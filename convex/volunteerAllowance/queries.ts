@@ -78,13 +78,17 @@ export const getAll = query({
 export const get = query({
   args: { id: v.id("volunteerAllowance") },
   handler: async (ctx, args) => {
-    return ctx.db.get(args.id);
+    const user = await getCurrentUser(ctx);
+    const doc = await ctx.db.get(args.id);
+    if (!doc || doc.organizationId !== user.organizationId) return null;
+    return doc;
   },
 });
 
 export const getSignatureUrl = query({
   args: { storageId: v.id("_storage") },
   handler: async (ctx, args) => {
+    await getCurrentUser(ctx);
     return ctx.storage.getUrl(args.storageId);
   },
 });

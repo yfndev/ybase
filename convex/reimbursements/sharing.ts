@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
-import { resend } from "../invitations/functions";
+import { escapeHtml, resend } from "../invitations/functions";
 import { addLog } from "../logs/functions";
 import { getCurrentUser } from "../users/getCurrentUser";
 
@@ -183,13 +183,16 @@ export const sendReimbursementLink = mutation({
     const user = await getCurrentUser(ctx);
     const typeLabel = args.type === "expense" ? "Auslagenerstattung" : "Reisekostenerstattung";
 
+    const senderName = escapeHtml(user.firstName ?? "");
+    const projectName = escapeHtml(args.projectName);
+
     await resend.sendEmail(ctx, {
       from: "YBudget <team@ybudget.de>",
       to: args.email,
       subject: `${typeLabel} ausfüllen`,
       html: `
         <p>Hallo,</p>
-        <p>${user.firstName} hat dir einen Link zum Ausfüllen der ${typeLabel} für das Projekt "${args.projectName}" gesendet.</p>
+        <p>${senderName} hat dir einen Link zum Ausfüllen der ${typeLabel} für das Projekt "${projectName}" gesendet.</p>
         <p><a href="${args.link}">Hier klicken zum Ausfüllen</a></p>
         <p>Viele Grüße,<br/>Dein YBudget Team</p>
       `,

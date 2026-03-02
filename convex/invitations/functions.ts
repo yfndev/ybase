@@ -6,6 +6,15 @@ import { getCurrentUser } from "../users/getCurrentUser";
 
 export const resend: Resend = new Resend(components.resend, {});
 
+export function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export const sendInvitation = mutation({
   args: {
     name: v.string(),
@@ -13,7 +22,8 @@ export const sendInvitation = mutation({
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    const firstName = args.name.split(" ")[0];
+    const firstName = escapeHtml(args.name.split(" ")[0]);
+    const senderName = escapeHtml(user.firstName ?? "");
 
     await resend.sendEmail(ctx, {
       from: "YBudget <team@ybudget.de>",
@@ -21,7 +31,7 @@ export const sendInvitation = mutation({
       subject: "Einladung zu YBudget",
       html: `
       <p>Hey ${firstName},</p>
-      <p>Du wurdest von ${user.firstName} zu YBudget eingeladen :) </p>
+      <p>Du wurdest von ${senderName} zu YBudget eingeladen :) </p>
       <p>Klicke auf den folgenden Link, um dich einzuloggen:</p>
       <a href="https://ybudget.de/login">Login</a>
       <p>Viel Spaß beim Budgeting!</p>

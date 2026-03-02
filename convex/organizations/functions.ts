@@ -19,7 +19,7 @@ export const initializeOrganization = mutation({
       return { organizationId: user.organizationId, isNew: false };
     }
 
-    const domain = user.email?.split("@")[1];
+    const domain = user.email?.split("@")[1]?.toLowerCase();
     if (!domain) throw new Error("Could not find a domain for this E-Mail");
 
     const existingOrg = await ctx.db

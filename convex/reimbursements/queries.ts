@@ -16,8 +16,10 @@ export const getUserBankDetails = query({
 export const getReimbursement = query({
   args: { reimbursementId: v.id("reimbursements") },
   handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
     const reimbursement = await ctx.db.get(args.reimbursementId);
-    if (!reimbursement) return null;
+    if (!reimbursement || reimbursement.organizationId !== user.organizationId)
+      return null;
 
     if (reimbursement.type !== "travel") return reimbursement;
 
@@ -33,6 +35,11 @@ export const getReimbursement = query({
 export const getReceipts = query({
   args: { reimbursementId: v.id("reimbursements") },
   handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    const reimbursement = await ctx.db.get(args.reimbursementId);
+    if (!reimbursement || reimbursement.organizationId !== user.organizationId)
+      return [];
+
     return ctx.db
       .query("receipts")
       .withIndex("by_reimbursement", (q) => q.eq("reimbursementId", args.reimbursementId))
@@ -43,6 +50,7 @@ export const getReceipts = query({
 export const getFileUrl = query({
   args: { storageId: v.id("_storage") },
   handler: async (ctx, args) => {
+    await getCurrentUser(ctx);
     return ctx.storage.getUrl(args.storageId);
   },
 });

@@ -1,8 +1,9 @@
 import { v } from "convex/values";
 import { mutation } from "../_generated/server";
-import { resend } from "../invitations/functions";
+import { escapeHtml, resend } from "../invitations/functions";
 import { addLog } from "../logs/functions";
 import { getCurrentUser } from "../users/getCurrentUser";
+import { requireRole } from "../users/permissions";
 
 export const create = mutation({
   args: {
@@ -152,9 +153,14 @@ export const submitExternal = mutation({
 export const approve = mutation({
   args: { id: v.id("volunteerAllowance") },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
+    const user = await requireRole(ctx, "lead");
     const doc = await ctx.db.get(args.id);
-    if (!doc) throw new Error("Not found");
+    if (!doc || doc.organizationId !== user.organizationId)
+      throw new Error("Not found");
+
+    if (doc.amount > 960) {
+      throw new Error("Cannot approve: amount exceeds 960€ legal limit");
+    }
 
     await ctx.db.patch(args.id, { isApproved: true, reviewedBy: user._id });
 
@@ -172,7 +178,10 @@ export const approve = mutation({
 export const reject = mutation({
   args: { id: v.id("volunteerAllowance"), rejectionNote: v.string() },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
+    const user = await requireRole(ctx, "lead");
+    const doc = await ctx.db.get(args.id);
+    if (!doc || doc.organizationId !== user.organizationId)
+      throw new Error("Not found");
 
     await ctx.db.patch(args.id, {
       isApproved: false,
@@ -196,7 +205,12 @@ export const remove = mutation({
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     const doc = await ctx.db.get(args.id);
-    if (!doc) throw new Error("Not found");
+    if (!doc || doc.organizationId !== user.organizationId)
+      throw new Error("Not found");
+
+    if (doc.createdBy !== user._id && user.role !== "admin") {
+      throw new Error("Only the creator or an admin can delete");
+    }
 
     if (doc.signatureStorageId) {
       await ctx.storage.delete(doc.signatureStorageId);
@@ -279,13 +293,16 @@ export const sendAllowanceLink = mutation({
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
 
+    const senderName = escapeHtml(user.firstName ?? "");
+    const projectName = escapeHtml(args.projectName);
+
     await resend.sendEmail(ctx, {
       from: "YBudget <team@ybudget.de>",
       to: args.email,
       subject: "Ehrenamtspauschale ausfüllen",
       html: `
         <p>Hallo,</p>
-        <p>${user.firstName} hat dir einen Link zum Ausfüllen der Ehrenamtspauschale für das Projekt "${args.projectName}" gesendet.</p>
+        <p>${senderName} hat dir einen Link zum Ausfüllen der Ehrenamtspauschale für das Projekt "${projectName}" gesendet.</p>
         <p><a href="${args.link}">Hier klicken zum Ausfüllen</a></p>
         <p>Viele Grüße,<br/>Dein YBudget Team</p>
       `,

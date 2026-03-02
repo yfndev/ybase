@@ -141,6 +141,10 @@ export const deleteReimbursement = mutation({
       throw new Error("Reimbursement not found");
     }
 
+    if (reimbursement.createdBy !== user._id && user.role !== "admin") {
+      throw new Error("Only the creator or an admin can delete reimbursements");
+    }
+
     const receipts = await ctx.db
       .query("receipts")
       .withIndex("by_reimbursement", (q) => q.eq("reimbursementId", args.reimbursementId))

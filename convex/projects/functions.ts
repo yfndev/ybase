@@ -1,9 +1,14 @@
 import { v } from "convex/values";
+import type { Id } from "../_generated/dataModel";
+import type { MutationCtx } from "../_generated/server";
 import { mutation } from "../_generated/server";
 import { addLog } from "../logs/functions";
 import { requireRole } from "../users/permissions";
 
-async function getProjectName(ctx: any, projectId: any) {
+async function getProjectName(
+  ctx: MutationCtx,
+  projectId: Id<"projects"> | null | undefined,
+) {
   if (!projectId) return "Root";
   const project = await ctx.db.get(projectId);
   return project?.name ?? "Root";
