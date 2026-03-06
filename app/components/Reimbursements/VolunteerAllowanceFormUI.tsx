@@ -1,8 +1,7 @@
 "use client";
 
 import { BankDetailsEditor } from "@/components/BankDetailsEditor";
-import { ShareSignatureModal } from "@/components/Reimbursements/ShareSignatureModal";
-import { SignatureCanvas } from "@/components/Reimbursements/SignatureCanvas";
+import { SignatureField } from "@/components/Reimbursements/SignatureField";
 import { AmountInput } from "@/components/Selectors/AmountInput";
 import { DateInput } from "@/components/Selectors/DateInput";
 import { SelectProject } from "@/components/Selectors/SelectProject";
@@ -10,17 +9,29 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
-import { RotateCcw, Smartphone } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 
 type BankDetails = { iban: string; bic: string; accountHolder: string };
+
+const MAX_AMOUNT = 960;
+const CURRENT_YEAR = new Date().getFullYear();
+const TAX_YEARS = Array.from({ length: 3 }, (_, i) =>
+  String(CURRENT_YEAR - i),
+);
 
 interface Props {
   defaultBankDetails: BankDetails;
@@ -30,16 +41,10 @@ export function VolunteerAllowanceFormUI({ defaultBankDetails }: Props) {
   const router = useRouter();
   const currentUser = useQuery(api.users.queries.getCurrentUserProfile);
   const submit = useMutation(api.volunteerAllowance.functions.create);
-  const createToken = useMutation(
-    api.volunteerAllowance.functions.createSignatureToken
-  );
 
   const [projectId, setProjectId] = useState<Id<"projects"> | null>(null);
   const [bank, setBank] = useState(defaultBankDetails);
   const [signature, setSignature] = useState<Id<"_storage"> | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
 
   const [form, setForm] = useState({
     name: currentUser?.name || "",
@@ -50,6 +55,7 @@ export function VolunteerAllowanceFormUI({ defaultBankDetails }: Props) {
     startDate: "",
     endDate: "",
     amount: "",
+    taxYear: String(CURRENT_YEAR),
     confirmed: false,
   });
 
@@ -57,11 +63,9 @@ export function VolunteerAllowanceFormUI({ defaultBankDetails }: Props) {
     setForm((prev) => ({ ...prev, ...field }));
 
   const updateAmount = (value: string) => {
-    if (parseFloat(value.replace(",", ".")) > 960) return;
+    if (parseFloat(value.replace(",", ".")) > MAX_AMOUNT) return;
     update({ amount: value });
   };
-
-  useEffect(() => setIsDesktop(window.innerWidth >= 768), []);
 
   const validate = () => {
     if (!projectId) return "Bitte ein Projekt auswählen";
@@ -71,12 +75,12 @@ export function VolunteerAllowanceFormUI({ defaultBankDetails }: Props) {
     if (!form.city) return "Bitte deinen Ort eingeben";
     if (!form.activity) return "Bitte die Tätigkeit beschreiben";
     if (!form.startDate || !form.endDate) return "Bitte den Zeitraum angeben";
+    if (!form.taxYear) return "Bitte das Steuerjahr angeben";
     const amount = parseFloat(form.amount.replace(",", "."));
     if (!amount || amount <= 0) return "Bitte einen Betrag eingeben";
-    if (amount > 960) return "Maximal 960€ erlaubt";
+    if (amount > MAX_AMOUNT) return `Maximal ${MAX_AMOUNT}€ erlaubt`;
     if (!bank.accountHolder) return "Bitte den Kontoinhaber eingeben";
     if (!bank.iban) return "Bitte die IBAN eingeben";
-    if (!bank.bic) return "Bitte die BIC eingeben";
     if (!form.confirmed) return "Bitte die Bestätigung ankreuzen";
     if (!signature) return "Bitte unterschreiben";
     return null;
@@ -93,6 +97,7 @@ export function VolunteerAllowanceFormUI({ defaultBankDetails }: Props) {
       activityDescription: form.activity,
       startDate: form.startDate,
       endDate: form.endDate,
+      taxYear: form.taxYear,
       volunteerName: form.name,
       volunteerStreet: form.street,
       volunteerPlz: form.plz,
@@ -103,14 +108,10 @@ export function VolunteerAllowanceFormUI({ defaultBankDetails }: Props) {
     router.push("/reimbursements");
   };
 
-  const openModal = async () => {
-    setToken(await createToken());
-    setModalOpen(true);
-  };
-
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       <div className="w-[200px]">
+        <Label>Projekt *</Label>
         <SelectProject
           value={projectId || ""}
           onValueChange={(value) =>
@@ -173,7 +174,7 @@ export function VolunteerAllowanceFormUI({ defaultBankDetails }: Props) {
             className="resize-none"
           />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div>
             <Label>Von *</Label>
             <DateInput
@@ -188,13 +189,31 @@ export function VolunteerAllowanceFormUI({ defaultBankDetails }: Props) {
               onChange={(value) => update({ endDate: value })}
             />
           </div>
+          <div>
+            <Label>Steuerjahr *</Label>
+            <Select
+              value={form.taxYear}
+              onValueChange={(value) => update({ taxYear: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TAX_YEARS.map((year) => (
+                  <SelectItem key={year} value={year}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
       <div className="space-y-4">
         <h2 className="text-lg font-medium">Betrag</h2>
         <div className="max-w-xs">
-          <Label>Betrag in Euro (max. 960€) *</Label>
+          <Label>Betrag in Euro (max. {MAX_AMOUNT}€) *</Label>
           <AmountInput value={form.amount} onChange={updateAmount} />
         </div>
       </div>
@@ -216,40 +235,22 @@ export function VolunteerAllowanceFormUI({ defaultBankDetails }: Props) {
           <Label htmlFor="confirm" className="text-sm leading-relaxed">
             Ich erkläre, dass die Steuerbefreiung nach § 3 Nr. 26a EStG für
             nebenberufliche ehrenamtliche Tätigkeit in Höhe von{" "}
-            {form.amount || "0,00"} Euro in Anspruch genommen werden kann.
-            Sollte sich im Lauf des Jahres eine Änderung ergeben, informiere ich
-            hierüber unverzüglich den Verein.
+            {form.amount || "0,00"} Euro für das Jahr {form.taxYear} in Anspruch
+            genommen werden kann. Sollte sich im Lauf des Jahres eine Änderung
+            ergeben, informiere ich hierüber unverzüglich den Verein. Mir ist
+            bekannt, dass andernfalls Nachteile des Vereins zu meinen Lasten
+            gehen.
           </Label>
         </div>
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-medium">Unterschrift</h2>
-        <p className="text-sm text-muted-foreground flex items-center gap-2">
-          <RotateCcw className="size-4" />
-          Drehe dein Handy ins Querformat, um die Unterschrift eingeben zu
-          können.
-        </p>
-        {isDesktop && !signature && (
-          <Button variant="outline" className="w-full h-14" onClick={openModal}>
-            <Smartphone className="size-5 mr-2" />
-            Auf Handy unterschreiben
-          </Button>
-        )}
-        <SignatureCanvas
-          onUploadComplete={setSignature}
+        <h2 className="text-lg font-medium">Unterschrift *</h2>
+        <SignatureField
+          onSignatureComplete={setSignature}
           storageId={signature || undefined}
         />
       </div>
-
-      {token && (
-        <ShareSignatureModal
-          token={token}
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          onSignatureReceived={setSignature}
-        />
-      )}
 
       <Button
         onClick={handleSubmit}

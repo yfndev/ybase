@@ -4,47 +4,19 @@ import { internal } from "../_generated/api";
 import { addLog } from "../logs/functions";
 import { getCurrentUser } from "../users/getCurrentUser";
 import { requireRole } from "../users/permissions";
+import { receiptValidator, travelReceiptValidator } from "./validators";
 
 export { sendApprovalEmail } from "./sendApprovalEmail";
-
-const receiptValidator = v.object({
-  receiptNumber: v.string(),
-  receiptDate: v.string(),
-  companyName: v.string(),
-  description: v.string(),
-  netAmount: v.number(),
-  taxRate: v.number(),
-  grossAmount: v.number(),
-  fileStorageId: v.id("_storage"),
-});
-
-const travelReceiptValidator = v.object({
-  receiptNumber: v.string(),
-  receiptDate: v.string(),
-  companyName: v.string(),
-  description: v.string(),
-  netAmount: v.number(),
-  taxRate: v.number(),
-  grossAmount: v.number(),
-  fileStorageId: v.id("_storage"),
-  costType: v.union(
-    v.literal("car"),
-    v.literal("train"),
-    v.literal("flight"),
-    v.literal("taxi"),
-    v.literal("bus"),
-    v.literal("accommodation"),
-  ),
-  kilometers: v.optional(v.number()),
-});
 
 export const createReimbursement = mutation({
   args: {
     amount: v.number(),
     projectId: v.id("projects"),
     iban: v.string(),
-    bic: v.string(),
+    bic: v.optional(v.string()),
     accountHolder: v.string(),
+    currency: v.optional(v.string()),
+    signatureStorageId: v.id("_storage"),
     receipts: v.array(receiptValidator),
   },
   handler: async (ctx, args) => {
@@ -59,6 +31,8 @@ export const createReimbursement = mutation({
       iban: args.iban,
       bic: args.bic,
       accountHolder: args.accountHolder,
+      currency: args.currency,
+      signatureStorageId: args.signatureStorageId,
       createdBy: user._id,
     });
 
@@ -77,8 +51,10 @@ export const createTravelReimbursement = mutation({
     amount: v.number(),
     projectId: v.id("projects"),
     iban: v.string(),
-    bic: v.string(),
+    bic: v.optional(v.string()),
     accountHolder: v.string(),
+    currency: v.optional(v.string()),
+    signatureStorageId: v.optional(v.id("_storage")),
     startDate: v.string(),
     endDate: v.string(),
     destination: v.string(),
@@ -100,6 +76,8 @@ export const createTravelReimbursement = mutation({
       iban: args.iban,
       bic: args.bic,
       accountHolder: args.accountHolder,
+      currency: args.currency,
+      signatureStorageId: args.signatureStorageId,
       createdBy: user._id,
     });
 

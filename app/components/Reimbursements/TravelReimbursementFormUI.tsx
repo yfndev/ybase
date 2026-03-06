@@ -2,6 +2,7 @@
 
 import { BankDetailsEditor } from "@/components/BankDetailsEditor";
 import { ReceiptUpload } from "@/components/Reimbursements/ReceiptUpload";
+import { SignatureField } from "@/components/Reimbursements/SignatureField";
 import { DateInput } from "@/components/Selectors/DateInput";
 import { SelectProject } from "@/components/Selectors/SelectProject";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,16 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
+import { toNet } from "@/lib/bank-utils";
+import {
+  CAR_ALLOWANCE_RATE_EUR_PER_KM,
+  COST_LABELS as LABELS,
+  COST_TYPES,
+  type CostType,
+  DEFAULT_TAX_RATES,
+  MEAL_ALLOWANCE_FULL_DAY_EUR,
+  MEAL_ALLOWANCE_PARTIAL_DAY_EUR,
+} from "@/lib/travel-costs";
 import { useMutation } from "convex/react";
 import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -25,20 +36,11 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 
 type BankDetails = { iban: string; bic: string; accountHolder: string };
-type CostType = NonNullable<Doc<"receipts">["costType"]>;
 type Receipt = Omit<
   Doc<"receipts">,
   "_id" | "_creationTime" | "reimbursementId"
 > & { costType: CostType };
 
-const LABELS: Record<CostType, string> = {
-  car: "PKW",
-  train: "Bahn",
-  flight: "Flug",
-  taxi: "Taxi",
-  bus: "Bus",
-  accommodation: "Unterkunft",
-};
 const PLACEHOLDERS: Record<CostType, string> = {
   car: "Eigenfahrt, Miles, Sixt, etc.",
   train: "Deutsche Bahn, Flix, etc.",
@@ -47,16 +49,6 @@ const PLACEHOLDERS: Record<CostType, string> = {
   bus: "Flixbus, etc.",
   accommodation: "Hotel, Airbnb, etc.",
 };
-const COST_TYPES = Object.keys(LABELS) as CostType[];
-const DEFAULT_TAX_RATES: Record<CostType, number> = {
-  car: 0,
-  train: 7,
-  flight: 19,
-  taxi: 7,
-  bus: 7,
-  accommodation: 7,
-};
-const toNet = (gross: number, tax: number) => gross / (1 + tax / 100);
 
 interface Props {
   defaultBankDetails: BankDetails;
@@ -70,6 +62,8 @@ export function TravelReimbursementFormUI({ defaultBankDetails }: Props) {
 
   const [projectId, setProjectId] = useState<Id<"projects"> | null>(null);
   const [bank, setBank] = useState(defaultBankDetails);
+  const [signature, setSignature] = useState<Id<"_storage"> | null>(null);
+  const [showMealAllowance, setShowMealAllowance] = useState(false);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [travel, setTravel] = useState({
     destination: "",
@@ -138,14 +132,17 @@ export function TravelReimbursementFormUI({ defaultBankDetails }: Props) {
     hasBasicInfo &&
     (receipts.length > 0 || mealTotal > 0) &&
     (receipts.length === 0 || allComplete) &&
-    projectId;
+    projectId &&
+    signature;
 
   const handleSubmit = async () => {
     if (!projectId) return toast.error("Bitte ein Projekt auswählen");
+    if (!signature) return toast.error("Bitte unterschreiben");
     await submit({
       projectId,
       amount: total,
       ...bank,
+      signatureStorageId: signature,
       startDate: travel.startDate,
       endDate: travel.endDate,
       destination: travel.destination,
@@ -162,6 +159,7 @@ export function TravelReimbursementFormUI({ defaultBankDetails }: Props) {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       <div className="w-[200px]">
+        <Label>Projekt *</Label>
         <SelectProject
           value={projectId || ""}
           onValueChange={(value) =>
@@ -289,7 +287,7 @@ export function TravelReimbursementFormUI({ defaultBankDetails }: Props) {
                             0,
                             Math.floor(parseFloat(e.target.value) || 0)
                           );
-                          const amount = Math.round(km * 0.3 * 100) / 100;
+                          const amount = Math.round(km * CAR_ALLOWANCE_RATE_EUR_PER_KM * 100) / 100;
                           updateReceipt(receipt.costType, {
                             kilometers: km,
                             grossAmount: amount,
@@ -370,52 +368,69 @@ export function TravelReimbursementFormUI({ defaultBankDetails }: Props) {
             </div>
           ))}
 
-          <div className="border rounded-lg p-4 space-y-4">
-            <h3 className="font-medium">Verpflegungsmehraufwand</h3>
-            <p className="text-sm text-muted-foreground">
-              Bitte nur ausfüllen, wenn dies vorab mit deinem Lead abgesprochen
-              wurde! Ansonsten werden die Reisekosten nicht erstattet.
-            </p>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label>Tage</Label>
-                <Input
-                  type="number"
-                  step="0.5"
-                  min={0}
-                  value={travel.mealDays || ""}
-                  onChange={(e) =>
-                    update({ mealDays: parseFloat(e.target.value) || 0 })
-                  }
-                  placeholder="z.B. 2.5"
-                />
-              </div>
-              <div>
-                <Label>Tagessatz (€)</Label>
-                <Select
-                  value={travel.mealRate ? String(travel.mealRate) : ""}
-                  onValueChange={(value) =>
-                    update({ mealRate: parseFloat(value) || 0 })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Auswählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="14">14 € (8-24h)</SelectItem>
-                    <SelectItem value="28">28 € (24h+)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-muted-foreground">Betrag</Label>
-                <Input
-                  value={`${mealTotal.toFixed(2)} €`}
-                  disabled
-                  className="bg-muted/50 font-mono"
-                />
-              </div>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="mealAllowance"
+                checked={showMealAllowance}
+                onCheckedChange={(checked) => {
+                  setShowMealAllowance(checked === true);
+                  if (!checked) update({ mealDays: 0, mealRate: 0 });
+                }}
+              />
+              <Label htmlFor="mealAllowance" className="font-normal cursor-pointer">
+                Verpflegungsmehraufwand geltend machen
+              </Label>
             </div>
+
+            {showMealAllowance && (
+              <div className="border rounded-lg p-4 space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Bitte nur ausfüllen, wenn dies vorab mit deinem Lead abgesprochen
+                  wurde! Ansonsten werden die Reisekosten nicht erstattet.
+                </p>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label>Tage</Label>
+                    <Input
+                      type="number"
+                      step="0.5"
+                      min={0}
+                      value={travel.mealDays || ""}
+                      onChange={(e) =>
+                        update({ mealDays: parseFloat(e.target.value) || 0 })
+                      }
+                      placeholder="z.B. 2.5"
+                    />
+                  </div>
+                  <div>
+                    <Label>Tagessatz (€)</Label>
+                    <Select
+                      value={travel.mealRate ? String(travel.mealRate) : ""}
+                      onValueChange={(value) =>
+                        update({ mealRate: parseFloat(value) || 0 })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Auswählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="14">{MEAL_ALLOWANCE_PARTIAL_DAY_EUR} € (8-24h)</SelectItem>
+                        <SelectItem value="28">{MEAL_ALLOWANCE_FULL_DAY_EUR} € (24h+)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Betrag</Label>
+                    <Input
+                      value={`${mealTotal.toFixed(2)} €`}
+                      disabled
+                      className="bg-muted/50 font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -484,6 +499,14 @@ export function TravelReimbursementFormUI({ defaultBankDetails }: Props) {
               <span>Brutto gesamt</span>
               <span>{total.toFixed(2)} €</span>
             </div>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-lg font-medium">Unterschrift *</h2>
+            <SignatureField
+              onSignatureComplete={setSignature}
+              storageId={signature || undefined}
+            />
           </div>
 
           <Button

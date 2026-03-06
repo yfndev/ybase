@@ -12,30 +12,25 @@ import toast from "react-hot-toast";
 export default function SignaturePage() {
   const { token } = useParams<{ token: string }>();
 
-  const tokenData = useQuery(
-    api.volunteerAllowance.queries.validateSignatureToken,
-    { token },
-  );
+  const tokenData = useQuery(api.signatures.queries.validate, { token });
   const generateUploadUrl = useMutation(
-    api.volunteerAllowance.functions.generateSignatureUploadUrl,
+    api.signatures.functions.generateUploadUrl,
   );
-  const submitSignature = useMutation(
-    api.volunteerAllowance.functions.submitSignature,
-  );
+  const submitSignature = useMutation(api.signatures.functions.submit);
 
-  const sigRef = useRef<SignaturePad>(null);
+  const signaturePadRef = useRef<SignaturePad>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   const handleSave = async () => {
-    if (!sigRef.current || sigRef.current.isEmpty()) {
+    if (!signaturePadRef.current || signaturePadRef.current.isEmpty()) {
       toast.error("Bitte unterschreiben");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const dataUrl = sigRef.current.getTrimmedCanvas().toDataURL("image/png");
+      const dataUrl = signaturePadRef.current.getTrimmedCanvas().toDataURL("image/png");
       const response = await fetch(dataUrl);
       const blob = await response.blob();
 
@@ -100,7 +95,7 @@ export default function SignaturePage() {
         </p>
         <div className="flex-1 border-2 border-dashed rounded-lg bg-gray-50 relative">
           <SignaturePad
-            ref={sigRef}
+            ref={signaturePadRef}
             canvasProps={{
               className: "absolute inset-0 w-full h-full",
             }}
@@ -113,7 +108,7 @@ export default function SignaturePage() {
           variant="outline"
           size="lg"
           className="flex-1 h-14"
-          onClick={() => sigRef.current?.clear()}
+          onClick={() => signaturePadRef.current?.clear()}
         >
           <RotateCcw className="size-5 mr-2" />
           Löschen

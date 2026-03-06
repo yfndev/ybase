@@ -8,6 +8,8 @@ test("create (standard) reimbursement", async () => {
   const t = convexTest(schema, modules);
   const { userId, projectId } = await setupTestData(t);
 
+  const sigId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
+
   const reimbursementId = await t
     .withIdentity({ subject: userId })
     .mutation(api.reimbursements.functions.createReimbursement, {
@@ -16,6 +18,7 @@ test("create (standard) reimbursement", async () => {
       iban: "DE12345678900000000000",
       bic: "TESTBIC",
       accountHolder: "Test User",
+      signatureStorageId: sigId,
       receipts: [],
     });
 
@@ -28,6 +31,8 @@ test("create travel reimbursement", async () => {
   const t = convexTest(schema, modules);
   const { userId, projectId } = await setupTestData(t);
 
+  const sigId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
+
   const reimbursementId = await t
     .withIdentity({ subject: userId })
     .mutation(api.reimbursements.functions.createTravelReimbursement, {
@@ -36,6 +41,7 @@ test("create travel reimbursement", async () => {
       iban: "DE12345678900000000000",
       bic: "TESTBIC",
       accountHolder: "Test User",
+      signatureStorageId: sigId,
       startDate: "2024-01-01",
       endDate: "2024-01-02",
       destination: "Berlin",
@@ -200,6 +206,7 @@ test("create reimbursement with receipts", async () => {
       iban: "DE12345678900000000000",
       bic: "TESTBIC",
       accountHolder: "Test User",
+      signatureStorageId: storageId,
       receipts: [
         {
           receiptNumber: "R001",
@@ -240,6 +247,7 @@ test("create travel reimbursement with meal allowance and receipts", async () =>
       iban: "DE12345678900000000000",
       bic: "TESTBIC",
       accountHolder: "Test User",
+      signatureStorageId: storageId,
       startDate: "2024-01-01",
       endDate: "2024-01-03",
       destination: "Munich",
@@ -321,6 +329,7 @@ test("delete reimbursement with receipts deletes receipt records", async () => {
       iban: "DE12345678900000000000",
       bic: "TESTBIC",
       accountHolder: "Test User",
+      signatureStorageId: storageId,
       receipts: [
         {
           receiptNumber: "R001",

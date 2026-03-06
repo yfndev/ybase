@@ -1,16 +1,20 @@
 "use client";
 
-import { ShareSignatureModal } from "@/components/Reimbursements/ShareSignatureModal";
+import { SignatureQRModal } from "@/components/Reimbursements/SignatureField";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { formatIban, normalizeIban, toNet } from "@/lib/bank-utils";
+import {
+  COST_LABELS,
+  type CostType,
+  DEFAULT_TAX_RATES,
+} from "@/lib/travel-costs";
 import { useMutation, useQuery } from "convex/react";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import ExternalReimbursementPageUI from "./ExternalReimbursementPageUI";
-
-type CostType = "car" | "train" | "flight" | "taxi" | "bus" | "accommodation";
 
 type Receipt = {
   receiptNumber: string;
@@ -28,30 +32,6 @@ type TravelReceipt = Receipt & {
   kilometers?: number;
 };
 
-const COST_LABELS: Record<CostType, string> = {
-  car: "PKW",
-  train: "Bahn",
-  flight: "Flug",
-  taxi: "Taxi",
-  bus: "Bus",
-  accommodation: "Unterkunft",
-};
-
-const DEFAULT_TAX: Record<CostType, number> = {
-  car: 0,
-  train: 7,
-  flight: 19,
-  taxi: 7,
-  bus: 7,
-  accommodation: 7,
-};
-
-const toNet = (gross: number, tax: number) => gross / (1 + tax / 100);
-
-const formatIban = (iban: string) => iban.replace(/(.{4})/g, "$1 ").trim();
-
-const normalizeIban = (iban: string) => iban.replace(/\s/g, "").toUpperCase();
-
 export default function ExternalReimbursementPage() {
   const params = useParams<{ id: string }>();
   const reimbursementId = params.id as Id<"reimbursements">;
@@ -66,7 +46,7 @@ export default function ExternalReimbursementPage() {
     api.reimbursements.sharing.submitExternalReimbursement
   );
   const createSignatureToken = useMutation(
-    api.volunteerAllowance.functions.createSignatureToken
+    api.signatures.functions.createToken
   );
 
   const [name, setName] = useState("");
@@ -163,7 +143,7 @@ export default function ExternalReimbursementPage() {
         companyName: "",
         description: "",
         netAmount: 0,
-        taxRate: DEFAULT_TAX[costType],
+        taxRate: DEFAULT_TAX_RATES[costType],
         grossAmount: 0,
         fileStorageId: null,
         kilometers: costType === "car" ? 0 : undefined,
@@ -369,7 +349,7 @@ export default function ExternalReimbursementPage() {
       />
 
       {signatureToken && (
-        <ShareSignatureModal
+        <SignatureQRModal
           token={signatureToken}
           open={showSignatureModal}
           onClose={() => setShowSignatureModal(false)}

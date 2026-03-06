@@ -4,17 +4,19 @@ import { escapeHtml, resend } from "../invitations/functions";
 import { addLog } from "../logs/functions";
 import { getCurrentUser } from "../users/getCurrentUser";
 import { requireRole } from "../users/permissions";
+import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "./constants";
 
 export const create = mutation({
   args: {
     projectId: v.id("projects"),
     amount: v.number(),
     iban: v.string(),
-    bic: v.string(),
+    bic: v.optional(v.string()),
     accountHolder: v.string(),
     activityDescription: v.string(),
     startDate: v.string(),
     endDate: v.string(),
+    taxYear: v.optional(v.string()),
     volunteerName: v.string(),
     volunteerStreet: v.string(),
     volunteerPlz: v.string(),
@@ -24,8 +26,8 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
 
-    if (args.amount > 960) {
-      throw new Error("Volunteer allowance cannot exceed 960€");
+    if (args.amount > MAX_VOLUNTEER_ALLOWANCE_EUR) {
+      throw new Error(`Volunteer allowance cannot exceed ${MAX_VOLUNTEER_ALLOWANCE_EUR}€`);
     }
 
     const id = await ctx.db.insert("volunteerAllowance", {
@@ -40,6 +42,7 @@ export const create = mutation({
       activityDescription: args.activityDescription,
       startDate: args.startDate,
       endDate: args.endDate,
+      taxYear: args.taxYear,
       volunteerName: args.volunteerName,
       volunteerStreet: args.volunteerStreet,
       volunteerPlz: args.volunteerPlz,
@@ -106,11 +109,12 @@ export const submitExternal = mutation({
     id: v.id("volunteerAllowance"),
     amount: v.number(),
     iban: v.string(),
-    bic: v.string(),
+    bic: v.optional(v.string()),
     accountHolder: v.string(),
     activityDescription: v.string(),
     startDate: v.string(),
     endDate: v.string(),
+    taxYear: v.optional(v.string()),
     volunteerName: v.string(),
     volunteerStreet: v.string(),
     volunteerPlz: v.string(),
@@ -122,7 +126,7 @@ export const submitExternal = mutation({
     if (!doc) throw new Error("Invalid link");
     if (doc.volunteerName && doc.signatureStorageId)
       throw new Error("Already submitted");
-    if (args.amount > 960) throw new Error("Amount cannot exceed 960€");
+    if (args.amount > MAX_VOLUNTEER_ALLOWANCE_EUR) throw new Error(`Amount cannot exceed ${MAX_VOLUNTEER_ALLOWANCE_EUR}€`);
 
     await ctx.db.patch(args.id, {
       amount: args.amount,
@@ -132,6 +136,7 @@ export const submitExternal = mutation({
       activityDescription: args.activityDescription,
       startDate: args.startDate,
       endDate: args.endDate,
+      taxYear: args.taxYear,
       volunteerName: args.volunteerName,
       volunteerStreet: args.volunteerStreet,
       volunteerPlz: args.volunteerPlz,
@@ -158,8 +163,8 @@ export const approve = mutation({
     if (!doc || doc.organizationId !== user.organizationId)
       throw new Error("Not found");
 
-    if (doc.amount > 960) {
-      throw new Error("Cannot approve: amount exceeds 960€ legal limit");
+    if (doc.amount > MAX_VOLUNTEER_ALLOWANCE_EUR) {
+      throw new Error(`Cannot approve: amount exceeds ${MAX_VOLUNTEER_ALLOWANCE_EUR}€ legal limit`);
     }
 
     await ctx.db.patch(args.id, { isApproved: true, reviewedBy: user._id });
@@ -226,61 +231,6 @@ export const remove = mutation({
       args.id,
       `${doc.amount}€`,
     );
-  },
-});
-
-export const createSignatureToken = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    const token = crypto.randomUUID();
-
-    await ctx.db.insert("signatureTokens", {
-      token,
-      organizationId: user.organizationId,
-      createdBy: user._id,
-      expiresAt: Date.now() + 60 * 60 * 1000,
-    });
-
-    return token;
-  },
-});
-
-export const generateSignatureUploadUrl = mutation({
-  args: { token: v.string() },
-  handler: async (ctx, args) => {
-    const doc = await ctx.db
-      .query("signatureTokens")
-      .withIndex("by_token", (q) => q.eq("token", args.token))
-      .first();
-
-    if (!doc) throw new Error("Invalid link");
-    if (doc.expiresAt < Date.now()) throw new Error("Link expired");
-    if (doc.usedAt) throw new Error("Link already used");
-
-    return ctx.storage.generateUploadUrl();
-  },
-});
-
-export const submitSignature = mutation({
-  args: {
-    token: v.string(),
-    signatureStorageId: v.id("_storage"),
-  },
-  handler: async (ctx, args) => {
-    const doc = await ctx.db
-      .query("signatureTokens")
-      .withIndex("by_token", (q) => q.eq("token", args.token))
-      .first();
-
-    if (!doc) throw new Error("Invalid link");
-    if (doc.expiresAt < Date.now()) throw new Error("Link expired");
-    if (doc.usedAt) throw new Error("Link already used");
-
-    await ctx.db.patch(doc._id, {
-      signatureStorageId: args.signatureStorageId,
-      usedAt: Date.now(),
-    });
   },
 });
 

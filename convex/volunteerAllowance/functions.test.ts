@@ -275,7 +275,7 @@ test("createSignatureToken returns token", async () => {
 
   const token = await t
     .withIdentity({ subject: userId })
-    .mutation(api.volunteerAllowance.functions.createSignatureToken, {});
+    .mutation(api.signatures.functions.createToken, {});
 
   expect(typeof token).toBe("string");
 });
@@ -286,9 +286,9 @@ test("generateSignatureUploadUrl with valid token returns url", async () => {
 
   const token = await t
     .withIdentity({ subject: userId })
-    .mutation(api.volunteerAllowance.functions.createSignatureToken, {});
+    .mutation(api.signatures.functions.createToken, {});
   const url = await t.mutation(
-    api.volunteerAllowance.functions.generateSignatureUploadUrl,
+    api.signatures.functions.generateUploadUrl,
     { token },
   );
 
@@ -301,10 +301,10 @@ test("submitSignature stores signature", async () => {
 
   const token = await t
     .withIdentity({ subject: userId })
-    .mutation(api.volunteerAllowance.functions.createSignatureToken, {});
+    .mutation(api.signatures.functions.createToken, {});
   const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
 
-  await t.mutation(api.volunteerAllowance.functions.submitSignature, {
+  await t.mutation(api.signatures.functions.submit, {
     token,
     signatureStorageId: storageId,
   });
@@ -375,10 +375,10 @@ test("generateSignatureUploadUrl fails with expired token", async () => {
   );
 
   await expect(
-    t.mutation(api.volunteerAllowance.functions.generateSignatureUploadUrl, {
+    t.mutation(api.signatures.functions.generateUploadUrl, {
       token: "expired-sig-upload",
     }),
-  ).rejects.toThrow("Link expired");
+  ).rejects.toThrow("Link abgelaufen");
 });
 
 test("generateSignatureUploadUrl fails with used token", async () => {
@@ -396,10 +396,10 @@ test("generateSignatureUploadUrl fails with used token", async () => {
   );
 
   await expect(
-    t.mutation(api.volunteerAllowance.functions.generateSignatureUploadUrl, {
+    t.mutation(api.signatures.functions.generateUploadUrl, {
       token: "used-sig-upload",
     }),
-  ).rejects.toThrow("Link already used");
+  ).rejects.toThrow("Link bereits verwendet");
 });
 
 test("generateSignatureUploadUrl fails with invalid token", async () => {
@@ -407,10 +407,10 @@ test("generateSignatureUploadUrl fails with invalid token", async () => {
   await setupTestData(t);
 
   await expect(
-    t.mutation(api.volunteerAllowance.functions.generateSignatureUploadUrl, {
+    t.mutation(api.signatures.functions.generateUploadUrl, {
       token: "invalid",
     }),
-  ).rejects.toThrow("Invalid link");
+  ).rejects.toThrow("Ungültiger Link");
 });
 
 test("submitSignature fails with expired token", async () => {
@@ -428,11 +428,11 @@ test("submitSignature fails with expired token", async () => {
   );
 
   await expect(
-    t.mutation(api.volunteerAllowance.functions.submitSignature, {
+    t.mutation(api.signatures.functions.submit, {
       token: "expired-submit-sig",
       signatureStorageId: storageId,
     }),
-  ).rejects.toThrow("Link expired");
+  ).rejects.toThrow("Link abgelaufen");
 });
 
 test("submitSignature fails with used token", async () => {
@@ -451,11 +451,11 @@ test("submitSignature fails with used token", async () => {
   );
 
   await expect(
-    t.mutation(api.volunteerAllowance.functions.submitSignature, {
+    t.mutation(api.signatures.functions.submit, {
       token: "used-submit-sig",
       signatureStorageId: storageId,
     }),
-  ).rejects.toThrow("Link already used");
+  ).rejects.toThrow("Link bereits verwendet");
 });
 
 test("submitSignature fails with invalid token", async () => {
@@ -464,11 +464,11 @@ test("submitSignature fails with invalid token", async () => {
   const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
 
   await expect(
-    t.mutation(api.volunteerAllowance.functions.submitSignature, {
+    t.mutation(api.signatures.functions.submit, {
       token: "invalid",
       signatureStorageId: storageId,
     }),
-  ).rejects.toThrow("Invalid link");
+  ).rejects.toThrow("Ungültiger Link");
 });
 
 test("approve fails for non-existent allowance", async () => {

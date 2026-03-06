@@ -3,37 +3,7 @@ import { mutation, query } from "../_generated/server";
 import { escapeHtml, resend } from "../invitations/functions";
 import { addLog } from "../logs/functions";
 import { getCurrentUser } from "../users/getCurrentUser";
-
-const travelReceiptValidator = v.object({
-  receiptNumber: v.string(),
-  receiptDate: v.string(),
-  companyName: v.string(),
-  description: v.string(),
-  netAmount: v.number(),
-  taxRate: v.number(),
-  grossAmount: v.number(),
-  fileStorageId: v.id("_storage"),
-  costType: v.union(
-    v.literal("car"),
-    v.literal("train"),
-    v.literal("flight"),
-    v.literal("taxi"),
-    v.literal("bus"),
-    v.literal("accommodation"),
-  ),
-  kilometers: v.optional(v.number()),
-});
-
-const receiptValidator = v.object({
-  receiptNumber: v.string(),
-  receiptDate: v.string(),
-  companyName: v.string(),
-  description: v.string(),
-  netAmount: v.number(),
-  taxRate: v.number(),
-  grossAmount: v.number(),
-  fileStorageId: v.id("_storage"),
-});
+import { receiptValidator, travelReceiptValidator } from "./validators";
 
 export const createReimbursementLink = mutation({
   args: {

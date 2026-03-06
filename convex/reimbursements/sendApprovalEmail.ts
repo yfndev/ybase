@@ -40,21 +40,41 @@ export const sendApprovalEmail = internalAction({
   },
 });
 
+function buildReceiptFilename(
+  receipt: { receiptNumber?: string; companyName: string; receiptDate: string },
+  index: number,
+) {
+  const company = receipt.companyName
+    .replace(/[^a-zA-Z0-9äöüÄÖÜß]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "")
+    .slice(0, 30);
+  const date = receipt.receiptDate.replace(/-/g, "");
+  const suffix = receipt.receiptNumber ? `_${receipt.receiptNumber}` : "";
+  return `beleg_${index + 1}_${company}_${date}${suffix}`;
+}
+
 async function buildAttachments(
   ctx: { storage: { getUrl: (id: string) => Promise<string | null> } },
-  receipts: Array<{ fileStorageId: string; receiptNumber: string }>,
+  receipts: Array<{
+    fileStorageId: string;
+    receiptNumber?: string;
+    companyName: string;
+    receiptDate: string;
+  }>,
 ) {
   const results = await Promise.all(
-    receipts.map(async (receipt) => {
+    receipts.map(async (receipt, index) => {
       const fileUrl = await ctx.storage.getUrl(receipt.fileStorageId);
       if (!fileUrl) return null;
 
       const response = await fetch(fileUrl);
       const buffer = await response.arrayBuffer();
       const contentType = response.headers.get("content-type") || "application/pdf";
+      const name = buildReceiptFilename(receipt, index);
 
       return {
-        filename: `beleg_${receipt.receiptNumber}.${getFileExtension(contentType)}`,
+        filename: `${name}.${getFileExtension(contentType)}`,
         content: Buffer.from(buffer).toString("base64"),
       };
     }),
@@ -68,11 +88,11 @@ function buildEmailHtml(data: {
   amount: number;
   accountHolder: string;
   iban: string;
-  bic: string;
+  bic?: string;
   project: { name: string };
   creator: { name?: string; email?: string };
   receipts: Array<{
-    receiptNumber: string;
+    receiptNumber?: string;
     receiptDate: string;
     companyName: string;
     description: string;
@@ -97,7 +117,7 @@ function buildEmailHtml(data: {
     .map(
       (receipt) => `
       <tr>
-        <td style="${CELL_STYLE}">${receipt.receiptNumber}</td>
+        <td style="${CELL_STYLE}">${receipt.receiptNumber || ""}</td>
         <td style="${CELL_STYLE}">${receipt.receiptDate}</td>
         <td style="${CELL_STYLE}">${receipt.companyName}</td>
         <td style="${CELL_STYLE}">${receipt.description}</td>
@@ -124,7 +144,7 @@ function buildEmailHtml(data: {
       <table style="width: 100%; border-collapse: collapse;">
         <tr><td style="${CELL_STYLE}"><strong>Kontoinhaber:</strong></td><td style="${CELL_STYLE}">${data.accountHolder}</td></tr>
         <tr><td style="${CELL_STYLE}"><strong>IBAN:</strong></td><td style="${CELL_STYLE}">${data.iban}</td></tr>
-        <tr><td style="${CELL_STYLE}"><strong>BIC:</strong></td><td style="${CELL_STYLE}">${data.bic}</td></tr>
+        ${data.bic ? `<tr><td style="${CELL_STYLE}"><strong>BIC:</strong></td><td style="${CELL_STYLE}">${data.bic}</td></tr>` : ""}
       </table>
 
       <h3 style="color: #555; margin-top: 24px;">Belege</h3>

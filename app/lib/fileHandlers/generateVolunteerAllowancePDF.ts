@@ -3,7 +3,7 @@ import { PDFDocument, StandardFonts } from "pdf-lib";
 type VolunteerAllowanceData = {
   amount: number;
   iban: string;
-  bic: string;
+  bic?: string;
   accountHolder: string;
   activityDescription: string;
   startDate: string;
@@ -138,7 +138,9 @@ export async function generateVolunteerAllowancePDF(
   yPos -= 15;
   page.drawText(`IBAN: ${data.iban}`, { x: MARGIN, y: yPos, size: 10, font });
   yPos -= 15;
-  page.drawText(`BIC: ${data.bic}`, { x: MARGIN, y: yPos, size: 10, font });
+  if (data.bic) {
+    page.drawText(`BIC: ${data.bic}`, { x: MARGIN, y: yPos, size: 10, font });
+  }
   yPos -= 35;
 
   page.drawText("Bestätigung gemäß § 3 Nr. 26a EStG:", {
@@ -173,7 +175,7 @@ export async function generateVolunteerAllowancePDF(
         height: image.height * scale,
       });
       yPos -= image.height * scale + 10;
-    } catch {}
+    } catch (error) { console.error('Failed to embed signature:', error); }
   }
 
   page.drawLine({

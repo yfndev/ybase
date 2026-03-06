@@ -93,35 +93,4 @@ export const getSignatureUrl = query({
   },
 });
 
-export const validateSignatureToken = query({
-  args: { token: v.string() },
-  handler: async (ctx, args) => {
-    const doc = await ctx.db
-      .query("signatureTokens")
-      .withIndex("by_token", (q) => q.eq("token", args.token))
-      .first();
-
-    if (!doc) return { valid: false, error: "Invalid link" } as const;
-    if (doc.expiresAt < Date.now()) return { valid: false, error: "Link expired" } as const;
-    if (doc.usedAt) return { valid: false, error: "Link already used" } as const;
-
-    return { valid: true } as const;
-  },
-});
-
-export const getSignatureToken = query({
-  args: { token: v.string() },
-  handler: async (ctx, args) => {
-    const doc = await ctx.db
-      .query("signatureTokens")
-      .withIndex("by_token", (q) => q.eq("token", args.token))
-      .first();
-
-    if (!doc) return null;
-
-    return {
-      signatureStorageId: doc.signatureStorageId,
-      usedAt: doc.usedAt,
-    };
-  },
-});
+// Signature token queries moved to convex/signatures/queries.ts
