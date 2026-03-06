@@ -77,3 +77,27 @@ test("getOrganizationByDomain returns false for email without domain", async () 
 
   expect(result.exists).toBe(false);
 });
+
+test("getOrganization returns org details", async () => {
+  const t = convexTest(schema, modules);
+  const { userId } = await setupTestData(t);
+
+  const org = await t
+    .withIdentity({ subject: userId })
+    .query(api.organizations.queries.getOrganization, {});
+
+  expect(org.name).toBe("Test Organization");
+});
+
+test("getOrganization throws when org is deleted", async () => {
+  const t = convexTest(schema, modules);
+  const { userId, organizationId } = await setupTestData(t);
+
+  await t.run((ctx) => ctx.db.delete(organizationId));
+
+  await expect(
+    t
+      .withIdentity({ subject: userId })
+      .query(api.organizations.queries.getOrganization, {}),
+  ).rejects.toThrow("Organization not found");
+});

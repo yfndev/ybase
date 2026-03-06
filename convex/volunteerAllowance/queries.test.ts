@@ -358,3 +358,69 @@ test("getAll handles deleted organization", async () => {
 
   expect(results.some((r) => r.organizationName === "")).toBe(true);
 });
+
+test("getAll includes reviewer name", async () => {
+  const t = convexTest(schema, modules);
+  const { organizationId, userId, projectId } = await setupTestData(t);
+  const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
+
+  await t.run(async (ctx) => {
+    await ctx.db.patch(userId, { name: "Test Admin" });
+    await ctx.db.insert("volunteerAllowance", {
+      ...baseAllowance(organizationId, projectId, userId, storageId),
+      isApproved: true,
+      reviewedBy: userId,
+    });
+  });
+
+  const results = await t
+    .withIdentity({ subject: userId })
+    .query(api.volunteerAllowance.queries.getAll, {});
+
+  const reviewed = results.find((r) => r.reviewedBy);
+  expect(reviewed?.reviewedByName).toBe("Test Admin");
+});
+
+test("get returns null for allowance from different org", async () => {
+  const t = convexTest(schema, modules);
+  const { userId, projectId } = await setupTestData(t);
+  const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
+
+  const otherOrgId = await t.run(async (ctx) => {
+    const otherUserId = await ctx.db.insert("users", {
+      email: "other@other.com",
+    });
+    return ctx.db.insert("organizations", {
+      name: "Other",
+      domain: "other.com",
+      createdBy: otherUserId,
+    });
+  });
+
+  const id = await t.run((ctx) =>
+    ctx.db.insert("volunteerAllowance", {
+      organizationId: otherOrgId,
+      projectId,
+      createdBy: userId,
+      amount: 500,
+      isApproved: false,
+      iban: "DE123",
+      bic: "BIC",
+      accountHolder: "Test",
+      activityDescription: "Test",
+      startDate: "2024-01-01",
+      endDate: "2024-12-31",
+      volunteerName: "Test",
+      volunteerStreet: "Test",
+      volunteerPlz: "12345",
+      volunteerCity: "Berlin",
+      signatureStorageId: storageId,
+    }),
+  );
+
+  const result = await t
+    .withIdentity({ subject: userId })
+    .query(api.volunteerAllowance.queries.get, { id });
+
+  expect(result).toBeNull();
+});

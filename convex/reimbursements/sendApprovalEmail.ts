@@ -4,7 +4,7 @@ import { internal } from "../_generated/api";
 
 const CELL_STYLE = "padding: 8px; border-bottom: 1px solid #eee;";
 
-function getFileExtension(contentType: string): string {
+export function getFileExtension(contentType: string): string {
   if (contentType.includes("pdf")) return "pdf";
   if (contentType.includes("png")) return "png";
   if (contentType.includes("jpeg") || contentType.includes("jpg")) return "jpg";

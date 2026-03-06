@@ -51,7 +51,7 @@ test("creating fails if amount exceeds 960€", async () => {
       .withIdentity({ subject: userId })
       .mutation(api.volunteerAllowance.functions.create, {
         projectId,
-        ...formData(storageId, 900),
+        ...formData(storageId, 961),
       }),
   ).rejects.toThrow("Volunteer allowance cannot exceed 960€");
 });
@@ -240,7 +240,7 @@ test("submitExternal fails if amount exceeds 960€", async () => {
   await expect(
     t.mutation(api.volunteerAllowance.functions.submitExternal, {
       id,
-      ...formData(storageId, 900),
+      ...formData(storageId, 961),
     }),
   ).rejects.toThrow("Amount cannot exceed 960€");
 });
@@ -602,4 +602,116 @@ test("sendAllowanceLink sends email", async () => {
       link: "https://example.com/form/123",
       projectName: project!.name,
     });
+});
+
+test("approve fails if amount exceeds 960€", async () => {
+  const t = convexTest(schema, modules);
+  const { userId, organizationId, projectId } = await setupTestData(t);
+  const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
+
+  const id = await t.run((ctx) =>
+    ctx.db.insert("volunteerAllowance", {
+      organizationId,
+      projectId,
+      createdBy: userId,
+      amount: 961,
+      isApproved: false,
+      iban: "DE123",
+      bic: "BIC",
+      accountHolder: "Test",
+      activityDescription: "Test",
+      startDate: "2024-01-01",
+      endDate: "2024-12-31",
+      volunteerName: "Test",
+      volunteerStreet: "Test",
+      volunteerPlz: "12345",
+      volunteerCity: "Berlin",
+      signatureStorageId: storageId,
+    }),
+  );
+
+  await expect(
+    t
+      .withIdentity({ subject: userId })
+      .mutation(api.volunteerAllowance.functions.approve, { id }),
+  ).rejects.toThrow("Cannot approve: amount exceeds 960€ legal limit");
+});
+
+test("reject fails for non-existent allowance", async () => {
+  const t = convexTest(schema, modules);
+  const { userId, organizationId, projectId } = await setupTestData(t);
+  const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
+
+  const id = await t.run((ctx) =>
+    ctx.db.insert("volunteerAllowance", {
+      organizationId,
+      projectId,
+      createdBy: userId,
+      amount: 500,
+      isApproved: false,
+      iban: "DE123",
+      bic: "BIC",
+      accountHolder: "Test",
+      activityDescription: "Test",
+      startDate: "2024-01-01",
+      endDate: "2024-12-31",
+      volunteerName: "Test",
+      volunteerStreet: "Test",
+      volunteerPlz: "12345",
+      volunteerCity: "Berlin",
+      signatureStorageId: storageId,
+    }),
+  );
+
+  await t.run((ctx) => ctx.db.delete(id));
+
+  await expect(
+    t
+      .withIdentity({ subject: userId })
+      .mutation(api.volunteerAllowance.functions.reject, {
+        id,
+        rejectionNote: "Test",
+      }),
+  ).rejects.toThrow("Not found");
+});
+
+test("non-creator non-admin cannot remove allowance", async () => {
+  const t = convexTest(schema, modules);
+  const { userId, organizationId, projectId } = await setupTestData(t);
+  const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
+
+  const memberUserId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      email: "member@test.com",
+      organizationId,
+      role: "member",
+    }),
+  );
+
+  const id = await t.run((ctx) =>
+    ctx.db.insert("volunteerAllowance", {
+      organizationId,
+      projectId,
+      createdBy: userId,
+      amount: 500,
+      isApproved: false,
+      iban: "DE123",
+      bic: "BIC",
+      accountHolder: "Test",
+      activityDescription: "Test",
+      startDate: "2024-01-01",
+      endDate: "2024-12-31",
+      volunteerName: "Test",
+      volunteerStreet: "Test",
+      volunteerPlz: "12345",
+      volunteerCity: "Berlin",
+      signatureStorageId: storageId,
+    }),
+  );
+
+  await expect(
+    t
+      .withIdentity({ subject: memberUserId })
+      .mutation(api.volunteerAllowance.functions.remove, { id }),
+  ).rejects.toThrow("Only the creator or an admin can delete");
 });

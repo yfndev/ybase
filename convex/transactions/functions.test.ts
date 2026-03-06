@@ -619,3 +619,88 @@ test("update transaction without project succeeds for admin", async () => {
   const transaction = await t.run((ctx) => ctx.db.get(transactionId));
   expect(transaction?.description).toBe("Updated");
 });
+
+test("update transaction with new projectId succeeds when user has access", async () => {
+  const t = convexTest(schema, modules);
+  const { organizationId, userId, projectId } = await setupTestData(t);
+
+  const newProjectId = await t.run((ctx) =>
+    ctx.db.insert("projects", {
+      name: "New Project",
+      organizationId,
+      isArchived: false,
+      createdBy: userId,
+    }),
+  );
+
+  await t.run((ctx) =>
+    ctx.db.insert("teams", {
+      name: "Full Access Team",
+      organizationId,
+      memberIds: [userId],
+      projectIds: [projectId, newProjectId],
+      createdBy: userId,
+    }),
+  );
+
+  const transactionId = await t.run((ctx) =>
+    ctx.db.insert("transactions", {
+      organizationId,
+      projectId,
+      date: Date.now(),
+      amount: 100,
+      description: "Test",
+      counterparty: "Test",
+      status: "processed",
+      importedBy: userId,
+    }),
+  );
+
+  await t
+    .withIdentity({ subject: userId })
+    .mutation(api.transactions.functions.updateTransaction, {
+      transactionId,
+      projectId: newProjectId,
+    });
+
+  const updated = await t.run((ctx) => ctx.db.get(transactionId));
+  expect(updated?.projectId).toBe(newProjectId);
+});
+
+test("split transaction throws when org is deleted and no reserves project", async () => {
+  const t = convexTest(schema, modules);
+  const { organizationId, userId, projectId } = await setupTestData(t);
+
+  const originalId = await t.run((ctx) =>
+    ctx.db.insert("transactions", {
+      organizationId,
+      date: Date.now(),
+      amount: 1000,
+      description: "Original",
+      counterparty: "Test",
+      status: "processed",
+      importedBy: userId,
+    }),
+  );
+
+  await t.run(async (ctx) => {
+    const reserves = await ctx.db
+      .query("projects")
+      .withIndex("by_organization", (q) =>
+        q.eq("organizationId", organizationId),
+      )
+      .filter((q) => q.eq(q.field("name"), "Rücklagen"))
+      .first();
+    if (reserves) await ctx.db.delete(reserves._id);
+    await ctx.db.delete(organizationId);
+  });
+
+  await expect(
+    t
+      .withIdentity({ subject: userId })
+      .mutation(api.transactions.functions.splitTransaction, {
+        transactionId: originalId,
+        splits: [{ projectId, amount: 500 }],
+      }),
+  ).rejects.toThrow("Organization not found");
+});

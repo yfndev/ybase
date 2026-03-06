@@ -38,6 +38,29 @@ test("cannot remove last admin", async () => {
   ).rejects.toThrow();
 });
 
+test("can demote admin when there are multiple admins", async () => {
+  const t = convexTest(schema, modules);
+  const { organizationId, userId } = await setupTestData(t);
+
+  const secondAdminId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      email: "admin2@test.com",
+      organizationId,
+      role: "admin",
+    }),
+  );
+
+  await t
+    .withIdentity({ subject: userId })
+    .mutation(api.users.functions.updateUserRole, {
+      userId: secondAdminId,
+      role: "lead",
+    });
+
+  const demoted = await t.run((ctx) => ctx.db.get(secondAdminId));
+  expect(demoted?.role).toBe("lead");
+});
+
 test("non-admin cannot update roles", async () => {
   const t = convexTest(schema, modules);
   const { organizationId, userId } = await setupTestData(t);
@@ -199,4 +222,26 @@ test("throw error when trying to update role throws for non existing user", asyn
         role: "admin",
       }),
   ).rejects.toThrow("User not found");
+});
+
+test("update role for user without explicit role", async () => {
+  const t = convexTest(schema, modules);
+  const { organizationId, userId } = await setupTestData(t);
+
+  const noRoleUserId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      email: "norole@test.com",
+      organizationId,
+    }),
+  );
+
+  await t
+    .withIdentity({ subject: userId })
+    .mutation(api.users.functions.updateUserRole, {
+      userId: noRoleUserId,
+      role: "lead",
+    });
+
+  const updated = await t.run((ctx) => ctx.db.get(noRoleUserId));
+  expect(updated?.role).toBe("lead");
 });
