@@ -112,7 +112,11 @@ export function TravelReimbursementFormUI({ defaultBankDetails }: Props) {
     );
 
   const hasBasicInfo =
-    travel.destination && travel.purpose && travel.startDate && travel.endDate;
+    travel.destination &&
+    travel.purpose &&
+    travel.startDate &&
+    travel.endDate &&
+    travel.endDate >= travel.startDate;
   const mealTotal = travel.mealDays * travel.mealRate;
   const totalNet = receipts.reduce((sum, receipt) => sum + receipt.netAmount, 0);
   const totalGross = receipts.reduce(

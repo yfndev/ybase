@@ -77,6 +77,9 @@ export function ReimbursementFormUI({ defaultBankDetails }: Props) {
     if (!draft.company || !draft.desc || !draft.gross || !draft.file || !draft.date) {
       return toast.error("Bitte Pflichtfelder ausfüllen (Firma, Beschreibung, Betrag, Belegdatum, Beleg)");
     }
+    if (draft.gross < 0) {
+      return toast.error("Betrag muss positiv sein");
+    }
     setReceipts([
       ...receipts,
       {

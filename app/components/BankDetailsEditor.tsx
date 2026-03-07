@@ -21,16 +21,18 @@ export function BankDetailsEditor({ value, onChange }: Props) {
   const save = useMutation(api.users.functions.updateBankDetails);
 
   const toggle = async () => {
-    if (editing) {
-      const iban = value.iban.replace(/\s/g, "").toUpperCase();
-      const bic = value.bic.replace(/\s/g, "").toUpperCase();
-      if (!value.accountHolder)
-        return toast.error("Bitte Kontoinhaber eingeben");
-      if (!IBAN_REGEX.test(iban)) return toast.error("Ungültige IBAN");
-      if (bic && !BIC_REGEX.test(bic)) return toast.error("Ungültige BIC");
-      await save(value);
+    if (!editing) {
+      setEditing(true);
+      return;
     }
-    setEditing(!editing);
+    const iban = value.iban.replace(/\s/g, "").toUpperCase();
+    const bic = value.bic.replace(/\s/g, "").toUpperCase();
+    if (!value.accountHolder)
+      return toast.error("Bitte Kontoinhaber eingeben");
+    if (!IBAN_REGEX.test(iban)) return toast.error("Ungültige IBAN");
+    if (bic && !BIC_REGEX.test(bic)) return toast.error("Ungültige BIC");
+    await save(value);
+    setEditing(false);
   };
 
   const update = (key: keyof BankDetails, val: string) =>

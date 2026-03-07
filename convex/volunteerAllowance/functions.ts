@@ -128,6 +128,11 @@ export const submitExternal = mutation({
       throw new Error("Already submitted");
     if (args.amount > MAX_VOLUNTEER_ALLOWANCE_EUR) throw new Error(`Amount cannot exceed ${MAX_VOLUNTEER_ALLOWANCE_EUR}€`);
 
+    // Re-read to prevent race condition
+    const freshDoc = await ctx.db.get(args.id);
+    if (freshDoc?.volunteerName && freshDoc?.signatureStorageId)
+      throw new Error("Already submitted");
+
     await ctx.db.patch(args.id, {
       amount: args.amount,
       iban: args.iban,

@@ -60,7 +60,7 @@ export const generatePublicUploadUrl = mutation({
 
     if (!doc) throw new Error("Invalid link");
     if (!doc.isSharedLink) throw new Error("Not a shared link");
-    if (doc.amount > 0) throw new Error("Already submitted");
+    if (doc.submitterName) throw new Error("Already submitted");
 
     return ctx.storage.generateUploadUrl();
   },
@@ -95,7 +95,7 @@ export const submitExternalReimbursement = mutation({
 
     if (!doc) throw new Error("Invalid link");
     if (!doc.isSharedLink) throw new Error("Not a shared link");
-    if (doc.amount > 0) throw new Error("Already submitted");
+    if (doc.submitterName) throw new Error("Already submitted");
 
     await ctx.db.patch(args.reimbursementId, {
       amount: args.amount,

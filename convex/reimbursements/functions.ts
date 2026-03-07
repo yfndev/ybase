@@ -144,6 +144,13 @@ export const deleteReimbursement = mutation({
       }
     }
 
+    if (reimbursement.signatureStorageId) {
+      const signatureExists = await ctx.storage.getUrl(reimbursement.signatureStorageId);
+      if (signatureExists) {
+        await ctx.storage.delete(reimbursement.signatureStorageId);
+      }
+    }
+
     await ctx.db.delete(args.reimbursementId);
     await addLog(ctx, user.organizationId, user._id, "reimbursement.delete", args.reimbursementId, `${reimbursement.amount}€`);
   },

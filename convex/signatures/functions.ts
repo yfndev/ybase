@@ -58,6 +58,10 @@ export const submit = mutation({
 
 		validateTokenDoc(doc);
 
+		// Re-read to prevent race condition
+		const freshDoc = await ctx.db.get(doc._id);
+		if (freshDoc?.usedAt) throw new Error("Link bereits verwendet");
+
 		await ctx.db.patch(doc._id, {
 			signatureStorageId: args.signatureStorageId,
 			usedAt: Date.now(),
