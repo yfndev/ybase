@@ -161,7 +161,7 @@ export function calculateStartBalance(
 ): number {
   if (!transactions) return 0;
   return transactions
-    .filter((tx) => tx.status === "processed" && !tx.transferId)
+    .filter((tx) => !tx.transferId)
     .reduce((total, tx) => total + tx.amount, 0);
 }
 

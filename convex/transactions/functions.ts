@@ -180,9 +180,24 @@ export const splitTransaction = mutation({
     if (!original || original.organizationId !== user.organizationId)
       throw new Error("Access denied");
 
-    await ctx.db.patch(args.transactionId, { isArchived: true });
+    if (original.amount <= 0) {
+      throw new Error("Can only split positive transactions");
+    }
+
+    for (const split of args.splits) {
+      if (split.amount <= 0) {
+        throw new Error("Split amounts must be positive");
+      }
+    }
 
     const total = args.splits.reduce((sum, split) => sum + split.amount, 0);
+
+    if (total > original.amount) {
+      throw new Error("Split total exceeds transaction amount");
+    }
+
+    await ctx.db.patch(args.transactionId, { isArchived: true });
+
     const remainder = original.amount - total;
 
     const allSplits =
