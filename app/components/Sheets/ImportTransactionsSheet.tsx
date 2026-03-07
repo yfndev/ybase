@@ -25,7 +25,7 @@ import Papa from "papaparse";
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
-type ImportSource = "moss" | "sparkasse" | "volksbank";
+type ImportSource = "moss" | "sparkasse" | "volksbank" | "finom";
 
 interface Props {
   open: boolean;
@@ -95,6 +95,7 @@ export function ImportTransactionsSheet({ open, onOpenChange }: Props) {
           importedTransactionId: mapped.importedTransactionId,
           importSource,
           accountName: mapped.accountName,
+          currency: mapped.currency,
         });
         toast.loading(
           `Importiere ${index + 1}/${newTransactions.length} Transaktionen...`,
@@ -176,6 +177,7 @@ export function ImportTransactionsSheet({ open, onOpenChange }: Props) {
                   <SelectValue placeholder="Wählen Sie die Datenquelle" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="finom">Finom</SelectItem>
                   <SelectItem value="moss">Moss</SelectItem>
                   <SelectItem value="sparkasse">
                     Sparkasse (CSV-CAMT V8)

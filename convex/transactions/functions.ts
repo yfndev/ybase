@@ -47,11 +47,13 @@ export const createImportedTransaction = mutation({
       v.literal("sparkasse"),
       v.literal("volksbank"),
       v.literal("moss"),
+      v.literal("finom"),
     ),
     amount: v.number(),
     description: v.string(),
     counterparty: v.string(),
     accountName: v.optional(v.string()),
+    currency: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await requireRole(ctx, "lead");

@@ -5,9 +5,10 @@ export interface TransactionData {
   counterparty: string;
   importedTransactionId: string;
   accountName?: string;
+  currency?: string;
 }
 
-type ImportSource = "moss" | "sparkasse" | "volksbank";
+type ImportSource = "moss" | "sparkasse" | "volksbank" | "finom";
 
 const DATE_TIME_PATTERN = /DATUM\s+\d{2}\.\d{2}\.\d{4},\s+\d{2}\.\d{2}\s+UHR/gi;
 const SENSITIVE_DATA_PATTERN = /(?:CRED|IBAN|BIC|MREF):\s*[A-Z0-9]+/gi;
@@ -119,10 +120,33 @@ function mapGermanBank(
   };
 }
 
+function mapFinom(row: Record<string, string>): TransactionData {
+  const buchungsdatum = row["Buchungsdatum"] || "";
+  const counterparty = row["Auftraggeber/Empfänger"] || "";
+  const verwendungszweck = row["Verwendungszweck"] || "";
+  const transactionId = row["Transaktions-ID"] || "";
+  const walletName = row["Wallet-Name"] || "";
+  const paymentAmount = row["Zahlungsbetrag"] || "0";
+  const paymentCurrency = row["Zahlungswährung"] || "EUR";
+
+  return {
+    date: buchungsdatum
+      ? parseGermanDate(buchungsdatum, false)
+      : Date.now(),
+    amount: parseFloat(paymentAmount.replace(",", ".")) || 0,
+    description: verwendungszweck || counterparty,
+    counterparty,
+    importedTransactionId: transactionId || createImportId(buchungsdatum, counterparty, "finom"),
+    accountName: walletName,
+    currency: paymentCurrency,
+  };
+}
+
 export function mapCSVRow(
   row: Record<string, string>,
   source: ImportSource,
 ): TransactionData {
   if (source === "moss") return mapMoss(row);
+  if (source === "finom") return mapFinom(row);
   return mapGermanBank(row, source);
 }
