@@ -1,6 +1,6 @@
 "use client";
 
-import { SignatureCanvas } from "@/components/Reimbursements/SignatureCanvas";
+import { SignatureField } from "@/components/Reimbursements/SignatureField";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 const IBAN_REGEX = /^[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}$/;
@@ -66,18 +66,20 @@ export default function ExternalEhrenamtspauschalePage() {
     updateField("amount", value);
   };
 
-  if (
-    linkData?.valid &&
-    !form.activityDescription &&
-    linkData.activityDescription
-  ) {
-    setForm((prev) => ({
-      ...prev,
-      activityDescription: linkData.activityDescription || "",
-      startDate: linkData.startDate || "",
-      endDate: linkData.endDate || "",
-    }));
-  }
+  useEffect(() => {
+    if (
+      linkData?.valid &&
+      !form.activityDescription &&
+      linkData.activityDescription
+    ) {
+      setForm((prev) => ({
+        ...prev,
+        activityDescription: linkData.activityDescription || "",
+        startDate: linkData.startDate || "",
+        endDate: linkData.endDate || "",
+      }));
+    }
+  }, [linkData, form.activityDescription]);
 
   const handleSubmit = async () => {
     if (!form.volunteerName) return toast.error("Bitte deinen Namen eingeben");
@@ -336,8 +338,8 @@ export default function ExternalEhrenamtspauschalePage() {
 
         <div className="space-y-4">
           <h2 className="text-lg font-medium">Unterschrift</h2>
-          <SignatureCanvas
-            onUploadComplete={setSignatureStorageId}
+          <SignatureField
+            onSignatureComplete={setSignatureStorageId}
             storageId={signatureStorageId || undefined}
             generateUploadUrl={() => generateUploadUrl({ id })}
           />
