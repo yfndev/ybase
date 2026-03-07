@@ -60,7 +60,7 @@ export default defineSchema({
     categoryId: v.optional(v.id("categories")),
     donorId: v.optional(v.id("donors")),
     importedBy: v.id("users"),
-    importedTransactionId: v.optional(v.string()),
+    bankReferenceId: v.optional(v.string()),
     importSource: v.optional(
       v.union(
         v.literal("sparkasse"),
@@ -71,7 +71,7 @@ export default defineSchema({
     ),
     currency: v.optional(v.string()),
     status: v.union(v.literal("expected"), v.literal("processed")),
-    matchedTransactionId: v.optional(v.string()),
+    matchedTransactionId: v.optional(v.id("transactions")),
     accountName: v.optional(v.string()),
     isArchived: v.optional(v.boolean()),
     splitFromTransactionId: v.optional(v.id("transactions")),
@@ -86,9 +86,9 @@ export default defineSchema({
       "projectId",
       "donorId",
     ])
-    .index("by_importedTransactionId", [
+    .index("by_bankReferenceId", [
       "organizationId",
-      "importedTransactionId",
+      "bankReferenceId",
     ])
     .index("by_splitFrom", ["splitFromTransactionId"])
     .index("by_archived", ["isArchived"])

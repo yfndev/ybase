@@ -42,7 +42,7 @@ export const createExpectedTransaction = mutation({
 export const createImportedTransaction = mutation({
   args: {
     date: v.number(),
-    importedTransactionId: v.string(),
+    bankReferenceId: v.string(),
     importSource: v.union(
       v.literal("sparkasse"),
       v.literal("volksbank"),
@@ -60,10 +60,10 @@ export const createImportedTransaction = mutation({
 
     const existing = await ctx.db
       .query("transactions")
-      .withIndex("by_importedTransactionId", (q) =>
+      .withIndex("by_bankReferenceId", (q) =>
         q
           .eq("organizationId", user.organizationId)
-          .eq("importedTransactionId", args.importedTransactionId),
+          .eq("bankReferenceId", args.bankReferenceId),
       )
       .first();
 
@@ -90,7 +90,7 @@ export const updateTransaction = mutation({
     projectId: v.optional(v.id("projects")),
     categoryId: v.optional(v.id("categories")),
     donorId: v.optional(v.id("donors")),
-    matchedTransactionId: v.optional(v.string()),
+    matchedTransactionId: v.optional(v.id("transactions")),
     status: v.optional(v.union(v.literal("expected"), v.literal("processed"))),
   },
   handler: async (ctx, { transactionId, ...updates }) => {
@@ -121,9 +121,7 @@ export const updateTransaction = mutation({
     await ctx.db.patch(transactionId, updates);
 
     if (updates.matchedTransactionId) {
-      const matched = await ctx.db.get(
-        updates.matchedTransactionId as Id<"transactions">,
-      );
+      const matched = await ctx.db.get(updates.matchedTransactionId);
       if (matched?.status === "expected") {
         await ctx.db.patch(matched._id, {
           isArchived: true,
@@ -211,7 +209,7 @@ export const splitTransaction = mutation({
         categoryId: original.categoryId,
         donorId: original.donorId,
         accountName: original.accountName,
-        importedTransactionId: original.importedTransactionId,
+        bankReferenceId: original.bankReferenceId,
         importSource: original.importSource,
         splitFromTransactionId: args.transactionId,
         isArchived: false,

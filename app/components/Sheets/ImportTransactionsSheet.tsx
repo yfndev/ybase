@@ -50,7 +50,7 @@ export function ImportTransactionsSheet({ open, onOpenChange }: Props) {
     if (!allTransactions) return undefined;
     return new Set(
       allTransactions
-        .map((transaction) => transaction.importedTransactionId)
+        .map((transaction) => transaction.bankReferenceId)
         .filter(Boolean),
     );
   }, [allTransactions]);
@@ -76,7 +76,7 @@ export function ImportTransactionsSheet({ open, onOpenChange }: Props) {
 
     const newTransactions = csvData.filter((row) => {
       const mapped = mapCSVRow(row, importSource);
-      return !existingIds.has(mapped.importedTransactionId);
+      return !existingIds.has(mapped.bankReferenceId);
     });
 
     const skipped = csvData.length - newTransactions.length;
@@ -92,7 +92,7 @@ export function ImportTransactionsSheet({ open, onOpenChange }: Props) {
           amount: mapped.amount,
           description: mapped.description,
           counterparty: mapped.counterparty,
-          importedTransactionId: mapped.importedTransactionId,
+          bankReferenceId: mapped.bankReferenceId,
           importSource,
           accountName: mapped.accountName,
           currency: mapped.currency,

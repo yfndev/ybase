@@ -115,7 +115,7 @@ test("imported transaction skips duplicates", async () => {
     .withIdentity({ subject: userId })
     .mutation(api.transactions.functions.createImportedTransaction, {
       date: Date.now(),
-      importedTransactionId: "tx123",
+      bankReferenceId: "tx123",
       importSource: "sparkasse",
       amount: 100,
       description: "Test",
@@ -127,7 +127,7 @@ test("imported transaction skips duplicates", async () => {
     .withIdentity({ subject: userId })
     .mutation(api.transactions.functions.createImportedTransaction, {
       date: Date.now(),
-      importedTransactionId: "tx123",
+      bankReferenceId: "tx123",
       importSource: "sparkasse",
       amount: 100,
       description: "Test",
