@@ -27,7 +27,7 @@ export const createReimbursement = mutation({
       projectId: args.projectId,
       amount: args.amount,
       type: "expense",
-      isApproved: false,
+      status: "pending",
       iban: args.iban,
       bic: args.bic,
       accountHolder: args.accountHolder,
@@ -54,7 +54,7 @@ export const createTravelReimbursement = mutation({
     bic: v.optional(v.string()),
     accountHolder: v.string(),
     currency: v.optional(v.string()),
-    signatureStorageId: v.optional(v.id("_storage")),
+    signatureStorageId: v.id("_storage"),
     startDate: v.string(),
     endDate: v.string(),
     destination: v.string(),
@@ -72,7 +72,7 @@ export const createTravelReimbursement = mutation({
       projectId: args.projectId,
       amount: args.amount,
       type: "travel",
-      isApproved: false,
+      status: "pending",
       iban: args.iban,
       bic: args.bic,
       accountHolder: args.accountHolder,
@@ -156,7 +156,7 @@ export const deleteReimbursement = mutation({
   },
 });
 
-export const markAsPaid = mutation({
+export const approve = mutation({
   args: { reimbursementId: v.id("reimbursements") },
   handler: async (ctx, args) => {
     const user = await requireRole(ctx, "lead");
@@ -164,6 +164,10 @@ export const markAsPaid = mutation({
 
     if (!reimbursement || reimbursement.organizationId !== user.organizationId) {
       throw new Error("Reimbursement not found");
+    }
+
+    if (reimbursement.status !== "pending") {
+      throw new Error("Reimbursement already processed");
     }
 
     const category = await ctx.db
@@ -186,8 +190,8 @@ export const markAsPaid = mutation({
       importedBy: user._id,
     });
 
-    await ctx.db.patch(args.reimbursementId, { isApproved: true, reviewedBy: user._id });
-    await addLog(ctx, user.organizationId, user._id, "reimbursement.pay", args.reimbursementId, `${reimbursement.amount}€`);
+    await ctx.db.patch(args.reimbursementId, { status: "approved", reviewedBy: user._id });
+    await addLog(ctx, user.organizationId, user._id, "reimbursement.approve", args.reimbursementId, `${reimbursement.amount}€`);
 
     await ctx.scheduler.runAfter(0, internal.reimbursements.functions.sendApprovalEmail, {
       reimbursementId: args.reimbursementId,
@@ -195,7 +199,7 @@ export const markAsPaid = mutation({
   },
 });
 
-export const rejectReimbursement = mutation({
+export const decline = mutation({
   args: {
     reimbursementId: v.id("reimbursements"),
     rejectionNote: v.string(),
@@ -208,12 +212,16 @@ export const rejectReimbursement = mutation({
       throw new Error("Reimbursement not found");
     }
 
+    if (reimbursement.status !== "pending") {
+      throw new Error("Reimbursement already processed");
+    }
+
     await ctx.db.patch(args.reimbursementId, {
-      isApproved: false,
+      status: "declined",
       rejectionNote: args.rejectionNote,
       reviewedBy: user._id,
     });
 
-    await addLog(ctx, user.organizationId, user._id, "reimbursement.reject", args.reimbursementId, args.rejectionNote);
+    await addLog(ctx, user.organizationId, user._id, "reimbursement.decline", args.reimbursementId, args.rejectionNote);
   },
 });

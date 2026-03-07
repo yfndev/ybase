@@ -101,7 +101,7 @@ test("admin sees all reimbursements", async () => {
       projectId,
       amount: 100,
       type: "expense",
-      isApproved: false,
+      status: "pending",
       iban: "DE12340000000000000000",
       bic: "BIC",
       accountHolder: "Admin",
@@ -112,7 +112,7 @@ test("admin sees all reimbursements", async () => {
       projectId,
       amount: 200,
       type: "expense",
-      isApproved: false,
+      status: "pending",
       iban: "DE12340000000000000000",
       bic: "BIC",
       accountHolder: "Other",
@@ -145,7 +145,7 @@ test("non-admin sees own only", async () => {
       projectId,
       amount: 100,
       type: "expense",
-      isApproved: false,
+      status: "pending",
       iban: "DE12340000000000000000",
       bic: "BIC",
       accountHolder: "Admin",
@@ -156,7 +156,7 @@ test("non-admin sees own only", async () => {
       projectId,
       amount: 200,
       type: "expense",
-      isApproved: false,
+      status: "pending",
       iban: "DE12340000000000000000",
       bic: "BIC",
       accountHolder: "Member",
@@ -245,7 +245,7 @@ test("getReimbursementWithDetails returns travel details with meal allowance", a
 
   await t
     .withIdentity({ subject: userId })
-    .mutation(api.reimbursements.functions.markAsPaid, {
+    .mutation(api.reimbursements.functions.approve, {
       reimbursementId: travelReimbursementId,
     });
 
@@ -253,7 +253,7 @@ test("getReimbursementWithDetails returns travel details with meal allowance", a
   vi.useRealTimers();
 
   const reimbursement = await t.run((ctx) => ctx.db.get(travelReimbursementId));
-  expect(reimbursement?.isApproved).toBe(true);
+  expect(reimbursement?.status).toBe("approved");
 });
 
 test("getAllReimbursements handles deleted project", async () => {
@@ -313,7 +313,7 @@ test("getAllReimbursements includes reviewer name", async () => {
 
   await t.run(async (ctx) => {
     await ctx.db.patch(userId, { name: "Test Admin" });
-    await ctx.db.patch(reimbursementId, { isApproved: true, reviewedBy: userId });
+    await ctx.db.patch(reimbursementId, { status: "approved", reviewedBy: userId });
   });
 
   const reimbursements = await t

@@ -66,7 +66,7 @@ test("approve volunteer allowance", async () => {
       organizationId,
       projectId,
       createdBy: userId,
-      isApproved: false,
+      status: "pending",
       ...formData(storageId),
     }),
   );
@@ -76,7 +76,7 @@ test("approve volunteer allowance", async () => {
     .mutation(api.volunteerAllowance.functions.approve, { id });
 
   const doc = await t.run((ctx) => ctx.db.get(id));
-  expect(doc?.isApproved).toBe(true);
+  expect(doc?.status).toBe("approved");
 });
 
 test("reject volunteer allowance", async () => {
@@ -89,14 +89,14 @@ test("reject volunteer allowance", async () => {
       organizationId,
       projectId,
       createdBy: userId,
-      isApproved: false,
+      status: "pending",
       ...formData(storageId),
     }),
   );
 
   await t
     .withIdentity({ subject: userId })
-    .mutation(api.volunteerAllowance.functions.reject, {
+    .mutation(api.volunteerAllowance.functions.decline, {
       id,
       rejectionNote: "Missing docs",
     });
@@ -115,7 +115,7 @@ test("remove volunteer allowance", async () => {
       organizationId,
       projectId,
       createdBy: userId,
-      isApproved: false,
+      status: "pending",
       ...formData(storageId),
     }),
   );
@@ -137,7 +137,7 @@ test("remove volunteer allowance without signature", async () => {
       organizationId,
       projectId,
       createdBy: userId,
-      isApproved: false,
+      status: "pending",
       amount: 500,
       iban: "DE123",
       bic: "BIC",
@@ -196,7 +196,7 @@ test("generatePublicUploadUrl fails with invalid id throws error", async () => {
       organizationId,
       projectId,
       createdBy: userId,
-      isApproved: false,
+      status: "pending",
       ...formData(storageId),
     }),
   );
@@ -255,7 +255,7 @@ test("submitExternal fails with invalid link", async () => {
       organizationId,
       projectId,
       createdBy: userId,
-      isApproved: false,
+      status: "pending",
       ...formData(storageId),
     }),
   );
@@ -481,7 +481,7 @@ test("approve fails for non-existent allowance", async () => {
       organizationId,
       projectId,
       createdBy: userId,
-      isApproved: false,
+      status: "pending",
       ...formData(storageId),
     }),
   );
@@ -505,7 +505,7 @@ test("remove fails for non-existent allowance", async () => {
       organizationId,
       projectId,
       createdBy: userId,
-      isApproved: false,
+      status: "pending",
       ...formData(storageId),
     }),
   );
@@ -615,7 +615,7 @@ test("approve fails if amount exceeds 960€", async () => {
       projectId,
       createdBy: userId,
       amount: 961,
-      isApproved: false,
+      status: "pending",
       iban: "DE123",
       bic: "BIC",
       accountHolder: "Test",
@@ -648,7 +648,7 @@ test("reject fails for non-existent allowance", async () => {
       projectId,
       createdBy: userId,
       amount: 500,
-      isApproved: false,
+      status: "pending",
       iban: "DE123",
       bic: "BIC",
       accountHolder: "Test",
@@ -668,7 +668,7 @@ test("reject fails for non-existent allowance", async () => {
   await expect(
     t
       .withIdentity({ subject: userId })
-      .mutation(api.volunteerAllowance.functions.reject, {
+      .mutation(api.volunteerAllowance.functions.decline, {
         id,
         rejectionNote: "Test",
       }),
@@ -694,7 +694,7 @@ test("non-creator non-admin cannot remove allowance", async () => {
       projectId,
       createdBy: userId,
       amount: 500,
-      isApproved: false,
+      status: "pending",
       iban: "DE123",
       bic: "BIC",
       accountHolder: "Test",

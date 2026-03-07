@@ -34,7 +34,7 @@ export const create = mutation({
       organizationId: user.organizationId,
       projectId: args.projectId,
       amount: args.amount,
-      isApproved: false,
+      status: "pending",
       iban: args.iban,
       bic: args.bic,
       accountHolder: args.accountHolder,
@@ -75,7 +75,7 @@ export const createLink = mutation({
       organizationId: user.organizationId,
       projectId: args.projectId,
       amount: 0,
-      isApproved: false,
+      status: "pending",
       iban: "",
       bic: "",
       accountHolder: "",
@@ -168,11 +168,35 @@ export const approve = mutation({
     if (!doc || doc.organizationId !== user.organizationId)
       throw new Error("Not found");
 
+    if (doc.status !== "pending") {
+      throw new Error("Already processed");
+    }
+
     if (doc.amount > MAX_VOLUNTEER_ALLOWANCE_EUR) {
       throw new Error(`Cannot approve: amount exceeds ${MAX_VOLUNTEER_ALLOWANCE_EUR}€ legal limit`);
     }
 
-    await ctx.db.patch(args.id, { isApproved: true, reviewedBy: user._id });
+    const category = await ctx.db
+      .query("categories")
+      .withIndex("by_name", (q) => q.eq("name", "Ehrenamtspauschale"))
+      .first();
+
+    const project = await ctx.db.get(doc.projectId);
+    const description = project ? `${project.name} - Ehrenamtspauschale` : "Ehrenamtspauschale";
+
+    await ctx.db.insert("transactions", {
+      organizationId: doc.organizationId,
+      projectId: doc.projectId,
+      date: Date.now(),
+      amount: -doc.amount,
+      description,
+      counterparty: doc.accountHolder,
+      categoryId: category?._id,
+      status: "expected",
+      importedBy: user._id,
+    });
+
+    await ctx.db.patch(args.id, { status: "approved", reviewedBy: user._id });
 
     await addLog(
       ctx,
@@ -185,7 +209,7 @@ export const approve = mutation({
   },
 });
 
-export const reject = mutation({
+export const decline = mutation({
   args: { id: v.id("volunteerAllowance"), rejectionNote: v.string() },
   handler: async (ctx, args) => {
     const user = await requireRole(ctx, "lead");
@@ -193,8 +217,12 @@ export const reject = mutation({
     if (!doc || doc.organizationId !== user.organizationId)
       throw new Error("Not found");
 
+    if (doc.status !== "pending") {
+      throw new Error("Already processed");
+    }
+
     await ctx.db.patch(args.id, {
-      isApproved: false,
+      status: "declined",
       rejectionNote: args.rejectionNote,
       reviewedBy: user._id,
     });
@@ -203,7 +231,7 @@ export const reject = mutation({
       ctx,
       user.organizationId,
       user._id,
-      "volunteerAllowance.reject",
+      "volunteerAllowance.decline",
       args.id,
       args.rejectionNote,
     );

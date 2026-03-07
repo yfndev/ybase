@@ -24,7 +24,7 @@ test("create (standard) reimbursement", async () => {
 
   const reimbursement = await t.run((ctx) => ctx.db.get(reimbursementId));
   expect(reimbursement?.type).toBe("expense");
-  expect(reimbursement?.isApproved).toBe(false);
+  expect(reimbursement?.status).toBe("pending");
 });
 
 test("create travel reimbursement", async () => {
@@ -92,13 +92,13 @@ test("mark reimbursement as paid", async () => {
 
   await t
     .withIdentity({ subject: userId })
-    .mutation(api.reimbursements.functions.markAsPaid, { reimbursementId });
+    .mutation(api.reimbursements.functions.approve, { reimbursementId });
 
   await t.finishAllScheduledFunctions(vi.runAllTimers);
   vi.useRealTimers();
 
   const reimbursement = await t.run((ctx) => ctx.db.get(reimbursementId));
-  expect(reimbursement?.isApproved).toBe(true);
+  expect(reimbursement?.status).toBe("approved");
 });
 
 test("reject reimbursement", async () => {
@@ -107,7 +107,7 @@ test("reject reimbursement", async () => {
 
   await t
     .withIdentity({ subject: userId })
-    .mutation(api.reimbursements.functions.rejectReimbursement, {
+    .mutation(api.reimbursements.functions.decline, {
       reimbursementId,
       rejectionNote: "Missing receipt",
     });
@@ -151,7 +151,7 @@ test("throw error if trying to mark non existent reimbursement as paid", async (
   await expect(
     t
       .withIdentity({ subject: userId })
-      .mutation(api.reimbursements.functions.markAsPaid, { reimbursementId }),
+      .mutation(api.reimbursements.functions.approve, { reimbursementId }),
   ).rejects.toThrow("Reimbursement not found");
 });
 
@@ -164,7 +164,7 @@ test("throw error if trying to reject non existent reimbursement", async () => {
   await expect(
     t
       .withIdentity({ subject: userId })
-      .mutation(api.reimbursements.functions.rejectReimbursement, {
+      .mutation(api.reimbursements.functions.decline, {
         reimbursementId,
         rejectionNote: "Test",
       }),
@@ -370,7 +370,7 @@ test("mark as paid when project is deleted uses fallback description", async () 
 
   await t
     .withIdentity({ subject: userId })
-    .mutation(api.reimbursements.functions.markAsPaid, { reimbursementId });
+    .mutation(api.reimbursements.functions.approve, { reimbursementId });
 
   await t.finishAllScheduledFunctions(vi.runAllTimers);
   vi.useRealTimers();
@@ -414,7 +414,7 @@ test("mark travel reimbursement as paid without meal allowance and no creator na
 
   await t
     .withIdentity({ subject: userId })
-    .mutation(api.reimbursements.functions.markAsPaid, {
+    .mutation(api.reimbursements.functions.approve, {
       reimbursementId: travelReimbursementId,
     });
 
@@ -424,7 +424,7 @@ test("mark travel reimbursement as paid without meal allowance and no creator na
   const reimbursement = await t.run((ctx) =>
     ctx.db.get(travelReimbursementId),
   );
-  expect(reimbursement?.isApproved).toBe(true);
+  expect(reimbursement?.status).toBe("approved");
 });
 
 test("mark travel reimbursement as paid with meal allowance days but no daily budget", async () => {
@@ -451,7 +451,7 @@ test("mark travel reimbursement as paid with meal allowance days but no daily bu
 
   await t
     .withIdentity({ subject: userId })
-    .mutation(api.reimbursements.functions.markAsPaid, {
+    .mutation(api.reimbursements.functions.approve, {
       reimbursementId: travelReimbursementId,
     });
 
@@ -461,23 +461,23 @@ test("mark travel reimbursement as paid with meal allowance days but no daily bu
   const reimbursement = await t.run((ctx) =>
     ctx.db.get(travelReimbursementId),
   );
-  expect(reimbursement?.isApproved).toBe(true);
+  expect(reimbursement?.status).toBe("approved");
 });
 
-test("markAsPaid sends no email when org has no accounting email", async () => {
+test("approve sends no email when org has no accounting email", async () => {
   vi.useFakeTimers();
   const t = convexTest(schema, modules);
   const { userId, reimbursementId } = await setupTestData(t);
 
   await t
     .withIdentity({ subject: userId })
-    .mutation(api.reimbursements.functions.markAsPaid, { reimbursementId });
+    .mutation(api.reimbursements.functions.approve, { reimbursementId });
 
   await t.finishAllScheduledFunctions(vi.runAllTimers);
   vi.useRealTimers();
 
   const reimbursement = await t.run((ctx) => ctx.db.get(reimbursementId));
-  expect(reimbursement?.isApproved).toBe(true);
+  expect(reimbursement?.status).toBe("approved");
 });
 
 test("sendApprovalEmail skips receipt with deleted storage file", async () => {
@@ -510,13 +510,13 @@ test("sendApprovalEmail skips receipt with deleted storage file", async () => {
 
   await t
     .withIdentity({ subject: userId })
-    .mutation(api.reimbursements.functions.markAsPaid, { reimbursementId });
+    .mutation(api.reimbursements.functions.approve, { reimbursementId });
 
   await t.finishAllScheduledFunctions(vi.runAllTimers);
   vi.useRealTimers();
 
   const reimbursement = await t.run((ctx) => ctx.db.get(reimbursementId));
-  expect(reimbursement?.isApproved).toBe(true);
+  expect(reimbursement?.status).toBe("approved");
 });
 
 test("sendApprovalEmail sends without cc when creator has no email", async () => {
@@ -538,7 +538,7 @@ test("sendApprovalEmail sends without cc when creator has no email", async () =>
       projectId,
       amount: 50,
       type: "expense",
-      isApproved: false,
+      status: "pending",
       iban: "DE12340000000000000000",
       bic: "BIC",
       accountHolder: "No Email",
@@ -554,13 +554,13 @@ test("sendApprovalEmail sends without cc when creator has no email", async () =>
 
   await t
     .withIdentity({ subject: noEmailUserId })
-    .mutation(api.reimbursements.functions.markAsPaid, { reimbursementId });
+    .mutation(api.reimbursements.functions.approve, { reimbursementId });
 
   await t.finishAllScheduledFunctions(vi.runAllTimers);
   vi.useRealTimers();
 
   const reimbursement = await t.run((ctx) => ctx.db.get(reimbursementId));
-  expect(reimbursement?.isApproved).toBe(true);
+  expect(reimbursement?.status).toBe("approved");
 });
 
 test("sendApprovalEmail handles deleted reimbursement gracefully", async () => {
@@ -577,7 +577,7 @@ test("sendApprovalEmail handles deleted reimbursement gracefully", async () => {
 
   await t
     .withIdentity({ subject: userId })
-    .mutation(api.reimbursements.functions.markAsPaid, { reimbursementId });
+    .mutation(api.reimbursements.functions.approve, { reimbursementId });
 
   await t.run((ctx) => ctx.db.delete(reimbursementId));
 

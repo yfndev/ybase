@@ -28,7 +28,7 @@ export const createReimbursementLink = mutation({
       projectId: args.projectId,
       amount: 0,
       type: args.type,
-      isApproved: false,
+      status: "pending",
       iban: "",
       bic: "",
       accountHolder: "",

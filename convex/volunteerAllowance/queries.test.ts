@@ -16,7 +16,7 @@ const baseAllowance = (
   createdBy,
   signatureStorageId,
   amount: 500,
-  isApproved: false,
+  status: "pending",
   iban: "DE123",
   bic: "BIC",
   accountHolder: "Test",
@@ -368,7 +368,7 @@ test("getAll includes reviewer name", async () => {
     await ctx.db.patch(userId, { name: "Test Admin" });
     await ctx.db.insert("volunteerAllowance", {
       ...baseAllowance(organizationId, projectId, userId, storageId),
-      isApproved: true,
+      status: "approved",
       reviewedBy: userId,
     });
   });
@@ -403,7 +403,7 @@ test("get returns null for allowance from different org", async () => {
       projectId,
       createdBy: userId,
       amount: 500,
-      isApproved: false,
+      status: "pending",
       iban: "DE123",
       bic: "BIC",
       accountHolder: "Test",

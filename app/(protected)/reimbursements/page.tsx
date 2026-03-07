@@ -42,11 +42,11 @@ export default function ReimbursementPage() {
   );
   const allowances = useQuery(api.volunteerAllowance.queries.getAll);
 
-  const markReimbursementPaid = useMutation(
-    api.reimbursements.functions.markAsPaid,
+  const approveReimbursementMutation = useMutation(
+    api.reimbursements.functions.approve,
   );
-  const rejectReimbursementMutation = useMutation(
-    api.reimbursements.functions.rejectReimbursement,
+  const declineReimbursementMutation = useMutation(
+    api.reimbursements.functions.decline,
   );
   const deleteReimbursementMutation = useMutation(
     api.reimbursements.functions.deleteReimbursement,
@@ -55,8 +55,8 @@ export default function ReimbursementPage() {
   const approveAllowanceMutation = useMutation(
     api.volunteerAllowance.functions.approve,
   );
-  const rejectAllowanceMutation = useMutation(
-    api.volunteerAllowance.functions.reject,
+  const declineAllowanceMutation = useMutation(
+    api.volunteerAllowance.functions.decline,
   );
   const deleteAllowanceMutation = useMutation(
     api.volunteerAllowance.functions.remove,
@@ -75,12 +75,12 @@ export default function ReimbursementPage() {
 
     try {
       if (rejectDialog.type === "reimbursement") {
-        await rejectReimbursementMutation({
+        await declineReimbursementMutation({
           reimbursementId: rejectDialog.id as Id<"reimbursements">,
           rejectionNote: rejectDialog.note,
         });
       } else {
-        await rejectAllowanceMutation({
+        await declineAllowanceMutation({
           id: rejectDialog.id as Id<"volunteerAllowance">,
           rejectionNote: rejectDialog.note,
         });
@@ -95,8 +95,8 @@ export default function ReimbursementPage() {
 
   const handleApproveReimbursement = async (id: Id<"reimbursements">) => {
     try {
-      await markReimbursementPaid({ reimbursementId: id });
-      toast.success("Als bezahlt markiert");
+      await approveReimbursementMutation({ reimbursementId: id });
+      toast.success("Genehmigt");
     } catch {
       toast.error("Fehler beim Markieren");
     }

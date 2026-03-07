@@ -70,7 +70,7 @@ export const getOpenReimbursements = createTool({
     );
 
     const openReimbursements = reimbursements.filter(
-      (reimbursement) => !reimbursement.isApproved,
+      (reimbursement) => reimbursement.status === "pending",
     );
 
     return openReimbursements.map((reimbursement) => ({
