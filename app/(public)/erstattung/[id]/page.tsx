@@ -3,7 +3,13 @@
 import { SignatureQRModal } from "@/components/Reimbursements/SignatureField";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { formatIban, normalizeIban, toNet } from "@/lib/bank-utils";
+import {
+  BIC_REGEX,
+  formatIban,
+  IBAN_REGEX,
+  normalizeIban,
+  toNet,
+} from "@/lib/bank-utils";
 import {
   COST_LABELS,
   type CostType,
@@ -193,6 +199,15 @@ export default function ExternalReimbursementPage() {
       if (receipts.length === 0) {
         return toast.error("Bitte mindestens einen Beleg hinzufügen");
       }
+    }
+
+    const normalizedIban = normalizeIban(iban);
+    if (!IBAN_REGEX.test(normalizedIban)) {
+      return toast.error("Ungültige IBAN");
+    }
+
+    if (bic && !BIC_REGEX.test(bic.toUpperCase())) {
+      return toast.error("Ungültige BIC");
     }
 
     setIsSubmitting(true);
