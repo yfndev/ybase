@@ -38,6 +38,18 @@ export async function setupTestData(test: ReturnType<typeof convexTest>) {
       approved: true,
     });
 
+    await ctx.db.insert("categories", {
+      name: "Auslagenerstattung",
+      taxsphere: "non-profit",
+      approved: true,
+    });
+
+    await ctx.db.insert("categories", {
+      name: "Ehrenamtspauschale",
+      taxsphere: "non-profit",
+      approved: true,
+    });
+
     const donorId = await ctx.db.insert("donors", {
       name: "Test Donor",
       type: "donation",

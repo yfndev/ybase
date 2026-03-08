@@ -181,6 +181,8 @@ export const approve = mutation({
       .withIndex("by_name", (q) => q.eq("name", "Ehrenamtspauschale"))
       .first();
 
+    if (!category) throw new Error("Kategorie 'Ehrenamtspauschale' nicht gefunden. Bitte Kategorien in den Einstellungen anlegen.");
+
     const project = await ctx.db.get(doc.projectId);
     const description = project ? `${project.name} - Ehrenamtspauschale` : "Ehrenamtspauschale";
 
@@ -191,7 +193,7 @@ export const approve = mutation({
       amount: -doc.amount,
       description,
       counterparty: doc.accountHolder,
-      categoryId: category?._id,
+      categoryId: category._id,
       status: "expected",
       importedBy: user._id,
     });

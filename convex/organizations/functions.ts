@@ -48,6 +48,18 @@ export const initializeOrganization = mutation({
       createdBy: user._id,
     });
 
+    await ctx.db.insert("categories", {
+      name: "Auslagenerstattung",
+      taxsphere: "non-profit",
+      approved: true,
+    });
+
+    await ctx.db.insert("categories", {
+      name: "Ehrenamtspauschale",
+      taxsphere: "non-profit",
+      approved: true,
+    });
+
     await ctx.db.patch(user._id, { organizationId, role: "admin" });
 
     return { organizationId, isNew: true };

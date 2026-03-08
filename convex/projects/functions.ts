@@ -62,7 +62,9 @@ export const archiveProject = mutation({
     const user = await requireRole(ctx, "admin");
     const project = await ctx.db.get(args.projectId);
 
-    const isReserves = project?.name === "Rücklagen" && !project.parentId;
+    if (!project || project.organizationId !== user.organizationId) throw new Error("Access denied");
+
+    const isReserves = project.name === "Rücklagen" && !project.parentId;
     if (isReserves) throw new Error("Rücklagen kann nicht archiviert werden");
 
     await ctx.db.patch(args.projectId, { isArchived: true });

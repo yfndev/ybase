@@ -175,6 +175,8 @@ export const approve = mutation({
       .withIndex("by_name", (q) => q.eq("name", "Auslagenerstattung"))
       .first();
 
+    if (!category) throw new Error("Kategorie 'Auslagenerstattung' nicht gefunden. Bitte Kategorien in den Einstellungen anlegen.");
+
     const project = await ctx.db.get(reimbursement.projectId);
     const description = project ? `${project.name} - Auslagenerstattung` : "Auslagenerstattung";
 
@@ -185,7 +187,7 @@ export const approve = mutation({
       amount: -reimbursement.amount,
       description,
       counterparty: reimbursement.accountHolder,
-      categoryId: category?._id,
+      categoryId: category._id,
       status: "expected",
       importedBy: user._id,
     });

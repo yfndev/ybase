@@ -101,7 +101,7 @@ export function ReimbursementPageUI({
         </Button>
         <Button variant="outline" onClick={onShareClick}>
           <Share2 className="h-4 w-4 mr-2" />
-          Teilen
+          Erstattung anfordern
         </Button>
       </div>
 

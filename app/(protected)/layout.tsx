@@ -71,7 +71,7 @@ export default function ProtectedLayout({
                 )}
               </div>
             </div>
-            {canEdit && <ChatTrigger />}
+            {/* ChatTrigger hidden until Budgy feature is ready */}
           </SidebarProvider>
         </Onborda>
       </DateRangeProvider>
