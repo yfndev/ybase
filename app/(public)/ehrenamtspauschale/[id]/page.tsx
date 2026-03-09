@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "@/convex/volunteerAllowance/constants";
 import { useMutation, useQuery } from "convex/react";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
@@ -63,7 +64,7 @@ export default function ExternalEhrenamtspauschalePage() {
   };
 
   const updateAmount = (value: string) => {
-    if (parseFloat(value.replace(",", ".")) > 960) return;
+    if (parseFloat(value.replace(",", ".")) > MAX_VOLUNTEER_ALLOWANCE_EUR) return;
     updateField("amount", value);
   };
 
@@ -95,7 +96,7 @@ export default function ExternalEhrenamtspauschalePage() {
     const amount = parseFloat(form.amount);
     if (!amount || amount <= 0)
       return toast.error("Bitte einen Betrag eingeben");
-    if (amount > 960) return toast.error("Maximal 960€ erlaubt");
+    if (amount > MAX_VOLUNTEER_ALLOWANCE_EUR) return toast.error(`Maximal ${MAX_VOLUNTEER_ALLOWANCE_EUR}€ erlaubt`);
     if (!form.accountHolder)
       return toast.error("Bitte den Kontoinhaber eingeben");
     const iban = form.iban.replace(/\s/g, "").toUpperCase();
@@ -270,11 +271,11 @@ export default function ExternalEhrenamtspauschalePage() {
           <h2 className="text-lg font-medium">Betrag</h2>
           <div className="grid grid-cols-2 gap-4 max-w-sm">
             <div>
-              <Label>Betrag in Euro (max. 960€) *</Label>
+              <Label>Betrag in Euro (max. {MAX_VOLUNTEER_ALLOWANCE_EUR}€) *</Label>
               <Input
                 type="number"
                 step="0.01"
-                max="960"
+                max={String(MAX_VOLUNTEER_ALLOWANCE_EUR)}
                 value={form.amount}
                 onChange={(e) => updateAmount(e.target.value)}
                 placeholder="0,00"

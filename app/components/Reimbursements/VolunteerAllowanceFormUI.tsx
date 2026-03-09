@@ -20,6 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "@/convex/volunteerAllowance/constants";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -27,7 +28,6 @@ import toast from "react-hot-toast";
 
 type BankDetails = { iban: string; bic: string; accountHolder: string };
 
-const MAX_AMOUNT = 960;
 const CURRENT_YEAR = new Date().getFullYear();
 const TAX_YEARS = Array.from({ length: 3 }, (_, i) =>
   String(CURRENT_YEAR - i),
@@ -63,7 +63,7 @@ export function VolunteerAllowanceFormUI({ defaultBankDetails }: Props) {
     setForm((prev) => ({ ...prev, ...field }));
 
   const updateAmount = (value: string) => {
-    if (parseFloat(value.replace(",", ".")) > MAX_AMOUNT) return;
+    if (parseFloat(value.replace(",", ".")) > MAX_VOLUNTEER_ALLOWANCE_EUR) return;
     update({ amount: value });
   };
 
@@ -78,7 +78,7 @@ export function VolunteerAllowanceFormUI({ defaultBankDetails }: Props) {
     if (!form.taxYear) return "Bitte das Steuerjahr angeben";
     const amount = parseFloat(form.amount.replace(",", "."));
     if (!amount || amount <= 0) return "Bitte einen Betrag eingeben";
-    if (amount > MAX_AMOUNT) return `Maximal ${MAX_AMOUNT}€ erlaubt`;
+    if (amount > MAX_VOLUNTEER_ALLOWANCE_EUR) return `Maximal ${MAX_VOLUNTEER_ALLOWANCE_EUR}€ erlaubt`;
     if (!bank.accountHolder) return "Bitte den Kontoinhaber eingeben";
     if (!bank.iban) return "Bitte die IBAN eingeben";
     if (!form.confirmed) return "Bitte die Bestätigung ankreuzen";
@@ -213,7 +213,7 @@ export function VolunteerAllowanceFormUI({ defaultBankDetails }: Props) {
       <div className="space-y-4">
         <h2 className="text-lg font-medium">Betrag</h2>
         <div className="max-w-xs">
-          <Label>Betrag in Euro (max. {MAX_AMOUNT}€) *</Label>
+          <Label>Betrag in Euro (max. {MAX_VOLUNTEER_ALLOWANCE_EUR}€) *</Label>
           <AmountInput value={form.amount} onChange={updateAmount} />
         </div>
       </div>
