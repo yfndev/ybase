@@ -58,7 +58,7 @@ export async function generateVolunteerAllowancePDF(
     color: rgb(0.85, 0.9, 1),
   });
   if (data.id) {
-    const refText = `Ref: ${data.id.slice(-8)}`;
+    const refText = `Ref: ${data.id}`;
     const refWidth = font.widthOfTextAtSize(refText, 8);
     page.drawText(refText, {
       x: WIDTH - refWidth - M,
