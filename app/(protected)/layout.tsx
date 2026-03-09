@@ -1,6 +1,5 @@
 "use client";
 
-import { ChatTrigger } from "@/components/AI/ChatTrigger";
 import { OnboardingDialog } from "@/components/Onboarding/OnboardingDialog";
 import { TourCard } from "@/components/Onboarding/TourCard";
 import { tourSteps } from "@/components/Onboarding/tourSteps";
@@ -71,7 +70,6 @@ export default function ProtectedLayout({
                 )}
               </div>
             </div>
-            {/* ChatTrigger hidden until Budgy feature is ready */}
           </SidebarProvider>
         </Onborda>
       </DateRangeProvider>
