@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 
-export const receiptValidator = v.object({
+const baseReceiptFields = {
   receiptNumber: v.optional(v.string()),
   receiptDate: v.string(),
   companyName: v.string(),
@@ -9,17 +9,12 @@ export const receiptValidator = v.object({
   taxRate: v.number(),
   grossAmount: v.number(),
   fileStorageId: v.id("_storage"),
-});
+};
+
+export const receiptValidator = v.object(baseReceiptFields);
 
 export const travelReceiptValidator = v.object({
-  receiptNumber: v.optional(v.string()),
-  receiptDate: v.string(),
-  companyName: v.string(),
-  description: v.string(),
-  netAmount: v.number(),
-  taxRate: v.number(),
-  grossAmount: v.number(),
-  fileStorageId: v.id("_storage"),
+  ...baseReceiptFields,
   costType: v.union(
     v.literal("car"),
     v.literal("train"),
