@@ -46,6 +46,7 @@ function drawHeader(
   title: string,
   orgName: string,
   width: number,
+  docId?: string,
 ) {
   // Blue header bar
   page.drawRectangle({
@@ -70,6 +71,17 @@ function drawHeader(
       size: 10,
       font,
       color: rgb(0.85, 0.9, 1),
+    });
+  }
+  if (docId) {
+    const refText = `Ref: ${docId}`;
+    const refWidth = font.widthOfTextAtSize(refText, 8);
+    page.drawText(refText, {
+      x: width - refWidth - 40,
+      y: 797,
+      size: 8,
+      font,
+      color: rgb(0.7, 0.8, 1),
     });
   }
 }
@@ -147,11 +159,12 @@ export async function generateReimbursementPDF(
   const orgName: string = reimbursement.organizationName ?? "";
   const isTravel = reimbursement.type === "travel";
   const title = isTravel ? "REISEKOSTENERSTATTUNG" : "AUSLAGENERSTATTUNG";
+  const docId = reimbursement._id ? String(reimbursement._id).slice(-8) : undefined;
   const totalPages = 1 + receipts.length;
 
   // ── Cover page ──────────────────────────────────────────────────────────
   const coverPage = pdfDoc.addPage([WIDTH, HEIGHT]);
-  drawHeader(coverPage, font, boldFont, title, orgName, WIDTH);
+  drawHeader(coverPage, font, boldFont, title, orgName, WIDTH, docId);
   drawFooter(coverPage, font, 1, totalPages, WIDTH);
 
   let y = 730;
