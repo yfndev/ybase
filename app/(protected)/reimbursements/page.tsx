@@ -134,7 +134,7 @@ export default function ReimbursementPage() {
     const signatureUrl = await convex.query(api.volunteerAllowance.queries.getSignatureUrl, {
       storageId: allowance.signatureStorageId,
     });
-    return generateVolunteerAllowancePDF(allowance, signatureUrl);
+    return generateVolunteerAllowancePDF({ ...allowance, id: allowance._id }, signatureUrl);
   };
 
   const handleDownloadReimbursement = async (id: Id<"reimbursements">) => {

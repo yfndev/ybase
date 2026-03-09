@@ -6,6 +6,7 @@ const TEXT_DARK = rgb(0.13, 0.13, 0.13);
 const TEXT_MUTED = rgb(0.45, 0.45, 0.45);
 
 type VolunteerAllowanceData = {
+  id?: string;
   amount: number;
   iban: string;
   bic?: string;
@@ -56,6 +57,17 @@ export async function generateVolunteerAllowancePDF(
     font,
     color: rgb(0.85, 0.9, 1),
   });
+  if (data.id) {
+    const refText = `Ref: ${data.id.slice(-8)}`;
+    const refWidth = font.widthOfTextAtSize(refText, 8);
+    page.drawText(refText, {
+      x: WIDTH - refWidth - M,
+      y: 797,
+      size: 8,
+      font,
+      color: rgb(0.7, 0.8, 1),
+    });
+  }
 
   // Footer
   page.drawLine({
