@@ -6,6 +6,7 @@ import { api } from "../_generated/api";
 import type { Id } from "../_generated/dataModel";
 import schema from "../schema";
 import { modules, setupTestData } from "../test.setup";
+import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "./constants";
 
 const formData = (signatureStorageId: Id<"_storage">, amount = 500) => ({
   amount,
@@ -41,7 +42,7 @@ test("create volunteer allowance", async () => {
   expect(all[0].amount).toBe(500);
 });
 
-test("creating fails if amount exceeds 960€", async () => {
+test(`creating fails if amount exceeds ${MAX_VOLUNTEER_ALLOWANCE_EUR}€`, async () => {
   const t = convexTest(schema, modules);
   const { userId, projectId } = await setupTestData(t);
   const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
@@ -53,7 +54,7 @@ test("creating fails if amount exceeds 960€", async () => {
         projectId,
         ...formData(storageId, 961),
       }),
-  ).rejects.toThrow("Volunteer allowance cannot exceed 960€");
+  ).rejects.toThrow(`Volunteer allowance cannot exceed ${MAX_VOLUNTEER_ALLOWANCE_EUR}€`);
 });
 
 test("approve volunteer allowance", async () => {
@@ -228,7 +229,7 @@ test("submitExternal completes allowance", async () => {
   expect(doc?.signatureStorageId).toBe(storageId);
 });
 
-test("submitExternal fails if amount exceeds 960€", async () => {
+test(`submitExternal fails if amount exceeds ${MAX_VOLUNTEER_ALLOWANCE_EUR}€`, async () => {
   const t = convexTest(schema, modules);
   const { userId, projectId } = await setupTestData(t);
 
@@ -242,7 +243,7 @@ test("submitExternal fails if amount exceeds 960€", async () => {
       id,
       ...formData(storageId, 961),
     }),
-  ).rejects.toThrow("Amount cannot exceed 960€");
+  ).rejects.toThrow(`Amount cannot exceed ${MAX_VOLUNTEER_ALLOWANCE_EUR}€`);
 });
 
 test("submitExternal fails with invalid link", async () => {
@@ -604,7 +605,7 @@ test("sendAllowanceLink sends email", async () => {
     });
 });
 
-test("approve fails if amount exceeds 960€", async () => {
+test(`approve fails if amount exceeds ${MAX_VOLUNTEER_ALLOWANCE_EUR}€`, async () => {
   const t = convexTest(schema, modules);
   const { userId, organizationId, projectId } = await setupTestData(t);
   const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
@@ -634,7 +635,7 @@ test("approve fails if amount exceeds 960€", async () => {
     t
       .withIdentity({ subject: userId })
       .mutation(api.volunteerAllowance.functions.approve, { id }),
-  ).rejects.toThrow("Cannot approve: amount exceeds 960€ legal limit");
+  ).rejects.toThrow(`Cannot approve: amount exceeds ${MAX_VOLUNTEER_ALLOWANCE_EUR}€ legal limit`);
 });
 
 test("reject fails for non-existent allowance", async () => {
