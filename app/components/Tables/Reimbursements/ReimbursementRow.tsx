@@ -46,6 +46,7 @@ interface ReimbursementRowProps {
   };
   isAdmin: boolean;
   description: ReactNode;
+  selectionCheckbox?: ReactNode;
   onClick?: () => void;
   onApprove: () => void;
   onReject: () => void;
@@ -57,6 +58,7 @@ export function ReimbursementRow({
   item,
   isAdmin,
   description,
+  selectionCheckbox,
   onClick,
   onApprove,
   onReject,
@@ -71,6 +73,11 @@ export function ReimbursementRow({
       className={onClick ? "cursor-pointer" : undefined}
       onClick={onClick}
     >
+      {selectionCheckbox !== undefined && (
+        <TableCell className="px-2" onClick={(e) => e.stopPropagation()}>
+          {selectionCheckbox}
+        </TableCell>
+      )}
       <TableCell className="px-1">
         <div className="flex items-center justify-center">
           <div className={`w-2 h-2 rounded-full ${display.dot}`} />

@@ -6,11 +6,12 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { generateReimbursementPDF } from "@/lib/fileHandlers/generateReimbursementPDF";
 import { generateVolunteerAllowancePDF } from "@/lib/fileHandlers/generateVolunteerAllowancePDF";
 import { useIsAdmin } from "@/lib/hooks/useCurrentUserRole";
+import JSZip from "jszip";
 import { useConvex, useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { ReimbursementPageUI } from "./ReimbursementPageUI";
+import { ReimbursementPageUI, type Allowance, type SelectionKey } from "./ReimbursementPageUI";
 
 type RejectDialog = {
   open: boolean;
@@ -18,10 +19,6 @@ type RejectDialog = {
   id: Id<"reimbursements"> | Id<"volunteerAllowance"> | null;
   note: string;
 };
-
-type Allowance = NonNullable<
-  ReturnType<typeof useQuery<typeof api.volunteerAllowance.queries.getAll>>
->[number];
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -37,30 +34,15 @@ export default function ReimbursementPage() {
   const router = useRouter();
   const convex = useConvex();
 
-  const reimbursements = useQuery(
-    api.reimbursements.queries.getAllReimbursements,
-  );
+  const reimbursements = useQuery(api.reimbursements.queries.getAllReimbursements);
   const allowances = useQuery(api.volunteerAllowance.queries.getAll);
 
-  const approveReimbursementMutation = useMutation(
-    api.reimbursements.functions.approve,
-  );
-  const declineReimbursementMutation = useMutation(
-    api.reimbursements.functions.decline,
-  );
-  const deleteReimbursementMutation = useMutation(
-    api.reimbursements.functions.deleteReimbursement,
-  );
-
-  const approveAllowanceMutation = useMutation(
-    api.volunteerAllowance.functions.approve,
-  );
-  const declineAllowanceMutation = useMutation(
-    api.volunteerAllowance.functions.decline,
-  );
-  const deleteAllowanceMutation = useMutation(
-    api.volunteerAllowance.functions.remove,
-  );
+  const approveReimbursementMutation = useMutation(api.reimbursements.functions.approve);
+  const declineReimbursementMutation = useMutation(api.reimbursements.functions.decline);
+  const deleteReimbursementMutation = useMutation(api.reimbursements.functions.deleteReimbursement);
+  const approveAllowanceMutation = useMutation(api.volunteerAllowance.functions.approve);
+  const declineAllowanceMutation = useMutation(api.volunteerAllowance.functions.decline);
+  const deleteAllowanceMutation = useMutation(api.volunteerAllowance.functions.remove);
 
   const [rejectDialog, setRejectDialog] = useState<RejectDialog>({
     open: false,
@@ -69,6 +51,8 @@ export default function ReimbursementPage() {
     note: "",
   });
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<SelectionKey>>(new Set());
+  const [isBulkDownloading, setIsBulkDownloading] = useState(false);
 
   const handleReject = async () => {
     if (!rejectDialog.id || !rejectDialog.note) return;
@@ -129,53 +113,78 @@ export default function ReimbursementPage() {
     }
   };
 
-  const handleDownloadReimbursement = async (id: Id<"reimbursements">) => {
-    const reimbursement = await convex.query(
-      api.reimbursements.queries.getReimbursement,
-      {
-        reimbursementId: id,
-      },
-    );
-    if (!reimbursement) return;
+  const getPdfBlobForReimbursement = async (id: Id<"reimbursements">): Promise<Blob | null> => {
+    const reimbursement = await convex.query(api.reimbursements.queries.getReimbursement, { reimbursementId: id });
+    if (!reimbursement) return null;
 
-    const receipts = await convex.query(
-      api.reimbursements.queries.getReceipts,
-      {
-        reimbursementId: id,
-      },
-    );
-
+    const receipts = await convex.query(api.reimbursements.queries.getReceipts, { reimbursementId: id });
     const receiptsWithUrls = await Promise.all(
       receipts.map(async (receipt) => ({
         ...receipt,
-        fileUrl: await convex.query(api.reimbursements.queries.getFileUrl, {
-          storageId: receipt.fileStorageId,
-        }),
+        fileUrl: await convex.query(api.reimbursements.queries.getFileUrl, { storageId: receipt.fileStorageId }),
       })),
     );
 
-    const pdfBlob = await generateReimbursementPDF(
-      reimbursement,
-      receiptsWithUrls,
-    );
-    downloadBlob(pdfBlob, `Erstattung_${id}.pdf`);
+    return generateReimbursementPDF(reimbursement, receiptsWithUrls);
+  };
+
+  const getPdfBlobForAllowance = async (allowance: Allowance): Promise<Blob | null> => {
+    if (!allowance.signatureStorageId) return null;
+    const signatureUrl = await convex.query(api.volunteerAllowance.queries.getSignatureUrl, {
+      storageId: allowance.signatureStorageId,
+    });
+    return generateVolunteerAllowancePDF(allowance, signatureUrl);
+  };
+
+  const handleDownloadReimbursement = async (id: Id<"reimbursements">) => {
+    const blob = await getPdfBlobForReimbursement(id);
+    if (blob) downloadBlob(blob, `Erstattung_${id}.pdf`);
   };
 
   const handleDownloadAllowance = async (allowance: Allowance) => {
-    if (!allowance.signatureStorageId) return;
+    const blob = await getPdfBlobForAllowance(allowance);
+    if (blob) downloadBlob(blob, `Ehrenamtspauschale_${allowance._id}.pdf`);
+  };
 
-    const signatureUrl = await convex.query(
-      api.volunteerAllowance.queries.getSignatureUrl,
-      {
-        storageId: allowance.signatureStorageId,
-      },
-    );
+  const handleBulkDownload = async () => {
+    if (selected.size === 0) return;
+    setIsBulkDownloading(true);
 
-    const pdfBlob = await generateVolunteerAllowancePDF(
-      allowance,
-      signatureUrl,
-    );
-    downloadBlob(pdfBlob, `Ehrenamtspauschale_${allowance._id}.pdf`);
+    try {
+      const zip = new JSZip();
+
+      for (const key of selected) {
+        if (key.startsWith("r:")) {
+          const id = key.slice(2) as Id<"reimbursements">;
+          const blob = await getPdfBlobForReimbursement(id);
+          if (blob) zip.file(`Erstattung_${id}.pdf`, blob);
+        } else if (key.startsWith("a:")) {
+          const id = key.slice(2) as Id<"volunteerAllowance">;
+          const allowance = allowances?.find((a) => a._id === id);
+          if (allowance) {
+            const blob = await getPdfBlobForAllowance(allowance);
+            if (blob) zip.file(`Ehrenamtspauschale_${id}.pdf`, blob);
+          }
+        }
+      }
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      downloadBlob(zipBlob, `Erstattungen_${new Date().toISOString().slice(0, 10)}.zip`);
+      setSelected(new Set());
+    } catch {
+      toast.error("Fehler beim Erstellen des Downloads");
+    } finally {
+      setIsBulkDownloading(false);
+    }
+  };
+
+  const handleToggleSelect = (key: SelectionKey) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   };
 
   const handleOpenRejectDialog = (
@@ -193,6 +202,8 @@ export default function ReimbursementPage() {
         reimbursements={reimbursements ?? []}
         allowances={allowances ?? []}
         rejectDialog={rejectDialog}
+        selected={selected}
+        isBulkDownloading={isBulkDownloading}
         onNewClick={() => router.push("/reimbursements/new")}
         onShareClick={() => setShareModalOpen(true)}
         onRowClick={(id) => router.push(`/reimbursements/${id}`)}
@@ -205,6 +216,8 @@ export default function ReimbursementPage() {
         onDownloadAllowance={handleDownloadAllowance}
         onDeleteReimbursement={handleDeleteReimbursement}
         onDeleteAllowance={handleDeleteAllowance}
+        onToggleSelect={handleToggleSelect}
+        onBulkDownload={handleBulkDownload}
       />
       <ShareModal open={shareModalOpen} onClose={() => setShareModalOpen(false)} />
     </>

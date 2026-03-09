@@ -187,3 +187,46 @@ function buildTravelRows(travel: {
 
   return rows;
 }
+
+export const sendRejectionEmail = internalAction({
+  args: { reimbursementId: v.id("reimbursements") },
+  handler: async (ctx, args) => {
+    const { Resend } = await import("resend");
+
+    const data = await ctx.runQuery(
+      internal.reimbursements.queries.getReimbursementWithDetails,
+      { reimbursementId: args.reimbursementId },
+    );
+
+    if (!data) return;
+    if (!data.organization.accountingEmail) return;
+
+    const typeLabel = data.type === "travel" ? "Reisekostenerstattung" : "Auslagenerstattung";
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
+    await resend.emails.send({
+      from: "YBudget <team@ybudget.de>",
+      to: [data.organization.accountingEmail],
+      cc: data.creator.email ? [data.creator.email] : [],
+      subject: `Erstattung abgelehnt: ${data.project.name} - ${data.amount.toFixed(2)}€`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #b91c1c;">Erstattung abgelehnt</h2>
+          <p>Eine ${typeLabel} wurde abgelehnt.</p>
+
+          <h3 style="color: #555; margin-top: 24px;">Details</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="${CELL_STYLE}"><strong>Projekt:</strong></td><td style="${CELL_STYLE}">${data.project.name}</td></tr>
+            <tr><td style="${CELL_STYLE}"><strong>Betrag:</strong></td><td style="${CELL_STYLE}">${data.amount.toFixed(2)}€</td></tr>
+            <tr><td style="${CELL_STYLE}"><strong>Erstellt von:</strong></td><td style="${CELL_STYLE}">${data.creator.name || data.creator.email}</td></tr>
+          </table>
+
+          <h3 style="color: #555; margin-top: 24px;">Ablehnungsgrund</h3>
+          <div style="background: #fef2f2; border-left: 4px solid #b91c1c; padding: 12px 16px; border-radius: 4px;">
+            ${data.rejectionNote ? data.rejectionNote : "Kein Grund angegeben"}
+          </div>
+        </div>
+      `,
+    });
+  },
+});

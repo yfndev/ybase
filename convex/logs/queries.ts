@@ -13,6 +13,6 @@ export const getLogs = query({
         q.eq("organizationId", user.organizationId),
       )
       .order("desc")
-      .take(100);
+      .take(500);
   },
 });

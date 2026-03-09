@@ -6,7 +6,7 @@ import { getCurrentUser } from "../users/getCurrentUser";
 import { requireRole } from "../users/permissions";
 import { receiptValidator, travelReceiptValidator } from "./validators";
 
-export { sendApprovalEmail } from "./sendApprovalEmail";
+export { sendApprovalEmail, sendRejectionEmail } from "./sendApprovalEmail";
 
 export const createReimbursement = mutation({
   args: {
@@ -225,5 +225,9 @@ export const decline = mutation({
     });
 
     await addLog(ctx, user.organizationId, user._id, "reimbursement.decline", args.reimbursementId, args.rejectionNote);
+
+    await ctx.scheduler.runAfter(0, internal.reimbursements.functions.sendRejectionEmail, {
+      reimbursementId: args.reimbursementId,
+    });
   },
 });

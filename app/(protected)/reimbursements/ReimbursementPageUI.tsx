@@ -2,6 +2,7 @@
 
 import { PageHeader } from "@/components/Layout/PageHeader";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
-import { Plus, Share2 } from "lucide-react";
+import { Download, Loader2, Plus, Share2 } from "lucide-react";
 import { ReimbursementRow } from "../../components/Tables/Reimbursements/ReimbursementRow";
 
 type Reimbursement = Doc<"reimbursements"> & {
@@ -46,12 +47,16 @@ type RejectDialog = {
   note: string;
 };
 
+type SelectionKey = `r:${string}` | `a:${string}`;
+
 interface Props {
   isAdmin: boolean;
   isLoading: boolean;
   reimbursements: Reimbursement[];
   allowances: Allowance[];
   rejectDialog: RejectDialog;
+  selected: Set<SelectionKey>;
+  isBulkDownloading: boolean;
   onNewClick: () => void;
   onShareClick: () => void;
   onRowClick: (id: Id<"reimbursements">) => void;
@@ -67,7 +72,11 @@ interface Props {
   onDownloadAllowance: (allowance: Allowance) => void;
   onDeleteReimbursement: (id: Id<"reimbursements">) => void;
   onDeleteAllowance: (id: Id<"volunteerAllowance">) => void;
+  onToggleSelect: (key: SelectionKey) => void;
+  onBulkDownload: () => void;
 }
+
+export type { SelectionKey, Reimbursement, Allowance };
 
 export function ReimbursementPageUI({
   isAdmin,
@@ -75,6 +84,8 @@ export function ReimbursementPageUI({
   reimbursements,
   allowances,
   rejectDialog,
+  selected,
+  isBulkDownloading,
   onNewClick,
   onShareClick,
   onRowClick,
@@ -87,6 +98,8 @@ export function ReimbursementPageUI({
   onDownloadAllowance,
   onDeleteReimbursement,
   onDeleteAllowance,
+  onToggleSelect,
+  onBulkDownload,
 }: Props) {
   const isEmpty = reimbursements.length === 0 && allowances.length === 0;
 
@@ -95,6 +108,16 @@ export function ReimbursementPageUI({
       <PageHeader title="Erstattungen" />
 
       <div className="flex justify-end gap-2 mb-4">
+        {selected.size > 0 && (
+          <Button variant="outline" onClick={onBulkDownload} disabled={isBulkDownloading}>
+            {isBulkDownloading ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            {isBulkDownloading ? "Wird erstellt..." : `${selected.size} herunterladen`}
+          </Button>
+        )}
         <Button variant="outline" onClick={onNewClick}>
           <Plus className="h-4 w-4 mr-2" />
           Neue Erstattung
@@ -122,6 +145,7 @@ export function ReimbursementPageUI({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[40px]" />
                 <TableHead className="w-[30px]" />
                 <TableHead>Datum</TableHead>
                 <TableHead>Projekt</TableHead>
@@ -138,6 +162,13 @@ export function ReimbursementPageUI({
                   key={item._id}
                   item={item}
                   isAdmin={isAdmin}
+                  selectionCheckbox={
+                    <Checkbox
+                      checked={selected.has(`r:${item._id}`)}
+                      onCheckedChange={() => onToggleSelect(`r:${item._id}`)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  }
                   description={
                     item.type === "travel" ? (
                       <div>
@@ -170,6 +201,13 @@ export function ReimbursementPageUI({
                   key={item._id}
                   item={item}
                   isAdmin={isAdmin}
+                  selectionCheckbox={
+                    <Checkbox
+                      checked={selected.has(`a:${item._id}`)}
+                      onCheckedChange={() => onToggleSelect(`a:${item._id}`)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  }
                   description={
                     <div>
                       <span>{item.projectName}</span>

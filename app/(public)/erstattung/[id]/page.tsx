@@ -15,7 +15,7 @@ import {
   type CostType,
   DEFAULT_TAX_RATES,
 } from "@/lib/travel-costs";
-import { useMutation, useQuery } from "convex/react";
+import { useConvex, useMutation, useQuery } from "convex/react";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -41,6 +41,7 @@ type TravelReceipt = Receipt & {
 export default function ExternalReimbursementPage() {
   const params = useParams<{ id: string }>();
   const reimbursementId = params.id as Id<"reimbursements">;
+  const convex = useConvex();
 
   const link = useQuery(api.reimbursements.sharing.validateReimbursementLink, {
     id: reimbursementId,
@@ -357,6 +358,7 @@ export default function ExternalReimbursementPage() {
         onSubmit={handleSubmit}
         reimbursementId={reimbursementId}
         generateUploadUrl={() => generateUploadUrl({ reimbursementId })}
+        getFileUrl={(storageId) => convex.query(api.reimbursements.sharing.getPublicFileUrl, { storageId })}
         toNet={toNet}
         formatIban={formatIban}
         costLabels={COST_LABELS}

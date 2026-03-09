@@ -14,9 +14,10 @@ interface Props {
   onUploadComplete: (storageId: Id<"_storage">) => void;
   storageId?: Id<"_storage">;
   generateUploadUrl: () => Promise<string>;
+  getFileUrl?: (storageId: Id<"_storage">) => Promise<string | null>;
 }
 
-export function ReceiptUploadExternal({ onUploadComplete, storageId, generateUploadUrl }: Props) {
+export function ReceiptUploadExternal({ onUploadComplete, storageId, generateUploadUrl, getFileUrl }: Props) {
   const [isUploading, setIsUploading] = useState(false);
   const [isPdf, setIsPdf] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -46,7 +47,12 @@ export function ReceiptUploadExternal({ onUploadComplete, storageId, generateUpl
       onUploadComplete(json.storageId);
 
       if (!fileIsPdf) {
-        setPreviewUrl(URL.createObjectURL(convertedFile));
+        if (getFileUrl) {
+          const url = await getFileUrl(json.storageId);
+          if (url) setPreviewUrl(url);
+        } else {
+          setPreviewUrl(URL.createObjectURL(convertedFile));
+        }
       }
 
       toast.success("Beleg hochgeladen");

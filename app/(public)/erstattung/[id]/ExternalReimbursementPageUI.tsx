@@ -96,6 +96,7 @@ type Props = {
 
   reimbursementId: Id<"reimbursements">;
   generateUploadUrl: () => Promise<string>;
+  getFileUrl: (storageId: Id<"_storage">) => Promise<string | null>;
 
   toNet: (gross: number, tax: number) => number;
   formatIban: (iban: string) => string;
@@ -314,6 +315,7 @@ export default function ExternalReimbursementPageUI(props: Props) {
                           }
                           storageId={receipt.fileStorageId || undefined}
                           generateUploadUrl={props.generateUploadUrl}
+                          getFileUrl={props.getFileUrl}
                         />
                       </div>
                     )}
@@ -444,6 +446,7 @@ export default function ExternalReimbursementPageUI(props: Props) {
                   onUploadComplete={props.onFileChange}
                   storageId={props.file || undefined}
                   generateUploadUrl={props.generateUploadUrl}
+                  getFileUrl={props.getFileUrl}
                 />
               </div>
 

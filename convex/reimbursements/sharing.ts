@@ -295,6 +295,13 @@ export const getPendingSharedLinks = query({
   },
 });
 
+export const getPublicFileUrl = query({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    return ctx.storage.getUrl(args.storageId);
+  },
+});
+
 export const deleteSharedAllowanceLink = mutation({
   args: { id: v.id("volunteerAllowance") },
   handler: async (ctx, args) => {

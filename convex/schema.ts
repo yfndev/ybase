@@ -159,7 +159,8 @@ export default defineSchema({
     description: v.optional(v.string()),
   })
     .index("by_organization", ["organizationId"])
-    .index("by_organization_and_createdBy", ["organizationId", "createdBy"]),
+    .index("by_organization_and_createdBy", ["organizationId", "createdBy"])
+    .index("by_organization_project", ["organizationId", "projectId"]),
 
   travelDetails: defineTable({
     reimbursementId: v.id("reimbursements"),
@@ -230,7 +231,8 @@ export default defineSchema({
     signatureStorageId: v.optional(v.id("_storage")),
   })
     .index("by_organization", ["organizationId"])
-    .index("by_organization_and_createdBy", ["organizationId", "createdBy"]),
+    .index("by_organization_and_createdBy", ["organizationId", "createdBy"])
+    .index("by_organization_project", ["organizationId", "projectId"]),
 
   signatureTokens: defineTable({
     token: v.string(),

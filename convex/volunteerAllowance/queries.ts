@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query } from "../_generated/server";
+import { internalQuery, query } from "../_generated/server";
 import { getCurrentUser } from "../users/getCurrentUser";
 
 export const validateLink = query({
@@ -90,6 +90,24 @@ export const getSignatureUrl = query({
   handler: async (ctx, args) => {
     await getCurrentUser(ctx);
     return ctx.storage.getUrl(args.storageId);
+  },
+});
+
+export const getWithDetails = internalQuery({
+  args: { id: v.id("volunteerAllowance") },
+  handler: async (ctx, args) => {
+    const doc = await ctx.db.get(args.id);
+    if (!doc) return null;
+
+    const [organization, creator, project] = await Promise.all([
+      ctx.db.get(doc.organizationId),
+      ctx.db.get(doc.createdBy),
+      ctx.db.get(doc.projectId),
+    ]);
+
+    if (!organization || !creator || !project) return null;
+
+    return { ...doc, organization, creator, project };
   },
 });
 
