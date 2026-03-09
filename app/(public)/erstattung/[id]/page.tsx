@@ -23,7 +23,7 @@ import toast from "react-hot-toast";
 import ExternalReimbursementPageUI from "./ExternalReimbursementPageUI";
 
 type Receipt = {
-  receiptNumber: string;
+  receiptNumber: string | undefined;
   receiptDate: string;
   companyName: string;
   description: string;
@@ -85,7 +85,9 @@ export default function ExternalReimbursementPage() {
   const [date, setDate] = useState("");
   const [gross, setGross] = useState(0);
   const [taxRate, setTaxRate] = useState(19);
+  const [currency, setCurrency] = useState("EUR");
   const [file, setFile] = useState<Id<"_storage"> | null>(null);
+  const [showFoodAllowance, setShowFoodAllowance] = useState(false);
 
   const isTravel = link?.valid && link.type === "travel";
   const mealTotal = mealDays * mealRate;
@@ -96,14 +98,14 @@ export default function ExternalReimbursementPage() {
     : receipts.reduce((sum, receipt) => sum + receipt.grossAmount, 0);
 
   const addReceipt = () => {
-    if (!number || !company || !gross || !file || !date) {
+    if (!company || !description || !gross || !file || !date) {
       return toast.error("Bitte Pflichtfelder ausfüllen");
     }
 
     setReceipts([
       ...receipts,
       {
-        receiptNumber: number,
+        receiptNumber: number || undefined,
         receiptDate: date,
         companyName: company,
         description,
@@ -176,14 +178,7 @@ export default function ExternalReimbursementPage() {
   };
 
   const handleSubmit = async () => {
-    if (
-      !name ||
-      !iban ||
-      !bic ||
-      !accountHolder ||
-      !confirmation ||
-      !signature
-    ) {
+    if (!name || !iban || !accountHolder || !confirmation || !signature) {
       return toast.error("Bitte alle Pflichtfelder ausfüllen");
     }
 
@@ -304,6 +299,8 @@ export default function ExternalReimbursementPage() {
         organizationName={link.organizationName}
         projectName={link.projectName}
         allowFoodAllowance={link.travelDetails?.allowFoodAllowance ?? false}
+        showFoodAllowance={showFoodAllowance}
+        onShowFoodAllowanceChange={setShowFoodAllowance}
         name={name}
         email={email}
         onNameChange={setName}
@@ -329,6 +326,7 @@ export default function ExternalReimbursementPage() {
         date={date}
         gross={gross}
         taxRate={taxRate}
+        currency={currency}
         file={file}
         onCompanyChange={setCompany}
         onNumberChange={setNumber}
@@ -336,6 +334,7 @@ export default function ExternalReimbursementPage() {
         onDateChange={setDate}
         onGrossChange={setGross}
         onTaxRateChange={setTaxRate}
+        onCurrencyChange={setCurrency}
         onFileChange={setFile}
         receipts={receipts}
         travelReceipts={travelReceipts}

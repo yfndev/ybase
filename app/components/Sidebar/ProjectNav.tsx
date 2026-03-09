@@ -16,7 +16,22 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -28,11 +43,12 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useCanEdit } from "@/lib/hooks/useCurrentUserRole";
 import { useMutation, useQuery } from "convex/react";
-import { Archive, ChevronRight, FolderInput, Pencil, Plus } from "lucide-react";
+import { Archive, ChevronRight, FolderInput, Pencil, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -42,11 +58,27 @@ type Project = NonNullable<
   ReturnType<typeof useQuery<typeof api.projects.queries.getAllProjects>>
 >[number];
 
+type DeleteDialogState = {
+  open: boolean;
+  projectId: Id<"projects"> | null;
+  projectName: string;
+  hasLinkedData: boolean;
+  mergeTargetId: Id<"projects"> | "";
+};
+
 export function ProjectNav({ id }: { id?: string }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<Id<"projects"> | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>({
+    open: false,
+    projectId: null,
+    projectName: "",
+    hasLinkedData: false,
+    mergeTargetId: "",
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const pathname = usePathname();
   const projects = useQuery(api.projects.queries.getAllProjects);
@@ -55,6 +87,8 @@ export function ProjectNav({ id }: { id?: string }) {
   const renameProject = useMutation(api.projects.functions.renameProject);
   const archiveProject = useMutation(api.projects.functions.archiveProject);
   const moveProject = useMutation(api.projects.functions.moveProject);
+  const checkProjectLinkedData = useMutation(api.projects.functions.checkProjectLinkedData);
+  const deleteProject = useMutation(api.projects.functions.deleteProject);
 
   if (!projects) {
     return (
@@ -115,6 +149,34 @@ export function ProjectNav({ id }: { id?: string }) {
       toast.success("Projekt verschoben");
     } catch {
       toast.error("Fehler beim Verschieben");
+    }
+  };
+
+  const handleDeleteClick = async (projectId: Id<"projects">, projectName: string) => {
+    try {
+      const { hasLinkedData } = await checkProjectLinkedData({ projectId });
+      setDeleteDialog({ open: true, projectId, projectName, hasLinkedData, mergeTargetId: "" });
+    } catch {
+      toast.error("Fehler beim Prüfen des Projekts");
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteDialog.projectId) return;
+    if (deleteDialog.hasLinkedData && !deleteDialog.mergeTargetId) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteProject({
+        projectId: deleteDialog.projectId,
+        mergeIntoProjectId: deleteDialog.mergeTargetId || undefined,
+      });
+      toast.success("Projekt gelöscht");
+      setDeleteDialog({ open: false, projectId: null, projectName: "", hasLinkedData: false, mergeTargetId: "" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Fehler beim Löschen");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -249,6 +311,13 @@ export function ProjectNav({ id }: { id?: string }) {
               <Archive className="mr-2 h-4 w-4" />
               Archivieren
             </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => handleDeleteClick(project._id, project.name)}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Löschen
+            </ContextMenuItem>
           </ContextMenuContent>
         )}
       </ContextMenu>
@@ -330,6 +399,59 @@ export function ProjectNav({ id }: { id?: string }) {
           />
         </>
       )}
+
+      <Dialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => !isDeleting && setDeleteDialog((prev) => ({ ...prev, open }))}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Projekt löschen</DialogTitle>
+            <DialogDescription>
+              {deleteDialog.hasLinkedData
+                ? `"${deleteDialog.projectName}" hat verknüpfte Transaktionen oder Erstattungen. Wähle ein Zielprojekt, in das alle Daten übernommen werden sollen.`
+                : `Möchtest du "${deleteDialog.projectName}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
+            </DialogDescription>
+          </DialogHeader>
+          {deleteDialog.hasLinkedData && (
+            <Select
+              value={deleteDialog.mergeTargetId}
+              onValueChange={(value) =>
+                setDeleteDialog((prev) => ({ ...prev, mergeTargetId: value as Id<"projects"> }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Zielprojekt auswählen..." />
+              </SelectTrigger>
+              <SelectContent>
+                {projects
+                  .filter((p) => p._id !== deleteDialog.projectId && !p.parentId)
+                  .map((p) => (
+                    <SelectItem key={p._id} value={p._id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialog((prev) => ({ ...prev, open: false }))}
+              disabled={isDeleting}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting || (deleteDialog.hasLinkedData && !deleteDialog.mergeTargetId)}
+            >
+              {isDeleting ? "Wird gelöscht..." : "Löschen"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SidebarGroup>
   );
 }

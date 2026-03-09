@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
-import { Download, Loader2, Plus, Share2 } from "lucide-react";
+import { Download, FileCode2, Loader2, Plus, Share2 } from "lucide-react";
 import { ReimbursementRow } from "../../components/Tables/Reimbursements/ReimbursementRow";
 
 type Reimbursement = Doc<"reimbursements"> & {
@@ -74,6 +74,7 @@ interface Props {
   onDeleteAllowance: (id: Id<"volunteerAllowance">) => void;
   onToggleSelect: (key: SelectionKey) => void;
   onBulkDownload: () => void;
+  onSepaXml: () => void;
 }
 
 export type { SelectionKey, Reimbursement, Allowance };
@@ -100,6 +101,7 @@ export function ReimbursementPageUI({
   onDeleteAllowance,
   onToggleSelect,
   onBulkDownload,
+  onSepaXml,
 }: Props) {
   const isEmpty = reimbursements.length === 0 && allowances.length === 0;
 
@@ -118,6 +120,10 @@ export function ReimbursementPageUI({
             {isBulkDownloading ? "Wird erstellt..." : `${selected.size} herunterladen`}
           </Button>
         )}
+        <Button variant="outline" onClick={onSepaXml}>
+          <FileCode2 className="h-4 w-4 mr-2" />
+          SEPA XML
+        </Button>
         <Button variant="outline" onClick={onNewClick}>
           <Plus className="h-4 w-4 mr-2" />
           Neue Erstattung

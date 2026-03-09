@@ -4,19 +4,26 @@ type SEPAPayment = {
   iban: string;
   bic?: string;
   amount: number;
+  currency?: string;
   reference: string;
 };
 
 type SEPAOptions = {
   organizationName: string;
-  organizationIban: string;
-  organizationBic: string;
-  executionDate: string; // YYYY-MM-DD
+  organizationIban?: string;
+  organizationBic?: string;
+  executionDate?: string; // YYYY-MM-DD, defaults to today
   payments: SEPAPayment[];
 };
 
 export function generateSEPAXML(options: SEPAOptions): Blob {
-  const { organizationName, organizationIban, organizationBic, executionDate, payments } = options;
+  const {
+    organizationName,
+    organizationIban = "TOBEFILLEDIN",
+    organizationBic = "TOBEFILLEDIN",
+    executionDate = new Date().toISOString().slice(0, 10),
+    payments,
+  } = options;
 
   const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0).toFixed(2);
   const msgId = `MSG-${Date.now()}`;
@@ -31,7 +38,7 @@ export function generateSEPAXML(options: SEPAOptions): Blob {
           <EndToEndId>${escapeXml(p.id)}</EndToEndId>
         </PmtId>
         <Amt>
-          <InstdAmt Ccy="EUR">${p.amount.toFixed(2)}</InstdAmt>
+          <InstdAmt Ccy="${p.currency ?? "EUR"}">${p.amount.toFixed(2)}</InstdAmt>
         </Amt>
         ${
           p.bic

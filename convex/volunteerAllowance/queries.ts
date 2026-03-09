@@ -18,6 +18,9 @@ export const validateLink = query({
     return {
       valid: true,
       organizationName: organization?.name || "",
+      organizationStreet: organization?.street || "",
+      organizationPlz: organization?.plz || "",
+      organizationCity: organization?.city || "",
       projectName: project?.name || "",
       activityDescription: doc.activityDescription,
       startDate: doc.startDate,

@@ -86,7 +86,7 @@ export function OnboardingDialog({ open, onOpenChange }: Props) {
             <DialogHeader>
               <DialogTitle>Vereinsadresse</DialogTitle>
               <DialogDescription>
-                Die Adresse deines Vereins wird auf Ehrenamtspauschalen-Dokumenten angezeigt.
+                Die offizielle Adresse deines Vereins wird auf Erstattungs- und Ehrenamtspauschalen-Dokumenten angezeigt. Diese Angaben können später in den Einstellungen geändert werden.
               </DialogDescription>
             </DialogHeader>
 
@@ -163,14 +163,19 @@ export function OnboardingDialog({ open, onOpenChange }: Props) {
 
           {!isJoiningExisting && (
             <div className="grid gap-3 mt-4">
-              <Label htmlFor="name-1">Wie heißt dein Verein?</Label>
-              <Input
-                id="name-1"
-                name="name"
-                placeholder="Young Founders Network e.V."
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+              <div>
+                <Label htmlFor="name-1">Offizieller Vereinsname *</Label>
+                <p className="text-xs text-muted-foreground mb-1">
+                  Bitte den vollständigen offiziellen Namen angeben (z.B. inkl. e.V.). Dieser erscheint auf allen Dokumenten.
+                </p>
+                <Input
+                  id="name-1"
+                  name="name"
+                  placeholder="Young Founders Network e.V."
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
             </div>
           )}
 

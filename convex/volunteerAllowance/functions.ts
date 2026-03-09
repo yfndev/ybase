@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 import { mutation } from "../_generated/server";
 import { internal } from "../_generated/api";
+
+export { sendApprovalEmail, sendRejectionEmail } from "./sendEmails";
 import { escapeHtml, resend } from "../invitations/functions";
 import { addLog } from "../logs/functions";
 import { getCurrentUser } from "../users/getCurrentUser";
@@ -210,7 +212,7 @@ export const approve = mutation({
       `${doc.amount}€`,
     );
 
-    await ctx.scheduler.runAfter(0, internal.volunteerAllowance.sendEmails.sendApprovalEmail, { id: args.id });
+    await ctx.scheduler.runAfter(0, internal.volunteerAllowance.functions.sendApprovalEmail, { id: args.id });
   },
 });
 
@@ -241,7 +243,7 @@ export const decline = mutation({
       args.rejectionNote,
     );
 
-    await ctx.scheduler.runAfter(0, internal.volunteerAllowance.sendEmails.sendRejectionEmail, { id: args.id });
+    await ctx.scheduler.runAfter(0, internal.volunteerAllowance.functions.sendRejectionEmail, { id: args.id });
   },
 });
 

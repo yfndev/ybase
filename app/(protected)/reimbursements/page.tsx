@@ -5,6 +5,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { generateReimbursementPDF } from "@/lib/fileHandlers/generateReimbursementPDF";
 import { generateVolunteerAllowancePDF } from "@/lib/fileHandlers/generateVolunteerAllowancePDF";
+import { generateSEPAXML } from "@/lib/fileHandlers/generateSEPAXML";
 import { useIsAdmin } from "@/lib/hooks/useCurrentUserRole";
 import JSZip from "jszip";
 import { useConvex, useMutation, useQuery } from "convex/react";
@@ -187,6 +188,33 @@ export default function ReimbursementPage() {
     });
   };
 
+  const handleSepaXml = () => {
+    const approved = (reimbursements ?? []).filter(
+      (r) => r.status === "approved" && r.iban && r.accountHolder
+    );
+
+    if (approved.length === 0) {
+      toast.error("Keine genehmigten Erstattungen mit IBAN vorhanden");
+      return;
+    }
+
+    const blob = generateSEPAXML({
+      organizationName: "Verein",
+      payments: approved.map((r) => ({
+        id: r._id,
+        name: r.accountHolder,
+        iban: r.iban,
+        bic: r.bic,
+        amount: r.amount,
+        currency: r.currency ?? "EUR",
+        reference: `Erstattung ${r._id}`,
+      })),
+    });
+
+    downloadBlob(blob, `SEPA_${new Date().toISOString().slice(0, 10)}.xml`);
+    toast.success(`${approved.length} Überweisungen exportiert`);
+  };
+
   const handleOpenRejectDialog = (
     type: "reimbursement" | "allowance",
     id: Id<"reimbursements"> | Id<"volunteerAllowance">,
@@ -218,6 +246,7 @@ export default function ReimbursementPage() {
         onDeleteAllowance={handleDeleteAllowance}
         onToggleSelect={handleToggleSelect}
         onBulkDownload={handleBulkDownload}
+        onSepaXml={handleSepaXml}
       />
       <ShareModal open={shareModalOpen} onClose={() => setShareModalOpen(false)} />
     </>
