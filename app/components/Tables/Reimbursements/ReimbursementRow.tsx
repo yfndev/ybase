@@ -37,7 +37,7 @@ interface ReimbursementRowProps {
   item: {
     _id: string;
     _creationTime: number;
-    status?: Status;
+    status: Status;
     rejectionNote?: string;
     projectName: string;
     creatorName: string;
@@ -65,8 +65,8 @@ export function ReimbursementRow({
   onDownload,
   onDelete,
 }: ReimbursementRowProps) {
-  const display = STATUS_DISPLAY[item.status ?? "pending"];
-  const isPending = item.status === "pending" || item.status === undefined;
+  const display = STATUS_DISPLAY[item.status];
+  const isPending = item.status === "pending";
 
   return (
     <TableRow
