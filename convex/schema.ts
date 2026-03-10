@@ -218,6 +218,7 @@ export default defineSchema({
     isApproved: v.optional(v.boolean()),
     token: v.optional(v.string()),
     expiresAt: v.optional(v.number()),
+    usedAt: v.optional(v.number()),
     iban: v.string(),
     bic: v.optional(v.string()),
     accountHolder: v.string(),
