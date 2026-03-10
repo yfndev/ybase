@@ -3,12 +3,13 @@
 import { PageHeader } from "@/components/Layout/PageHeader";
 import { editableColumns } from "@/components/Tables/Transactions/EditableColumns";
 import { EditableDataTable } from "@/components/Tables/Transactions/EditableDataTable";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/formatters/formatDate";
 import type { EnrichedTransaction } from "@/lib/transactionFilters";
 import type { PaginationStatus } from "convex/react";
-import { Search } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
 
@@ -25,6 +26,31 @@ interface Props {
     value: unknown
   ) => Promise<void>;
   onDeleteTransaction: (rowId: string) => Promise<void>;
+}
+
+function exportCsv(transactions: EnrichedTransaction[]) {
+  const headers = ["Datum", "Gegenseite", "Beschreibung", "Projekt", "Kategorie", "Betrag (€)", "Status"];
+  const rows = transactions.map((t) => [
+    new Date(t.date).toLocaleDateString("de-DE"),
+    t.counterparty,
+    t.description,
+    t.projectName ?? "",
+    t.categoryName ?? "",
+    t.amount.toFixed(2),
+    t.status,
+  ]);
+
+  const csv = [headers, ...rows]
+    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `Transaktionen_${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function filterByStatus(
@@ -90,17 +116,23 @@ export function TransactionsPageUI({
           </div>
           <div className="text-sm text-muted-foreground">{dateRangeText}</div>
         </div>
-        <Tabs
-          value={statusFilter}
-          onValueChange={(value) => setStatusFilter(value as StatusFilter)}
-        >
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => exportCsv(filteredTransactions)}>
+            <Download className="h-4 w-4 mr-2" />
+            CSV
+          </Button>
+          <Tabs
+            value={statusFilter}
+            onValueChange={(value) => setStatusFilter(value as StatusFilter)}
+          >
           <TabsList>
             <TabsTrigger value="all">Alle</TabsTrigger>
             <TabsTrigger value="expected">Geplant</TabsTrigger>
             <TabsTrigger value="processed">Abgerechnet</TabsTrigger>
             <TabsTrigger value="budget">Budgets</TabsTrigger>
           </TabsList>
-        </Tabs>
+          </Tabs>
+        </div>
       </div>
       <div id="tour-transactions-table">
         <EditableDataTable

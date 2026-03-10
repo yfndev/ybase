@@ -38,6 +38,18 @@ export async function setupTestData(test: ReturnType<typeof convexTest>) {
       approved: true,
     });
 
+    await ctx.db.insert("categories", {
+      name: "Auslagenerstattung",
+      taxsphere: "non-profit",
+      approved: true,
+    });
+
+    await ctx.db.insert("categories", {
+      name: "Ehrenamtspauschale",
+      taxsphere: "non-profit",
+      approved: true,
+    });
+
     const donorId = await ctx.db.insert("donors", {
       name: "Test Donor",
       type: "donation",
@@ -59,7 +71,7 @@ export async function setupTestData(test: ReturnType<typeof convexTest>) {
       projectId,
       amount: 100,
       type: "expense",
-      isApproved: false,
+      status: "pending",
       iban: "DE12340000000000000000",
       bic: "BIC",
       accountHolder: "Test",
@@ -71,7 +83,7 @@ export async function setupTestData(test: ReturnType<typeof convexTest>) {
       projectId,
       amount: 200,
       type: "travel",
-      isApproved: false,
+      status: "pending",
       iban: "DE12340000000000000000",
       bic: "BIC",
       accountHolder: "Test",

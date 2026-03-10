@@ -1,39 +1,9 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
-import { resend } from "../invitations/functions";
+import { escapeHtml, resend } from "../invitations/functions";
 import { addLog } from "../logs/functions";
 import { getCurrentUser } from "../users/getCurrentUser";
-
-const travelReceiptValidator = v.object({
-  receiptNumber: v.string(),
-  receiptDate: v.string(),
-  companyName: v.string(),
-  description: v.string(),
-  netAmount: v.number(),
-  taxRate: v.number(),
-  grossAmount: v.number(),
-  fileStorageId: v.id("_storage"),
-  costType: v.union(
-    v.literal("car"),
-    v.literal("train"),
-    v.literal("flight"),
-    v.literal("taxi"),
-    v.literal("bus"),
-    v.literal("accommodation"),
-  ),
-  kilometers: v.optional(v.number()),
-});
-
-const receiptValidator = v.object({
-  receiptNumber: v.string(),
-  receiptDate: v.string(),
-  companyName: v.string(),
-  description: v.string(),
-  netAmount: v.number(),
-  taxRate: v.number(),
-  grossAmount: v.number(),
-  fileStorageId: v.id("_storage"),
-});
+import { receiptValidator, travelReceiptValidator } from "./validators";
 
 export const createReimbursementLink = mutation({
   args: {
@@ -58,7 +28,7 @@ export const createReimbursementLink = mutation({
       projectId: args.projectId,
       amount: 0,
       type: args.type,
-      isApproved: false,
+      status: "pending",
       iban: "",
       bic: "",
       accountHolder: "",
@@ -90,7 +60,7 @@ export const generatePublicUploadUrl = mutation({
 
     if (!doc) throw new Error("Invalid link");
     if (!doc.isSharedLink) throw new Error("Not a shared link");
-    if (doc.amount > 0) throw new Error("Already submitted");
+    if (doc.submitterName) throw new Error("Already submitted");
 
     return ctx.storage.generateUploadUrl();
   },
@@ -125,7 +95,7 @@ export const submitExternalReimbursement = mutation({
 
     if (!doc) throw new Error("Invalid link");
     if (!doc.isSharedLink) throw new Error("Not a shared link");
-    if (doc.amount > 0) throw new Error("Already submitted");
+    if (doc.submitterName) throw new Error("Already submitted");
 
     await ctx.db.patch(args.reimbursementId, {
       amount: args.amount,
@@ -183,13 +153,16 @@ export const sendReimbursementLink = mutation({
     const user = await getCurrentUser(ctx);
     const typeLabel = args.type === "expense" ? "Auslagenerstattung" : "Reisekostenerstattung";
 
+    const senderName = escapeHtml(user.firstName ?? "");
+    const projectName = escapeHtml(args.projectName);
+
     await resend.sendEmail(ctx, {
       from: "YBudget <team@ybudget.de>",
       to: args.email,
       subject: `${typeLabel} ausfüllen`,
       html: `
         <p>Hallo,</p>
-        <p>${user.firstName} hat dir einen Link zum Ausfüllen der ${typeLabel} für das Projekt "${args.projectName}" gesendet.</p>
+        <p>${senderName} hat dir einen Link zum Ausfüllen der ${typeLabel} für das Projekt "${projectName}" gesendet.</p>
         <p><a href="${args.link}">Hier klicken zum Ausfüllen</a></p>
         <p>Viele Grüße,<br/>Dein YBudget Team</p>
       `,
@@ -319,6 +292,13 @@ export const getPendingSharedLinks = query({
         linkType: "allowance" as const,
       })),
     };
+  },
+});
+
+export const getPublicFileUrl = query({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    return ctx.storage.getUrl(args.storageId);
   },
 });
 

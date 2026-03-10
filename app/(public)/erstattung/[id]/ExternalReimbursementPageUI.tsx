@@ -12,7 +12,7 @@ import { Loader2, Plus, Smartphone, Trash2 } from "lucide-react";
 type CostType = "car" | "train" | "flight" | "taxi" | "bus" | "accommodation";
 
 type Receipt = {
-  receiptNumber: string;
+  receiptNumber: string | undefined;
   receiptDate: string;
   companyName: string;
   description: string;
@@ -32,6 +32,8 @@ type Props = {
   organizationName: string;
   projectName: string;
   allowFoodAllowance: boolean;
+  showFoodAllowance: boolean;
+  onShowFoodAllowanceChange: (value: boolean) => void;
 
   name: string;
   email: string;
@@ -60,6 +62,7 @@ type Props = {
   date: string;
   gross: number;
   taxRate: number;
+  currency: string;
   file: Id<"_storage"> | null;
   onCompanyChange: (value: string) => void;
   onNumberChange: (value: string) => void;
@@ -67,6 +70,7 @@ type Props = {
   onDateChange: (value: string) => void;
   onGrossChange: (value: number) => void;
   onTaxRateChange: (value: number) => void;
+  onCurrencyChange: (value: string) => void;
   onFileChange: (value: Id<"_storage"> | null) => void;
 
   receipts: Receipt[];
@@ -96,6 +100,7 @@ type Props = {
 
   reimbursementId: Id<"reimbursements">;
   generateUploadUrl: () => Promise<string>;
+  getFileUrl: (storageId: Id<"_storage">) => Promise<string | null>;
 
   toNet: (gross: number, tax: number) => number;
   formatIban: (iban: string) => string;
@@ -314,6 +319,7 @@ export default function ExternalReimbursementPageUI(props: Props) {
                           }
                           storageId={receipt.fileStorageId || undefined}
                           generateUploadUrl={props.generateUploadUrl}
+                          getFileUrl={props.getFileUrl}
                         />
                       </div>
                     )}
@@ -323,6 +329,21 @@ export default function ExternalReimbursementPageUI(props: Props) {
             </div>
 
             {props.allowFoodAllowance && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="showFood"
+                    checked={props.showFoodAllowance}
+                    onCheckedChange={(checked) => props.onShowFoodAllowanceChange(checked === true)}
+                  />
+                  <Label htmlFor="showFood" className="text-lg font-medium cursor-pointer">
+                    Verpflegungsmehraufwand geltend machen
+                  </Label>
+                </div>
+              </div>
+            )}
+
+            {props.allowFoodAllowance && props.showFoodAllowance && (
               <div className="space-y-4">
                 <h2 className="text-lg font-medium">Verpflegungsmehraufwand</h2>
                 <div className="border rounded-lg p-4 space-y-4">
@@ -382,7 +403,7 @@ export default function ExternalReimbursementPageUI(props: Props) {
                   />
                 </div>
                 <div>
-                  <Label>Beleg-Nr. *</Label>
+                  <Label>Beleg-Nr.</Label>
                   <Input
                     value={props.number}
                     onChange={(e) => props.onNumberChange(e.target.value)}
@@ -392,7 +413,7 @@ export default function ExternalReimbursementPageUI(props: Props) {
               </div>
 
               <div>
-                <Label>Beschreibung</Label>
+                <Label>Beschreibung *</Label>
                 <Input
                   value={props.description}
                   onChange={(e) => props.onDescriptionChange(e.target.value)}
@@ -402,18 +423,31 @@ export default function ExternalReimbursementPageUI(props: Props) {
 
               <div className="grid grid-cols-4 gap-4">
                 <div>
-                  <Label>Datum *</Label>
+                  <Label>Belegdatum *</Label>
                   <Input type="date" value={props.date} onChange={(e) => props.onDateChange(e.target.value)} />
                 </div>
                 <div>
-                  <Label>Brutto (€) *</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={props.gross || ""}
-                    onChange={(e) => props.onGrossChange(parseFloat(e.target.value) || 0)}
-                    placeholder="119.95"
-                  />
+                  <Label>Brutto *</Label>
+                  <div className="flex gap-1">
+                    <Select value={props.currency} onValueChange={props.onCurrencyChange}>
+                      <SelectTrigger className="w-20 shrink-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="EUR">EUR</SelectItem>
+                        <SelectItem value="USD">USD</SelectItem>
+                        <SelectItem value="CHF">CHF</SelectItem>
+                        <SelectItem value="GBP">GBP</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={props.gross || ""}
+                      onChange={(e) => props.onGrossChange(parseFloat(e.target.value) || 0)}
+                      placeholder="119.95"
+                    />
+                  </div>
                 </div>
                 <div>
                   <Label>MwSt.</Label>
@@ -429,7 +463,7 @@ export default function ExternalReimbursementPageUI(props: Props) {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Netto (€)</Label>
+                  <Label className="text-muted-foreground">Netto</Label>
                   <Input
                     value={props.gross ? props.toNet(props.gross, props.taxRate).toFixed(2) : ""}
                     disabled
@@ -444,12 +478,13 @@ export default function ExternalReimbursementPageUI(props: Props) {
                   onUploadComplete={props.onFileChange}
                   storageId={props.file || undefined}
                   generateUploadUrl={props.generateUploadUrl}
+                  getFileUrl={props.getFileUrl}
                 />
               </div>
 
               <Button onClick={props.onAddReceipt} variant="outline" className="w-full">
                 <Plus className="size-5 mr-2" />
-                Beleg hinzufügen
+                Weiteren Beleg hinzufügen
               </Button>
             </div>
 
@@ -513,7 +548,7 @@ export default function ExternalReimbursementPageUI(props: Props) {
               />
             </div>
             <div>
-              <Label>BIC *</Label>
+              <Label>BIC (optional)</Label>
               <Input
                 value={props.bic.toUpperCase()}
                 onChange={(e) => props.onBicChange(e.target.value.toUpperCase())}

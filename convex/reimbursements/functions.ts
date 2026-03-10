@@ -4,47 +4,19 @@ import { internal } from "../_generated/api";
 import { addLog } from "../logs/functions";
 import { getCurrentUser } from "../users/getCurrentUser";
 import { requireRole } from "../users/permissions";
+import { receiptValidator, travelReceiptValidator } from "./validators";
 
-export { sendApprovalEmail } from "./sendApprovalEmail";
-
-const receiptValidator = v.object({
-  receiptNumber: v.string(),
-  receiptDate: v.string(),
-  companyName: v.string(),
-  description: v.string(),
-  netAmount: v.number(),
-  taxRate: v.number(),
-  grossAmount: v.number(),
-  fileStorageId: v.id("_storage"),
-});
-
-const travelReceiptValidator = v.object({
-  receiptNumber: v.string(),
-  receiptDate: v.string(),
-  companyName: v.string(),
-  description: v.string(),
-  netAmount: v.number(),
-  taxRate: v.number(),
-  grossAmount: v.number(),
-  fileStorageId: v.id("_storage"),
-  costType: v.union(
-    v.literal("car"),
-    v.literal("train"),
-    v.literal("flight"),
-    v.literal("taxi"),
-    v.literal("bus"),
-    v.literal("accommodation"),
-  ),
-  kilometers: v.optional(v.number()),
-});
+export { sendApprovalEmail, sendRejectionEmail } from "./sendApprovalEmail";
 
 export const createReimbursement = mutation({
   args: {
     amount: v.number(),
     projectId: v.id("projects"),
     iban: v.string(),
-    bic: v.string(),
+    bic: v.optional(v.string()),
     accountHolder: v.string(),
+    currency: v.optional(v.string()),
+    signatureStorageId: v.id("_storage"),
     receipts: v.array(receiptValidator),
   },
   handler: async (ctx, args) => {
@@ -55,10 +27,12 @@ export const createReimbursement = mutation({
       projectId: args.projectId,
       amount: args.amount,
       type: "expense",
-      isApproved: false,
+      status: "pending",
       iban: args.iban,
       bic: args.bic,
       accountHolder: args.accountHolder,
+      currency: args.currency,
+      signatureStorageId: args.signatureStorageId,
       createdBy: user._id,
     });
 
@@ -77,8 +51,10 @@ export const createTravelReimbursement = mutation({
     amount: v.number(),
     projectId: v.id("projects"),
     iban: v.string(),
-    bic: v.string(),
+    bic: v.optional(v.string()),
     accountHolder: v.string(),
+    currency: v.optional(v.string()),
+    signatureStorageId: v.id("_storage"),
     startDate: v.string(),
     endDate: v.string(),
     destination: v.string(),
@@ -96,10 +72,12 @@ export const createTravelReimbursement = mutation({
       projectId: args.projectId,
       amount: args.amount,
       type: "travel",
-      isApproved: false,
+      status: "pending",
       iban: args.iban,
       bic: args.bic,
       accountHolder: args.accountHolder,
+      currency: args.currency,
+      signatureStorageId: args.signatureStorageId,
       createdBy: user._id,
     });
 
@@ -141,6 +119,10 @@ export const deleteReimbursement = mutation({
       throw new Error("Reimbursement not found");
     }
 
+    if (reimbursement.createdBy !== user._id && user.role !== "admin") {
+      throw new Error("Only the creator or an admin can delete reimbursements");
+    }
+
     const receipts = await ctx.db
       .query("receipts")
       .withIndex("by_reimbursement", (q) => q.eq("reimbursementId", args.reimbursementId))
@@ -162,12 +144,19 @@ export const deleteReimbursement = mutation({
       }
     }
 
+    if (reimbursement.signatureStorageId) {
+      const signatureExists = await ctx.storage.getUrl(reimbursement.signatureStorageId);
+      if (signatureExists) {
+        await ctx.storage.delete(reimbursement.signatureStorageId);
+      }
+    }
+
     await ctx.db.delete(args.reimbursementId);
     await addLog(ctx, user.organizationId, user._id, "reimbursement.delete", args.reimbursementId, `${reimbursement.amount}€`);
   },
 });
 
-export const markAsPaid = mutation({
+export const approve = mutation({
   args: { reimbursementId: v.id("reimbursements") },
   handler: async (ctx, args) => {
     const user = await requireRole(ctx, "lead");
@@ -177,10 +166,16 @@ export const markAsPaid = mutation({
       throw new Error("Reimbursement not found");
     }
 
+    if (reimbursement.status !== "pending") {
+      throw new Error("Reimbursement already processed");
+    }
+
     const category = await ctx.db
       .query("categories")
       .withIndex("by_name", (q) => q.eq("name", "Auslagenerstattung"))
       .first();
+
+    if (!category) throw new Error("Kategorie 'Auslagenerstattung' nicht gefunden. Bitte Kategorien in den Einstellungen anlegen.");
 
     const project = await ctx.db.get(reimbursement.projectId);
     const description = project ? `${project.name} - Auslagenerstattung` : "Auslagenerstattung";
@@ -192,13 +187,13 @@ export const markAsPaid = mutation({
       amount: -reimbursement.amount,
       description,
       counterparty: reimbursement.accountHolder,
-      categoryId: category?._id,
+      categoryId: category._id,
       status: "expected",
       importedBy: user._id,
     });
 
-    await ctx.db.patch(args.reimbursementId, { isApproved: true, reviewedBy: user._id });
-    await addLog(ctx, user.organizationId, user._id, "reimbursement.pay", args.reimbursementId, `${reimbursement.amount}€`);
+    await ctx.db.patch(args.reimbursementId, { status: "approved", reviewedBy: user._id });
+    await addLog(ctx, user.organizationId, user._id, "reimbursement.approve", args.reimbursementId, `${reimbursement.amount}€`);
 
     await ctx.scheduler.runAfter(0, internal.reimbursements.functions.sendApprovalEmail, {
       reimbursementId: args.reimbursementId,
@@ -206,7 +201,7 @@ export const markAsPaid = mutation({
   },
 });
 
-export const rejectReimbursement = mutation({
+export const decline = mutation({
   args: {
     reimbursementId: v.id("reimbursements"),
     rejectionNote: v.string(),
@@ -219,12 +214,20 @@ export const rejectReimbursement = mutation({
       throw new Error("Reimbursement not found");
     }
 
+    if (reimbursement.status !== "pending") {
+      throw new Error("Reimbursement already processed");
+    }
+
     await ctx.db.patch(args.reimbursementId, {
-      isApproved: false,
+      status: "declined",
       rejectionNote: args.rejectionNote,
       reviewedBy: user._id,
     });
 
-    await addLog(ctx, user.organizationId, user._id, "reimbursement.reject", args.reimbursementId, args.rejectionNote);
+    await addLog(ctx, user.organizationId, user._id, "reimbursement.decline", args.reimbursementId, args.rejectionNote);
+
+    await ctx.scheduler.runAfter(0, internal.reimbursements.functions.sendRejectionEmail, {
+      reimbursementId: args.reimbursementId,
+    });
   },
 });

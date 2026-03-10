@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { calculateBudget } from "./budgetCalculations";
 
 const mockTransaction = (amount: number, status: "processed" | "expected") =>
-  ({ amount, status }) as Parameters<typeof calculateBudget>[0][0];
+  ({ amount, status });
 
 const transactions = [
   mockTransaction(100, "processed"),
@@ -38,4 +38,16 @@ test("returns 0 if available budget is negative", () => {
 test("calculates positive available budget", () => {
   const result = calculateBudget(transactions);
   expect(result.availableBudget).toBe(370);
+});
+
+test("rounds to cents to avoid floating point drift", () => {
+  const floatTransactions = [
+    mockTransaction(0.1, "processed"),
+    mockTransaction(0.2, "processed"),
+    mockTransaction(0.3, "expected"),
+  ];
+  const result = calculateBudget(floatTransactions);
+  expect(result.currentBalance).toBe(0.3);
+  expect(result.expectedIncome).toBe(0.3);
+  expect(result.availableBudget).toBe(0.6);
 });

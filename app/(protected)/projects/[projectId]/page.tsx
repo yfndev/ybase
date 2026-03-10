@@ -5,7 +5,6 @@ import { ProjectDashboardUI } from "@/(protected)/projects/[projectId]/ProjectDa
 import { TransferDialog } from "@/components/Dialogs/TransferDialog";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { calculateBudget } from "@/lib/budgetCalculations";
 import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -25,6 +24,11 @@ export default function ProjectDetailPage() {
     [projectId, childIds],
   );
 
+  const budgets = useQuery(
+    api.transactions.queries.getProjectBudget,
+    projectIds.length > 0 ? { projectIds } : "skip",
+  );
+
   const {
     results: transactions,
     status,
@@ -33,11 +37,6 @@ export default function ProjectDetailPage() {
     api.transactions.queries.getPaginatedTransactions,
     { projectIds },
     { initialNumItems: 50 },
-  );
-
-  const budgets = useMemo(
-    () => calculateBudget(transactions ?? []),
-    [transactions],
   );
 
   const updateTransaction = useMutation(
@@ -70,7 +69,7 @@ export default function ProjectDetailPage() {
       <ProjectDashboardUI
         project={project}
         transactions={transactions ?? []}
-        budgets={budgets}
+        budgets={budgets ?? { currentBalance: 0, expectedIncome: 0, expectedExpenses: 0, availableBudget: 0 }}
         status={status}
         loadMore={loadMore}
         onUpdate={handleUpdate}

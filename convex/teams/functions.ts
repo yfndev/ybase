@@ -53,9 +53,10 @@ export const renameTeam = mutation({
 export const addTeamMember = mutation({
   args: { teamId: v.id("teams"), userId: v.id("users") },
   handler: async (ctx, args) => {
-    await requireRole(ctx, "admin");
+    const user = await requireRole(ctx, "admin");
     const team = await ctx.db.get(args.teamId);
-    if (!team) throw new Error("Team not found");
+    if (!team || team.organizationId !== user.organizationId)
+      throw new Error("Team not found");
     if (team.memberIds.includes(args.userId)) return;
 
     await ctx.db.patch(args.teamId, {
@@ -67,9 +68,10 @@ export const addTeamMember = mutation({
 export const removeTeamMember = mutation({
   args: { teamId: v.id("teams"), userId: v.id("users") },
   handler: async (ctx, args) => {
-    await requireRole(ctx, "admin");
+    const user = await requireRole(ctx, "admin");
     const team = await ctx.db.get(args.teamId);
-    if (!team) throw new Error("Team not found");
+    if (!team || team.organizationId !== user.organizationId)
+      throw new Error("Team not found");
 
     await ctx.db.patch(args.teamId, {
       memberIds: team.memberIds.filter((memberId) => memberId !== args.userId),
@@ -80,9 +82,10 @@ export const removeTeamMember = mutation({
 export const assignProjectToTeam = mutation({
   args: { teamId: v.id("teams"), projectId: v.id("projects") },
   handler: async (ctx, args) => {
-    await requireRole(ctx, "admin");
+    const user = await requireRole(ctx, "admin");
     const team = await ctx.db.get(args.teamId);
-    if (!team) throw new Error("Team not found");
+    if (!team || team.organizationId !== user.organizationId)
+      throw new Error("Team not found");
     if (team.projectIds.includes(args.projectId)) return;
 
     await ctx.db.patch(args.teamId, {
@@ -94,9 +97,10 @@ export const assignProjectToTeam = mutation({
 export const removeProjectFromTeam = mutation({
   args: { teamId: v.id("teams"), projectId: v.id("projects") },
   handler: async (ctx, args) => {
-    await requireRole(ctx, "admin");
+    const user = await requireRole(ctx, "admin");
     const team = await ctx.db.get(args.teamId);
-    if (!team) throw new Error("Team not found");
+    if (!team || team.organizationId !== user.organizationId)
+      throw new Error("Team not found");
 
     await ctx.db.patch(args.teamId, {
       projectIds: team.projectIds.filter(

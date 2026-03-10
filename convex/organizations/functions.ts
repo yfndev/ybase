@@ -19,7 +19,7 @@ export const initializeOrganization = mutation({
       return { organizationId: user.organizationId, isNew: false };
     }
 
-    const domain = user.email?.split("@")[1];
+    const domain = user.email?.split("@")[1]?.toLowerCase();
     if (!domain) throw new Error("Could not find a domain for this E-Mail");
 
     const existingOrg = await ctx.db
@@ -46,6 +46,18 @@ export const initializeOrganization = mutation({
       organizationId,
       isArchived: false,
       createdBy: user._id,
+    });
+
+    await ctx.db.insert("categories", {
+      name: "Auslagenerstattung",
+      taxsphere: "non-profit",
+      approved: true,
+    });
+
+    await ctx.db.insert("categories", {
+      name: "Ehrenamtspauschale",
+      taxsphere: "non-profit",
+      approved: true,
     });
 
     await ctx.db.patch(user._id, { organizationId, role: "admin" });

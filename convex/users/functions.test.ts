@@ -38,6 +38,29 @@ test("cannot remove last admin", async () => {
   ).rejects.toThrow();
 });
 
+test("can demote admin when there are multiple admins", async () => {
+  const t = convexTest(schema, modules);
+  const { organizationId, userId } = await setupTestData(t);
+
+  const secondAdminId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      email: "admin2@test.com",
+      organizationId,
+      role: "admin",
+    }),
+  );
+
+  await t
+    .withIdentity({ subject: userId })
+    .mutation(api.users.functions.updateUserRole, {
+      userId: secondAdminId,
+      role: "lead",
+    });
+
+  const demoted = await t.run((ctx) => ctx.db.get(secondAdminId));
+  expect(demoted?.role).toBe("lead");
+});
+
 test("non-admin cannot update roles", async () => {
   const t = convexTest(schema, modules);
   const { organizationId, userId } = await setupTestData(t);
@@ -59,20 +82,78 @@ test("non-admin cannot update roles", async () => {
 
 test("add user to organization", async () => {
   const t = convexTest(schema, modules);
-  const { organizationId } = await setupTestData(t);
+  const { organizationId, userId } = await setupTestData(t);
 
   const newUserId = await t.run((ctx) =>
     ctx.db.insert("users", { email: "new@test.com" }),
   );
 
-  await t.mutation(api.users.functions.addUserToOrganization, {
-    userId: newUserId,
-    organizationId,
-  });
+  await t
+    .withIdentity({ subject: userId })
+    .mutation(api.users.functions.addUserToOrganization, {
+      userId: newUserId,
+      organizationId,
+    });
 
   const user = await t.run((ctx) => ctx.db.get(newUserId));
   expect(user?.organizationId).toBe(organizationId);
   expect(user?.role).toBe("lead");
+});
+
+test("non-admin cannot add user to organization", async () => {
+  const t = convexTest(schema, modules);
+  const { organizationId } = await setupTestData(t);
+
+  const leadUserId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      email: "lead@test.com",
+      organizationId,
+      role: "lead",
+    }),
+  );
+
+  const newUserId = await t.run((ctx) =>
+    ctx.db.insert("users", { email: "new@test.com" }),
+  );
+
+  await expect(
+    t
+      .withIdentity({ subject: leadUserId })
+      .mutation(api.users.functions.addUserToOrganization, {
+        userId: newUserId,
+        organizationId,
+      }),
+  ).rejects.toThrow();
+});
+
+test("cannot add user to different organization", async () => {
+  const t = convexTest(schema, modules);
+  const { userId } = await setupTestData(t);
+
+  const { otherOrgId } = await t.run(async (ctx) => {
+    const otherUserId = await ctx.db.insert("users", {
+      email: "other@other.com",
+    });
+    const otherOrgId = await ctx.db.insert("organizations", {
+      name: "Other Org",
+      domain: "other.com",
+      createdBy: otherUserId,
+    });
+    return { otherOrgId };
+  });
+
+  const newUserId = await t.run((ctx) =>
+    ctx.db.insert("users", { email: "new@test.com" }),
+  );
+
+  await expect(
+    t
+      .withIdentity({ subject: userId })
+      .mutation(api.users.functions.addUserToOrganization, {
+        userId: newUserId,
+        organizationId: otherOrgId,
+      }),
+  ).rejects.toThrow("Cannot add users to other organizations");
 });
 
 test("update role throws for different org", async () => {
@@ -141,4 +222,26 @@ test("throw error when trying to update role throws for non existing user", asyn
         role: "admin",
       }),
   ).rejects.toThrow("User not found");
+});
+
+test("update role for user without explicit role", async () => {
+  const t = convexTest(schema, modules);
+  const { organizationId, userId } = await setupTestData(t);
+
+  const noRoleUserId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      email: "norole@test.com",
+      organizationId,
+    }),
+  );
+
+  await t
+    .withIdentity({ subject: userId })
+    .mutation(api.users.functions.updateUserRole, {
+      userId: noRoleUserId,
+      role: "lead",
+    });
+
+  const updated = await t.run((ctx) => ctx.db.get(noRoleUserId));
+  expect(updated?.role).toBe("lead");
 });

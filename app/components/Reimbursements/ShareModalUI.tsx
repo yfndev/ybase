@@ -83,7 +83,7 @@ export function ShareModalUI({
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Link teilen</DialogTitle>
+          <DialogTitle>Erstattung anfordern</DialogTitle>
           <DialogDescription>
             Erstelle einen Link zum Einreichen von Erstattungen oder Ehrenamtspauschalen.
           </DialogDescription>

@@ -28,22 +28,22 @@ export function HeroSection() {
             YOUNG FOUNDERS NETWORK
           </p>
           <h1 className="mt-4 text-3xl font-bold tracking-tight text-black sm:text-5xl lg:text-6xl">
-            <YellowHighlight>Budgetverwaltung für</YellowHighlight>
+            <YellowHighlight>Kostenlose Budgetverwaltung</YellowHighlight>
             <br />
-            <YellowHighlight>gemeinnützige Vereine.</YellowHighlight>
+            <YellowHighlight>für gemeinnützige Vereine.</YellowHighlight>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-600 sm:text-xl">
-            YBudget hilft dir, Budgets zu planen, Ausgaben zu tracken und
-            Berichte für Förderer zu erstellen. Einfach und schnell.
+            YBudget ist kostenlos, open source und speziell für Vereine gemacht. Budgets planen, Ausgaben tracken, Erstattungen digital abwickeln — alles in einem Tool.
           </p>
 
-          <div className="mt-8">
+          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Button
               asChild
               className="h-12 bg-black px-8 text-base font-semibold text-white hover:bg-gray-800"
             >
               <Link href="/login">Kostenlos starten</Link>
             </Button>
+            <p className="text-sm text-gray-500">Kein Kreditkarte. Kein Ablaufdatum.</p>
           </div>
         </motion.div>
 

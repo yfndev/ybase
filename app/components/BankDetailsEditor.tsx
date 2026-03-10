@@ -4,21 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/convex/_generated/api";
+import { BIC_REGEX, formatIban, IBAN_REGEX } from "@/lib/bank-utils";
 import { useMutation } from "convex/react";
 import { Pencil } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
 type BankDetails = { iban: string; bic: string; accountHolder: string };
-
-const IBAN_REGEX = /^[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}$/;
-const BIC_REGEX = /^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/;
-
-const formatIban = (iban: string) =>
-  iban
-    .replace(/\s/g, "")
-    .replace(/(.{4})/g, "$1 ")
-    .trim();
 
 interface Props {
   value: BankDetails;
@@ -29,16 +21,18 @@ export function BankDetailsEditor({ value, onChange }: Props) {
   const save = useMutation(api.users.functions.updateBankDetails);
 
   const toggle = async () => {
-    if (editing) {
-      const iban = value.iban.replace(/\s/g, "").toUpperCase();
-      const bic = value.bic.replace(/\s/g, "").toUpperCase();
-      if (!value.accountHolder)
-        return toast.error("Bitte Kontoinhaber eingeben");
-      if (!IBAN_REGEX.test(iban)) return toast.error("Ungültige IBAN");
-      if (!BIC_REGEX.test(bic)) return toast.error("Ungültige BIC");
-      await save(value);
+    if (!editing) {
+      setEditing(true);
+      return;
     }
-    setEditing(!editing);
+    const iban = value.iban.replace(/\s/g, "").toUpperCase();
+    const bic = value.bic.replace(/\s/g, "").toUpperCase();
+    if (!value.accountHolder)
+      return toast.error("Bitte Kontoinhaber eingeben");
+    if (!IBAN_REGEX.test(iban)) return toast.error("Ungültige IBAN");
+    if (bic && !BIC_REGEX.test(bic)) return toast.error("Ungültige BIC");
+    await save(value);
+    setEditing(false);
   };
 
   const update = (key: keyof BankDetails, val: string) =>
@@ -51,17 +45,18 @@ export function BankDetailsEditor({ value, onChange }: Props) {
         <div className="grid grid-cols-[1fr_2fr_1fr] gap-4 flex-1">
           <div>
             <Label className="text-xs text-muted-foreground uppercase">
-              Kontoinhaber
+              Kontoinhaber *
             </Label>
             <Input
               value={value.accountHolder}
               onChange={(e) => update("accountHolder", e.target.value)}
               disabled={!editing}
+              placeholder="Vor- und Nachname"
             />
           </div>
           <div>
             <Label className="text-xs text-muted-foreground uppercase">
-              IBAN
+              IBAN *
             </Label>
             <Input
               value={formatIban(value.iban)}
@@ -76,7 +71,7 @@ export function BankDetailsEditor({ value, onChange }: Props) {
           </div>
           <div>
             <Label className="text-xs text-muted-foreground uppercase">
-              BIC
+              BIC (optional)
             </Label>
             <Input
               value={value.bic}

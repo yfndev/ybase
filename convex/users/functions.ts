@@ -13,6 +13,12 @@ export const addUserToOrganization = mutation({
     ),
   },
   handler: async (ctx, args) => {
+    const currentUser = await requireRole(ctx, "admin");
+
+    if (args.organizationId !== currentUser.organizationId) {
+      throw new Error("Cannot add users to other organizations");
+    }
+
     await ctx.db.patch(args.userId, {
       organizationId: args.organizationId,
       role: args.role ?? "lead",

@@ -179,12 +179,6 @@ export function TransactionSheet({ type, open, onOpenChange }: Props) {
           >
             {isExpense ? "Ausgabe planen" : "Einnahme erfassen"}
           </Button>
-          <p className="text-xs text-muted-foreground text-center">
-            oder{" "}
-            <kbd className="bg-muted px-1.5 py-0.5 rounded text-xs">
-              ⌘ Enter
-            </kbd>
-          </p>
         </div>
       </SheetContent>
     </Sheet>

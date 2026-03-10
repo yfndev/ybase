@@ -67,8 +67,12 @@ export default function ReimbursementDetailPage() {
         0,
       );
 
-  const statusLabel = reimbursement.isApproved ? "Genehmigt" : "Ausstehend";
-  const statusVariant = reimbursement.isApproved ? "default" : "secondary";
+  const statusMap = {
+    pending: { label: "Ausstehend", variant: "secondary" as const },
+    approved: { label: "Genehmigt", variant: "default" as const },
+    declined: { label: "Abgelehnt", variant: "destructive" as const },
+  };
+  const { label: statusLabel, variant: statusVariant } = statusMap[reimbursement.status as keyof typeof statusMap] ?? statusMap.pending;
 
   return (
     <div className="flex flex-col w-full h-screen">

@@ -210,7 +210,7 @@ test("get donors by project ignores transactions without donorId", async () => {
     .query(api.donors.queries.getDonorsByProject, { projectId });
 
   expect(donors).toHaveLength(1);
-  expect(donors[0]._id).toBe(donorId);
+  expect(donors?.[0]?._id).toBe(donorId);
 });
 
 test("get donors by project handles deleted donor", async () => {

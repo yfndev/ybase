@@ -1,0 +1,1 @@
+export const MAX_VOLUNTEER_ALLOWANCE_EUR = 960;

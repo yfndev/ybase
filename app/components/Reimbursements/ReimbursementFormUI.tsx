@@ -1,6 +1,7 @@
 "use client";
 
 import { BankDetailsEditor } from "@/components/BankDetailsEditor";
+import { SignatureField } from "@/components/Reimbursements/SignatureField";
 import { DateInput } from "@/components/Selectors/DateInput";
 import { SelectProject } from "@/components/Selectors/SelectProject";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
+import { CURRENCIES, CURRENCY_SYMBOLS, toNet } from "@/lib/bank-utils";
 import { useMutation } from "convex/react";
 import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -30,8 +32,6 @@ type Receipt = Omit<
   "_id" | "_creationTime" | "reimbursementId" | "costType" | "kilometers"
 >;
 
-const toNet = (gross: number, tax: number) => gross / (1 + tax / 100);
-
 interface Props {
   defaultBankDetails: BankDetails;
 }
@@ -42,6 +42,8 @@ export function ReimbursementFormUI({ defaultBankDetails }: Props) {
 
   const [projectId, setProjectId] = useState<Id<"projects"> | null>(null);
   const [bank, setBank] = useState(defaultBankDetails);
+  const [currency, setCurrency] = useState("EUR");
+  const [signature, setSignature] = useState<Id<"_storage"> | null>(null);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [draft, setDraft] = useState({
     company: "",
@@ -53,6 +55,7 @@ export function ReimbursementFormUI({ defaultBankDetails }: Props) {
     file: null as Id<"_storage"> | null,
   });
 
+  const currencySymbol = CURRENCY_SYMBOLS[currency] || currency;
   const net = draft.gross ? toNet(draft.gross, draft.tax) : 0;
   const totalGross = receipts.reduce(
     (sum, receipt) => sum + receipt.grossAmount,
@@ -71,19 +74,16 @@ export function ReimbursementFormUI({ defaultBankDetails }: Props) {
       );
 
   const addReceipt = () => {
-    if (
-      !draft.number ||
-      !draft.company ||
-      !draft.gross ||
-      !draft.file ||
-      !draft.date
-    ) {
-      return toast.error("Bitte Pflichtfelder ausfüllen");
+    if (!draft.company || !draft.desc || !draft.gross || !draft.file || !draft.date) {
+      return toast.error("Bitte Pflichtfelder ausfüllen (Firma, Beschreibung, Betrag, Belegdatum, Beleg)");
+    }
+    if (draft.gross < 0) {
+      return toast.error("Betrag muss positiv sein");
     }
     setReceipts([
       ...receipts,
       {
-        receiptNumber: draft.number,
+        receiptNumber: draft.number || undefined,
         receiptDate: draft.date,
         companyName: draft.company,
         description: draft.desc,
@@ -107,20 +107,47 @@ export function ReimbursementFormUI({ defaultBankDetails }: Props) {
 
   const handleSubmit = async () => {
     if (!projectId) return toast.error("Bitte ein Projekt auswählen");
-    await submit({ projectId, amount: totalGross, ...bank, receipts });
+    if (receipts.length === 0) return toast.error("Bitte mindestens einen Beleg hinzufügen");
+    if (!signature) return toast.error("Bitte unterschreiben");
+    await submit({
+      projectId,
+      amount: totalGross,
+      ...bank,
+      currency,
+      signatureStorageId: signature,
+      receipts,
+    });
     toast.success("Erstattung eingereicht");
     router.push("/reimbursements");
   };
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
-      <div className="w-[200px]">
-        <SelectProject
-          value={projectId || ""}
-          onValueChange={(value) =>
-            setProjectId(value ? (value as Id<"projects">) : null)
-          }
-        />
+      <div className="flex items-end gap-4">
+        <div className="w-[200px]">
+          <Label>Projekt *</Label>
+          <SelectProject
+            value={projectId || ""}
+            onValueChange={(value) =>
+              setProjectId(value ? (value as Id<"projects">) : null)
+            }
+          />
+        </div>
+        <div className="w-[120px]">
+          <Label>Währung</Label>
+          <Select value={currency} onValueChange={setCurrency}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CURRENCIES.map((cur) => (
+                <SelectItem key={cur} value={cur}>
+                  {cur} ({CURRENCY_SYMBOLS[cur]})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -135,21 +162,21 @@ export function ReimbursementFormUI({ defaultBankDetails }: Props) {
             <Input
               value={draft.company}
               onChange={(e) => setDraft({ ...draft, company: e.target.value })}
-              placeholder="z.B. Amazon, Deutsche Bahn"
+              placeholder="z.B. Amazon GmbH, Deutsche Bahn AG"
             />
           </div>
           <div>
-            <Label>Beleg-Nr. *</Label>
+            <Label>Beleg-Nr.</Label>
             <Input
               value={draft.number}
               onChange={(e) => setDraft({ ...draft, number: e.target.value })}
-              placeholder="z.B. INV-2024-001"
+              placeholder="z.B. INV-2024-001 (optional)"
             />
           </div>
         </div>
 
         <div>
-          <Label>Beschreibung</Label>
+          <Label>Beschreibung *</Label>
           <Textarea
             value={draft.desc}
             onChange={(e) => setDraft({ ...draft, desc: e.target.value })}
@@ -161,14 +188,14 @@ export function ReimbursementFormUI({ defaultBankDetails }: Props) {
 
         <div className="grid grid-cols-4 gap-4">
           <div>
-            <Label>Datum *</Label>
+            <Label>Belegdatum *</Label>
             <DateInput
               value={draft.date}
               onChange={(value) => setDraft({ ...draft, date: value })}
             />
           </div>
           <div>
-            <Label>Bruttobetrag (€) *</Label>
+            <Label>Bruttobetrag ({currencySymbol}) *</Label>
             <Input
               type="number"
               step="0.01"
@@ -198,7 +225,7 @@ export function ReimbursementFormUI({ defaultBankDetails }: Props) {
             </Select>
           </div>
           <div>
-            <Label className="text-muted-foreground">Nettobetrag (€)</Label>
+            <Label className="text-muted-foreground">Nettobetrag ({currencySymbol})</Label>
             <Input
               value={net.toFixed(2)}
               disabled
@@ -222,7 +249,7 @@ export function ReimbursementFormUI({ defaultBankDetails }: Props) {
           size="lg"
         >
           <Plus className="size-5 mr-2" />
-          Beleg hinzufügen
+          Weiteren Beleg hinzufügen
         </Button>
       </div>
 
@@ -240,12 +267,12 @@ export function ReimbursementFormUI({ defaultBankDetails }: Props) {
                 <div className="flex items-center gap-8 flex-1">
                   <span className="font-semibold">{receipt.companyName}</span>
                   <span className="text-sm text-muted-foreground">
-                    {receipt.description || "Keine Beschreibung"}
+                    {receipt.description}
                   </span>
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="font-semibold">
-                    {receipt.grossAmount.toFixed(2)} €
+                    {receipt.grossAmount.toFixed(2)} {currencySymbol}
                   </span>
                   <Button
                     variant="ghost"
@@ -265,25 +292,33 @@ export function ReimbursementFormUI({ defaultBankDetails }: Props) {
           <div className="space-y-3 pt-6">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Netto gesamt</span>
-              <span>{totalNet.toFixed(2)} €</span>
+              <span>{totalNet.toFixed(2)} {currencySymbol}</span>
             </div>
             {taxByRate(7) > 0 && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">UST 7% gesamt</span>
-                <span>{taxByRate(7).toFixed(2)} €</span>
+                <span>{taxByRate(7).toFixed(2)} {currencySymbol}</span>
               </div>
             )}
             {taxByRate(19) > 0 && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">UST 19% gesamt</span>
-                <span>{taxByRate(19).toFixed(2)} €</span>
+                <span>{taxByRate(19).toFixed(2)} {currencySymbol}</span>
               </div>
             )}
             <Separator className="my-4" />
             <div className="flex justify-between text-lg font-semibold pt-2">
               <span>Brutto gesamt</span>
-              <span>{totalGross.toFixed(2)} €</span>
+              <span>{totalGross.toFixed(2)} {currencySymbol}</span>
             </div>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-lg font-medium">Unterschrift *</h2>
+            <SignatureField
+              onSignatureComplete={setSignature}
+              storageId={signature || undefined}
+            />
           </div>
 
           <Button

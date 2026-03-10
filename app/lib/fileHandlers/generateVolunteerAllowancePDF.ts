@@ -1,13 +1,20 @@
-import { PDFDocument, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+
+const BLUE = rgb(0.118, 0.251, 0.686);
+const LIGHT_GRAY = rgb(0.96, 0.96, 0.96);
+const TEXT_DARK = rgb(0.13, 0.13, 0.13);
+const TEXT_MUTED = rgb(0.45, 0.45, 0.45);
 
 type VolunteerAllowanceData = {
+  id?: string;
   amount: number;
   iban: string;
-  bic: string;
+  bic?: string;
   accountHolder: string;
   activityDescription: string;
   startDate: string;
   endDate: string;
+  taxYear?: string;
   volunteerName: string;
   volunteerStreet: string;
   volunteerPlz: string;
@@ -29,195 +36,230 @@ export async function generateVolunteerAllowancePDF(
 
   const WIDTH = 595;
   const HEIGHT = 842;
-  const MARGIN = 50;
+  const M = 40;
 
   const page = pdfDoc.addPage([WIDTH, HEIGHT]);
-  let yPos = HEIGHT - MARGIN;
 
-  page.drawText("ABRECHNUNG EHRENAMTSPAUSCHALE", {
-    x: MARGIN,
-    y: yPos,
-    size: 18,
+  // Blue header bar
+  page.drawRectangle({ x: 0, y: 792, width: WIDTH, height: 50, color: BLUE });
+  page.drawText("EHRENAMTSPAUSCHALE", {
+    x: M,
+    y: 808,
+    size: 16,
     font: boldFont,
+    color: rgb(1, 1, 1),
   });
-  yPos -= 50;
-
-  page.drawText("Ehrenamtliche/r:", {
-    x: MARGIN,
-    y: yPos,
-    size: 10,
-    font: boldFont,
-  });
-  yPos -= 18;
-  page.drawText(data.volunteerName, { x: MARGIN, y: yPos, size: 12, font });
-  yPos -= 15;
-  page.drawText(data.volunteerStreet, { x: MARGIN, y: yPos, size: 10, font });
-  yPos -= 15;
-  page.drawText(`${data.volunteerPlz} ${data.volunteerCity}`, {
-    x: MARGIN,
-    y: yPos,
+  const orgTextWidth = boldFont.widthOfTextAtSize(data.organizationName, 10);
+  page.drawText(data.organizationName, {
+    x: WIDTH - orgTextWidth - M,
+    y: 811,
     size: 10,
     font,
+    color: rgb(0.85, 0.9, 1),
   });
-  yPos -= 35;
-
-  page.drawText("Verein:", { x: MARGIN, y: yPos, size: 10, font: boldFont });
-  yPos -= 18;
-  page.drawText(data.organizationName, { x: MARGIN, y: yPos, size: 12, font });
-  yPos -= 15;
-  if (data.organizationStreet) {
-    page.drawText(data.organizationStreet, { x: MARGIN, y: yPos, size: 10, font });
-    yPos -= 15;
-  }
-  if (data.organizationPlz || data.organizationCity) {
-    page.drawText(`${data.organizationPlz || ""} ${data.organizationCity || ""}`.trim(), {
-      x: MARGIN,
-      y: yPos,
-      size: 10,
+  if (data.id) {
+    const refText = `Ref: ${data.id}`;
+    const refWidth = font.widthOfTextAtSize(refText, 8);
+    page.drawText(refText, {
+      x: WIDTH - refWidth - M,
+      y: 797,
+      size: 8,
       font,
+      color: rgb(0.7, 0.8, 1),
     });
-    yPos -= 15;
   }
-  page.drawText(`Projekt: ${data.projectName}`, {
-    x: MARGIN,
-    y: yPos,
-    size: 10,
+
+  // Footer
+  page.drawLine({
+    start: { x: M, y: 30 },
+    end: { x: WIDTH - M, y: 30 },
+    thickness: 0.5,
+    color: rgb(0.8, 0.8, 0.8),
+  });
+  const dateStr = new Date().toLocaleDateString("de-DE");
+  page.drawText(dateStr, { x: M, y: 16, size: 8, font, color: TEXT_MUTED });
+  page.drawText("Gemäß § 3 Nr. 26a EStG", {
+    x: WIDTH / 2 - 50,
+    y: 16,
+    size: 8,
     font,
+    color: TEXT_MUTED,
   });
-  yPos -= 35;
 
-  page.drawText("Nebenberufliche Tätigkeit:", {
-    x: MARGIN,
-    y: yPos,
-    size: 10,
+  let y = 755;
+
+  // Helper functions
+  const drawSection = (label: string) => {
+    page.drawText(label, { x: M, y, size: 8, font: boldFont, color: BLUE });
+    y -= 6;
+    page.drawLine({
+      start: { x: M, y },
+      end: { x: WIDTH - M, y },
+      thickness: 0.5,
+      color: rgb(0.85, 0.85, 0.85),
+    });
+    y -= 16;
+  };
+
+  const drawRow = (label: string, value: string, bold = false) => {
+    page.drawText(label, { x: M, y, size: 9, font, color: TEXT_MUTED });
+    page.drawText(value, {
+      x: M + 150,
+      y,
+      size: 9,
+      font: bold ? boldFont : font,
+      color: TEXT_DARK,
+    });
+    y -= 15;
+  };
+
+  // Person info + amount summary box
+  page.drawRectangle({
+    x: M,
+    y: y - 10,
+    width: WIDTH - 2 * M,
+    height: 52,
+    color: LIGHT_GRAY,
+    borderColor: rgb(0.88, 0.88, 0.88),
+    borderWidth: 0.5,
+  });
+  page.drawText(data.volunteerName, {
+    x: M + 12,
+    y: y + 26,
+    size: 13,
     font: boldFont,
+    color: TEXT_DARK,
   });
-  yPos -= 18;
-  for (const line of splitText(data.activityDescription, 80)) {
-    page.drawText(line, { x: MARGIN, y: yPos, size: 10, font });
-    yPos -= 15;
-  }
-  yPos -= 10;
-
-  page.drawText("Zeitraum:", { x: MARGIN, y: yPos, size: 10, font: boldFont });
-  yPos -= 18;
-  page.drawText(
-    `${formatDate(data.startDate)} bis ${formatDate(data.endDate)}`,
-    {
-      x: MARGIN,
-      y: yPos,
-      size: 10,
-      font,
-    },
-  );
-  yPos -= 35;
-
-  page.drawText("Betrag:", { x: MARGIN, y: yPos, size: 10, font: boldFont });
-  yPos -= 18;
   page.drawText(`${data.amount.toFixed(2)} Euro`, {
-    x: MARGIN,
-    y: yPos,
-    size: 14,
+    x: M + 12,
+    y: y + 8,
+    size: 11,
     font: boldFont,
+    color: BLUE,
   });
-  yPos -= 35;
-
-  page.drawText("Bankverbindung:", {
-    x: MARGIN,
-    y: yPos,
-    size: 10,
-    font: boldFont,
-  });
-  yPos -= 18;
-  page.drawText(`Kontoinhaber: ${data.accountHolder}`, {
-    x: MARGIN,
-    y: yPos,
-    size: 10,
-    font,
-  });
-  yPos -= 15;
-  page.drawText(`IBAN: ${data.iban}`, { x: MARGIN, y: yPos, size: 10, font });
-  yPos -= 15;
-  page.drawText(`BIC: ${data.bic}`, { x: MARGIN, y: yPos, size: 10, font });
-  yPos -= 35;
-
-  page.drawText("Bestätigung gemäß § 3 Nr. 26a EStG:", {
-    x: MARGIN,
-    y: yPos,
-    size: 10,
-    font: boldFont,
-  });
-  yPos -= 18;
-  const confirmationText =
-    "Ich erkläre, dass die Steuerbefreiung nach § 3 Nr. 26a EStG für nebenberufliche " +
-    `ehrenamtliche Tätigkeit in Höhe von ${data.amount.toFixed(2)} Euro in Anspruch genommen werden kann.`;
-  for (const line of splitText(confirmationText, 85)) {
-    page.drawText(line, { x: MARGIN, y: yPos, size: 9, font });
-    yPos -= 13;
+  if (data.taxYear) {
+    page.drawText(`Steuerjahr ${data.taxYear}`, {
+      x: WIDTH - M - 100,
+      y: y + 17,
+      size: 9,
+      font,
+      color: TEXT_MUTED,
+    });
   }
-  yPos -= 20;
+  y -= 40;
 
-  page.drawText("[X] Bestätigt", { x: MARGIN, y: yPos, size: 10, font });
-  yPos -= 50;
+  // Ehrenamtliche/r
+  y -= 12;
+  drawSection("EHRENAMTLICHE/R");
+  drawRow("Name", data.volunteerName);
+  drawRow("Straße", data.volunteerStreet);
+  drawRow("PLZ / Ort", `${data.volunteerPlz} ${data.volunteerCity}`);
+
+  // Verein
+  y -= 4;
+  drawSection("VEREIN");
+  drawRow("Name", data.organizationName);
+  if (data.organizationStreet) drawRow("Straße", data.organizationStreet);
+  if (data.organizationPlz || data.organizationCity) {
+    drawRow("PLZ / Ort", `${data.organizationPlz ?? ""} ${data.organizationCity ?? ""}`.trim());
+  }
+  drawRow("Projekt", data.projectName);
+
+  // Tätigkeit
+  y -= 4;
+  drawSection("TÄTIGKEIT");
+  const activityLines = splitText(data.activityDescription, 72);
+  for (const line of activityLines) {
+    page.drawText(line, { x: M, y, size: 9, font, color: TEXT_DARK });
+    y -= 14;
+  }
+  y -= 2;
+  drawRow("Zeitraum", `${formatDate(data.startDate)} bis ${formatDate(data.endDate)}`);
+
+  // Betrag + Bankverbindung
+  y -= 4;
+  drawSection("BANKVERBINDUNG");
+  drawRow("Kontoinhaber", data.accountHolder);
+  drawRow("IBAN", data.iban);
+  if (data.bic) drawRow("BIC", data.bic);
+
+  // Legal confirmation
+  y -= 8;
+  drawSection("BESTÄTIGUNG GEMÄSS § 3 NR. 26A ESTG");
+  const confirmText =
+    `Ich erkläre, dass ich die Steuerbefreiung nach § 3 Nr. 26a EStG für nebenberufliche ` +
+    `ehrenamtliche Tätigkeit in Höhe von ${data.amount.toFixed(2)} Euro in Anspruch nehmen kann. ` +
+    `Sollte sich im Laufe des Jahres eine Änderung ergeben, werde ich dies umgehend mitteilen.`;
+  for (const line of splitText(confirmText, 85)) {
+    page.drawText(line, { x: M, y, size: 8.5, font, color: TEXT_DARK });
+    y -= 13;
+  }
+
+  // Signature area
+  y -= 20;
 
   if (signatureUrl) {
     try {
       const response = await fetch(signatureUrl);
       const bytes = new Uint8Array(await response.arrayBuffer());
       const image = await pdfDoc.embedPng(bytes);
-      const scale = Math.min(200 / image.width, 60 / image.height);
+      const scale = Math.min(180 / image.width, 55 / image.height);
       page.drawImage(image, {
-        x: MARGIN,
-        y: yPos - image.height * scale,
+        x: M,
+        y: y - image.height * scale,
         width: image.width * scale,
         height: image.height * scale,
       });
-      yPos -= image.height * scale + 10;
-    } catch {}
+      y -= image.height * scale + 8;
+    } catch (error) {
+      console.error("Failed to embed signature:", error);
+    }
   }
 
   page.drawLine({
-    start: { x: MARGIN, y: yPos },
-    end: { x: MARGIN + 200, y: yPos },
+    start: { x: M, y },
+    end: { x: M + 220, y },
     thickness: 0.5,
+    color: rgb(0.3, 0.3, 0.3),
   });
-  yPos -= 15;
-  page.drawText("Unterschrift Ehrenamtliche/r", {
-    x: MARGIN,
-    y: yPos,
-    size: 9,
-    font,
-  });
-  yPos -= 30;
+  y -= 14;
+  page.drawText("Unterschrift Ehrenamtliche/r", { x: M, y, size: 8.5, font, color: TEXT_MUTED });
 
-  page.drawText(`Datum: ${new Date().toLocaleDateString("de-DE")}`, {
-    x: MARGIN,
-    y: yPos,
-    size: 9,
+  // Org signature line (right side)
+  const rightX = WIDTH / 2 + 20;
+  page.drawLine({
+    start: { x: rightX, y: y + 14 },
+    end: { x: rightX + 220, y: y + 14 },
+    thickness: 0.5,
+    color: rgb(0.3, 0.3, 0.3),
+  });
+  page.drawText("Unterschrift Vorstand / Verein", {
+    x: rightX,
+    y,
+    size: 8.5,
     font,
+    color: TEXT_MUTED,
   });
 
   const pdfBytes = await pdfDoc.save();
-  return new Blob([pdfBytes.buffer as ArrayBuffer], {
-    type: "application/pdf",
-  });
+  return new Blob([pdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
 }
 
 function splitText(text: string, maxChars: number): string[] {
   const words = text.split(" ");
-  const lines: Array<string> = [];
-  let currentLine = "";
+  const lines: string[] = [];
+  let current = "";
 
   for (const word of words) {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    if (testLine.length <= maxChars) {
-      currentLine = testLine;
+    const test = current ? `${current} ${word}` : word;
+    if (test.length <= maxChars) {
+      current = test;
     } else {
-      if (currentLine) lines.push(currentLine);
-      currentLine = word;
+      if (current) lines.push(current);
+      current = word;
     }
   }
-  if (currentLine) lines.push(currentLine);
+  if (current) lines.push(current);
   return lines;
 }
 

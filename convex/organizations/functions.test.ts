@@ -113,3 +113,68 @@ test("throw error when user not found in database", async () => {
       .mutation(api.organizations.functions.initializeOrganization, {}),
   ).rejects.toThrow("User not found");
 });
+
+test("update organization", async () => {
+  const t = convexTest(schema, modules);
+  const { userId, organizationId } = await setupTestData(t);
+
+  await t
+    .withIdentity({ subject: userId })
+    .mutation(api.organizations.functions.updateOrganization, {
+      name: "Updated Name",
+      street: "Teststr. 1",
+      plz: "12345",
+      city: "Berlin",
+      accountingEmail: "accounting@test.com",
+    });
+
+  const org = await t.run((ctx) => ctx.db.get(organizationId));
+  expect(org?.name).toBe("Updated Name");
+  expect(org?.street).toBe("Teststr. 1");
+  expect(org?.accountingEmail).toBe("accounting@test.com");
+});
+
+test("update organization with partial fields", async () => {
+  const t = convexTest(schema, modules);
+  const { userId, organizationId } = await setupTestData(t);
+
+  await t
+    .withIdentity({ subject: userId })
+    .mutation(api.organizations.functions.updateOrganization, {
+      name: "Only Name",
+    });
+
+  const org = await t.run((ctx) => ctx.db.get(organizationId));
+  expect(org?.name).toBe("Only Name");
+  expect(org?.street).toBeUndefined();
+});
+
+test("update organization without name only updates provided fields", async () => {
+  const t = convexTest(schema, modules);
+  const { userId, organizationId } = await setupTestData(t);
+
+  await t
+    .withIdentity({ subject: userId })
+    .mutation(api.organizations.functions.updateOrganization, {
+      street: "Neue Str. 2",
+    });
+
+  const org = await t.run((ctx) => ctx.db.get(organizationId));
+  expect(org?.name).toBe("Test Organization");
+  expect(org?.street).toBe("Neue Str. 2");
+});
+
+test("update organization throws when org is deleted", async () => {
+  const t = convexTest(schema, modules);
+  const { userId, organizationId } = await setupTestData(t);
+
+  await t.run((ctx) => ctx.db.delete(organizationId));
+
+  await expect(
+    t
+      .withIdentity({ subject: userId })
+      .mutation(api.organizations.functions.updateOrganization, {
+        name: "Nope",
+      }),
+  ).rejects.toThrow("Organization not found");
+});

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query } from "../_generated/server";
+import { internalQuery, query } from "../_generated/server";
 import { getCurrentUser } from "../users/getCurrentUser";
 
 export const validateLink = query({
@@ -18,6 +18,9 @@ export const validateLink = query({
     return {
       valid: true,
       organizationName: organization?.name || "",
+      organizationStreet: organization?.street || "",
+      organizationPlz: organization?.plz || "",
+      organizationCity: organization?.city || "",
       projectName: project?.name || "",
       activityDescription: doc.activityDescription,
       startDate: doc.startDate,
@@ -78,46 +81,37 @@ export const getAll = query({
 export const get = query({
   args: { id: v.id("volunteerAllowance") },
   handler: async (ctx, args) => {
-    return ctx.db.get(args.id);
+    const user = await getCurrentUser(ctx);
+    const doc = await ctx.db.get(args.id);
+    if (!doc || doc.organizationId !== user.organizationId) return null;
+    return doc;
   },
 });
 
 export const getSignatureUrl = query({
   args: { storageId: v.id("_storage") },
   handler: async (ctx, args) => {
+    await getCurrentUser(ctx);
     return ctx.storage.getUrl(args.storageId);
   },
 });
 
-export const validateSignatureToken = query({
-  args: { token: v.string() },
+export const getWithDetails = internalQuery({
+  args: { id: v.id("volunteerAllowance") },
   handler: async (ctx, args) => {
-    const doc = await ctx.db
-      .query("signatureTokens")
-      .withIndex("by_token", (q) => q.eq("token", args.token))
-      .first();
-
-    if (!doc) return { valid: false, error: "Invalid link" } as const;
-    if (doc.expiresAt < Date.now()) return { valid: false, error: "Link expired" } as const;
-    if (doc.usedAt) return { valid: false, error: "Link already used" } as const;
-
-    return { valid: true } as const;
-  },
-});
-
-export const getSignatureToken = query({
-  args: { token: v.string() },
-  handler: async (ctx, args) => {
-    const doc = await ctx.db
-      .query("signatureTokens")
-      .withIndex("by_token", (q) => q.eq("token", args.token))
-      .first();
-
+    const doc = await ctx.db.get(args.id);
     if (!doc) return null;
 
-    return {
-      signatureStorageId: doc.signatureStorageId,
-      usedAt: doc.usedAt,
-    };
+    const [organization, creator, project] = await Promise.all([
+      ctx.db.get(doc.organizationId),
+      ctx.db.get(doc.createdBy),
+      ctx.db.get(doc.projectId),
+    ]);
+
+    if (!organization || !creator || !project) return null;
+
+    return { ...doc, organization, creator, project };
   },
 });
+
+// Signature token queries moved to convex/signatures/queries.ts

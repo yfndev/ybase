@@ -60,16 +60,19 @@ export default defineSchema({
     categoryId: v.optional(v.id("categories")),
     donorId: v.optional(v.id("donors")),
     importedBy: v.id("users"),
+    bankReferenceId: v.optional(v.string()),
     importedTransactionId: v.optional(v.string()),
     importSource: v.optional(
       v.union(
         v.literal("sparkasse"),
         v.literal("volksbank"),
         v.literal("moss"),
+        v.literal("finom"),
       ),
     ),
+    currency: v.optional(v.string()),
     status: v.union(v.literal("expected"), v.literal("processed")),
-    matchedTransactionId: v.optional(v.string()),
+    matchedTransactionId: v.optional(v.id("transactions")),
     accountName: v.optional(v.string()),
     isArchived: v.optional(v.boolean()),
     splitFromTransactionId: v.optional(v.id("transactions")),
@@ -84,9 +87,9 @@ export default defineSchema({
       "projectId",
       "donorId",
     ])
-    .index("by_importedTransactionId", [
+    .index("by_bankReferenceId", [
       "organizationId",
-      "importedTransactionId",
+      "bankReferenceId",
     ])
     .index("by_splitFrom", ["splitFromTransactionId"])
     .index("by_archived", ["isArchived"])
@@ -137,13 +140,15 @@ export default defineSchema({
     projectId: v.id("projects"),
     amount: v.number(),
     type: v.union(v.literal("expense"), v.literal("travel")),
-    isApproved: v.boolean(),
+    status: v.optional(v.union(v.literal("pending"), v.literal("approved"), v.literal("declined"))),
+    isApproved: v.optional(v.boolean()),
     iban: v.string(),
-    bic: v.string(),
+    bic: v.optional(v.string()),
     accountHolder: v.string(),
     rejectionNote: v.optional(v.string()),
     createdBy: v.id("users"),
     reviewedBy: v.optional(v.id("users")),
+    currency: v.optional(v.string()),
     // Sharing fields
     signatureStorageId: v.optional(v.id("_storage")),
     isSharedLink: v.optional(v.boolean()),
@@ -152,7 +157,8 @@ export default defineSchema({
     description: v.optional(v.string()),
   })
     .index("by_organization", ["organizationId"])
-    .index("by_organization_and_createdBy", ["organizationId", "createdBy"]),
+    .index("by_organization_and_createdBy", ["organizationId", "createdBy"])
+    .index("by_organization_project", ["organizationId", "projectId"]),
 
   travelDetails: defineTable({
     reimbursementId: v.id("reimbursements"),
@@ -168,7 +174,7 @@ export default defineSchema({
 
   receipts: defineTable({
     reimbursementId: v.id("reimbursements"),
-    receiptNumber: v.string(),
+    receiptNumber: v.optional(v.string()),
     receiptDate: v.string(),
     companyName: v.string(),
     description: v.string(),
@@ -201,9 +207,13 @@ export default defineSchema({
     organizationId: v.id("organizations"),
     projectId: v.id("projects"),
     amount: v.number(),
-    isApproved: v.boolean(),
+    status: v.optional(v.union(v.literal("pending"), v.literal("approved"), v.literal("declined"))),
+    isApproved: v.optional(v.boolean()),
+    token: v.optional(v.string()),
+    expiresAt: v.optional(v.number()),
+    usedAt: v.optional(v.number()),
     iban: v.string(),
-    bic: v.string(),
+    bic: v.optional(v.string()),
     accountHolder: v.string(),
     rejectionNote: v.optional(v.string()),
     createdBy: v.id("users"),
@@ -211,18 +221,16 @@ export default defineSchema({
     activityDescription: v.string(),
     startDate: v.string(),
     endDate: v.string(),
+    taxYear: v.optional(v.string()),
     volunteerName: v.string(),
     volunteerStreet: v.string(),
     volunteerPlz: v.string(),
     volunteerCity: v.string(),
     signatureStorageId: v.optional(v.id("_storage")),
-    token: v.optional(v.string()),
-    expiresAt: v.optional(v.number()),
-    usedAt: v.optional(v.number()),
   })
-    .index("by_token", ["token"])
     .index("by_organization", ["organizationId"])
-    .index("by_organization_and_createdBy", ["organizationId", "createdBy"]),
+    .index("by_organization_and_createdBy", ["organizationId", "createdBy"])
+    .index("by_organization_project", ["organizationId", "projectId"]),
 
   signatureTokens: defineTable({
     token: v.string(),

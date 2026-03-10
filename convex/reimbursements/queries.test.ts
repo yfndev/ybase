@@ -1,6 +1,7 @@
 import { convexTest } from "convex-test";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { api } from "../_generated/api";
+import { internal } from "../_generated/api";
 import schema from "../schema";
 import { modules, setupTestData } from "../test.setup";
 
@@ -100,7 +101,7 @@ test("admin sees all reimbursements", async () => {
       projectId,
       amount: 100,
       type: "expense",
-      isApproved: false,
+      status: "pending",
       iban: "DE12340000000000000000",
       bic: "BIC",
       accountHolder: "Admin",
@@ -111,7 +112,7 @@ test("admin sees all reimbursements", async () => {
       projectId,
       amount: 200,
       type: "expense",
-      isApproved: false,
+      status: "pending",
       iban: "DE12340000000000000000",
       bic: "BIC",
       accountHolder: "Other",
@@ -144,7 +145,7 @@ test("non-admin sees own only", async () => {
       projectId,
       amount: 100,
       type: "expense",
-      isApproved: false,
+      status: "pending",
       iban: "DE12340000000000000000",
       bic: "BIC",
       accountHolder: "Admin",
@@ -155,7 +156,7 @@ test("non-admin sees own only", async () => {
       projectId,
       amount: 200,
       type: "expense",
-      isApproved: false,
+      status: "pending",
       iban: "DE12340000000000000000",
       bic: "BIC",
       accountHolder: "Member",
@@ -193,4 +194,132 @@ test("getFileUrl returns url", async () => {
     .query(api.reimbursements.queries.getFileUrl, { storageId });
 
   expect(typeof url).toBe("string");
+});
+
+test("getReceipts returns empty for deleted reimbursement", async () => {
+  const t = convexTest(schema, modules);
+  const { userId, reimbursementId } = await setupTestData(t);
+
+  await t.run((ctx) => ctx.db.delete(reimbursementId));
+
+  const receipts = await t
+    .withIdentity({ subject: userId })
+    .query(api.reimbursements.queries.getReceipts, { reimbursementId });
+
+  expect(receipts).toHaveLength(0);
+});
+
+test("getReimbursementWithDetails returns travel details with meal allowance", async () => {
+  vi.useFakeTimers();
+  const t = convexTest(schema, modules);
+  const { userId, organizationId, travelReimbursementId } = await setupTestData(t);
+  const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["receipt"])));
+
+  await t.run(async (ctx) => {
+    await ctx.db.patch(organizationId, { accountingEmail: "accounting@test.com" });
+    await ctx.db.patch(userId, { name: "Test Admin" });
+    const travelDetails = await ctx.db
+      .query("travelDetails")
+      .withIndex("by_reimbursement", (q) =>
+        q.eq("reimbursementId", travelReimbursementId),
+      )
+      .first();
+    if (travelDetails) {
+      await ctx.db.patch(travelDetails._id, {
+        mealAllowanceDays: 3,
+        mealAllowanceDailyBudget: 28,
+      });
+    }
+    await ctx.db.insert("receipts", {
+      reimbursementId: travelReimbursementId,
+      receiptNumber: "R001",
+      receiptDate: "2024-01-01",
+      companyName: "Test",
+      description: "Test receipt",
+      netAmount: 100,
+      taxRate: 19,
+      grossAmount: 119,
+      fileStorageId: storageId,
+    });
+  });
+
+  await t
+    .withIdentity({ subject: userId })
+    .mutation(api.reimbursements.functions.approve, {
+      reimbursementId: travelReimbursementId,
+    });
+
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  vi.useRealTimers();
+
+  const reimbursement = await t.run((ctx) => ctx.db.get(travelReimbursementId));
+  expect(reimbursement?.status).toBe("approved");
+});
+
+test("getAllReimbursements handles deleted project", async () => {
+  const t = convexTest(schema, modules);
+  const { userId, projectId } = await setupTestData(t);
+
+  await t.run((ctx) => ctx.db.delete(projectId));
+
+  const reimbursements = await t
+    .withIdentity({ subject: userId })
+    .query(api.reimbursements.queries.getAllReimbursements, {});
+
+  expect(reimbursements.some((r) => r.projectName === "Unbekanntes Projekt")).toBe(true);
+});
+
+test("getReimbursementWithDetails returns null for deleted reimbursement", async () => {
+  const t = convexTest(schema, modules);
+  const { reimbursementId } = await setupTestData(t);
+
+  await t.run((ctx) => ctx.db.delete(reimbursementId));
+
+  const result = await t.query(
+    internal.reimbursements.queries.getReimbursementWithDetails,
+    { reimbursementId },
+  );
+  expect(result).toBeNull();
+});
+
+test("getReimbursementWithDetails returns null when creator is deleted", async () => {
+  const t = convexTest(schema, modules);
+  const { userId, reimbursementId } = await setupTestData(t);
+
+  await t.run((ctx) => ctx.db.delete(userId));
+
+  const result = await t.query(
+    internal.reimbursements.queries.getReimbursementWithDetails,
+    { reimbursementId },
+  );
+  expect(result).toBeNull();
+});
+
+test("getReimbursementWithDetails returns expense reimbursement", async () => {
+  const t = convexTest(schema, modules);
+  const { reimbursementId } = await setupTestData(t);
+
+  const result = await t.query(
+    internal.reimbursements.queries.getReimbursementWithDetails,
+    { reimbursementId },
+  );
+  expect(result?.type).toBe("expense");
+  expect(result?.travelDetails).toBeNull();
+});
+
+test("getAllReimbursements includes reviewer name", async () => {
+  const t = convexTest(schema, modules);
+  const { userId, reimbursementId } = await setupTestData(t);
+
+  await t.run(async (ctx) => {
+    await ctx.db.patch(userId, { name: "Test Admin" });
+    await ctx.db.patch(reimbursementId, { status: "approved", reviewedBy: userId });
+  });
+
+  const reimbursements = await t
+    .withIdentity({ subject: userId })
+    .query(api.reimbursements.queries.getAllReimbursements, {});
+
+  const reviewed = reimbursements.find((r) => r.reviewedBy);
+  expect(reviewed?.reviewedByName).toBe("Test Admin");
 });

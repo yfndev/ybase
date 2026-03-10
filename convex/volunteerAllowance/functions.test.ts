@@ -6,6 +6,7 @@ import { api } from "../_generated/api";
 import type { Id } from "../_generated/dataModel";
 import schema from "../schema";
 import { modules, setupTestData } from "../test.setup";
+import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "./constants";
 
 const formData = (signatureStorageId: Id<"_storage">, amount = 500) => ({
   amount,
@@ -41,7 +42,7 @@ test("create volunteer allowance", async () => {
   expect(all[0].amount).toBe(500);
 });
 
-test("creating fails if amount exceeds 960€", async () => {
+test(`creating fails if amount exceeds ${MAX_VOLUNTEER_ALLOWANCE_EUR}€`, async () => {
   const t = convexTest(schema, modules);
   const { userId, projectId } = await setupTestData(t);
   const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
@@ -51,9 +52,9 @@ test("creating fails if amount exceeds 960€", async () => {
       .withIdentity({ subject: userId })
       .mutation(api.volunteerAllowance.functions.create, {
         projectId,
-        ...formData(storageId, 900),
+        ...formData(storageId, 961),
       }),
-  ).rejects.toThrow("Volunteer allowance cannot exceed 960€");
+  ).rejects.toThrow(`Volunteer allowance cannot exceed ${MAX_VOLUNTEER_ALLOWANCE_EUR}€`);
 });
 
 test("approve volunteer allowance", async () => {
@@ -66,7 +67,7 @@ test("approve volunteer allowance", async () => {
       organizationId,
       projectId,
       createdBy: userId,
-      isApproved: false,
+      status: "pending",
       ...formData(storageId),
     }),
   );
@@ -76,7 +77,7 @@ test("approve volunteer allowance", async () => {
     .mutation(api.volunteerAllowance.functions.approve, { id });
 
   const doc = await t.run((ctx) => ctx.db.get(id));
-  expect(doc?.isApproved).toBe(true);
+  expect(doc?.status).toBe("approved");
 });
 
 test("reject volunteer allowance", async () => {
@@ -89,14 +90,14 @@ test("reject volunteer allowance", async () => {
       organizationId,
       projectId,
       createdBy: userId,
-      isApproved: false,
+      status: "pending",
       ...formData(storageId),
     }),
   );
 
   await t
     .withIdentity({ subject: userId })
-    .mutation(api.volunteerAllowance.functions.reject, {
+    .mutation(api.volunteerAllowance.functions.decline, {
       id,
       rejectionNote: "Missing docs",
     });
@@ -115,7 +116,7 @@ test("remove volunteer allowance", async () => {
       organizationId,
       projectId,
       createdBy: userId,
-      isApproved: false,
+      status: "pending",
       ...formData(storageId),
     }),
   );
@@ -137,7 +138,7 @@ test("remove volunteer allowance without signature", async () => {
       organizationId,
       projectId,
       createdBy: userId,
-      isApproved: false,
+      status: "pending",
       amount: 500,
       iban: "DE123",
       bic: "BIC",
@@ -196,7 +197,7 @@ test("generatePublicUploadUrl fails with invalid id throws error", async () => {
       organizationId,
       projectId,
       createdBy: userId,
-      isApproved: false,
+      status: "pending",
       ...formData(storageId),
     }),
   );
@@ -228,7 +229,7 @@ test("submitExternal completes allowance", async () => {
   expect(doc?.signatureStorageId).toBe(storageId);
 });
 
-test("submitExternal fails if amount exceeds 960€", async () => {
+test(`submitExternal fails if amount exceeds ${MAX_VOLUNTEER_ALLOWANCE_EUR}€`, async () => {
   const t = convexTest(schema, modules);
   const { userId, projectId } = await setupTestData(t);
 
@@ -240,9 +241,9 @@ test("submitExternal fails if amount exceeds 960€", async () => {
   await expect(
     t.mutation(api.volunteerAllowance.functions.submitExternal, {
       id,
-      ...formData(storageId, 900),
+      ...formData(storageId, 961),
     }),
-  ).rejects.toThrow("Amount cannot exceed 960€");
+  ).rejects.toThrow(`Amount cannot exceed ${MAX_VOLUNTEER_ALLOWANCE_EUR}€`);
 });
 
 test("submitExternal fails with invalid link", async () => {
@@ -255,7 +256,7 @@ test("submitExternal fails with invalid link", async () => {
       organizationId,
       projectId,
       createdBy: userId,
-      isApproved: false,
+      status: "pending",
       ...formData(storageId),
     }),
   );
@@ -275,7 +276,7 @@ test("createSignatureToken returns token", async () => {
 
   const token = await t
     .withIdentity({ subject: userId })
-    .mutation(api.volunteerAllowance.functions.createSignatureToken, {});
+    .mutation(api.signatures.functions.createToken, {});
 
   expect(typeof token).toBe("string");
 });
@@ -286,9 +287,9 @@ test("generateSignatureUploadUrl with valid token returns url", async () => {
 
   const token = await t
     .withIdentity({ subject: userId })
-    .mutation(api.volunteerAllowance.functions.createSignatureToken, {});
+    .mutation(api.signatures.functions.createToken, {});
   const url = await t.mutation(
-    api.volunteerAllowance.functions.generateSignatureUploadUrl,
+    api.signatures.functions.generateUploadUrl,
     { token },
   );
 
@@ -301,10 +302,10 @@ test("submitSignature stores signature", async () => {
 
   const token = await t
     .withIdentity({ subject: userId })
-    .mutation(api.volunteerAllowance.functions.createSignatureToken, {});
+    .mutation(api.signatures.functions.createToken, {});
   const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
 
-  await t.mutation(api.volunteerAllowance.functions.submitSignature, {
+  await t.mutation(api.signatures.functions.submit, {
     token,
     signatureStorageId: storageId,
   });
@@ -375,10 +376,10 @@ test("generateSignatureUploadUrl fails with expired token", async () => {
   );
 
   await expect(
-    t.mutation(api.volunteerAllowance.functions.generateSignatureUploadUrl, {
+    t.mutation(api.signatures.functions.generateUploadUrl, {
       token: "expired-sig-upload",
     }),
-  ).rejects.toThrow("Link expired");
+  ).rejects.toThrow("Link abgelaufen");
 });
 
 test("generateSignatureUploadUrl fails with used token", async () => {
@@ -396,10 +397,10 @@ test("generateSignatureUploadUrl fails with used token", async () => {
   );
 
   await expect(
-    t.mutation(api.volunteerAllowance.functions.generateSignatureUploadUrl, {
+    t.mutation(api.signatures.functions.generateUploadUrl, {
       token: "used-sig-upload",
     }),
-  ).rejects.toThrow("Link already used");
+  ).rejects.toThrow("Link bereits verwendet");
 });
 
 test("generateSignatureUploadUrl fails with invalid token", async () => {
@@ -407,10 +408,10 @@ test("generateSignatureUploadUrl fails with invalid token", async () => {
   await setupTestData(t);
 
   await expect(
-    t.mutation(api.volunteerAllowance.functions.generateSignatureUploadUrl, {
+    t.mutation(api.signatures.functions.generateUploadUrl, {
       token: "invalid",
     }),
-  ).rejects.toThrow("Invalid link");
+  ).rejects.toThrow("Ungültiger Link");
 });
 
 test("submitSignature fails with expired token", async () => {
@@ -428,11 +429,11 @@ test("submitSignature fails with expired token", async () => {
   );
 
   await expect(
-    t.mutation(api.volunteerAllowance.functions.submitSignature, {
+    t.mutation(api.signatures.functions.submit, {
       token: "expired-submit-sig",
       signatureStorageId: storageId,
     }),
-  ).rejects.toThrow("Link expired");
+  ).rejects.toThrow("Link abgelaufen");
 });
 
 test("submitSignature fails with used token", async () => {
@@ -451,11 +452,11 @@ test("submitSignature fails with used token", async () => {
   );
 
   await expect(
-    t.mutation(api.volunteerAllowance.functions.submitSignature, {
+    t.mutation(api.signatures.functions.submit, {
       token: "used-submit-sig",
       signatureStorageId: storageId,
     }),
-  ).rejects.toThrow("Link already used");
+  ).rejects.toThrow("Link bereits verwendet");
 });
 
 test("submitSignature fails with invalid token", async () => {
@@ -464,11 +465,11 @@ test("submitSignature fails with invalid token", async () => {
   const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
 
   await expect(
-    t.mutation(api.volunteerAllowance.functions.submitSignature, {
+    t.mutation(api.signatures.functions.submit, {
       token: "invalid",
       signatureStorageId: storageId,
     }),
-  ).rejects.toThrow("Invalid link");
+  ).rejects.toThrow("Ungültiger Link");
 });
 
 test("approve fails for non-existent allowance", async () => {
@@ -481,7 +482,7 @@ test("approve fails for non-existent allowance", async () => {
       organizationId,
       projectId,
       createdBy: userId,
-      isApproved: false,
+      status: "pending",
       ...formData(storageId),
     }),
   );
@@ -505,7 +506,7 @@ test("remove fails for non-existent allowance", async () => {
       organizationId,
       projectId,
       createdBy: userId,
-      isApproved: false,
+      status: "pending",
       ...formData(storageId),
     }),
   );
@@ -602,4 +603,116 @@ test("sendAllowanceLink sends email", async () => {
       link: "https://example.com/form/123",
       projectName: project!.name,
     });
+});
+
+test(`approve fails if amount exceeds ${MAX_VOLUNTEER_ALLOWANCE_EUR}€`, async () => {
+  const t = convexTest(schema, modules);
+  const { userId, organizationId, projectId } = await setupTestData(t);
+  const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
+
+  const id = await t.run((ctx) =>
+    ctx.db.insert("volunteerAllowance", {
+      organizationId,
+      projectId,
+      createdBy: userId,
+      amount: 961,
+      status: "pending",
+      iban: "DE123",
+      bic: "BIC",
+      accountHolder: "Test",
+      activityDescription: "Test",
+      startDate: "2024-01-01",
+      endDate: "2024-12-31",
+      volunteerName: "Test",
+      volunteerStreet: "Test",
+      volunteerPlz: "12345",
+      volunteerCity: "Berlin",
+      signatureStorageId: storageId,
+    }),
+  );
+
+  await expect(
+    t
+      .withIdentity({ subject: userId })
+      .mutation(api.volunteerAllowance.functions.approve, { id }),
+  ).rejects.toThrow(`Cannot approve: amount exceeds ${MAX_VOLUNTEER_ALLOWANCE_EUR}€ legal limit`);
+});
+
+test("reject fails for non-existent allowance", async () => {
+  const t = convexTest(schema, modules);
+  const { userId, organizationId, projectId } = await setupTestData(t);
+  const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
+
+  const id = await t.run((ctx) =>
+    ctx.db.insert("volunteerAllowance", {
+      organizationId,
+      projectId,
+      createdBy: userId,
+      amount: 500,
+      status: "pending",
+      iban: "DE123",
+      bic: "BIC",
+      accountHolder: "Test",
+      activityDescription: "Test",
+      startDate: "2024-01-01",
+      endDate: "2024-12-31",
+      volunteerName: "Test",
+      volunteerStreet: "Test",
+      volunteerPlz: "12345",
+      volunteerCity: "Berlin",
+      signatureStorageId: storageId,
+    }),
+  );
+
+  await t.run((ctx) => ctx.db.delete(id));
+
+  await expect(
+    t
+      .withIdentity({ subject: userId })
+      .mutation(api.volunteerAllowance.functions.decline, {
+        id,
+        rejectionNote: "Test",
+      }),
+  ).rejects.toThrow("Not found");
+});
+
+test("non-creator non-admin cannot remove allowance", async () => {
+  const t = convexTest(schema, modules);
+  const { userId, organizationId, projectId } = await setupTestData(t);
+  const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
+
+  const memberUserId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      email: "member@test.com",
+      organizationId,
+      role: "member",
+    }),
+  );
+
+  const id = await t.run((ctx) =>
+    ctx.db.insert("volunteerAllowance", {
+      organizationId,
+      projectId,
+      createdBy: userId,
+      amount: 500,
+      status: "pending",
+      iban: "DE123",
+      bic: "BIC",
+      accountHolder: "Test",
+      activityDescription: "Test",
+      startDate: "2024-01-01",
+      endDate: "2024-12-31",
+      volunteerName: "Test",
+      volunteerStreet: "Test",
+      volunteerPlz: "12345",
+      volunteerCity: "Berlin",
+      signatureStorageId: storageId,
+    }),
+  );
+
+  await expect(
+    t
+      .withIdentity({ subject: memberUserId })
+      .mutation(api.volunteerAllowance.functions.remove, { id }),
+  ).rejects.toThrow("Only the creator or an admin can delete");
 });

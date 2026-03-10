@@ -54,14 +54,6 @@ const features = [
       "Erstelle Links für Ehrenamtliche, die ihre Pauschale direkt digital einreichen können – inklusive Unterschrift vom Handy.",
     screenshot: "/screenshots/Ehrenamtspauschale.png",
   },
-  {
-    side: "left",
-    category: "KI-Assistent",
-    title: "Intelligente Insights",
-    description:
-      "Frag deinen Finanzassistenten nach Insights und lass dir komplexe Auswertungen erklären.",
-    screenshot: "/screenshots/AI.png",
-  },
 ];
 
 export function SolutionSection() {

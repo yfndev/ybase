@@ -23,12 +23,12 @@ const tiers: Tier[] = [
     name: "YBudget Free",
     price: "0€",
     period: "/ für immer",
-    description: "Perfekt für kleine Vereine zum Ausprobieren",
+    description: "Für die meisten Vereine mehr als genug — für immer gratis.",
     features: [
       "Bis zu 3 Projekte",
       "Unbegrenzte Transaktionen",
-      "CSV-Import",
-      "Basis-Kategorisierung",
+      "CSV-Import (Sparkasse, Volksbank, Moss, Finom)",
+      "Erstattungen & Ehrenamtspauschale digital",
     ],
     cta: "Kostenlos starten",
     href: "/login",
@@ -84,10 +84,10 @@ export function PricingSection() {
           className="text-center"
         >
           <h2 className="text-2xl font-bold tracking-tight text-black sm:text-4xl lg:text-5xl">
-            <YellowHighlight>Preise</YellowHighlight>
+            <YellowHighlight>Kostenlos für Vereine</YellowHighlight>
           </h2>
           <p className="mx-auto mt-6 max-w-3xl text-base text-gray-600 sm:text-lg">
-            Transparent. Fair. Ohne versteckte Kosten.
+            YBudget wird vom Young Founders Network kostenfrei gehostet und betrieben — als Beitrag zur gemeinnützigen Arbeit in Deutschland. Wer mehr braucht, kann upgraden.
           </p>
         </motion.div>
 

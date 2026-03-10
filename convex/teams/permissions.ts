@@ -64,6 +64,8 @@ export async function filterByProjectAccess<
   organizationId: Id<"organizations">,
   items: T[],
 ): Promise<T[]> {
+  if (await isOrgAdmin(ctx, userId)) return items;
+
   const accessibleIds = await getUserAccessibleProjectIds(
     ctx,
     userId,

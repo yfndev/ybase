@@ -54,3 +54,27 @@ test("handles missing category", async () => {
 
   expect(transactions[0].categoryName).toBeUndefined();
 });
+
+test("handles missing project", async () => {
+  const t = convexTest(schema, modules);
+  const { organizationId, userId } = await setupTestData(t);
+
+  await t.run((ctx) =>
+    ctx.db.insert("transactions", {
+      organizationId,
+      date: Date.now(),
+      amount: 100,
+      description: "No project",
+      counterparty: "Test",
+      status: "processed",
+      importedBy: userId,
+    }),
+  );
+
+  const transactions = await t
+    .withIdentity({ subject: userId })
+    .query(api.transactions.queries.getAllTransactions, {});
+
+  const noProject = transactions.find((tx) => !tx.projectId);
+  expect(noProject?.projectName).toBeUndefined();
+});

@@ -7,34 +7,37 @@ import { formatDate } from "@/lib/formatters/formatDate";
 import { Check, Download, Trash2, X } from "lucide-react";
 import type { ReactNode } from "react";
 
-function getStatus(isApproved: boolean, rejectionNote?: string) {
-  if (rejectionNote)
-    return {
-      variant: "destructive" as const,
-      label: "Abgelehnt",
-      dot: "bg-red-500",
-      className: "bg",
-    };
-  if (isApproved)
-    return {
-      variant: "default" as const,
-      label: "Genehmigt",
-      dot: "bg-green-500",
-      className: "bg-green-600 text-white border-green-600",
-    };
-  return {
-    variant: "default" as const,
+type Status = "pending" | "approved" | "declined";
+
+const STATUS_DISPLAY: Record<
+  Status,
+  { variant: "default" | "destructive"; label: string; dot: string; className: string }
+> = {
+  pending: {
+    variant: "default",
     label: "Ausstehend",
     dot: "bg-yellow-500",
     className: "",
-  };
-}
+  },
+  approved: {
+    variant: "default",
+    label: "Genehmigt",
+    dot: "bg-green-500",
+    className: "bg-green-600 text-white border-green-600",
+  },
+  declined: {
+    variant: "destructive",
+    label: "Abgelehnt",
+    dot: "bg-red-500",
+    className: "bg",
+  },
+};
 
 interface ReimbursementRowProps {
   item: {
     _id: string;
     _creationTime: number;
-    isApproved: boolean;
+    status?: Status;
     rejectionNote?: string;
     projectName: string;
     creatorName: string;
@@ -43,6 +46,7 @@ interface ReimbursementRowProps {
   };
   isAdmin: boolean;
   description: ReactNode;
+  selectionCheckbox?: ReactNode;
   onClick?: () => void;
   onApprove: () => void;
   onReject: () => void;
@@ -54,23 +58,29 @@ export function ReimbursementRow({
   item,
   isAdmin,
   description,
+  selectionCheckbox,
   onClick,
   onApprove,
   onReject,
   onDownload,
   onDelete,
 }: ReimbursementRowProps) {
-  const status = getStatus(item.isApproved, item.rejectionNote);
-  const showAdminActions = isAdmin && !item.isApproved && !item.rejectionNote;
+  const display = STATUS_DISPLAY[item.status ?? "pending"];
+  const isPending = item.status === "pending" || item.status === undefined;
 
   return (
     <TableRow
       className={onClick ? "cursor-pointer" : undefined}
       onClick={onClick}
     >
+      {selectionCheckbox !== undefined && (
+        <TableCell className="px-2" onClick={(e) => e.stopPropagation()}>
+          {selectionCheckbox}
+        </TableCell>
+      )}
       <TableCell className="px-1">
         <div className="flex items-center justify-center">
-          <div className={`w-2 h-2 rounded-full ${status.dot}`} />
+          <div className={`w-2 h-2 rounded-full ${display.dot}`} />
         </div>
       </TableCell>
       <TableCell>{formatDate(new Date(item._creationTime))}</TableCell>
@@ -89,10 +99,10 @@ export function ReimbursementRow({
       </TableCell>
       <TableCell>
         <div className="flex flex-col gap-0.5">
-          <Badge variant={status.variant} className={status.className}>
-            {status.label}
+          <Badge variant={display.variant} className={display.className}>
+            {display.label}
           </Badge>
-          {item.reviewedByName && (item.isApproved || item.rejectionNote) && (
+          {item.reviewedByName && !isPending && (
             <span className="text-xs text-muted-foreground">
               ({item.reviewedByName})
             </span>
@@ -101,7 +111,7 @@ export function ReimbursementRow({
       </TableCell>
       <TableCell onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-end gap-0.5">
-          {showAdminActions && (
+          {isAdmin && isPending && (
             <>
               <Button
                 variant="ghost"
@@ -116,7 +126,6 @@ export function ReimbursementRow({
                 size="icon"
                 className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
                 onClick={onReject}
-                disabled={!!item.rejectionNote}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -130,7 +139,7 @@ export function ReimbursementRow({
           >
             <Download className="h-4 w-4" />
           </Button>
-          {showAdminActions && (
+          {isAdmin && isPending && (
             <Button
               variant="ghost"
               size="icon"

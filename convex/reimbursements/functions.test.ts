@@ -1,5 +1,5 @@
 import { convexTest } from "convex-test";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { api } from "../_generated/api";
 import schema from "../schema";
 import { modules, setupTestData } from "../test.setup";
@@ -7,6 +7,8 @@ import { modules, setupTestData } from "../test.setup";
 test("create (standard) reimbursement", async () => {
   const t = convexTest(schema, modules);
   const { userId, projectId } = await setupTestData(t);
+
+  const sigId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
 
   const reimbursementId = await t
     .withIdentity({ subject: userId })
@@ -16,17 +18,20 @@ test("create (standard) reimbursement", async () => {
       iban: "DE12345678900000000000",
       bic: "TESTBIC",
       accountHolder: "Test User",
+      signatureStorageId: sigId,
       receipts: [],
     });
 
   const reimbursement = await t.run((ctx) => ctx.db.get(reimbursementId));
   expect(reimbursement?.type).toBe("expense");
-  expect(reimbursement?.isApproved).toBe(false);
+  expect(reimbursement?.status).toBe("pending");
 });
 
 test("create travel reimbursement", async () => {
   const t = convexTest(schema, modules);
   const { userId, projectId } = await setupTestData(t);
+
+  const sigId = await t.run((ctx) => ctx.storage.store(new Blob(["sig"])));
 
   const reimbursementId = await t
     .withIdentity({ subject: userId })
@@ -36,6 +41,7 @@ test("create travel reimbursement", async () => {
       iban: "DE12345678900000000000",
       bic: "TESTBIC",
       accountHolder: "Test User",
+      signatureStorageId: sigId,
       startDate: "2024-01-01",
       endDate: "2024-01-02",
       destination: "Berlin",
@@ -73,15 +79,26 @@ test("delete reimbursement", async () => {
 });
 
 test("mark reimbursement as paid", async () => {
+  vi.useFakeTimers();
   const t = convexTest(schema, modules);
-  const { userId, reimbursementId } = await setupTestData(t);
+  const { userId, organizationId, reimbursementId } = await setupTestData(t);
+
+  await t.run((ctx) =>
+    ctx.db.patch(organizationId, { accountingEmail: "accounting@test.com" }),
+  );
+  await t.run((ctx) =>
+    ctx.db.patch(userId, { name: "Test Admin", email: "test@test.com" }),
+  );
 
   await t
     .withIdentity({ subject: userId })
-    .mutation(api.reimbursements.functions.markAsPaid, { reimbursementId });
+    .mutation(api.reimbursements.functions.approve, { reimbursementId });
+
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  vi.useRealTimers();
 
   const reimbursement = await t.run((ctx) => ctx.db.get(reimbursementId));
-  expect(reimbursement?.isApproved).toBe(true);
+  expect(reimbursement?.status).toBe("approved");
 });
 
 test("reject reimbursement", async () => {
@@ -90,7 +107,7 @@ test("reject reimbursement", async () => {
 
   await t
     .withIdentity({ subject: userId })
-    .mutation(api.reimbursements.functions.rejectReimbursement, {
+    .mutation(api.reimbursements.functions.decline, {
       reimbursementId,
       rejectionNote: "Missing receipt",
     });
@@ -134,7 +151,7 @@ test("throw error if trying to mark non existent reimbursement as paid", async (
   await expect(
     t
       .withIdentity({ subject: userId })
-      .mutation(api.reimbursements.functions.markAsPaid, { reimbursementId }),
+      .mutation(api.reimbursements.functions.approve, { reimbursementId }),
   ).rejects.toThrow("Reimbursement not found");
 });
 
@@ -147,7 +164,7 @@ test("throw error if trying to reject non existent reimbursement", async () => {
   await expect(
     t
       .withIdentity({ subject: userId })
-      .mutation(api.reimbursements.functions.rejectReimbursement, {
+      .mutation(api.reimbursements.functions.decline, {
         reimbursementId,
         rejectionNote: "Test",
       }),
@@ -189,6 +206,7 @@ test("create reimbursement with receipts", async () => {
       iban: "DE12345678900000000000",
       bic: "TESTBIC",
       accountHolder: "Test User",
+      signatureStorageId: storageId,
       receipts: [
         {
           receiptNumber: "R001",
@@ -229,6 +247,7 @@ test("create travel reimbursement with meal allowance and receipts", async () =>
       iban: "DE12345678900000000000",
       bic: "TESTBIC",
       accountHolder: "Test User",
+      signatureStorageId: storageId,
       startDate: "2024-01-01",
       endDate: "2024-01-03",
       destination: "Munich",
@@ -275,6 +294,27 @@ test("create travel reimbursement with meal allowance and receipts", async () =>
   expect(receipts[0].costType).toBe("train");
 });
 
+test("non-creator non-admin cannot delete reimbursement", async () => {
+  const t = convexTest(schema, modules);
+  const { organizationId, reimbursementId } = await setupTestData(t);
+
+  const memberUserId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      email: "member@test.com",
+      organizationId,
+      role: "member",
+    }),
+  );
+
+  await expect(
+    t
+      .withIdentity({ subject: memberUserId })
+      .mutation(api.reimbursements.functions.deleteReimbursement, {
+        reimbursementId,
+      }),
+  ).rejects.toThrow("Only the creator or an admin can delete reimbursements");
+});
+
 test("delete reimbursement with receipts deletes receipt records", async () => {
   const t = convexTest(schema, modules);
   const { userId, projectId } = await setupTestData(t);
@@ -289,6 +329,7 @@ test("delete reimbursement with receipts deletes receipt records", async () => {
       iban: "DE12345678900000000000",
       bic: "TESTBIC",
       accountHolder: "Test User",
+      signatureStorageId: storageId,
       receipts: [
         {
           receiptNumber: "R001",
@@ -318,4 +359,255 @@ test("delete reimbursement with receipts deletes receipt records", async () => {
       .collect(),
   );
   expect(receipts).toHaveLength(0);
+});
+
+test("mark as paid when project is deleted uses fallback description", async () => {
+  vi.useFakeTimers();
+  const t = convexTest(schema, modules);
+  const { userId, projectId, reimbursementId } = await setupTestData(t);
+
+  await t.run((ctx) => ctx.db.delete(projectId));
+
+  await t
+    .withIdentity({ subject: userId })
+    .mutation(api.reimbursements.functions.approve, { reimbursementId });
+
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  vi.useRealTimers();
+
+  const transactions = await t.run((ctx) =>
+    ctx.db.query("transactions").collect(),
+  );
+  const created = transactions.find((tx) => tx.description === "Auslagenerstattung");
+  expect(created).toBeDefined();
+});
+
+test("mark travel reimbursement as paid without meal allowance and no creator name", async () => {
+  vi.useFakeTimers();
+  const t = convexTest(schema, modules);
+  const { userId, organizationId, travelReimbursementId } =
+    await setupTestData(t);
+
+  await t.run(async (ctx) => {
+    await ctx.db.patch(organizationId, {
+      accountingEmail: "accounting@test.com",
+    });
+  });
+
+  const storageId = await t.run((ctx) =>
+    ctx.storage.store(new Blob(["receipt"])),
+  );
+
+  await t.run(async (ctx) => {
+    await ctx.db.insert("receipts", {
+      reimbursementId: travelReimbursementId,
+      receiptNumber: "T001",
+      receiptDate: "2024-01-01",
+      companyName: "Test",
+      description: "Test receipt",
+      netAmount: 100,
+      taxRate: 19,
+      grossAmount: 119,
+      fileStorageId: storageId,
+    });
+  });
+
+  await t
+    .withIdentity({ subject: userId })
+    .mutation(api.reimbursements.functions.approve, {
+      reimbursementId: travelReimbursementId,
+    });
+
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  vi.useRealTimers();
+
+  const reimbursement = await t.run((ctx) =>
+    ctx.db.get(travelReimbursementId),
+  );
+  expect(reimbursement?.status).toBe("approved");
+});
+
+test("mark travel reimbursement as paid with meal allowance days but no daily budget", async () => {
+  vi.useFakeTimers();
+  const t = convexTest(schema, modules);
+  const { userId, organizationId, travelReimbursementId } =
+    await setupTestData(t);
+
+  await t.run(async (ctx) => {
+    await ctx.db.patch(organizationId, {
+      accountingEmail: "accounting@test.com",
+    });
+    await ctx.db.patch(userId, { name: "Test Admin" });
+    const travelDetails = await ctx.db
+      .query("travelDetails")
+      .withIndex("by_reimbursement", (q) =>
+        q.eq("reimbursementId", travelReimbursementId),
+      )
+      .first();
+    if (travelDetails) {
+      await ctx.db.patch(travelDetails._id, { mealAllowanceDays: 2 });
+    }
+  });
+
+  await t
+    .withIdentity({ subject: userId })
+    .mutation(api.reimbursements.functions.approve, {
+      reimbursementId: travelReimbursementId,
+    });
+
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  vi.useRealTimers();
+
+  const reimbursement = await t.run((ctx) =>
+    ctx.db.get(travelReimbursementId),
+  );
+  expect(reimbursement?.status).toBe("approved");
+});
+
+test("approve sends no email when org has no accounting email", async () => {
+  vi.useFakeTimers();
+  const t = convexTest(schema, modules);
+  const { userId, reimbursementId } = await setupTestData(t);
+
+  await t
+    .withIdentity({ subject: userId })
+    .mutation(api.reimbursements.functions.approve, { reimbursementId });
+
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  vi.useRealTimers();
+
+  const reimbursement = await t.run((ctx) => ctx.db.get(reimbursementId));
+  expect(reimbursement?.status).toBe("approved");
+});
+
+test("sendApprovalEmail skips receipt with deleted storage file", async () => {
+  vi.useFakeTimers();
+  const t = convexTest(schema, modules);
+  const { userId, organizationId, reimbursementId } = await setupTestData(t);
+
+  const storageId = await t.run((ctx) =>
+    ctx.storage.store(new Blob(["test"])),
+  );
+
+  await t.run(async (ctx) => {
+    await ctx.db.patch(organizationId, {
+      accountingEmail: "accounting@test.com",
+    });
+    await ctx.db.patch(userId, { name: "Test Admin" });
+    await ctx.db.insert("receipts", {
+      reimbursementId,
+      receiptNumber: "R001",
+      receiptDate: "2024-01-01",
+      companyName: "Test",
+      description: "Test",
+      netAmount: 100,
+      taxRate: 19,
+      grossAmount: 119,
+      fileStorageId: storageId,
+    });
+    await ctx.storage.delete(storageId);
+  });
+
+  await t
+    .withIdentity({ subject: userId })
+    .mutation(api.reimbursements.functions.approve, { reimbursementId });
+
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  vi.useRealTimers();
+
+  const reimbursement = await t.run((ctx) => ctx.db.get(reimbursementId));
+  expect(reimbursement?.status).toBe("approved");
+});
+
+test("sendApprovalEmail sends without cc when creator has no email", async () => {
+  vi.useFakeTimers();
+  const t = convexTest(schema, modules);
+  const { organizationId, projectId } = await setupTestData(t);
+
+  const noEmailUserId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      organizationId,
+      role: "admin",
+      name: "No Email User",
+    }),
+  );
+
+  const reimbursementId = await t.run((ctx) =>
+    ctx.db.insert("reimbursements", {
+      organizationId,
+      projectId,
+      amount: 50,
+      type: "expense",
+      status: "pending",
+      iban: "DE12340000000000000000",
+      bic: "BIC",
+      accountHolder: "No Email",
+      createdBy: noEmailUserId,
+    }),
+  );
+
+  await t.run((ctx) =>
+    ctx.db.patch(organizationId, {
+      accountingEmail: "accounting@test.com",
+    }),
+  );
+
+  await t
+    .withIdentity({ subject: noEmailUserId })
+    .mutation(api.reimbursements.functions.approve, { reimbursementId });
+
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  vi.useRealTimers();
+
+  const reimbursement = await t.run((ctx) => ctx.db.get(reimbursementId));
+  expect(reimbursement?.status).toBe("approved");
+});
+
+test("sendApprovalEmail handles deleted reimbursement gracefully", async () => {
+  vi.useFakeTimers();
+  const t = convexTest(schema, modules);
+  const { userId, organizationId, reimbursementId } = await setupTestData(t);
+
+  await t.run(async (ctx) => {
+    await ctx.db.patch(organizationId, {
+      accountingEmail: "accounting@test.com",
+    });
+    await ctx.db.patch(userId, { name: "Test Admin" });
+  });
+
+  await t
+    .withIdentity({ subject: userId })
+    .mutation(api.reimbursements.functions.approve, { reimbursementId });
+
+  await t.run((ctx) => ctx.db.delete(reimbursementId));
+
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  vi.useRealTimers();
+
+  const deleted = await t.run((ctx) => ctx.db.get(reimbursementId));
+  expect(deleted).toBeNull();
+});
+
+test("delete travel reimbursement without travel details row", async () => {
+  const t = convexTest(schema, modules);
+  const { userId, travelReimbursementId } = await setupTestData(t);
+
+  await t.run(async (ctx) => {
+    const details = await ctx.db
+      .query("travelDetails")
+      .withIndex("by_reimbursement", (q) =>
+        q.eq("reimbursementId", travelReimbursementId),
+      )
+      .first();
+    if (details) await ctx.db.delete(details._id);
+  });
+
+  await t
+    .withIdentity({ subject: userId })
+    .mutation(api.reimbursements.functions.deleteReimbursement, {
+      reimbursementId: travelReimbursementId,
+    });
+
+  const deleted = await t.run((ctx) => ctx.db.get(travelReimbursementId));
+  expect(deleted).toBeNull();
 });

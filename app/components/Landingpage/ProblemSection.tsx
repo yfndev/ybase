@@ -10,14 +10,14 @@ const problems = [
       "Unübersichtliche Tabellen, veraltete Daten und niemand weiß, wer was wann geändert hat.",
   },
   {
-    title: "Teure Software",
+    title: "Tools kosten Geld — das ihr nicht habt",
     description:
-      "Budget-Tools für Organisationen sind teuer und komplex – oft zu viel für kleine Vereine.",
+      "Budget-Software für Organisationen ist teuer und zu komplex. Geld, das besser in eure Projekte fließen sollte.",
   },
   {
-    title: "Keine Übersicht",
+    title: "Kein klarer Überblick",
     description:
-      "Wo ist das Geld wirklich hingegangen? Welches Budget bleibt noch? Niemand hat einen klaren Überblick.",
+      "Wo ist das Geld wirklich hingegangen? Welches Budget bleibt noch? Niemand hat den Überblick.",
   },
 ];
 

@@ -2,6 +2,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { query } from "../_generated/server";
+import { calculateBudget } from "../lib/budgetCalculations";
 import { filterByProjectAccess } from "../teams/permissions";
 import { getCurrentUser } from "../users/getCurrentUser";
 import { addProjectAndCategoryNames } from "../utils/addProjectAndCategoryNames";
@@ -138,6 +139,35 @@ export const getMatchingRecommendations = query({
       unmatched,
     );
     return addProjectAndCategoryNames(ctx, filtered);
+  },
+});
+
+export const getProjectBudget = query({
+  args: {
+    projectIds: v.array(v.id("projects")),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+
+    const allTransactions: Array<{ amount: number; status: string }> = [];
+
+    for (const projectId of args.projectIds) {
+      const transactions = await ctx.db
+        .query("transactions")
+        .withIndex("by_organization_project", (q) =>
+          q
+            .eq("organizationId", user.organizationId)
+            .eq("projectId", projectId),
+        )
+        .collect();
+
+      for (const transaction of transactions) {
+        if (transaction.isArchived) continue;
+        allTransactions.push(transaction);
+      }
+    }
+
+    return calculateBudget(allTransactions);
   },
 });
 

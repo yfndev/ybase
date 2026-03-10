@@ -1,6 +1,6 @@
 "use client";
 
-import { SignatureCanvas } from "@/components/Reimbursements/SignatureCanvas";
+import { SignatureField } from "@/components/Reimbursements/SignatureField";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,11 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "@/convex/volunteerAllowance/constants";
 import { useMutation, useQuery } from "convex/react";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 const IBAN_REGEX = /^[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}$/;
@@ -54,6 +55,7 @@ export default function ExternalEhrenamtspauschalePage() {
     iban: "",
     bic: "",
     accountHolder: "",
+    taxYear: String(new Date().getFullYear()),
     confirmation: false,
   });
 
@@ -62,22 +64,24 @@ export default function ExternalEhrenamtspauschalePage() {
   };
 
   const updateAmount = (value: string) => {
-    if (parseFloat(value.replace(",", ".")) > 960) return;
+    if (parseFloat(value.replace(",", ".")) > MAX_VOLUNTEER_ALLOWANCE_EUR) return;
     updateField("amount", value);
   };
 
-  if (
-    linkData?.valid &&
-    !form.activityDescription &&
-    linkData.activityDescription
-  ) {
-    setForm((prev) => ({
-      ...prev,
-      activityDescription: linkData.activityDescription || "",
-      startDate: linkData.startDate || "",
-      endDate: linkData.endDate || "",
-    }));
-  }
+  useEffect(() => {
+    if (
+      linkData?.valid &&
+      !form.activityDescription &&
+      linkData.activityDescription
+    ) {
+      setForm((prev) => ({
+        ...prev,
+        activityDescription: linkData.activityDescription || "",
+        startDate: linkData.startDate || "",
+        endDate: linkData.endDate || "",
+      }));
+    }
+  }, [linkData, form.activityDescription]);
 
   const handleSubmit = async () => {
     if (!form.volunteerName) return toast.error("Bitte deinen Namen eingeben");
@@ -92,13 +96,13 @@ export default function ExternalEhrenamtspauschalePage() {
     const amount = parseFloat(form.amount);
     if (!amount || amount <= 0)
       return toast.error("Bitte einen Betrag eingeben");
-    if (amount > 960) return toast.error("Maximal 960€ erlaubt");
+    if (amount > MAX_VOLUNTEER_ALLOWANCE_EUR) return toast.error(`Maximal ${MAX_VOLUNTEER_ALLOWANCE_EUR}€ erlaubt`);
     if (!form.accountHolder)
       return toast.error("Bitte den Kontoinhaber eingeben");
     const iban = form.iban.replace(/\s/g, "").toUpperCase();
-    const bic = form.bic.replace(/\s/g, "").toUpperCase();
     if (!IBAN_REGEX.test(iban)) return toast.error("Ungültige IBAN");
-    if (!BIC_REGEX.test(bic)) return toast.error("Ungültige BIC");
+    const bic = form.bic.replace(/\s/g, "").toUpperCase();
+    if (bic && !BIC_REGEX.test(bic)) return toast.error("Ungültige BIC");
     if (!form.confirmation)
       return toast.error("Bitte die Bestätigung ankreuzen");
     if (!signatureStorageId) return toast.error("Bitte unterschreiben");
@@ -109,7 +113,7 @@ export default function ExternalEhrenamtspauschalePage() {
         id,
         amount,
         iban,
-        bic,
+        bic: bic || undefined,
         accountHolder: form.accountHolder,
         activityDescription: form.activityDescription,
         startDate: form.startDate,
@@ -118,6 +122,7 @@ export default function ExternalEhrenamtspauschalePage() {
         volunteerStreet: form.volunteerStreet,
         volunteerPlz: form.volunteerPlz,
         volunteerCity: form.volunteerCity,
+        taxYear: form.taxYear,
         signatureStorageId,
       });
       setSubmitted(true);
@@ -173,6 +178,11 @@ export default function ExternalEhrenamtspauschalePage() {
           <p className="text-muted-foreground mt-2">
             {linkData.organizationName} - {linkData.projectName}
           </p>
+          {(linkData.organizationStreet || linkData.organizationCity) && (
+            <p className="text-sm text-muted-foreground mt-1">
+              {[linkData.organizationStreet, linkData.organizationPlz, linkData.organizationCity].filter(Boolean).join(", ")}
+            </p>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -259,16 +269,29 @@ export default function ExternalEhrenamtspauschalePage() {
 
         <div className="space-y-4">
           <h2 className="text-lg font-medium">Betrag</h2>
-          <div className="max-w-xs">
-            <Label>Betrag in Euro (max. 960€) *</Label>
-            <Input
-              type="number"
-              step="0.01"
-              max="960"
-              value={form.amount}
-              onChange={(e) => updateAmount(e.target.value)}
-              placeholder="0,00"
-            />
+          <div className="grid grid-cols-2 gap-4 max-w-sm">
+            <div>
+              <Label>Betrag in Euro (max. {MAX_VOLUNTEER_ALLOWANCE_EUR}€) *</Label>
+              <Input
+                type="number"
+                step="0.01"
+                max={String(MAX_VOLUNTEER_ALLOWANCE_EUR)}
+                value={form.amount}
+                onChange={(e) => updateAmount(e.target.value)}
+                placeholder="0,00"
+              />
+            </div>
+            <div>
+              <Label>Steuerjahr *</Label>
+              <Input
+                type="number"
+                min="2000"
+                max="2099"
+                value={form.taxYear}
+                onChange={(e) => updateField("taxYear", e.target.value)}
+                placeholder={String(new Date().getFullYear())}
+              />
+            </div>
           </div>
         </div>
 
@@ -298,7 +321,7 @@ export default function ExternalEhrenamtspauschalePage() {
               />
             </div>
             <div>
-              <Label>BIC *</Label>
+              <Label>BIC (optional)</Label>
               <Input
                 value={form.bic.toUpperCase()}
                 onChange={(event) =>
@@ -336,8 +359,8 @@ export default function ExternalEhrenamtspauschalePage() {
 
         <div className="space-y-4">
           <h2 className="text-lg font-medium">Unterschrift</h2>
-          <SignatureCanvas
-            onUploadComplete={setSignatureStorageId}
+          <SignatureField
+            onSignatureComplete={setSignatureStorageId}
             storageId={signatureStorageId || undefined}
             generateUploadUrl={() => generateUploadUrl({ id })}
           />

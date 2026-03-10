@@ -10,7 +10,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { calculateBudget } from "@/lib/budgetCalculations";
+import { calculateBudget } from "@/convex/lib/budgetCalculations";
 import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import toast from "react-hot-toast";

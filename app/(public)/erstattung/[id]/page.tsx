@@ -1,19 +1,29 @@
 "use client";
 
-import { ShareSignatureModal } from "@/components/Reimbursements/ShareSignatureModal";
+import { SignatureQRModal } from "@/components/Reimbursements/SignatureField";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { useMutation, useQuery } from "convex/react";
+import {
+  BIC_REGEX,
+  formatIban,
+  IBAN_REGEX,
+  normalizeIban,
+  toNet,
+} from "@/lib/bank-utils";
+import {
+  COST_LABELS,
+  type CostType,
+  DEFAULT_TAX_RATES,
+} from "@/lib/travel-costs";
+import { useConvex, useMutation, useQuery } from "convex/react";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import ExternalReimbursementPageUI from "./ExternalReimbursementPageUI";
 
-type CostType = "car" | "train" | "flight" | "taxi" | "bus" | "accommodation";
-
 type Receipt = {
-  receiptNumber: string;
+  receiptNumber: string | undefined;
   receiptDate: string;
   companyName: string;
   description: string;
@@ -28,33 +38,10 @@ type TravelReceipt = Receipt & {
   kilometers?: number;
 };
 
-const COST_LABELS: Record<CostType, string> = {
-  car: "PKW",
-  train: "Bahn",
-  flight: "Flug",
-  taxi: "Taxi",
-  bus: "Bus",
-  accommodation: "Unterkunft",
-};
-
-const DEFAULT_TAX: Record<CostType, number> = {
-  car: 0,
-  train: 7,
-  flight: 19,
-  taxi: 7,
-  bus: 7,
-  accommodation: 7,
-};
-
-const toNet = (gross: number, tax: number) => gross / (1 + tax / 100);
-
-const formatIban = (iban: string) => iban.replace(/(.{4})/g, "$1 ").trim();
-
-const normalizeIban = (iban: string) => iban.replace(/\s/g, "").toUpperCase();
-
 export default function ExternalReimbursementPage() {
   const params = useParams<{ id: string }>();
   const reimbursementId = params.id as Id<"reimbursements">;
+  const convex = useConvex();
 
   const link = useQuery(api.reimbursements.sharing.validateReimbursementLink, {
     id: reimbursementId,
@@ -66,7 +53,7 @@ export default function ExternalReimbursementPage() {
     api.reimbursements.sharing.submitExternalReimbursement
   );
   const createSignatureToken = useMutation(
-    api.volunteerAllowance.functions.createSignatureToken
+    api.signatures.functions.createToken
   );
 
   const [name, setName] = useState("");
@@ -98,7 +85,9 @@ export default function ExternalReimbursementPage() {
   const [date, setDate] = useState("");
   const [gross, setGross] = useState(0);
   const [taxRate, setTaxRate] = useState(19);
+  const [currency, setCurrency] = useState("EUR");
   const [file, setFile] = useState<Id<"_storage"> | null>(null);
+  const [showFoodAllowance, setShowFoodAllowance] = useState(false);
 
   const isTravel = link?.valid && link.type === "travel";
   const mealTotal = mealDays * mealRate;
@@ -109,14 +98,14 @@ export default function ExternalReimbursementPage() {
     : receipts.reduce((sum, receipt) => sum + receipt.grossAmount, 0);
 
   const addReceipt = () => {
-    if (!number || !company || !gross || !file || !date) {
+    if (!company || !description || !gross || !file || !date) {
       return toast.error("Bitte Pflichtfelder ausfüllen");
     }
 
     setReceipts([
       ...receipts,
       {
-        receiptNumber: number,
+        receiptNumber: number || undefined,
         receiptDate: date,
         companyName: company,
         description,
@@ -163,7 +152,7 @@ export default function ExternalReimbursementPage() {
         companyName: "",
         description: "",
         netAmount: 0,
-        taxRate: DEFAULT_TAX[costType],
+        taxRate: DEFAULT_TAX_RATES[costType],
         grossAmount: 0,
         fileStorageId: null,
         kilometers: costType === "car" ? 0 : undefined,
@@ -189,14 +178,7 @@ export default function ExternalReimbursementPage() {
   };
 
   const handleSubmit = async () => {
-    if (
-      !name ||
-      !iban ||
-      !bic ||
-      !accountHolder ||
-      !confirmation ||
-      !signature
-    ) {
+    if (!name || !iban || !accountHolder || !confirmation || !signature) {
       return toast.error("Bitte alle Pflichtfelder ausfüllen");
     }
 
@@ -213,6 +195,15 @@ export default function ExternalReimbursementPage() {
       if (receipts.length === 0) {
         return toast.error("Bitte mindestens einen Beleg hinzufügen");
       }
+    }
+
+    const normalizedIban = normalizeIban(iban);
+    if (!IBAN_REGEX.test(normalizedIban)) {
+      return toast.error("Ungültige IBAN");
+    }
+
+    if (bic && !BIC_REGEX.test(bic.toUpperCase())) {
+      return toast.error("Ungültige BIC");
     }
 
     setIsSubmitting(true);
@@ -308,6 +299,8 @@ export default function ExternalReimbursementPage() {
         organizationName={link.organizationName}
         projectName={link.projectName}
         allowFoodAllowance={link.travelDetails?.allowFoodAllowance ?? false}
+        showFoodAllowance={showFoodAllowance}
+        onShowFoodAllowanceChange={setShowFoodAllowance}
         name={name}
         email={email}
         onNameChange={setName}
@@ -333,6 +326,7 @@ export default function ExternalReimbursementPage() {
         date={date}
         gross={gross}
         taxRate={taxRate}
+        currency={currency}
         file={file}
         onCompanyChange={setCompany}
         onNumberChange={setNumber}
@@ -340,6 +334,7 @@ export default function ExternalReimbursementPage() {
         onDateChange={setDate}
         onGrossChange={setGross}
         onTaxRateChange={setTaxRate}
+        onCurrencyChange={setCurrency}
         onFileChange={setFile}
         receipts={receipts}
         travelReceipts={travelReceipts}
@@ -362,6 +357,7 @@ export default function ExternalReimbursementPage() {
         onSubmit={handleSubmit}
         reimbursementId={reimbursementId}
         generateUploadUrl={() => generateUploadUrl({ reimbursementId })}
+        getFileUrl={(storageId) => convex.query(api.reimbursements.sharing.getPublicFileUrl, { storageId })}
         toNet={toNet}
         formatIban={formatIban}
         costLabels={COST_LABELS}
@@ -369,7 +365,7 @@ export default function ExternalReimbursementPage() {
       />
 
       {signatureToken && (
-        <ShareSignatureModal
+        <SignatureQRModal
           token={signatureToken}
           open={showSignatureModal}
           onClose={() => setShowSignatureModal(false)}

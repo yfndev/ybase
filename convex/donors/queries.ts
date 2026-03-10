@@ -73,11 +73,12 @@ export const getDonorById = query({
       }
     }
 
+    const round = (v: number) => Math.round(v * 100) / 100;
     return {
       ...donor,
-      committedIncome: expectedIncome + paidIncome,
-      paidIncome,
-      availableBudget: paidIncome - expenses,
+      committedIncome: round(expectedIncome + paidIncome),
+      paidIncome: round(paidIncome),
+      availableBudget: round(paidIncome - expenses),
     };
   },
 });
