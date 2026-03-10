@@ -61,6 +61,8 @@ export default defineSchema({
     donorId: v.optional(v.id("donors")),
     importedBy: v.id("users"),
     bankReferenceId: v.optional(v.string()),
+    // TODO: remove after running migrateTransactionIds migration
+    importedTransactionId: v.optional(v.string()),
     importSource: v.optional(
       v.union(
         v.literal("sparkasse"),

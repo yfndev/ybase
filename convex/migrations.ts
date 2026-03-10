@@ -23,3 +23,28 @@ export const migrateReimbursementStatus = internalMutation({
     return { migrated, total: docs.length };
   },
 });
+
+/**
+ * One-time migration: renames importedTransactionId → bankReferenceId on transactions.
+ *
+ * Run once via Convex dashboard after deploying, then remove this file.
+ */
+export const migrateTransactionIds = internalMutation({
+  handler: async (ctx) => {
+    const docs = await ctx.db.query("transactions").collect();
+    let migrated = 0;
+
+    for (const doc of docs) {
+      const old = (doc as any).importedTransactionId;
+      if (old === undefined) continue;
+
+      await ctx.db.patch(doc._id, {
+        bankReferenceId: doc.bankReferenceId ?? old,
+        importedTransactionId: undefined,
+      });
+      migrated++;
+    }
+
+    return { migrated, total: docs.length };
+  },
+});
