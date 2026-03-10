@@ -61,6 +61,7 @@ export default defineSchema({
     donorId: v.optional(v.id("donors")),
     importedBy: v.id("users"),
     bankReferenceId: v.optional(v.string()),
+    importedTransactionId: v.optional(v.string()),
     importSource: v.optional(
       v.union(
         v.literal("sparkasse"),
@@ -139,11 +140,8 @@ export default defineSchema({
     projectId: v.id("projects"),
     amount: v.number(),
     type: v.union(v.literal("expense"), v.literal("travel")),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("approved"),
-      v.literal("declined"),
-    ),
+    status: v.optional(v.union(v.literal("pending"), v.literal("approved"), v.literal("declined"))),
+    isApproved: v.optional(v.boolean()),
     iban: v.string(),
     bic: v.optional(v.string()),
     accountHolder: v.string(),
@@ -209,11 +207,11 @@ export default defineSchema({
     organizationId: v.id("organizations"),
     projectId: v.id("projects"),
     amount: v.number(),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("approved"),
-      v.literal("declined"),
-    ),
+    status: v.optional(v.union(v.literal("pending"), v.literal("approved"), v.literal("declined"))),
+    isApproved: v.optional(v.boolean()),
+    token: v.optional(v.string()),
+    expiresAt: v.optional(v.number()),
+    usedAt: v.optional(v.number()),
     iban: v.string(),
     bic: v.optional(v.string()),
     accountHolder: v.string(),
