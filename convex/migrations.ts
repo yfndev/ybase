@@ -25,6 +25,40 @@ export const migrateReimbursementStatus = internalMutation({
 });
 
 /**
+ * One-time migration: converts volunteerAllowance from isApproved (bool) to
+ * status ("pending" | "approved" | "declined"), and removes legacy token/expiresAt fields.
+ *
+ * Run once via Convex dashboard after deploying, then remove this file.
+ */
+export const migrateVolunteerAllowanceStatus = internalMutation({
+  handler: async (ctx) => {
+    const docs = await ctx.db.query("volunteerAllowance").collect();
+    let migrated = 0;
+
+    for (const doc of docs) {
+      const needsMigration =
+        doc.status === undefined ||
+        (doc as any).isApproved !== undefined ||
+        (doc as any).token !== undefined ||
+        (doc as any).expiresAt !== undefined;
+
+      if (!needsMigration) continue;
+
+      const status = doc.status ?? ((doc as any).isApproved === true ? "approved" : "pending");
+      await ctx.db.patch(doc._id, {
+        status,
+        isApproved: undefined,
+        token: undefined,
+        expiresAt: undefined,
+      });
+      migrated++;
+    }
+
+    return { migrated, total: docs.length };
+  },
+});
+
+/**
  * One-time migration: renames importedTransactionId → bankReferenceId on transactions.
  *
  * Run once via Convex dashboard after deploying, then remove this file.

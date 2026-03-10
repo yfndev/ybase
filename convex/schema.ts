@@ -211,11 +211,13 @@ export default defineSchema({
     organizationId: v.id("organizations"),
     projectId: v.id("projects"),
     amount: v.number(),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("approved"),
-      v.literal("declined"),
+    // TODO: remove optional + legacy fields after running migrateVolunteerAllowanceStatus
+    status: v.optional(
+      v.union(v.literal("pending"), v.literal("approved"), v.literal("declined")),
     ),
+    isApproved: v.optional(v.boolean()),
+    token: v.optional(v.string()),
+    expiresAt: v.optional(v.number()),
     iban: v.string(),
     bic: v.optional(v.string()),
     accountHolder: v.string(),
