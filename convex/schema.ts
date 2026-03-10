@@ -139,11 +139,11 @@ export default defineSchema({
     projectId: v.id("projects"),
     amount: v.number(),
     type: v.union(v.literal("expense"), v.literal("travel")),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("approved"),
-      v.literal("declined"),
+    // TODO: remove optional + isApproved after running migration
+    status: v.optional(
+      v.union(v.literal("pending"), v.literal("approved"), v.literal("declined")),
     ),
+    isApproved: v.optional(v.boolean()),
     iban: v.string(),
     bic: v.optional(v.string()),
     accountHolder: v.string(),
