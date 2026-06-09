@@ -4,7 +4,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -18,15 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Doc } from "@/convex/_generated/dataModel";
-import { useAction, useQuery } from "convex/react";
-import {
-  Building2,
-  ChevronsUpDown,
-  FolderKanban,
-  ScrollText,
-  Users,
-} from "lucide-react";
-import Link from "next/link";
+import { ChevronsUpDown } from "lucide-react";
 import { LogoutButton } from "../Auth/LogoutButton";
 
 function UserAvatar({ user }: { user: Doc<"users"> }) {
@@ -55,7 +46,6 @@ function UserInfo({ user }: { user: Doc<"users"> }) {
 
 export function NavUser({ user }: { user: Doc<"users"> | null | undefined }) {
   const { isMobile } = useSidebar();
-  const isAdmin = user?.role === "admin";
 
   if (!user) {
     return (
@@ -100,37 +90,6 @@ export function NavUser({ user }: { user: Doc<"users"> | null | undefined }) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {isAdmin && (
-              <>
-                <DropdownMenuGroup>
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings/organization">
-                      <Building2 />
-                      Organisation
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings/users">
-                      <Users />
-                      Benutzer
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings/projects">
-                      <FolderKanban />
-                      Projekte
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings/logs">
-                      <ScrollText />
-                      Logs
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-              </>
-            )}
             <DropdownMenuItem>
               <LogoutButton>Abmelden</LogoutButton>
             </DropdownMenuItem>

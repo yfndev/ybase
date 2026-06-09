@@ -2,6 +2,7 @@
 
 import {
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -15,9 +16,18 @@ export interface NavItem {
   icon: LucideIcon;
 }
 
-export function MainNav({ items, id }: { items: NavItem[]; id?: string }) {
+export function MainNav({
+  items,
+  id,
+  label,
+}: {
+  items: NavItem[];
+  id?: string;
+  label?: string;
+}) {
   return (
     <SidebarGroup id={id}>
+      {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
