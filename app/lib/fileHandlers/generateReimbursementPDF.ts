@@ -5,6 +5,7 @@ import {
   rgb,
   StandardFonts,
 } from "pdf-lib";
+import { shortReferenceId } from "./referenceId";
 
 const BLUE = rgb(0.118, 0.251, 0.686); // #1e40af
 const LIGHT_GRAY = rgb(0.96, 0.96, 0.96);
@@ -159,7 +160,7 @@ export async function generateReimbursementPDF(
   const orgName: string = reimbursement.organizationName ?? "";
   const isTravel = reimbursement.type === "travel";
   const title = isTravel ? "REISEKOSTENERSTATTUNG" : "AUSLAGENERSTATTUNG";
-  const docId = reimbursement._id ? String(reimbursement._id).slice(-8) : undefined;
+  const docId = reimbursement._id ? shortReferenceId(String(reimbursement._id)) : undefined;
   const totalPages = 1 + receipts.length;
 
   // ── Cover page ──────────────────────────────────────────────────────────
