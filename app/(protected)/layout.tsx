@@ -1,6 +1,5 @@
 "use client";
 
-import { OnboardingDialog } from "@/components/Onboarding/OnboardingDialog";
 import { TourCard } from "@/components/Onboarding/TourCard";
 import { tourSteps } from "@/components/Onboarding/tourSteps";
 import { AppSidebar } from "@/components/Sidebar/AppSidebar";
@@ -8,11 +7,11 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { api } from "@/convex/_generated/api";
 import { DateRangeProvider } from "@/lib/DateRangeContext";
 import { useCanEdit } from "@/lib/hooks/useCurrentUserRole";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Onborda, OnbordaProvider } from "onborda";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export default function ProtectedLayout({
   children,
@@ -22,6 +21,10 @@ export default function ProtectedLayout({
   const { isAuthenticated, isLoading } = useConvexAuth();
   const router = useRouter();
   const organizationId = useQuery(api.users.queries.getUserOrganizationId, {});
+  const initializeOrganization = useMutation(
+    api.organizations.functions.initializeOrganization,
+  );
+  const autoJoinStarted = useRef(false);
   const canEdit = useCanEdit();
 
   useEffect(() => {
@@ -29,6 +32,13 @@ export default function ProtectedLayout({
       router.push("/login");
     }
   }, [isAuthenticated, isLoading, router]);
+
+  useEffect(() => {
+    if (organizationId === null && !autoJoinStarted.current) {
+      autoJoinStarted.current = true;
+      void initializeOrganization({});
+    }
+  }, [organizationId, initializeOrganization]);
 
   if (isLoading) {
     return (
@@ -48,7 +58,19 @@ export default function ProtectedLayout({
     return null;
   }
 
-  const showOnboarding = organizationId === null;
+  if (!organizationId) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Image
+          src="/AppIcon.png"
+          alt="Logo"
+          width={48}
+          height={48}
+          className="animate-spin"
+        />
+      </div>
+    );
+  }
 
   return (
     <OnbordaProvider>
@@ -65,9 +87,6 @@ export default function ProtectedLayout({
             <div className="flex flex-col flex-1 min-w-0">
               <div className="p-3 sm:p-4 lg:px-6 pb-6">
                 {children}
-                {showOnboarding && (
-                  <OnboardingDialog open onOpenChange={() => {}} />
-                )}
               </div>
             </div>
           </SidebarProvider>

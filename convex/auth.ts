@@ -2,13 +2,20 @@ import Google from "@auth/core/providers/google";
 import { convexAuth } from "@convex-dev/auth/server";
 import { TestingCredentials } from "./testing/functions";
 
+const ALLOWED_EMAIL_DOMAIN = "youngfounders.network";
+
 const GoogleProvider = Google({
   authorization: {
     params: {
       prompt: "select_account",
+      hd: ALLOWED_EMAIL_DOMAIN,
     },
   },
   profile(user) {
+    const email = user.email ?? "";
+    if (!email.toLowerCase().endsWith(`@${ALLOWED_EMAIL_DOMAIN}`)) {
+      throw new Error("Nur youngfounders.network-Konten sind zugelassen");
+    }
     return {
       id: user.sub,
       name: user.name,
