@@ -8,11 +8,17 @@ test("admin can call admin function", async () => {
   const t = convexTest(schema, modules);
   const { userId } = await setupTestData(t);
 
-  const teamId = await t
+  await t
     .withIdentity({ subject: userId })
-    .mutation(api.teams.functions.createTeam, { name: "Test Team" });
+    .mutation(api.organizations.functions.updateOrganization, { name: "X" });
 
-  expect(teamId).toBeDefined();
+  const org = await t.run((ctx) =>
+    ctx.db
+      .query("organizations")
+      .withIndex("by_name", (q) => q.eq("name", "X"))
+      .first(),
+  );
+  expect(org).not.toBeNull();
 });
 
 test("member cannot call admin function", async () => {
@@ -30,7 +36,7 @@ test("member cannot call admin function", async () => {
   await expect(
     t
       .withIdentity({ subject: memberUserId })
-      .mutation(api.teams.functions.createTeam, { name: "Test Team" }),
+      .mutation(api.organizations.functions.updateOrganization, { name: "X" }),
   ).rejects.toThrow("Insufficient permissions");
 });
 
@@ -49,7 +55,7 @@ test("lead cannot call admin function", async () => {
   await expect(
     t
       .withIdentity({ subject: leadUserId })
-      .mutation(api.teams.functions.createTeam, { name: "Test Team" }),
+      .mutation(api.organizations.functions.updateOrganization, { name: "X" }),
   ).rejects.toThrow("Insufficient permissions");
 });
 
@@ -67,7 +73,7 @@ test("user without explicit role defaults to member", async () => {
   await expect(
     t
       .withIdentity({ subject: noRoleUserId })
-      .mutation(api.teams.functions.createTeam, { name: "Test" }),
+      .mutation(api.organizations.functions.updateOrganization, { name: "X" }),
   ).rejects.toThrow("Insufficient permissions");
 });
 
@@ -82,7 +88,7 @@ test("user without organization cannot call protected functions", async () => {
   await expect(
     t
       .withIdentity({ subject: noOrgUserId })
-      .mutation(api.teams.functions.createTeam, { name: "Test" }),
+      .mutation(api.organizations.functions.updateOrganization, { name: "X" }),
   ).rejects.toThrow("User has no organization");
 });
 
@@ -91,7 +97,7 @@ test("unauthenticated user cannot call protected functions", async () => {
   await setupTestData(t);
 
   await expect(
-    t.mutation(api.teams.functions.createTeam, { name: "Test" }),
+    t.mutation(api.organizations.functions.updateOrganization, { name: "X" }),
   ).rejects.toThrow("Unauthorized");
 });
 
@@ -104,6 +110,6 @@ test("deleted user cannot call protected functions", async () => {
   await expect(
     t
       .withIdentity({ subject: userId })
-      .mutation(api.teams.functions.createTeam, { name: "Test" }),
+      .mutation(api.organizations.functions.updateOrganization, { name: "X" }),
   ).rejects.toThrow("User not found");
 });

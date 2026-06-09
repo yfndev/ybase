@@ -170,28 +170,6 @@ export const approve = mutation({
       throw new Error("Reimbursement already processed");
     }
 
-    const category = await ctx.db
-      .query("categories")
-      .withIndex("by_name", (q) => q.eq("name", "Auslagenerstattung"))
-      .first();
-
-    if (!category) throw new Error("Kategorie 'Auslagenerstattung' nicht gefunden. Bitte Kategorien in den Einstellungen anlegen.");
-
-    const project = await ctx.db.get(reimbursement.projectId);
-    const description = project ? `${project.name} - Auslagenerstattung` : "Auslagenerstattung";
-
-    await ctx.db.insert("transactions", {
-      organizationId: reimbursement.organizationId,
-      projectId: reimbursement.projectId,
-      date: Date.now(),
-      amount: -reimbursement.amount,
-      description,
-      counterparty: reimbursement.accountHolder,
-      categoryId: category._id,
-      status: "expected",
-      importedBy: user._id,
-    });
-
     await ctx.db.patch(args.reimbursementId, { status: "approved", reviewedBy: user._id });
     await addLog(ctx, user.organizationId, user._id, "reimbursement.approve", args.reimbursementId, `${reimbursement.amount}€`);
 

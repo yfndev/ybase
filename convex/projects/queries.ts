@@ -1,7 +1,6 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 import { query } from "../_generated/server";
-import { getUserAccessibleProjectIds } from "../teams/permissions";
 import { getCurrentUser } from "../users/getCurrentUser";
 
 export const getAllProjects = query({
@@ -13,21 +12,12 @@ export const getAllProjects = query({
     const user = await ctx.db.get(userId);
     if (!user?.organizationId) return [];
 
-    const organizationId = user.organizationId;
-    const accessibleIds = await getUserAccessibleProjectIds(
-      ctx,
-      user._id,
-      organizationId,
-    );
-
-    const projects = await ctx.db
+    return ctx.db
       .query("projects")
       .withIndex("by_organization_archived", (q) =>
-        q.eq("organizationId", organizationId).eq("isArchived", false),
+        q.eq("organizationId", user.organizationId!).eq("isArchived", false),
       )
       .collect();
-
-    return projects.filter((project) => accessibleIds.includes(project._id));
   },
 });
 
@@ -38,28 +28,11 @@ export const getProjectById = query({
     if (!userId) return null;
 
     const user = await getCurrentUser(ctx);
-    const accessibleIds = await getUserAccessibleProjectIds(
-      ctx,
-      user._id,
-      user.organizationId,
-    );
+    const project = await ctx.db.get(args.projectId);
+    if (!project || project.organizationId !== user.organizationId)
+      throw new Error("No access");
 
-    if (!accessibleIds.includes(args.projectId)) throw new Error("No access");
-
-    return ctx.db.get(args.projectId);
-  },
-});
-
-export const getDepartments = query({
-  handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    const projects = await ctx.db
-      .query("projects")
-      .withIndex("by_organization_archived", (q) =>
-        q.eq("organizationId", user.organizationId).eq("isArchived", false),
-      )
-      .collect();
-    return projects.filter((project) => !project.parentId);
+    return project;
   },
 });
 
@@ -72,72 +45,5 @@ export const getArchivedProjects = query({
         q.eq("organizationId", user.organizationId).eq("isArchived", true),
       )
       .collect();
-  },
-});
-
-export const getBookableProjects = query({
-  args: { showRuecklagen: v.optional(v.boolean()) },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
-
-    const user = await ctx.db.get(userId);
-    if (!user?.organizationId) return [];
-
-    const organizationId = user.organizationId;
-    const accessibleIds = await getUserAccessibleProjectIds(
-      ctx,
-      user._id,
-      organizationId,
-    );
-
-    const allProjects = await ctx.db
-      .query("projects")
-      .withIndex("by_organization_archived", (q) =>
-        q.eq("organizationId", organizationId).eq("isArchived", false),
-      )
-      .collect();
-
-    const active = allProjects.filter((project) =>
-      accessibleIds.includes(project._id),
-    );
-
-    const parentIds = new Set(
-      active.map((project) => project.parentId).filter(Boolean),
-    );
-
-    return active.filter((project) => {
-      if (!project.parentId && parentIds.has(project._id)) return false;
-      if (!args.showRuecklagen && project.name === "Rücklagen" && !project.parentId)
-        return false;
-      return true;
-    });
-  },
-});
-
-export const getChildProjectIds = query({
-  args: { projectId: v.id("projects") },
-  handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-
-    const active = await ctx.db
-      .query("projects")
-      .withIndex("by_organization_archived", (q) =>
-        q.eq("organizationId", user.organizationId).eq("isArchived", false),
-      )
-      .collect();
-    const result: (typeof args.projectId)[] = [];
-
-    const collectChildren = (parentId: typeof args.projectId) => {
-      for (const project of active) {
-        if (project.parentId === parentId) {
-          result.push(project._id);
-          collectChildren(project._id);
-        }
-      }
-    };
-
-    collectChildren(args.projectId);
-    return result;
   },
 });

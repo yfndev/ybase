@@ -40,99 +40,12 @@ export default defineSchema({
 
   projects: defineTable({
     name: v.string(),
-
-    parentId: v.optional(v.id("projects")),
     organizationId: v.id("organizations"),
     isArchived: v.boolean(),
     createdBy: v.id("users"),
   })
     .index("by_organization", ["organizationId"])
-    .index("by_organization_parentId", ["organizationId", "parentId"])
     .index("by_organization_archived", ["organizationId", "isArchived"]),
-
-  transactions: defineTable({
-    projectId: v.optional(v.id("projects")),
-    organizationId: v.id("organizations"),
-    date: v.number(),
-    amount: v.number(),
-    description: v.string(),
-    counterparty: v.string(),
-    categoryId: v.optional(v.id("categories")),
-    donorId: v.optional(v.id("donors")),
-    importedBy: v.id("users"),
-    bankReferenceId: v.optional(v.string()),
-    importSource: v.optional(
-      v.union(
-        v.literal("sparkasse"),
-        v.literal("volksbank"),
-        v.literal("moss"),
-        v.literal("finom"),
-      ),
-    ),
-    currency: v.optional(v.string()),
-    status: v.union(v.literal("expected"), v.literal("processed")),
-    matchedTransactionId: v.optional(v.id("transactions")),
-    accountName: v.optional(v.string()),
-    isArchived: v.optional(v.boolean()),
-    splitFromTransactionId: v.optional(v.id("transactions")),
-    transferId: v.optional(v.string()),
-  })
-    .index("by_organization_project", ["organizationId", "projectId"])
-    .index("by_date", ["date"])
-    .index("by_organization", ["organizationId"])
-    .index("by_organization_donor", ["organizationId", "donorId"])
-    .index("by_organization_project_donor", [
-      "organizationId",
-      "projectId",
-      "donorId",
-    ])
-    .index("by_bankReferenceId", [
-      "organizationId",
-      "bankReferenceId",
-    ])
-    .index("by_splitFrom", ["splitFromTransactionId"])
-    .index("by_archived", ["isArchived"])
-    .index("by_transferId", ["transferId"])
-    .index("by_organization_status", ["organizationId", "status"])
-    .index("by_organization_date", ["organizationId", "date"]),
-
-  categories: defineTable({
-    name: v.string(),
-    taxsphere: v.union(
-      v.literal("non-profit"), // Ideeller Bereich
-      v.literal("asset-management"), // Vermögensverwaltung
-      v.literal("purpose-operations"), // Zweckbetrieb
-      v.literal("commercial-operations"), // Wirtschaftlicher Geschäftsbetrieb
-    ),
-    approved: v.boolean(),
-    createdBy: v.optional(v.id("users")),
-    parentId: v.optional(v.id("categories")),
-  })
-    .index("by_parent", ["parentId"])
-    .index("by_name", ["name"]),
-
-  donors: defineTable({
-    name: v.string(),
-    type: v.union(v.literal("donation"), v.literal("sponsoring")),
-    allowedTaxSpheres: v.array(
-      v.union(
-        v.literal("non-profit"),
-        v.literal("asset-management"),
-        v.literal("purpose-operations"),
-        v.literal("commercial-operations"),
-      ),
-    ),
-    organizationId: v.id("organizations"),
-    createdBy: v.id("users"),
-  }).index("by_organization", ["organizationId"]),
-
-  teams: defineTable({
-    name: v.string(),
-    organizationId: v.id("organizations"),
-    projectIds: v.array(v.id("projects")),
-    memberIds: v.array(v.id("users")),
-    createdBy: v.id("users"),
-  }).index("by_organization", ["organizationId"]),
 
   reimbursements: defineTable({
     organizationId: v.id("organizations"),

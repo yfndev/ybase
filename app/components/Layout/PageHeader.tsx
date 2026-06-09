@@ -1,35 +1,17 @@
 "use client";
 
-import { AddDonorDialog } from "@/components/Dialogs/AddDonorDialog";
-import { CreateCategoryDialog } from "@/components/Dialogs/CreateCategoryDialog";
-import { CreateProjectDialog } from "@/components/Dialogs/CreateProjectDialog";
-import { RangeCalendarToggle } from "@/components/RangeCalendar/RangeCalendarToggle";
-import { ImportTransactionsSheet } from "@/components/Sheets/ImportTransactionsSheet";
-import { TransactionSheet } from "@/components/Sheets/TransactionSheet";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useIsAdmin } from "@/lib/hooks/useCurrentUserRole";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 
 interface Props {
   title?: string;
   subtitle?: string;
   showBackButton?: boolean;
   backUrl?: string;
-  showRangeCalendar?: boolean;
 }
 
 export function PageHeader({
@@ -37,42 +19,8 @@ export function PageHeader({
   subtitle,
   showBackButton = false,
   backUrl,
-  showRangeCalendar = false,
 }: Props) {
   const router = useRouter();
-  const isAdmin = useIsAdmin();
-  const [isExpenseOpen, setIsExpenseOpen] = useState(false);
-  const [isIncomeOpen, setIsIncomeOpen] = useState(false);
-  const [isImportOpen, setIsImportOpen] = useState(false);
-  const [isDonorOpen, setIsDonorOpen] = useState(false);
-  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
-  const [isProjectOpen, setIsProjectOpen] = useState(false);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.metaKey && (e.code === "KeyE" || e.key === "e")) {
-        e.preventDefault();
-        setIsIncomeOpen(false);
-        setIsExpenseOpen(true);
-      } else if (e.metaKey && (e.code === "KeyI" || e.key === "i")) {
-        e.preventDefault();
-        setIsExpenseOpen(false);
-        setIsIncomeOpen(true);
-      } else if (e.metaKey && e.code === "KeyP") {
-        e.preventDefault();
-        setIsProjectOpen(true);
-      } else if (e.metaKey && e.code === "KeyD") {
-        e.preventDefault();
-        setIsDonorOpen(true);
-      } else if (e.metaKey && e.code === "KeyK") {
-        e.preventDefault();
-        setIsCategoryOpen(true);
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
 
   const handleBackClick = () => {
     if (backUrl) {
@@ -83,129 +31,40 @@ export function PageHeader({
   };
 
   return (
-    <>
-      <header className="flex h-12 sm:h-16 items-center" id="tour-page-header">
-        <div className="flex w-full items-center gap-2">
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-[orientation=vertical]:h-4"
-          />
-          <div className="flex flex-1 min-w-0 items-center justify-between gap-2">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              {showBackButton && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleBackClick}
-                  className="h-8 w-8 shrink-0"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              )}
-              <div className="min-w-0">
-                {title ? (
-                  <h1 className="text-lg sm:text-xl font-semibold truncate">
-                    {title}
-                  </h1>
-                ) : (
-                  <Skeleton className="h-7 w-48" />
-                )}
-                {subtitle && (
-                  <p className="text-sm text-muted-foreground truncate">
-                    {subtitle}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-              {showRangeCalendar && <RangeCalendarToggle />}
-
-              {isAdmin && (
-                <div id="tour-add-dropdown">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="default" className="hidden sm:flex">
-                        Hinzufügen
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-auto mr-4" align="start">
-                      <DropdownMenuGroup>
-                        <DropdownMenuItem
-                          onSelect={() => setIsExpenseOpen(true)}
-                        >
-                          <span className="font-semibold"> Ausgabe planen</span>
-                          <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onSelect={() => setIsIncomeOpen(true)}
-                        >
-                          <span className="font-semibold">Einnahme planen</span>
-                          <DropdownMenuShortcut>⌘I</DropdownMenuShortcut>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onSelect={() => setIsProjectOpen(true)}
-                        >
-                          <span> Projekt erstellen</span>
-                          <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => setIsDonorOpen(true)}>
-                          <span> Förderer hinzufügen</span>
-                          <DropdownMenuShortcut>⇧⌘F</DropdownMenuShortcut>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onSelect={() => setIsCategoryOpen(true)}
-                        >
-                          <span> Kategorie hinzufügen</span>
-                          <DropdownMenuShortcut>⇧⌘K</DropdownMenuShortcut>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onSelect={() => setIsImportOpen(true)}
-                        >
-                          CSV importieren
-                        </DropdownMenuItem>
-                      </DropdownMenuGroup>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              )}
-            </div>
+    <header className="flex h-12 sm:h-16 items-center">
+      <div className="flex w-full items-center gap-2">
+        <SidebarTrigger className="-ml-1" />
+        <Separator
+          orientation="vertical"
+          className="mr-2 data-[orientation=vertical]:h-4"
+        />
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          {showBackButton && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleBackClick}
+              className="h-8 w-8 shrink-0"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
+          <div className="min-w-0">
+            {title ? (
+              <h1 className="text-lg sm:text-xl font-semibold truncate">
+                {title}
+              </h1>
+            ) : (
+              <Skeleton className="h-7 w-48" />
+            )}
+            {subtitle && (
+              <p className="text-sm text-muted-foreground truncate">
+                {subtitle}
+              </p>
+            )}
           </div>
         </div>
-      </header>
-
-      <div id="tour-expense-sheet">
-        <TransactionSheet
-          type="expense"
-          open={isExpenseOpen}
-          onOpenChange={setIsExpenseOpen}
-        />
       </div>
-      <div id="tour-income-sheet">
-        <TransactionSheet
-          type="income"
-          open={isIncomeOpen}
-          onOpenChange={setIsIncomeOpen}
-        />
-      </div>
-      <div id="tour-csv-upload">
-        <ImportTransactionsSheet
-          open={isImportOpen}
-          onOpenChange={setIsImportOpen}
-        />
-      </div>
-      <AddDonorDialog open={isDonorOpen} onOpenChange={setIsDonorOpen} />
-      <CreateCategoryDialog
-        open={isCategoryOpen}
-        onOpenChange={setIsCategoryOpen}
-      />
-      <CreateProjectDialog
-        open={isProjectOpen}
-        onOpenChange={setIsProjectOpen}
-      />
-      <div id="tour-transaction-form" className="hidden" />
-      <div id="tour-csv-preview" className="hidden" />
-    </>
+    </header>
   );
 }

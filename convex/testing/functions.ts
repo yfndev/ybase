@@ -74,13 +74,16 @@ async function deleteOrganization(
     await ctx.db.delete(r._id);
   }
 
-  for (const table of [
-    "transactions",
-    "projects",
-    "donors",
-    "logs",
-    "teams",
-  ] as const) {
+  const allowances = await ctx.db
+    .query("volunteerAllowance")
+    .withIndex("by_organization", (q) => q.eq("organizationId", organizationId))
+    .collect();
+  for (const a of allowances) {
+    if (a.signatureStorageId) await ctx.storage.delete(a.signatureStorageId);
+    await ctx.db.delete(a._id);
+  }
+
+  for (const table of ["projects", "logs"] as const) {
     const docs = await ctx.db
       .query(table)
       .withIndex("by_organization", (q) =>

@@ -18,7 +18,7 @@ export default function TestAuthPage() {
     setStatus("Authenticating...");
     try {
       await signIn("testing", { email, name });
-      router.push("/dashboard");
+      router.push("/reimbursements");
     } catch (error) {
       setStatus(
         `Error: ${error instanceof Error ? error.message : "Unknown error"}`,

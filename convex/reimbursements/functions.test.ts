@@ -361,7 +361,7 @@ test("delete reimbursement with receipts deletes receipt records", async () => {
   expect(receipts).toHaveLength(0);
 });
 
-test("mark as paid when project is deleted uses fallback description", async () => {
+test("approve still works when project is deleted", async () => {
   vi.useFakeTimers();
   const t = convexTest(schema, modules);
   const { userId, projectId, reimbursementId } = await setupTestData(t);
@@ -375,11 +375,8 @@ test("mark as paid when project is deleted uses fallback description", async () 
   await t.finishAllScheduledFunctions(vi.runAllTimers);
   vi.useRealTimers();
 
-  const transactions = await t.run((ctx) =>
-    ctx.db.query("transactions").collect(),
-  );
-  const created = transactions.find((tx) => tx.description === "Auslagenerstattung");
-  expect(created).toBeDefined();
+  const reimbursement = await t.run((ctx) => ctx.db.get(reimbursementId));
+  expect(reimbursement?.status).toBe("approved");
 });
 
 test("mark travel reimbursement as paid without meal allowance and no creator name", async () => {
