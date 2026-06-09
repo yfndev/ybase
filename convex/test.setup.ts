@@ -18,51 +18,10 @@ export async function setupTestData(test: ReturnType<typeof convexTest>) {
 
     await ctx.db.patch(userId, { organizationId });
 
-    await ctx.db.insert("projects", {
-      name: "Rücklagen",
-      organizationId,
-      isArchived: false,
-      createdBy: userId,
-    });
-
     const projectId = await ctx.db.insert("projects", {
       name: "Test Project",
       organizationId,
       isArchived: false,
-      createdBy: userId,
-    });
-
-    const categoryId = await ctx.db.insert("categories", {
-      name: "Test Category",
-      taxsphere: "non-profit",
-      approved: true,
-    });
-
-    await ctx.db.insert("categories", {
-      name: "Auslagenerstattung",
-      taxsphere: "non-profit",
-      approved: true,
-    });
-
-    await ctx.db.insert("categories", {
-      name: "Ehrenamtspauschale",
-      taxsphere: "non-profit",
-      approved: true,
-    });
-
-    const donorId = await ctx.db.insert("donors", {
-      name: "Test Donor",
-      type: "donation",
-      allowedTaxSpheres: ["non-profit"],
-      organizationId,
-      createdBy: userId,
-    });
-
-    const teamId = await ctx.db.insert("teams", {
-      name: "Test Team",
-      organizationId,
-      memberIds: [userId],
-      projectIds: [projectId],
       createdBy: userId,
     });
 
@@ -103,9 +62,6 @@ export async function setupTestData(test: ReturnType<typeof convexTest>) {
       organizationId,
       userId,
       projectId,
-      categoryId,
-      donorId,
-      teamId,
       reimbursementId,
       travelReimbursementId,
     };
