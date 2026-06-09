@@ -34,7 +34,7 @@ test("add user to existing organization by domain", async () => {
   expect(user?.role).toBe("member");
 });
 
-test("create new organization with reserves project", async () => {
+test("create new organization with default project", async () => {
   const t = convexTest(schema, modules);
 
   const userId = await t.run((ctx) =>
@@ -60,7 +60,7 @@ test("create new organization with reserves project", async () => {
       )
       .first(),
   );
-  expect(project?.name).toBe("Rücklagen");
+  expect(project?.name).toBe("Allgemein");
 });
 
 test("throw error when email has no @ (can't split domain)", async () => {

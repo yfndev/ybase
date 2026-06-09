@@ -179,28 +179,6 @@ export const approve = mutation({
       throw new Error(`Cannot approve: amount exceeds ${MAX_VOLUNTEER_ALLOWANCE_EUR}€ legal limit`);
     }
 
-    const category = await ctx.db
-      .query("categories")
-      .withIndex("by_name", (q) => q.eq("name", "Ehrenamtspauschale"))
-      .first();
-
-    if (!category) throw new Error("Kategorie 'Ehrenamtspauschale' nicht gefunden. Bitte Kategorien in den Einstellungen anlegen.");
-
-    const project = await ctx.db.get(doc.projectId);
-    const description = project ? `${project.name} - Ehrenamtspauschale` : "Ehrenamtspauschale";
-
-    await ctx.db.insert("transactions", {
-      organizationId: doc.organizationId,
-      projectId: doc.projectId,
-      date: Date.now(),
-      amount: -doc.amount,
-      description,
-      counterparty: doc.accountHolder,
-      categoryId: category._id,
-      status: "expected",
-      importedBy: user._id,
-    });
-
     await ctx.db.patch(args.id, { status: "approved", reviewedBy: user._id });
 
     await addLog(
