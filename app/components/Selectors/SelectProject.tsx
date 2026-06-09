@@ -12,14 +12,12 @@ interface Props {
   value: string | undefined;
   onValueChange: (value: string) => void;
   autoFocus?: boolean;
-  showRuecklagen?: boolean;
 }
 
 export function SelectProject({
   value,
   onValueChange,
   autoFocus,
-  showRuecklagen,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -28,8 +26,7 @@ export function SelectProject({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const projects = useQuery(api.projects.queries.getBookableProjects, {});
-  const departments = useQuery(api.projects.queries.getDepartments);
+  const projects = useQuery(api.projects.queries.getAllProjects, {});
 
   const selected = projects?.find((project) => project._id === value);
   const filtered =

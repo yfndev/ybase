@@ -1,38 +1,18 @@
 import { v } from "convex/values";
-import type { Id } from "../_generated/dataModel";
-import type { MutationCtx } from "../_generated/server";
 import { mutation } from "../_generated/server";
 import { addLog } from "../logs/functions";
 import { requireRole } from "../users/permissions";
 
-async function getProjectName(
-  ctx: MutationCtx,
-  projectId: Id<"projects"> | null | undefined,
-) {
-  if (!projectId) return "Root";
-  const project = await ctx.db.get(projectId);
-  return project?.name ?? "Root";
-}
-
 export const createProject = mutation({
   args: {
     name: v.string(),
-    parentId: v.optional(v.id("projects")),
   },
   handler: async (ctx, args) => {
     const user = await requireRole(ctx, "lead");
 
-    if (args.parentId) {
-      const parent = await ctx.db.get(args.parentId);
-      if (parent?.parentId) {
-        throw new Error("Projects can only be nested one level deep");
-      }
-    }
-
     const projectId = await ctx.db.insert("projects", {
       name: args.name,
       organizationId: user.organizationId,
-      parentId: args.parentId,
       isArchived: false,
       createdBy: user._id,
     });
@@ -64,9 +44,6 @@ export const archiveProject = mutation({
 
     if (!project || project.organizationId !== user.organizationId) throw new Error("Access denied");
 
-    const isReserves = project.name === "Rücklagen" && !project.parentId;
-    if (isReserves) throw new Error("Rücklagen kann nicht archiviert werden");
-
     await ctx.db.patch(args.projectId, { isArchived: true });
     await addLog(ctx, user.organizationId, user._id, "project.archive", args.projectId, project?.name);
   },
@@ -93,13 +70,7 @@ export const checkProjectLinkedData = mutation({
     const project = await ctx.db.get(args.projectId);
     if (!project || project.organizationId !== user.organizationId) throw new Error("Access denied");
 
-    const [transactions, reimbursements, allowances] = await Promise.all([
-      ctx.db
-        .query("transactions")
-        .withIndex("by_organization_project", (q) =>
-          q.eq("organizationId", user.organizationId).eq("projectId", args.projectId),
-        )
-        .first(),
+    const [reimbursements, allowances] = await Promise.all([
       ctx.db
         .query("reimbursements")
         .withIndex("by_organization_project", (q) =>
@@ -114,7 +85,7 @@ export const checkProjectLinkedData = mutation({
         .first(),
     ]);
 
-    return { hasLinkedData: !!(transactions || reimbursements || allowances) };
+    return { hasLinkedData: !!(reimbursements || allowances) };
   },
 });
 
@@ -129,9 +100,6 @@ export const deleteProject = mutation({
 
     if (!project || project.organizationId !== user.organizationId) throw new Error("Access denied");
 
-    const isReserves = project.name === "Rücklagen" && !project.parentId;
-    if (isReserves) throw new Error("Rücklagen kann nicht gelöscht werden");
-
     const targetId = args.mergeIntoProjectId;
 
     if (targetId) {
@@ -139,18 +107,6 @@ export const deleteProject = mutation({
       if (!target || target.organizationId !== user.organizationId) throw new Error("Zielprojekt nicht gefunden");
       if (targetId === args.projectId) throw new Error("Zielprojekt darf nicht das gleiche Projekt sein");
 
-      // Reassign transactions
-      const transactions = await ctx.db
-        .query("transactions")
-        .withIndex("by_organization_project", (q) =>
-          q.eq("organizationId", user.organizationId).eq("projectId", args.projectId),
-        )
-        .collect();
-      for (const tx of transactions) {
-        await ctx.db.patch(tx._id, { projectId: targetId });
-      }
-
-      // Reassign reimbursements
       const reimbursements = await ctx.db
         .query("reimbursements")
         .withIndex("by_organization_project", (q) =>
@@ -161,7 +117,6 @@ export const deleteProject = mutation({
         await ctx.db.patch(r._id, { projectId: targetId });
       }
 
-      // Reassign volunteerAllowances
       const allowances = await ctx.db
         .query("volunteerAllowance")
         .withIndex("by_organization_project", (q) =>
@@ -171,71 +126,9 @@ export const deleteProject = mutation({
       for (const a of allowances) {
         await ctx.db.patch(a._id, { projectId: targetId });
       }
-
-      // Update teams: replace deleted projectId with targetId
-      const teams = await ctx.db
-        .query("teams")
-        .withIndex("by_organization", (q) => q.eq("organizationId", user.organizationId))
-        .collect();
-      for (const team of teams) {
-        if (team.projectIds.includes(args.projectId)) {
-          const newIds = team.projectIds
-            .filter((id) => id !== args.projectId)
-            .concat(team.projectIds.includes(targetId) ? [] : [targetId]);
-          await ctx.db.patch(team._id, { projectIds: newIds });
-        }
-      }
-    }
-
-    // Delete child projects first
-    const children = await ctx.db
-      .query("projects")
-      .withIndex("by_organization_parentId", (q) =>
-        q.eq("organizationId", user.organizationId).eq("parentId", args.projectId),
-      )
-      .collect();
-    for (const child of children) {
-      await ctx.db.delete(child._id);
     }
 
     await ctx.db.delete(args.projectId);
     await addLog(ctx, user.organizationId, user._id, "project.delete", args.projectId, project.name);
-  },
-});
-
-export const moveProject = mutation({
-  args: {
-    projectId: v.id("projects"),
-    newParentId: v.union(v.id("projects"), v.null()),
-  },
-  handler: async (ctx, args) => {
-    const user = await requireRole(ctx, "lead");
-    const project = await ctx.db.get(args.projectId);
-
-    if (!project) throw new Error("Project not found");
-    if (project.organizationId !== user.organizationId) throw new Error("Access denied");
-
-    if (args.newParentId) {
-      const newParent = await ctx.db.get(args.newParentId);
-      if (!newParent) throw new Error("Parent not found");
-      if (newParent.parentId) throw new Error("Cannot move to a nested project");
-      if (args.newParentId === args.projectId) throw new Error("Cannot move project to itself");
-      if (newParent.name === "Rücklagen") throw new Error("Cannot move to Rücklagen");
-    }
-
-    const children = await ctx.db
-      .query("projects")
-      .withIndex("by_organization_parentId", (q) => q.eq("organizationId", user.organizationId).eq("parentId", args.projectId))
-      .collect();
-
-    if (children.length > 0 && args.newParentId) {
-      throw new Error("Cannot move a department with children");
-    }
-
-    const oldParentName = await getProjectName(ctx, project.parentId);
-    const newParentName = await getProjectName(ctx, args.newParentId);
-
-    await ctx.db.patch(args.projectId, { parentId: args.newParentId ?? undefined });
-    await addLog(ctx, user.organizationId, user._id, "project.move", args.projectId, `${project.name}: ${oldParentName} → ${newParentName}`);
   },
 });

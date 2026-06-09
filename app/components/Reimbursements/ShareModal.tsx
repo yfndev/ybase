@@ -21,7 +21,7 @@ const INITIAL_FORM = {
 };
 
 export function ShareModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const projects = useQuery(api.projects.queries.getBookableProjects, {});
+  const projects = useQuery(api.projects.queries.getAllProjects, {});
   const pendingLinks = useQuery(api.reimbursements.sharing.getPendingSharedLinks);
 
   const createReimbursementLink = useMutation(api.reimbursements.sharing.createReimbursementLink);
