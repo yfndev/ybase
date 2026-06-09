@@ -1,6 +1,5 @@
 "use client";
 
-import { CreateTeamDialog } from "@/components/Dialogs/CreateTeamDialog";
 import { InviteUserDialog } from "@/components/Dialogs/InviteUserDialog";
 import { PageHeader } from "@/components/Layout/PageHeader";
 import { AccessDenied } from "@/components/Settings/AccessDenied";
@@ -26,7 +25,6 @@ export default function UsersPage() {
   const users = useQuery(api.users.queries.listOrganizationUsers);
   const isAdmin = useIsAdmin();
   const updateUserRole = useMutation(api.users.functions.updateUserRole);
-  const [createTeamDialogOpen, setCreateTeamDialogOpen] = useState(false);
   const [inviteUserDialogOpen, setInviteUserDialogOpen] = useState(false);
 
   const handleRoleChange = async (userId: Id<"users">, role: UserRole) => {
@@ -83,20 +81,7 @@ export default function UsersPage() {
                     </div>
                   </TableHead>
                   <TableHead>E-Mail</TableHead>
-                  <TableHead>Org-Rolle</TableHead>
-                  <TableHead className="pr-6">
-                    <div className="flex items-center gap-2">
-                      Teams
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => setCreateTeamDialogOpen(true)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableHead>
+                  <TableHead className="pr-6">Org-Rolle</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -117,10 +102,6 @@ export default function UsersPage() {
         )}
       </div>
 
-      <CreateTeamDialog
-        open={createTeamDialogOpen}
-        onOpenChange={setCreateTeamDialogOpen}
-      />
       <InviteUserDialog
         open={inviteUserDialogOpen}
         onOpenChange={setInviteUserDialogOpen}
