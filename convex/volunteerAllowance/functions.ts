@@ -179,7 +179,7 @@ export const approve = mutation({
       throw new Error(`Cannot approve: amount exceeds ${MAX_VOLUNTEER_ALLOWANCE_EUR}€ legal limit`);
     }
 
-    await ctx.db.patch(args.id, { status: "approved", reviewedBy: user._id });
+    await ctx.db.patch(args.id, { status: "approved", reviewedBy: user._id, reviewedAt: Date.now() });
 
     await addLog(
       ctx,
@@ -210,6 +210,7 @@ export const decline = mutation({
       status: "declined",
       rejectionNote: args.rejectionNote,
       reviewedBy: user._id,
+      reviewedAt: Date.now(),
     });
 
     await addLog(

@@ -59,6 +59,7 @@ export default defineSchema({
     rejectionNote: v.optional(v.string()),
     createdBy: v.id("users"),
     reviewedBy: v.optional(v.id("users")),
+    reviewedAt: v.optional(v.number()),
     currency: v.optional(v.string()),
     // Sharing fields
     signatureStorageId: v.optional(v.id("_storage")),
@@ -125,6 +126,7 @@ export default defineSchema({
     rejectionNote: v.optional(v.string()),
     createdBy: v.id("users"),
     reviewedBy: v.optional(v.id("users")),
+    reviewedAt: v.optional(v.number()),
     activityDescription: v.string(),
     startDate: v.string(),
     endDate: v.string(),

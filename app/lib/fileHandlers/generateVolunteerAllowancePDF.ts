@@ -24,6 +24,9 @@ type VolunteerAllowanceData = {
   organizationStreet?: string;
   organizationPlz?: string;
   organizationCity?: string;
+  status?: string;
+  reviewedByName?: string;
+  reviewedAt?: number;
 };
 
 export async function generateVolunteerAllowancePDF(
@@ -193,6 +196,15 @@ export async function generateVolunteerAllowancePDF(
   for (const line of splitText(confirmText, 85)) {
     page.drawText(line, { x: M, y, size: 8.5, font, color: TEXT_DARK });
     y -= 13;
+  }
+
+  if (data.status === "approved" && data.reviewedByName) {
+    y -= 8;
+    drawSection("GENEHMIGUNG");
+    drawRow("Freigegeben von", data.reviewedByName, true);
+    if (data.reviewedAt) {
+      drawRow("Freigabedatum", new Date(data.reviewedAt).toLocaleDateString("de-DE"));
+    }
   }
 
   // Signature area
