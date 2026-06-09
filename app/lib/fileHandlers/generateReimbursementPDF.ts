@@ -296,6 +296,26 @@ export async function generateReimbursementPDF(
     }
   }
 
+  if (reimbursement.status === "approved" && reimbursement.reviewedByName) {
+    y -= 28;
+    coverPage.drawText("GENEHMIGUNG", {
+      x: M,
+      y,
+      size: 8,
+      font: boldFont,
+      color: BLUE,
+    });
+    y -= 6;
+    drawDivider(coverPage, y, WIDTH);
+    y -= 18;
+    drawLabelValue(coverPage, font, boldFont, "Freigegeben von", reimbursement.reviewedByName, M, y);
+    if (reimbursement.reviewedAt) {
+      y -= 16;
+      const reviewedDate = new Date(reimbursement.reviewedAt).toLocaleDateString("de-DE");
+      drawLabelValue(coverPage, font, boldFont, "Freigabedatum", reviewedDate, M, y);
+    }
+  }
+
   // ── Receipt pages ────────────────────────────────────────────────────────
   for (let i = 0; i < receipts.length; i++) {
     const r = receipts[i];

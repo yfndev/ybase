@@ -170,7 +170,7 @@ export const approve = mutation({
       throw new Error("Reimbursement already processed");
     }
 
-    await ctx.db.patch(args.reimbursementId, { status: "approved", reviewedBy: user._id });
+    await ctx.db.patch(args.reimbursementId, { status: "approved", reviewedBy: user._id, reviewedAt: Date.now() });
     await addLog(ctx, user.organizationId, user._id, "reimbursement.approve", args.reimbursementId, `${reimbursement.amount}€`);
 
     await ctx.scheduler.runAfter(0, internal.reimbursements.functions.sendApprovalEmail, {
@@ -200,6 +200,7 @@ export const decline = mutation({
       status: "declined",
       rejectionNote: args.rejectionNote,
       reviewedBy: user._id,
+      reviewedAt: Date.now(),
     });
 
     await addLog(ctx, user.organizationId, user._id, "reimbursement.decline", args.reimbursementId, args.rejectionNote);

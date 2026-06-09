@@ -21,14 +21,17 @@ export const getReimbursement = query({
     if (!reimbursement || reimbursement.organizationId !== user.organizationId)
       return null;
 
-    if (reimbursement.type !== "travel") return reimbursement;
+    const reviewer = reimbursement.reviewedBy ? await ctx.db.get(reimbursement.reviewedBy) : null;
+    const reviewedByName = reviewer?.name;
+
+    if (reimbursement.type !== "travel") return { ...reimbursement, reviewedByName };
 
     const travelDetails = await ctx.db
       .query("travelDetails")
       .withIndex("by_reimbursement", (q) => q.eq("reimbursementId", args.reimbursementId))
       .first();
 
-    return { ...reimbursement, travelDetails };
+    return { ...reimbursement, reviewedByName, travelDetails };
   },
 });
 
