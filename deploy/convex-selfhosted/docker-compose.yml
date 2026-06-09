@@ -1,0 +1,63 @@
+# Ports bind to 127.0.0.1 — the host nginx vhost terminates TLS and proxies to
+# them (not Coolify Traefik). Postgres lives on the shared "coolify" network.
+
+services:
+  backend:
+    image: ghcr.io/get-convex/convex-backend:latest
+    stop_grace_period: 10s
+    stop_signal: SIGINT
+    ports:
+      - "127.0.0.1:3210:3210"
+      - "127.0.0.1:3211:3211"
+    environment:
+      - CONVEX_CLOUD_ORIGIN=${CONVEX_CLOUD_ORIGIN}
+      - CONVEX_SITE_ORIGIN=${CONVEX_SITE_ORIGIN}
+      - POSTGRES_URL=${POSTGRES_URL}
+      - DO_NOT_REQUIRE_SSL=${DO_NOT_REQUIRE_SSL:-1}
+      - INSTANCE_NAME=${INSTANCE_NAME}
+      - INSTANCE_SECRET=${INSTANCE_SECRET}
+      - DISABLE_BEACON=${DISABLE_BEACON:-true}
+      - REDACT_LOGS_TO_CLIENT=${REDACT_LOGS_TO_CLIENT:-true}
+      - RUST_LOG=${RUST_LOG:-info}
+      - DOCUMENT_RETENTION_DELAY=${DOCUMENT_RETENTION_DELAY:-172800}
+    volumes:
+      - convex-data:/convex/data
+    healthcheck:
+      test: curl -f http://localhost:3210/version
+      interval: 5s
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1500m
+    restart: unless-stopped
+    networks:
+      - default
+      - coolify
+
+  dashboard:
+    image: ghcr.io/get-convex/convex-dashboard:latest
+    stop_grace_period: 10s
+    stop_signal: SIGINT
+    ports:
+      - "127.0.0.1:6791:6791"
+    environment:
+      - NEXT_PUBLIC_DEPLOYMENT_URL=${NEXT_PUBLIC_DEPLOYMENT_URL}
+    depends_on:
+      backend:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    restart: unless-stopped
+    networks:
+      - default
+      - coolify
+
+volumes:
+  convex-data:
+
+networks:
+  coolify:
+    external: true
