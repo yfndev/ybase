@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@source "../../../node_modules/onborda/dist";
 
 @custom-variant dark (&:is(.dark *));
 :root {
@@ -213,27 +212,4 @@
     @apply bg-background text-foreground;
     letter-spacing: var(--tracking-normal);
   }
-}
-
-/* Onborda tour card z-index fix */
-[data-onborda-wrapper] {
-  z-index: 99999 !important;
-}
-
-[data-onborda-card] {
-  z-index: 99999 !important;
-}
-
-[data-name="onborda-overlay"] {
-  z-index: 1000 !important;
-}
-
-body:has([data-name="onborda-overlay"]) [data-slot="sidebar-container"] {
-  z-index: 9 !important;
-}
-
-[data-onborda-exclude] {
-  position: relative;
-  z-index: 1 !important;
-  isolation: isolate;
 }
