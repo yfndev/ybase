@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -12,42 +11,18 @@ import {
 } from "@/components/ui/sidebar";
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
-import {
-  Coins,
-  HelpCircle,
-  LayoutDashboard,
-  SquareCheckBig,
-  Upload,
-  Users,
-} from "lucide-react";
+import { Coins } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useOnborda } from "onborda";
 import { MainNav, type NavItem } from "./MainNav";
-import { ProjectNav } from "./ProjectNav";
 import { NavUser } from "./UserNav";
 
-const NAV_ITEMS: Array<NavItem & { adminOnly?: boolean }> = [
-  { name: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { name: "Transaktionen", url: "/transactions", icon: SquareCheckBig },
-  { name: "Import", url: "/import", icon: Upload, adminOnly: true },
-  { name: "Förderer", url: "/donors", icon: Users, adminOnly: true },
+const NAV_ITEMS: NavItem[] = [
   { name: "Erstattungen", url: "/reimbursements", icon: Coins },
 ];
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const user = useQuery(api.users.queries.getCurrentUserProfile);
-  const isAdmin = user?.role === "admin";
-  const navItems = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin);
-  const { startOnborda } = useOnborda();
-  const router = useRouter();
-
-  const handleStartTour = () => {
-    localStorage.removeItem("onborda:main-tour");
-    router.push("/dashboard");
-    setTimeout(() => startOnborda("main-tour"), 300);
-  };
 
   return (
     <Sidebar variant="sidebar" collapsible="icon" {...props}>
@@ -55,7 +30,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/dashboard">
+              <Link href="/reimbursements">
                 <Image
                   src="/AppIcon.png"
                   alt="YBudget"
@@ -71,20 +46,10 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <MainNav items={navItems} id="tour-main-nav" />
-        <ProjectNav id="tour-project-nav" />
+        <MainNav items={NAV_ITEMS} />
       </SidebarContent>
-      <SidebarFooter className="flex flex-row items-center justify-between">
+      <SidebarFooter>
         <NavUser user={user} />
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleStartTour}
-          title="Tour starten"
-          className="h-8 w-8"
-        >
-          <HelpCircle className="h-4 w-4" />
-        </Button>
       </SidebarFooter>
     </Sidebar>
   );

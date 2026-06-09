@@ -22,7 +22,7 @@ import { useAction, useQuery } from "convex/react";
 import {
   Building2,
   ChevronsUpDown,
-  Handshake,
+  FolderKanban,
   ScrollText,
   Users,
 } from "lucide-react";
@@ -116,9 +116,9 @@ export function NavUser({ user }: { user: Doc<"users"> | null | undefined }) {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/settings/teams">
-                      <Handshake />
-                      Teams
+                    <Link href="/settings/projects">
+                      <FolderKanban />
+                      Projekte
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
