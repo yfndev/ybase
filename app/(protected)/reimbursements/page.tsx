@@ -6,6 +6,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { generateReimbursementPDF } from "@/lib/fileHandlers/generateReimbursementPDF";
 import { generateVolunteerAllowancePDF } from "@/lib/fileHandlers/generateVolunteerAllowancePDF";
 import { generateSEPAXML } from "@/lib/fileHandlers/generateSEPAXML";
+import { shortReferenceId } from "@/lib/fileHandlers/referenceId";
 import { useIsAdmin } from "@/lib/hooks/useCurrentUserRole";
 import JSZip from "jszip";
 import { useConvex, useMutation, useQuery } from "convex/react";
@@ -134,17 +135,17 @@ export default function ReimbursementPage() {
     const signatureUrl = await convex.query(api.volunteerAllowance.queries.getSignatureUrl, {
       storageId: allowance.signatureStorageId,
     });
-    return generateVolunteerAllowancePDF({ ...allowance, id: String(allowance._id).slice(-8) }, signatureUrl);
+    return generateVolunteerAllowancePDF({ ...allowance, id: shortReferenceId(allowance._id) }, signatureUrl);
   };
 
   const handleDownloadReimbursement = async (id: Id<"reimbursements">) => {
     const blob = await getPdfBlobForReimbursement(id);
-    if (blob) downloadBlob(blob, `Erstattung_${id}.pdf`);
+    if (blob) downloadBlob(blob, `Erstattung_${shortReferenceId(id)}.pdf`);
   };
 
   const handleDownloadAllowance = async (allowance: Allowance) => {
     const blob = await getPdfBlobForAllowance(allowance);
-    if (blob) downloadBlob(blob, `Ehrenamtspauschale_${allowance._id}.pdf`);
+    if (blob) downloadBlob(blob, `Ehrenamtspauschale_${shortReferenceId(allowance._id)}.pdf`);
   };
 
   const handleBulkDownload = async () => {
@@ -158,13 +159,13 @@ export default function ReimbursementPage() {
         if (key.startsWith("r:")) {
           const id = key.slice(2) as Id<"reimbursements">;
           const blob = await getPdfBlobForReimbursement(id);
-          if (blob) zip.file(`Erstattung_${id}.pdf`, blob);
+          if (blob) zip.file(`Erstattung_${shortReferenceId(id)}.pdf`, blob);
         } else if (key.startsWith("a:")) {
           const id = key.slice(2) as Id<"volunteerAllowance">;
           const allowance = allowances?.find((a) => a._id === id);
           if (allowance) {
             const blob = await getPdfBlobForAllowance(allowance);
-            if (blob) zip.file(`Ehrenamtspauschale_${id}.pdf`, blob);
+            if (blob) zip.file(`Ehrenamtspauschale_${shortReferenceId(id)}.pdf`, blob);
           }
         }
       }

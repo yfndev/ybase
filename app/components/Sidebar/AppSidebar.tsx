@@ -15,6 +15,7 @@ import {
   Building2,
   Coins,
   FolderKanban,
+  LayoutDashboard,
   ScrollText,
   Users,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import { MainNav, type NavItem } from "./MainNav";
 import { NavUser } from "./UserNav";
 
 const NAV_ITEMS: NavItem[] = [
+  { name: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { name: "Erstattungen", url: "/reimbursements", icon: Coins },
 ];
 
