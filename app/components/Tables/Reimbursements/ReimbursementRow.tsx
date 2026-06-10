@@ -4,34 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/formatters/formatDate";
+import {
+  type ReimbursementStatus as Status,
+  STATUS_DISPLAY,
+} from "@/lib/reimbursementStatus";
 import { Check, Download, Trash2, X } from "lucide-react";
 import type { ReactNode } from "react";
-
-type Status = "pending" | "approved" | "declined";
-
-const STATUS_DISPLAY: Record<
-  Status,
-  { variant: "default" | "destructive"; label: string; dot: string; className: string }
-> = {
-  pending: {
-    variant: "default",
-    label: "Ausstehend",
-    dot: "bg-yellow-500",
-    className: "",
-  },
-  approved: {
-    variant: "default",
-    label: "Genehmigt",
-    dot: "bg-green-500",
-    className: "bg-green-600 text-white border-green-600",
-  },
-  declined: {
-    variant: "destructive",
-    label: "Abgelehnt",
-    dot: "bg-red-500",
-    className: "bg",
-  },
-};
 
 interface ReimbursementRowProps {
   item: {
