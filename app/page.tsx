@@ -10,7 +10,7 @@ export default function Home() {
 
   useEffect(() => {
     if (isLoading) return;
-    router.replace(isAuthenticated ? "/reimbursements" : "/login");
+    router.replace(isAuthenticated ? "/dashboard" : "/login");
   }, [isAuthenticated, isLoading, router]);
 
   return null;

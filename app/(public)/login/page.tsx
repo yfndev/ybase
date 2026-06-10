@@ -11,7 +11,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.push("/reimbursements");
+      router.push("/dashboard");
     }
   }, [isAuthenticated, isLoading, router]);
 
