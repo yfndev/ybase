@@ -159,6 +159,7 @@ export function ReimbursementPageUI({
                 {isAdmin && <TableHead>Ersteller</TableHead>}
                 <TableHead className="text-right">Betrag</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Geprüft von</TableHead>
                 <TableHead className="text-right" />
               </TableRow>
             </TableHeader>
