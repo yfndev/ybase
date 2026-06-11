@@ -76,16 +76,12 @@ export function ReimbursementRow({
         {item.amount.toFixed(2)} €
       </TableCell>
       <TableCell>
-        <div className="flex flex-col gap-0.5">
-          <Badge variant={display.variant} className={display.className}>
-            {display.label}
-          </Badge>
-          {item.reviewedByName && !isPending && (
-            <span className="text-xs text-muted-foreground">
-              ({item.reviewedByName})
-            </span>
-          )}
-        </div>
+        <Badge variant={display.variant} className={display.className}>
+          {display.label}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-muted-foreground">
+        {!isPending && item.reviewedByName ? item.reviewedByName : "–"}
       </TableCell>
       <TableCell onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-end gap-0.5">
