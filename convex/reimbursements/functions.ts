@@ -129,7 +129,10 @@ export const deleteReimbursement = mutation({
       .collect();
 
     for (const receipt of receipts) {
-      await ctx.storage.delete(receipt.fileStorageId);
+      const fileExists = await ctx.storage.getUrl(receipt.fileStorageId);
+      if (fileExists) {
+        await ctx.storage.delete(receipt.fileStorageId);
+      }
       await ctx.db.delete(receipt._id);
     }
 

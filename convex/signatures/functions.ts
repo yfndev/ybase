@@ -79,7 +79,10 @@ export const cleanupExpired = internalMutation({
 
 		for (const token of expired) {
 			if (token.signatureStorageId) {
-				await ctx.storage.delete(token.signatureStorageId);
+				const fileExists = await ctx.storage.getUrl(token.signatureStorageId);
+				if (fileExists) {
+					await ctx.storage.delete(token.signatureStorageId);
+				}
 			}
 			await ctx.db.delete(token._id);
 		}

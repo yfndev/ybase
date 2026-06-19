@@ -239,7 +239,10 @@ export const remove = mutation({
     }
 
     if (doc.signatureStorageId) {
-      await ctx.storage.delete(doc.signatureStorageId);
+      const fileExists = await ctx.storage.getUrl(doc.signatureStorageId);
+      if (fileExists) {
+        await ctx.storage.delete(doc.signatureStorageId);
+      }
     }
 
     await ctx.db.delete(args.id);
