@@ -1,4 +1,4 @@
--- YBudget Schema DDL for DrawSQL
+-- YBase Schema DDL for DrawSQL
 -- Generated from convex/schema.ts
 
 CREATE TABLE organizations (

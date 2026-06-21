@@ -49,12 +49,12 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
               <Link href="/reimbursements">
                 <Image
                   src="/AppIcon.png"
-                  alt="YBudget"
+                  alt="YBase"
                   width={32}
                   height={32}
                 />
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">YBudget</span>
+                  <span className="truncate font-semibold">YBase</span>
                 </div>
               </Link>
             </SidebarMenuButton>

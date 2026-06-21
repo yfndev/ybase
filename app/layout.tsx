@@ -13,7 +13,7 @@ const lexendDeca = Lexend_Deca({
 });
 
 export const metadata: Metadata = {
-  title: "yBudget",
+  title: "YBase",
   description: "Budget management for organizations",
 };
 

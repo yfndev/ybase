@@ -163,7 +163,7 @@ export default function DatenschutzPage() {
       <p className="mb-4">
         Telefon: 01715871414
         <br />
-        E-Mail: team@ybudget.de
+        E-Mail: info@youngfounders.network
       </p>
       <p className="mb-4">
         Verantwortliche Stelle ist die natürliche oder juristische Person, die

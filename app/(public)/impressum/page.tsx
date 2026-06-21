@@ -25,7 +25,8 @@ export default function ImpressumPage() {
         <br />
         Telefon: +49-01715871414
         <br />
-        E-Mail: <a href="mailto:team@ybudget.de">team@ybudget.de</a>
+        E-Mail:{" "}
+        <a href="mailto:info@youngfounders.network">info@youngfounders.network</a>
       </p>
 
       <p className="mb-4">

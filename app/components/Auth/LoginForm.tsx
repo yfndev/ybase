@@ -12,14 +12,14 @@ export function LoginForm() {
     <div className="flex flex-col items-center gap-12 text-center">
       <Image
         src="/LoginIllustration.svg"
-        alt="YBudget"
+        alt="YBase"
         width={350}
         height={350}
         priority
       />
       <div className="space-y-3">
         <h1 className="text-3xl font-bold tracking-tight">
-          Willkommen bei <span className="text-primary">YBudget</span>
+          Willkommen bei <span className="text-primary">YBase</span>
         </h1>
         <p className="text-muted-foreground text-sm">
           Melde dich mit deinem Google Konto an, um direkt loszulegen.
