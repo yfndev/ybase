@@ -3,11 +3,38 @@
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
-import { AlertCircle, CheckCircle2, Loader2, RotateCcw } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  RotateCcw,
+  Signature,
+} from "lucide-react";
 import { useParams } from "next/navigation";
 import { useRef, useState } from "react";
 import SignaturePad from "react-signature-canvas";
 import toast from "react-hot-toast";
+
+async function enterLandscapeFullscreen() {
+  try {
+    await document.documentElement.requestFullscreen?.();
+  } catch {}
+  try {
+    const orientation = screen.orientation as ScreenOrientation & {
+      lock?: (orientation: string) => Promise<void>;
+    };
+    await orientation?.lock?.("landscape");
+  } catch {}
+}
+
+function exitLandscapeFullscreen() {
+  try {
+    screen.orientation?.unlock?.();
+  } catch {}
+  try {
+    if (document.fullscreenElement) document.exitFullscreen?.();
+  } catch {}
+}
 
 export default function SignaturePage() {
   const { token } = useParams<{ token: string }>();
@@ -19,8 +46,14 @@ export default function SignaturePage() {
   const submitSignature = useMutation(api.signatures.functions.submit);
 
   const signaturePadRef = useRef<SignaturePad>(null);
+  const [started, setStarted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  const handleStart = async () => {
+    await enterLandscapeFullscreen();
+    setStarted(true);
+  };
 
   const handleSave = async () => {
     if (!signaturePadRef.current || signaturePadRef.current.isEmpty()) {
@@ -30,7 +63,9 @@ export default function SignaturePage() {
 
     setIsSubmitting(true);
     try {
-      const dataUrl = signaturePadRef.current.getTrimmedCanvas().toDataURL("image/png");
+      const dataUrl = signaturePadRef.current
+        .getTrimmedCanvas()
+        .toDataURL("image/png");
       const response = await fetch(dataUrl);
       const blob = await response.blob();
 
@@ -45,6 +80,7 @@ export default function SignaturePage() {
 
       const { storageId } = await result.json();
       await submitSignature({ token, signatureStorageId: storageId });
+      exitLandscapeFullscreen();
       setSubmitted(true);
     } catch {
       toast.error("Speichern fehlgeschlagen");
@@ -82,6 +118,20 @@ export default function SignaturePage() {
           <AlertCircle className="size-16 text-destructive mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-2">Link ungültig</h1>
           <p className="text-muted-foreground">{tokenData.error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!started) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-white p-8">
+        <div className="w-full max-w-xs text-center">
+          <Signature className="size-16 text-muted-foreground mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-6">Unterschreiben</h1>
+          <Button size="lg" className="w-full h-14" onClick={handleStart}>
+            Unterschrift starten
+          </Button>
         </div>
       </div>
     );
