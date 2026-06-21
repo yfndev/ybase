@@ -12,6 +12,8 @@ export default defineSchema({
     plz: v.optional(v.string()),
     city: v.optional(v.string()),
     accountingEmail: v.optional(v.string()),
+    careOf: v.optional(v.string()),
+    taxId: v.optional(v.string()),
   })
     .index("by_name", ["name"])
     .index("by_domain", ["domain"]),

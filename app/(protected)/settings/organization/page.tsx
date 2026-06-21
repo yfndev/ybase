@@ -21,9 +21,12 @@ export default function OrganizationSettingsPage() {
 
   const [form, setForm] = useState({
     name: "",
+    careOf: "",
     street: "",
     plz: "",
     city: "",
+    taxId: "",
+    accountingEmail: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -31,9 +34,12 @@ export default function OrganizationSettingsPage() {
     if (organization) {
       setForm({
         name: organization.name,
+        careOf: organization.careOf,
         street: organization.street,
         plz: organization.plz,
         city: organization.city,
+        taxId: organization.taxId,
+        accountingEmail: organization.accountingEmail,
       });
     }
   }, [organization]);
@@ -52,9 +58,12 @@ export default function OrganizationSettingsPage() {
     try {
       await updateOrganization({
         name: form.name,
+        careOf: form.careOf,
         street: form.street,
         plz: form.plz,
         city: form.city,
+        taxId: form.taxId,
+        accountingEmail: form.accountingEmail,
       });
       toast.success("Organisation aktualisiert");
     } catch {
@@ -97,6 +106,16 @@ export default function OrganizationSettingsPage() {
             </div>
 
             <div>
+              <Label htmlFor="careOf">Adresszusatz (c/o)</Label>
+              <Input
+                id="careOf"
+                value={form.careOf}
+                onChange={(e) => setForm({ ...form, careOf: e.target.value })}
+                placeholder="c/o Beispiel GmbH"
+              />
+            </div>
+
+            <div>
               <Label htmlFor="street">Straße und Hausnummer</Label>
               <Input
                 id="street"
@@ -128,6 +147,29 @@ export default function OrganizationSettingsPage() {
                   placeholder="Musterstadt"
                 />
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="taxId">USt-ID</Label>
+              <Input
+                id="taxId"
+                value={form.taxId}
+                onChange={(e) => setForm({ ...form, taxId: e.target.value })}
+                placeholder="DE123456789"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="accountingEmail">E-Mail Buchhaltung</Label>
+              <Input
+                id="accountingEmail"
+                type="email"
+                value={form.accountingEmail}
+                onChange={(e) =>
+                  setForm({ ...form, accountingEmail: e.target.value })
+                }
+                placeholder="buchhaltung@verein.de"
+              />
             </div>
           </div>
 
