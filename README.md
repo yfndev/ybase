@@ -1,13 +1,13 @@
-# YBudget
+# YBase
 
 > Free, open-source budget management for German non-profit associations.
 
-YBudget helps German (non-profit) associations manage their budgets when Excel gets too complicated.
+YBase helps German (non-profit) associations manage their budgets when Excel gets too complicated.
 
 ## Free for Associations
-We believe every association deserves proper budget tools. That's why we cover all hosting and server costs—so you can use yBudget at no charge. No hidden fees, no premium tiers, just free budget management for the nonprofit community.
+We believe every association deserves proper budget tools. That's why we cover all hosting and server costs—so you can use YBase at no charge. No hidden fees, no premium tiers, just free budget management for the nonprofit community.
 
- [Young Founders Network e.V.](https://youngfounders.network) provides yBudget **completely free** for other associations. We cover all server costs so you don't have to.
+ [Young Founders Network e.V.](https://youngfounders.network) provides YBase **completely free** for other associations. We cover all server costs so you don't have to.
 
 **The problem?**
 Most budget tools are too expensive or too complex for associations. Excel is flexible but keeping track of all expenses is plenty of work.
@@ -41,7 +41,7 @@ Simple, free, intuitive budget and reimbursement tracking for non-profits.
 
 ## Architecture
 
-YBudget uses Next.js App Router with protected and public routes:
+YBase uses Next.js App Router with protected and public routes:
 
 - `app/(public)/` → Login and public pages
 - `app/(protected)/` → Authenticated dashboard with sidebar navigation
@@ -66,8 +66,8 @@ Transactions are categorized by status for budget calculations:
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/joelheile/ybudget.git
-cd ybudget
+git clone https://github.com/joelheile/ybase.git
+cd ybase
 pnpm install
 npx convex dev  # Creates .env.local with CONVEX_DEPLOYMENT and NEXT_PUBLIC_CONVEX_URL
 ```
@@ -137,7 +137,7 @@ We're building a tool to support NGOs by making budgeting as easy as possible.
 6. Open a Pull Request
 
 **Ideas, feedback, or questions?**
-[team@ybudget.de](mailto:team@ybudget.de) | [Open an issue](https://github.com/joelheile/ybudget/issues)
+[info@youngfounders.network](mailto:info@youngfounders.network) | [Open an issue](https://github.com/joelheile/ybase/issues)
 
 ## Testing
 

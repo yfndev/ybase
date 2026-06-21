@@ -271,14 +271,14 @@ export const sendAllowanceLink = mutation({
     const projectName = escapeHtml(args.projectName);
 
     await resend.sendEmail(ctx, {
-      from: "YBudget <team@ybudget.de>",
+      from: "YBase <info@youngfounders.network>",
       to: args.email,
       subject: "Ehrenamtspauschale ausfüllen",
       html: `
         <p>Hallo,</p>
         <p>${senderName} hat dir einen Link zum Ausfüllen der Ehrenamtspauschale für das Projekt "${projectName}" gesendet.</p>
         <p><a href="${args.link}">Hier klicken zum Ausfüllen</a></p>
-        <p>Viele Grüße,<br/>Dein YBudget Team</p>
+        <p>Viele Grüße,<br/>Dein YBase Team</p>
       `,
     });
   },

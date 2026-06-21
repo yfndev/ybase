@@ -26,14 +26,14 @@ export const sendInvitation = mutation({
     const senderName = escapeHtml(user.firstName ?? "");
 
     await resend.sendEmail(ctx, {
-      from: "YBudget <team@ybudget.de>",
+      from: "YBase <info@youngfounders.network>",
       to: args.email,
-      subject: "Einladung zu YBudget",
+      subject: "Einladung zu YBase",
       html: `
       <p>Hey ${firstName},</p>
-      <p>Du wurdest von ${senderName} zu YBudget eingeladen :) </p>
+      <p>Du wurdest von ${senderName} zu YBase eingeladen :) </p>
       <p>Klicke auf den folgenden Link, um dich einzuloggen:</p>
-      <a href="https://ybudget.de/login">Login</a>
+      <a href="https://ybase.de/login">Login</a>
       <p>Viel Spaß beim Budgeting!</p>
       `,
     });

@@ -30,7 +30,7 @@ export const sendApprovalEmail = internalAction({
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     await resend.emails.send({
-      from: "YBudget <team@ybudget.de>",
+      from: "YBase <info@youngfounders.network>",
       to: [data.organization.accountingEmail],
       cc: data.creator.email ? [data.creator.email] : [],
       subject: `Erstattung genehmigt: ${data.project.name} - ${data.amount.toFixed(2)}€`,
@@ -205,7 +205,7 @@ export const sendRejectionEmail = internalAction({
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     await resend.emails.send({
-      from: "YBudget <team@ybudget.de>",
+      from: "YBase <info@youngfounders.network>",
       to: [data.organization.accountingEmail],
       cc: data.creator.email ? [data.creator.email] : [],
       subject: `Erstattung abgelehnt: ${data.project.name} - ${data.amount.toFixed(2)}€`,

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-YBudget is an open-source budget management application for German non-profit associations. It provides budget tracking, reimbursement workflows, and CSV import from German banks (Sparkasse, Volksbank, Moss).
+YBase is an open-source budget management application for German non-profit associations. It provides budget tracking, reimbursement workflows, and CSV import from German banks (Sparkasse, Volksbank, Moss).
 
 ## Commands
 

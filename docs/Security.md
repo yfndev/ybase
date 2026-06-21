@@ -1,6 +1,6 @@
 # Security
 
-We take security seriously at YBudget. Here's how we protect your financial data.
+We take security seriously at YBase. Here's how we protect your financial data.
 
 ## Authentication & Authorization
 
@@ -79,4 +79,4 @@ For STRIDE analysis and data flow diagrams, see [ThreatModel.md](ThreatModel.md)
 
 ## Report an Issue
 
-Email team@ybudget.de with security concerns.
+Email info@youngfounders.network with security concerns.

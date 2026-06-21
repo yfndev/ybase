@@ -1,13 +1,13 @@
 ## Data Flow Diagram
 
-I've mapped out YBudget's security architecture using a Level 1 Data Flow Diagram to visualize how data moves through the system and where the critical trust boundaries are between services.
+I've mapped out YBase's security architecture using a Level 1 Data Flow Diagram to visualize how data moves through the system and where the critical trust boundaries are between services.
 
 **What are trust boundaries?**
 Trust boundaries highlight the points where data crosses between zones with different security levels. When data moves across these boundaries, it needs protection in form of validating and authenticating the data before it enters zones with a higher trust, and encrypting before going out to less trusted areas.
 
 ### Our Trust Zones
 
-I've organized YBudget into five security zones, each with different trust levels and protection mechanisms.
+I've organized YBase into five security zones, each with different trust levels and protection mechanisms.
 
 **Public Zone (Untrusted)**
 
@@ -34,7 +34,7 @@ _(Diagram was created in FigJam)_
 
 ## Trust Boundary Analysis using STRIDE
 
-I analyzed each trust boundary using the **STRIDE** framework, which was developed by Microsoft to identify YBudget's security strengths and weaknesses.
+I analyzed each trust boundary using the **STRIDE** framework, which was developed by Microsoft to identify YBase's security strengths and weaknesses.
 
 - **Spoofing:** Pretending to be someone else → Fake login, forged webhook (mitigated through OAuth, JWT verification, webhook signatures)
 - **Tampering:** Unauthorized data modification → Changing transaction amounts (Input validation, type-safe queries, digital signatures)
