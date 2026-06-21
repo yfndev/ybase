@@ -119,6 +119,11 @@ export default function ReimbursementPage() {
     const reimbursement = await convex.query(api.reimbursements.queries.getReimbursement, { reimbursementId: id });
     if (!reimbursement) return null;
 
+    const organization = await convex.query(api.organizations.queries.getOrganization);
+    const signatureUrl = reimbursement.signatureStorageId
+      ? await convex.query(api.reimbursements.queries.getFileUrl, { storageId: reimbursement.signatureStorageId })
+      : null;
+
     const receipts = await convex.query(api.reimbursements.queries.getReceipts, { reimbursementId: id });
     const receiptsWithUrls = await Promise.all(
       receipts.map(async (receipt) => ({
@@ -127,7 +132,7 @@ export default function ReimbursementPage() {
       })),
     );
 
-    return generateReimbursementPDF(reimbursement, receiptsWithUrls);
+    return generateReimbursementPDF({ ...reimbursement, organization, signatureUrl }, receiptsWithUrls);
   };
 
   const getPdfBlobForAllowance = async (allowance: Allowance): Promise<Blob | null> => {
