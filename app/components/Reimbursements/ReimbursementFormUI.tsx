@@ -249,7 +249,9 @@ export function ReimbursementFormUI({ defaultBankDetails }: Props) {
           size="lg"
         >
           <Plus className="size-5 mr-2" />
-          Weiteren Beleg hinzufügen
+          {receipts.length === 0
+            ? "Beleg hinzufügen"
+            : "Weiteren Beleg hinzufügen"}
         </Button>
       </div>
 
