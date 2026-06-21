@@ -56,19 +56,14 @@ export function SignatureField({
 }
 
 function SignaturePreview({ storageId }: { storageId: Id<"_storage"> }) {
-  const previewUrl = useQuery(
-    api.reimbursements.queries.getFileUrl,
-    { storageId },
-  );
+  const previewUrl = useQuery(api.reimbursements.queries.getFileUrl, {
+    storageId,
+  });
 
   return (
     <div className="border rounded-lg p-4">
       {previewUrl ? (
-        <img
-          src={previewUrl}
-          alt="Unterschrift"
-          className="max-h-24 mx-auto"
-        />
+        <img src={previewUrl} alt="Unterschrift" className="max-h-24 mx-auto" />
       ) : (
         <div className="h-24 flex items-center justify-center">
           <Loader2 className="size-5 animate-spin text-muted-foreground" />
@@ -129,9 +124,8 @@ function MobileCanvas({
 
   return (
     <div className="space-y-2">
-      <p className="text-sm text-muted-foreground flex items-center gap-2">
-        <RotateCcw className="size-4" />
-        Drehe dein Handy ins Querformat für mehr Platz.
+      <p className="text-sm text-muted-foreground">
+        Bitte hier unterschreiben.
       </p>
       <div className="border rounded-lg bg-white">
         <SignaturePad
