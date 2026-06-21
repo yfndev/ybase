@@ -37,6 +37,9 @@ export const getOrganization = query({
       street: org.street || "",
       plz: org.plz || "",
       city: org.city || "",
+      accountingEmail: org.accountingEmail || "",
+      careOf: org.careOf || "",
+      taxId: org.taxId || "",
     };
   },
 });

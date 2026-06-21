@@ -61,6 +61,8 @@ export const updateOrganization = mutation({
     plz: v.optional(v.string()),
     city: v.optional(v.string()),
     accountingEmail: v.optional(v.string()),
+    careOf: v.optional(v.string()),
+    taxId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await requireRole(ctx, "admin");
@@ -76,6 +78,8 @@ export const updateOrganization = mutation({
     if (args.city !== undefined) updates.city = args.city;
     if (args.accountingEmail !== undefined)
       updates.accountingEmail = args.accountingEmail;
+    if (args.careOf !== undefined) updates.careOf = args.careOf;
+    if (args.taxId !== undefined) updates.taxId = args.taxId;
 
     await ctx.db.patch(user.organizationId, updates);
 
