@@ -2,7 +2,6 @@
 
 import { PageHeader } from "@/components/Layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import type { Id } from "@/convex/_generated/dataModel";
 import {
   Download,
   FileCode2,
@@ -30,19 +29,19 @@ interface Props {
   isBulkDownloading: boolean;
   onNewClick: () => void;
   onShareClick: () => void;
-  onRowClick: (id: Id<"reimbursements">) => void;
-  onApproveReimbursement: (id: Id<"reimbursements">) => void;
-  onApproveAllowance: (id: Id<"volunteerAllowance">) => void;
+  onRowClick: (id: string) => void;
+  onApproveReimbursement: (id: string) => void;
+  onApproveAllowance: (id: string) => void;
   onOpenRejectDialog: (
     type: "reimbursement" | "allowance",
-    id: Id<"reimbursements"> | Id<"volunteerAllowance">,
+    id: string,
   ) => void;
   onRejectDialogChange: (dialog: RejectDialog) => void;
   onReject: () => void;
-  onDownloadReimbursement: (id: Id<"reimbursements">) => void;
+  onDownloadReimbursement: (id: string) => void;
   onDownloadAllowance: (allowance: Allowance) => void;
-  onDeleteReimbursement: (id: Id<"reimbursements">) => void;
-  onDeleteAllowance: (id: Id<"volunteerAllowance">) => void;
+  onDeleteReimbursement: (id: string) => void;
+  onDeleteAllowance: (id: string) => void;
   onToggleSelect: (key: SelectionKey) => void;
   onBulkDownload: () => void;
   onFinomCsv: () => void;

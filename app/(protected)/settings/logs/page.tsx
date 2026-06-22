@@ -1,5 +1,3 @@
-"use client";
-
 import { PageHeader } from "@/components/Layout/PageHeader";
 import { AccessDenied } from "@/components/Settings/AccessDenied";
 import {
@@ -10,19 +8,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { api } from "@/convex/_generated/api";
+import { auth } from "@/lib/auth";
 import { formatDateTime } from "@/lib/formatters/formatDateTime";
-import { useIsAdmin } from "@/lib/hooks/useCurrentUserRole";
-import { useQuery } from "convex/react";
+import { getLogs } from "@/lib/server/logs/data";
 import { ScrollText } from "lucide-react";
 
-export default function LogsPage() {
-  const logs = useQuery(api.logs.queries.getLogs);
-  const isAdmin = useIsAdmin();
+export default async function LogsPage() {
+  const session = await auth();
+  if (session?.user?.role !== "admin") {
+    return <AccessDenied title="Logs" />;
+  }
 
-  if (!isAdmin) return <AccessDenied title="Logs" />;
+  const logs = await getLogs();
 
-  if (!logs?.length) {
+  if (!logs.length) {
     return (
       <div>
         <PageHeader title="Logs" />

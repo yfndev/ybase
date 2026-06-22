@@ -8,7 +8,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Id } from "@/convex/_generated/dataModel";
 import { ReimbursementRow } from "../../components/Tables/Reimbursements/ReimbursementRow";
 import type { Allowance, Reimbursement, SelectionKey } from "./types";
 
@@ -18,17 +17,14 @@ type Props = {
   reimbursements: Reimbursement[];
   allowances: Allowance[];
   selected: Set<SelectionKey>;
-  onRowClick: (id: Id<"reimbursements">) => void;
-  onApproveReimbursement: (id: Id<"reimbursements">) => void;
-  onApproveAllowance: (id: Id<"volunteerAllowance">) => void;
-  onOpenRejectDialog: (
-    type: "reimbursement" | "allowance",
-    id: Id<"reimbursements"> | Id<"volunteerAllowance">,
-  ) => void;
-  onDownloadReimbursement: (id: Id<"reimbursements">) => void;
+  onRowClick: (id: string) => void;
+  onApproveReimbursement: (id: string) => void;
+  onApproveAllowance: (id: string) => void;
+  onOpenRejectDialog: (type: "reimbursement" | "allowance", id: string) => void;
+  onDownloadReimbursement: (id: string) => void;
   onDownloadAllowance: (allowance: Allowance) => void;
-  onDeleteReimbursement: (id: Id<"reimbursements">) => void;
-  onDeleteAllowance: (id: Id<"volunteerAllowance">) => void;
+  onDeleteReimbursement: (id: string) => void;
+  onDeleteAllowance: (id: string) => void;
   onToggleSelect: (key: SelectionKey) => void;
 };
 

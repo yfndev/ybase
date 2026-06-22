@@ -1,6 +1,6 @@
-import type { Doc } from "@/convex/_generated/dataModel";
+import type { CostType } from "@/lib/db/types";
 
-export type CostType = NonNullable<Doc<"receipts">["costType"]>;
+export type { CostType };
 
 export const COST_LABELS: Record<CostType, string> = {
   car: "PKW",

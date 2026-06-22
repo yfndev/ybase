@@ -1,17 +1,18 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
-import { useMutation, useQuery } from "convex/react";
+import {
+  generateUploadUrl,
+  getFileUrlAction,
+} from "@/lib/server/reimbursements/actions";
 import { Loader2, RotateCcw } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import SignaturePad from "react-signature-canvas";
 
 type Props = {
-  onUploadComplete: (storageId: Id<"_storage">) => void;
-  storageId?: Id<"_storage">;
+  onUploadComplete: (key: string) => void;
+  storageId?: string;
   generateUploadUrl?: () => Promise<string>;
 };
 
@@ -22,15 +23,21 @@ export function SignatureCanvas({
 }: Props) {
   const padRef = useRef<SignaturePad>(null);
   const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const defaultUploadUrl = useMutation(
-    api.reimbursements.functions.generateUploadUrl
-  );
-  const generateUploadUrl = customUploadUrl || defaultUploadUrl;
-  const previewUrl = useQuery(
-    api.reimbursements.queries.getFileUrl,
-    storageId ? { storageId } : "skip"
-  );
+  useEffect(() => {
+    if (!storageId) {
+      setPreviewUrl(null);
+      return;
+    }
+    let active = true;
+    getFileUrlAction(storageId).then((url) => {
+      if (active) setPreviewUrl(url);
+    });
+    return () => {
+      active = false;
+    };
+  }, [storageId]);
 
   const handleSave = async () => {
     const pad = padRef.current;
@@ -43,18 +50,28 @@ export function SignatureCanvas({
     try {
       const dataUrl = pad.getTrimmedCanvas().toDataURL("image/png");
       const blob = await (await fetch(dataUrl)).blob();
-      const uploadUrl = await generateUploadUrl();
 
-      const response = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": "image/png" },
-        body: blob,
-      });
+      if (customUploadUrl) {
+        const uploadUrl = await customUploadUrl();
+        const response = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": "image/png" },
+          body: blob,
+        });
+        if (!response.ok) throw new Error();
+        const { storageId: newStorageId } = await response.json();
+        onUploadComplete(newStorageId);
+      } else {
+        const { key, url } = await generateUploadUrl("image/png");
+        const response = await fetch(url, {
+          method: "PUT",
+          headers: { "Content-Type": "image/png" },
+          body: blob,
+        });
+        if (!response.ok) throw new Error();
+        onUploadComplete(key);
+      }
 
-      if (!response.ok) throw new Error();
-
-      const { storageId: newStorageId } = await response.json();
-      onUploadComplete(newStorageId);
       toast.success("Unterschrift gespeichert");
     } catch {
       toast.error("Speichern fehlgeschlagen");

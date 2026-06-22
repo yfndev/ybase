@@ -17,9 +17,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { api } from "@/convex/_generated/api";
-import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { toNet } from "@/lib/bank-utils";
+import type { Project, Receipt as ReceiptDoc } from "@/lib/db/types";
+import { createTravelReimbursement } from "@/lib/server/reimbursements/actions";
 import {
   CAR_ALLOWANCE_RATE_EUR_PER_KM,
   COST_LABELS as LABELS,
@@ -29,7 +29,6 @@ import {
   MEAL_ALLOWANCE_FULL_DAY_EUR,
   MEAL_ALLOWANCE_PARTIAL_DAY_EUR,
 } from "@/lib/travel-costs";
-import { useMutation } from "convex/react";
 import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -37,7 +36,7 @@ import toast from "react-hot-toast";
 
 type BankDetails = { iban: string; bic: string; accountHolder: string };
 type Receipt = Omit<
-  Doc<"receipts">,
+  ReceiptDoc,
   "_id" | "_creationTime" | "reimbursementId"
 > & { costType: CostType };
 
@@ -52,17 +51,18 @@ const PLACEHOLDERS: Record<CostType, string> = {
 
 interface Props {
   defaultBankDetails: BankDetails;
+  projects: Project[];
 }
 
-export function TravelReimbursementFormUI({ defaultBankDetails }: Props) {
+export function TravelReimbursementFormUI({
+  defaultBankDetails,
+  projects,
+}: Props) {
   const router = useRouter();
-  const submit = useMutation(
-    api.reimbursements.functions.createTravelReimbursement
-  );
 
-  const [projectId, setProjectId] = useState<Id<"projects"> | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [bank, setBank] = useState(defaultBankDetails);
-  const [signature, setSignature] = useState<Id<"_storage"> | null>(null);
+  const [signature, setSignature] = useState<string | null>(null);
   const [showMealAllowance, setShowMealAllowance] = useState(false);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [travel, setTravel] = useState({
@@ -98,7 +98,7 @@ export function TravelReimbursementFormUI({ defaultBankDetails }: Props) {
         netAmount: 0,
         taxRate: DEFAULT_TAX_RATES[type],
         grossAmount: 0,
-        fileStorageId: "" as Id<"_storage">,
+        fileStorageId: "",
         kilometers: type === "car" ? 0 : undefined,
       },
     ]);
@@ -142,22 +142,26 @@ export function TravelReimbursementFormUI({ defaultBankDetails }: Props) {
   const handleSubmit = async () => {
     if (!projectId) return toast.error("Bitte ein Projekt auswählen");
     if (!signature) return toast.error("Bitte unterschreiben");
-    await submit({
-      projectId,
-      amount: total,
-      ...bank,
-      signatureStorageId: signature,
-      startDate: travel.startDate,
-      endDate: travel.endDate,
-      destination: travel.destination,
-      purpose: travel.purpose,
-      isInternational: travel.isInternational,
-      mealAllowanceDays: travel.mealDays || undefined,
-      mealAllowanceDailyBudget: travel.mealRate || undefined,
-      receipts,
-    });
-    toast.success("Reisekostenerstattung eingereicht");
-    router.push("/reimbursements");
+    try {
+      await createTravelReimbursement({
+        projectId,
+        amount: total,
+        ...bank,
+        signatureStorageId: signature,
+        startDate: travel.startDate,
+        endDate: travel.endDate,
+        destination: travel.destination,
+        purpose: travel.purpose,
+        isInternational: travel.isInternational,
+        mealAllowanceDays: travel.mealDays || undefined,
+        mealAllowanceDailyBudget: travel.mealRate || undefined,
+        receipts,
+      });
+      toast.success("Reisekostenerstattung eingereicht");
+      router.push("/reimbursements");
+    } catch {
+      toast.error("Fehler beim Einreichen");
+    }
   };
 
   return (
@@ -166,9 +170,8 @@ export function TravelReimbursementFormUI({ defaultBankDetails }: Props) {
         <Label>Projekt *</Label>
         <SelectProject
           value={projectId || ""}
-          onValueChange={(value) =>
-            setProjectId(value ? (value as Id<"projects">) : null)
-          }
+          onValueChange={(value) => setProjectId(value || null)}
+          projects={projects}
         />
       </div>
 

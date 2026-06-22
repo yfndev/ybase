@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { api } from "@/convex/_generated/api";
-import { useMutation } from "convex/react";
+import { createProject } from "@/lib/server/projects/actions";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
@@ -28,20 +28,19 @@ export function CreateProjectDialog({
   onProjectCreated,
 }: Props) {
   const [name, setName] = useState("");
-
-  const addProject = useMutation(api.projects.functions.createProject);
+  const router = useRouter();
 
   const handleSubmit = async () => {
     if (!name.trim()) return;
 
     try {
-      const projectId = await addProject({ name: name.trim() });
-
+      const projectId = await createProject({ name: name.trim() });
+      router.refresh();
       toast.success("Projekt erstellt!");
       onProjectCreated?.(projectId);
       onOpenChange(false);
       setName("");
-    } catch (error) {
+    } catch {
       toast.error("Fehler beim Erstellen.");
     }
   };

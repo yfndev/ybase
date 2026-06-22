@@ -1,14 +1,13 @@
-"use client";
-
 import { PageHeader } from "@/components/Layout/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { api } from "@/convex/_generated/api";
-import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import { formatDate } from "@/lib/formatters/formatDate";
-import { useQuery } from "convex/react";
-import { useParams } from "next/navigation";
+import {
+  getFileUrl,
+  getReceipts,
+  getReimbursement,
+} from "@/lib/server/reimbursements/data";
 
 const COST_TYPE_LABELS: Record<string, string> = {
   car: "PKW",
@@ -19,42 +18,37 @@ const COST_TYPE_LABELS: Record<string, string> = {
   accommodation: "Hotel",
 };
 
-function ReceiptImage({ storageId }: { storageId: Id<"_storage"> }) {
-  const url = useQuery(api.reimbursements.queries.getFileUrl, { storageId });
-  if (!url) return <div className="w-32 h-32 bg-muted animate-pulse rounded" />;
-  return (
-    <img
-      src={url}
-      alt="Beleg"
-      className="w-32 h-32 object-cover rounded border"
-    />
+const STATUS_MAP = {
+  pending: { label: "Ausstehend", variant: "secondary" as const },
+  approved: { label: "Genehmigt", variant: "default" as const },
+  declined: { label: "Abgelehnt", variant: "destructive" as const },
+};
+
+export default async function ReimbursementDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const reimbursement = await getReimbursement(id);
+  const rawReceipts = reimbursement ? await getReceipts(id) : [];
+  const receipts = await Promise.all(
+    rawReceipts.map(async (receipt) => ({
+      ...receipt,
+      fileUrl: await getFileUrl(receipt.fileStorageId),
+    })),
   );
-}
 
-export default function ReimbursementDetailPage() {
-  const { id } = useParams();
-  const reimbursementId = id as Id<"reimbursements">;
-
-  const reimbursement = useQuery(api.reimbursements.queries.getReimbursement, {
-    reimbursementId,
-  });
-  const receipts = useQuery(api.reimbursements.queries.getReceipts, {
-    reimbursementId,
-  }) as Doc<"receipts">[] | undefined;
-
-  if (!reimbursement || !receipts) {
+  if (!reimbursement) {
     return (
       <div className="flex flex-col w-full h-screen">
         <PageHeader title="Erstattung" showBackButton />
-        <div className="p-6">Lädt...</div>
+        <div className="p-6">Nicht gefunden.</div>
       </div>
     );
   }
 
-  const totalNet = receipts.reduce(
-    (sum, receipt) => sum + receipt.netAmount,
-    0,
-  );
+  const totalNet = receipts.reduce((sum, receipt) => sum + receipt.netAmount, 0);
   const totalGross = receipts.reduce(
     (sum, receipt) => sum + receipt.grossAmount,
     0,
@@ -62,17 +56,10 @@ export default function ReimbursementDetailPage() {
   const taxByRate = (rate: number) =>
     receipts
       .filter((receipt) => receipt.taxRate === rate)
-      .reduce(
-        (sum, receipt) => sum + receipt.grossAmount - receipt.netAmount,
-        0,
-      );
+      .reduce((sum, receipt) => sum + receipt.grossAmount - receipt.netAmount, 0);
 
-  const statusMap = {
-    pending: { label: "Ausstehend", variant: "secondary" as const },
-    approved: { label: "Genehmigt", variant: "default" as const },
-    declined: { label: "Abgelehnt", variant: "destructive" as const },
-  };
-  const { label: statusLabel, variant: statusVariant } = statusMap[reimbursement.status as keyof typeof statusMap] ?? statusMap.pending;
+  const { label: statusLabel, variant: statusVariant } =
+    STATUS_MAP[reimbursement.status] ?? STATUS_MAP.pending;
 
   return (
     <div className="flex flex-col w-full h-screen">
@@ -98,7 +85,7 @@ export default function ReimbursementDetailPage() {
           </div>
         )}
 
-        {"travelDetails" in reimbursement && reimbursement.travelDetails && (
+        {reimbursement.travelDetails && (
           <div className="bg-muted/50 rounded-lg p-4 space-y-2">
             <h3 className="font-medium">Reisedetails</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
@@ -146,7 +133,11 @@ export default function ReimbursementDetailPage() {
           <h3 className="text-lg font-semibold">Belege ({receipts.length})</h3>
           {receipts.map((receipt) => (
             <div key={receipt._id} className="border rounded-lg p-4 flex gap-4">
-              <ReceiptImage storageId={receipt.fileStorageId} />
+              <img
+                src={receipt.fileUrl}
+                alt="Beleg"
+                className="w-32 h-32 object-cover rounded border"
+              />
               <div className="flex-1 space-y-2">
                 <div className="flex items-start justify-between">
                   <div>

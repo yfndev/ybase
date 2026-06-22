@@ -1,13 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useAuthActions } from "@convex-dev/auth/react";
+import { signIn } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 
 export function LoginForm() {
-  const { signIn } = useAuthActions();
-
   return (
     <div className="flex flex-col items-center gap-12 text-center">
       <Image
@@ -30,7 +28,7 @@ export function LoginForm() {
         variant="outline"
         size="lg"
         className="w-full"
-        onClick={() => void signIn("google")}
+        onClick={() => void signIn("google", { callbackUrl: "/dashboard" })}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

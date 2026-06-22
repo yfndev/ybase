@@ -13,13 +13,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import type { Id } from "@/convex/_generated/dataModel";
+import type { Project } from "@/lib/db/types";
 import { Car, Check, Copy, Loader2, Mail, Receipt, Trash2, Users } from "lucide-react";
 
 type LinkType = "expense" | "travel" | "allowance";
 
 type FormState = {
-  projectId: Id<"projects"> | null;
+  projectId: string | null;
   description: string;
   email: string;
   startDate: string;
@@ -41,6 +41,7 @@ type Props = {
   onClose: () => void;
   type: LinkType;
   form: FormState;
+  projects: Project[];
   isLoading: boolean;
   isGenerating: boolean;
   isSending: boolean;
@@ -66,6 +67,7 @@ export function ShareModalUI({
   onClose,
   type,
   form,
+  projects,
   isLoading,
   isGenerating,
   isSending,
@@ -109,7 +111,8 @@ export function ShareModalUI({
             <Label>Projekt</Label>
             <SelectProject
               value={form.projectId ?? ""}
-              onValueChange={(value) => onFormUpdate({ projectId: value ? (value as Id<"projects">) : null })}
+              onValueChange={(value) => onFormUpdate({ projectId: value || null })}
+              projects={projects}
             />
           </div>
 

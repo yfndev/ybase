@@ -1,14 +1,13 @@
 "use client";
 
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuthActions } from "@convex-dev/auth/react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 export default function TestAuthPage() {
-  const { signIn } = useAuthActions();
   const router = useRouter();
   const [email, setEmail] = useState("user@test.com");
   const [name, setName] = useState("Test User");
@@ -16,14 +15,12 @@ export default function TestAuthPage() {
 
   const handleSubmit = async () => {
     setStatus("Authenticating...");
-    try {
-      await signIn("testing", { email, name });
-      router.push("/reimbursements");
-    } catch (error) {
-      setStatus(
-        `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
+    const result = await signIn("testing", { email, name, redirect: false });
+    if (result?.error) {
+      setStatus(`Error: ${result.error}`);
+      return;
     }
+    router.push("/reimbursements");
   };
 
   return (

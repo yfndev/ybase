@@ -1,11 +1,12 @@
-import { api } from "@/convex/_generated/api";
-import { useQuery } from "convex/react";
+"use client";
+
+import { useSession } from "next-auth/react";
 
 export type UserRole = "admin" | "lead" | "member";
 
 export function useCurrentUserRole(): UserRole | undefined {
-  const user = useQuery(api.users.queries.getCurrentUserProfile);
-  return user?.role || "member";
+  const { data } = useSession();
+  return (data?.user?.role as UserRole) ?? "member";
 }
 
 export function useCanEdit(): boolean {

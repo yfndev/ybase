@@ -1,16 +1,33 @@
 "use client";
 
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
-import { useMutation, useQuery } from "convex/react";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import type { Project } from "@/lib/db/types";
+import {
+  createReimbursementLink,
+  deleteSharedAllowanceLink,
+  deleteSharedReimbursementLink,
+  getPendingSharedLinks,
+  sendReimbursementLink,
+} from "@/lib/server/reimbursements/sharing";
+import {
+  createLink as createAllowanceLink,
+  sendAllowanceLink,
+} from "@/lib/server/volunteerAllowance/sharing";
 import { ShareModalUI } from "./ShareModalUI";
 
 type LinkType = "expense" | "travel" | "allowance";
+type LinkKind = "reimbursement" | "allowance";
+type PendingLink = {
+  _id: string;
+  projectName: string;
+  linkType: LinkKind;
+  type?: "expense" | "travel";
+};
 
 const INITIAL_FORM = {
-  projectId: null as Id<"projects"> | null,
+  projectId: null as string | null,
   description: "",
   email: "",
   startDate: "",
@@ -20,98 +37,78 @@ const INITIAL_FORM = {
   allowFoodAllowance: false,
 };
 
-export function ShareModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const projects = useQuery(api.projects.queries.getAllProjects, {});
-  const pendingLinks = useQuery(api.reimbursements.sharing.getPendingSharedLinks);
+function linkUrl(linkType: LinkKind, id: string): string {
+  const segment = linkType === "allowance" ? "ehrenamtspauschale" : "erstattung";
+  return `${window.location.origin}/${segment}/${id}`;
+}
 
-  const createReimbursementLink = useMutation(api.reimbursements.sharing.createReimbursementLink);
-  const sendReimbursementEmail = useMutation(api.reimbursements.sharing.sendReimbursementLink);
-  const deleteReimbursementLink = useMutation(api.reimbursements.sharing.deleteSharedReimbursementLink);
-  const createAllowanceLink = useMutation(api.volunteerAllowance.functions.createLink);
-  const sendAllowanceEmail = useMutation(api.volunteerAllowance.functions.sendAllowanceLink);
-  const deleteAllowanceLink = useMutation(api.reimbursements.sharing.deleteSharedAllowanceLink);
-
+export function ShareModal({
+  open,
+  onClose,
+  projects,
+}: {
+  open: boolean;
+  onClose: () => void;
+  projects: Project[];
+}) {
+  const router = useRouter();
   const [type, setType] = useState<LinkType>("expense");
   const [form, setForm] = useState(INITIAL_FORM);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  const projectName = projects?.find((project) => project._id === form.projectId)?.name ?? "";
-  const isLoading = isGenerating || isSending;
+  const [allLinks, setAllLinks] = useState<PendingLink[]>([]);
   const needsDates = type === "travel" || type === "allowance";
 
-  const allLinks = [
-    ...(pendingLinks?.reimbursementLinks ?? []),
-    ...(pendingLinks?.allowanceLinks ?? []),
-  ].sort((first, second) => second._creationTime - first._creationTime);
+  useEffect(() => {
+    if (!open) return;
+    void getPendingSharedLinks().then(({ reimbursementLinks, allowanceLinks }) => {
+      setAllLinks([
+        ...reimbursementLinks.map((link) => ({
+          _id: link._id,
+          projectName: link.projectName,
+          linkType: "reimbursement" as const,
+          type: link.type,
+        })),
+        ...allowanceLinks.map((link) => ({
+          _id: link._id,
+          projectName: link.projectName,
+          linkType: "allowance" as const,
+        })),
+      ]);
+    });
+  }, [open]);
 
-  const updateForm = (updates: Partial<typeof form>) => {
-    setForm((prev) => ({ ...prev, ...updates }));
+  const refresh = () => {
+    setAllLinks([]);
+    router.refresh();
   };
 
-  const resetForm = () => setForm(INITIAL_FORM);
+  const updateForm = (updates: Partial<typeof form>) =>
+    setForm((prev) => ({ ...prev, ...updates }));
 
   const handleClose = () => {
-    resetForm();
+    setForm(INITIAL_FORM);
     setType("expense");
     onClose();
   };
 
-  const validate = (): boolean => {
-    if (!form.projectId) {
-      toast.error("Bitte ein Projekt auswählen");
-      return false;
-    }
+  const projectName = projects.find((p) => p._id === form.projectId)?.name ?? "";
 
-    if (type === "expense" && !form.description) {
-      toast.error("Bitte eine Beschreibung eingeben");
-      return false;
-    }
-
-    if (type === "travel") {
-      if (!form.destination) {
-        toast.error("Bitte ein Reiseziel eingeben");
-        return false;
-      }
-      if (!form.purpose) {
-        toast.error("Bitte einen Reisezweck eingeben");
-        return false;
-      }
-    }
-
-    if (type === "allowance" && !form.description) {
-      toast.error("Bitte eine Tätigkeitsbeschreibung eingeben");
-      return false;
-    }
-
-    if (needsDates && (!form.startDate || !form.endDate)) {
-      toast.error("Bitte Von und Bis Datum eingeben");
-      return false;
-    }
-
-    return true;
-  };
-
-  const generateLink = async (): Promise<string | null> => {
-    if (!validate() || !form.projectId) return null;
-
-    const baseUrl = window.location.origin;
-
+  const generate = async (): Promise<{ id: string; linkType: LinkKind }> => {
     if (type === "allowance") {
       const id = await createAllowanceLink({
-        projectId: form.projectId,
+        projectId: form.projectId ?? "",
         activityDescription: form.description,
         startDate: form.startDate,
         endDate: form.endDate,
       });
-      return `${baseUrl}/ehrenamtspauschale/${id}`;
+      return { id, linkType: "allowance" };
     }
-
     const id = await createReimbursementLink({
-      projectId: form.projectId,
+      projectId: form.projectId ?? "",
       type,
-      description: form.description || undefined,
+      description: form.description,
       travelDetails:
         type === "travel"
           ? {
@@ -123,68 +120,67 @@ export function ShareModal({ open, onClose }: { open: boolean; onClose: () => vo
             }
           : undefined,
     });
-    return `${baseUrl}/erstattung/${id}`;
+    return { id, linkType: "reimbursement" };
   };
 
   const handleCopy = async () => {
+    if (!form.projectId) return;
     setIsGenerating(true);
     try {
-      const link = await generateLink();
-      if (!link) return;
-      await navigator.clipboard.writeText(link);
+      const { id, linkType } = await generate();
+      await navigator.clipboard.writeText(linkUrl(linkType, id));
       toast.success("Link kopiert");
-      resetForm();
-    } catch {
-      toast.error("Fehler beim Erstellen des Links");
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Fehler");
     } finally {
       setIsGenerating(false);
     }
   };
 
   const handleSendEmail = async () => {
-    if (!form.email) {
-      toast.error("Bitte E-Mail eingeben");
-      return;
-    }
-
+    if (!form.projectId || !form.email) return;
     setIsSending(true);
     try {
-      const link = await generateLink();
-      if (!link) return;
-
-      if (type === "allowance") {
-        await sendAllowanceEmail({ email: form.email, link, projectName });
+      const { id, linkType } = await generate();
+      const link = linkUrl(linkType, id);
+      if (linkType === "allowance") {
+        await sendAllowanceLink({ email: form.email, link, projectName });
       } else {
-        await sendReimbursementEmail({ email: form.email, link, projectName, type });
+        await sendReimbursementLink({
+          email: form.email,
+          link,
+          projectName,
+          type: type === "travel" ? "travel" : "expense",
+        });
       }
       toast.success("E-Mail gesendet");
-      resetForm();
-    } catch {
-      toast.error("Fehler beim Senden der E-Mail");
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Fehler");
     } finally {
       setIsSending(false);
     }
   };
 
-  const copyExistingLink = async (id: string, linkType: "reimbursement" | "allowance") => {
-    const baseUrl = window.location.origin;
-    const path = linkType === "reimbursement" ? "erstattung" : "ehrenamtspauschale";
-    await navigator.clipboard.writeText(`${baseUrl}/${path}/${id}`);
+  const handleCopyExisting = async (id: string, linkType: LinkKind) => {
+    await navigator.clipboard.writeText(linkUrl(linkType, id));
     setCopiedId(id);
-    toast.success("Link kopiert");
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const deleteLink = async (id: string, linkType: "reimbursement" | "allowance") => {
+  const handleDelete = async (id: string, linkType: LinkKind) => {
     try {
-      if (linkType === "reimbursement") {
-        await deleteReimbursementLink({ id: id as Id<"reimbursements"> });
+      if (linkType === "allowance") {
+        await deleteSharedAllowanceLink({ id });
       } else {
-        await deleteAllowanceLink({ id: id as Id<"volunteerAllowance"> });
+        await deleteSharedReimbursementLink({ id });
       }
       toast.success("Link gelöscht");
-    } catch {
-      toast.error("Fehler beim Löschen");
+      setAllLinks((prev) => prev.filter((link) => link._id !== id));
+      router.refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Fehler");
     }
   };
 
@@ -194,7 +190,8 @@ export function ShareModal({ open, onClose }: { open: boolean; onClose: () => vo
       onClose={handleClose}
       type={type}
       form={form}
-      isLoading={isLoading}
+      projects={projects}
+      isLoading={isGenerating || isSending}
       isGenerating={isGenerating}
       isSending={isSending}
       needsDates={needsDates}
@@ -204,8 +201,8 @@ export function ShareModal({ open, onClose }: { open: boolean; onClose: () => vo
       onFormUpdate={updateForm}
       onCopy={handleCopy}
       onSendEmail={handleSendEmail}
-      onCopyExistingLink={copyExistingLink}
-      onDeleteLink={deleteLink}
+      onCopyExistingLink={handleCopyExisting}
+      onDeleteLink={handleDelete}
     />
   );
 }

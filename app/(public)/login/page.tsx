@@ -1,31 +1,10 @@
-"use client";
-
+import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/Auth/LoginForm";
-import { useConvexAuth } from "convex/react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { auth } from "@/lib/auth";
 
-export default function LoginPage() {
-  const { isAuthenticated, isLoading } = useConvexAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.push("/dashboard");
-    }
-  }, [isAuthenticated, isLoading, router]);
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-svh items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
-
-  if (isAuthenticated) {
-    return null;
-  }
+export default async function LoginPage() {
+  const session = await auth();
+  if (session) redirect("/dashboard");
 
   return (
     <div className="flex min-h-svh -mt-24 items-center justify-center p-8">

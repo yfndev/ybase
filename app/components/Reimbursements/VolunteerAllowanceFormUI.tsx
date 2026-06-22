@@ -18,16 +18,16 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
-import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "@/convex/volunteerAllowance/constants";
-import { useMutation, useQuery } from "convex/react";
+import type { Project } from "@/lib/db/types";
+import { create } from "@/lib/server/volunteerAllowance/actions";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
 type BankDetails = { iban: string; bic: string; accountHolder: string };
 
+const MAX_VOLUNTEER_ALLOWANCE_EUR = 960;
 const CURRENT_YEAR = new Date().getFullYear();
 const TAX_YEARS = Array.from({ length: 3 }, (_, i) =>
   String(CURRENT_YEAR - i),
@@ -35,19 +35,22 @@ const TAX_YEARS = Array.from({ length: 3 }, (_, i) =>
 
 interface Props {
   defaultBankDetails: BankDetails;
+  projects: Project[];
 }
 
-export function VolunteerAllowanceFormUI({ defaultBankDetails }: Props) {
+export function VolunteerAllowanceFormUI({
+  defaultBankDetails,
+  projects,
+}: Props) {
   const router = useRouter();
-  const currentUser = useQuery(api.users.queries.getCurrentUserProfile);
-  const submit = useMutation(api.volunteerAllowance.functions.create);
+  const { data: session } = useSession();
 
-  const [projectId, setProjectId] = useState<Id<"projects"> | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [bank, setBank] = useState(defaultBankDetails);
-  const [signature, setSignature] = useState<Id<"_storage"> | null>(null);
+  const [signature, setSignature] = useState<string | null>(null);
 
   const [form, setForm] = useState({
-    name: currentUser?.name || "",
+    name: session?.user?.name || "",
     street: "",
     plz: "",
     city: "",
@@ -90,22 +93,26 @@ export function VolunteerAllowanceFormUI({ defaultBankDetails }: Props) {
     const error = validate();
     if (error) return toast.error(error);
 
-    await submit({
-      projectId: projectId!,
-      amount: parseFloat(form.amount.replace(",", ".")),
-      ...bank,
-      activityDescription: form.activity,
-      startDate: form.startDate,
-      endDate: form.endDate,
-      taxYear: form.taxYear,
-      volunteerName: form.name,
-      volunteerStreet: form.street,
-      volunteerPlz: form.plz,
-      volunteerCity: form.city,
-      signatureStorageId: signature!,
-    });
-    toast.success("Ehrenamtspauschale eingereicht");
-    router.push("/reimbursements");
+    try {
+      await create({
+        projectId: projectId!,
+        amount: parseFloat(form.amount.replace(",", ".")),
+        ...bank,
+        activityDescription: form.activity,
+        startDate: form.startDate,
+        endDate: form.endDate,
+        taxYear: form.taxYear,
+        volunteerName: form.name,
+        volunteerStreet: form.street,
+        volunteerPlz: form.plz,
+        volunteerCity: form.city,
+        signatureStorageId: signature!,
+      });
+      toast.success("Ehrenamtspauschale eingereicht");
+      router.push("/reimbursements");
+    } catch {
+      toast.error("Fehler beim Einreichen");
+    }
   };
 
   return (
@@ -114,9 +121,8 @@ export function VolunteerAllowanceFormUI({ defaultBankDetails }: Props) {
         <Label>Projekt *</Label>
         <SelectProject
           value={projectId || ""}
-          onValueChange={(value) =>
-            setProjectId(value ? (value as Id<"projects">) : null)
-          }
+          onValueChange={(value) => setProjectId(value || null)}
+          projects={projects}
         />
       </div>
 

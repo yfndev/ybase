@@ -1,10 +1,9 @@
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
 import { downloadBlob } from "@/lib/fileHandlers/downloadBlob";
 import { generateReimbursementPDF } from "@/lib/fileHandlers/generateReimbursementPDF";
 import { generateVolunteerAllowancePDF } from "@/lib/fileHandlers/generateVolunteerAllowancePDF";
 import { shortReferenceId } from "@/lib/fileHandlers/referenceId";
-import { useConvex } from "convex/react";
+import { getReimbursementPdfData } from "@/lib/server/reimbursements/actions";
+import { getSignatureUrlAction } from "@/lib/server/volunteerAllowance/actions";
 import JSZip from "jszip";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -21,45 +20,21 @@ export function usePdfDownloads({
   selected,
   clearSelection,
 }: Params) {
-  const convex = useConvex();
   const [isBulkDownloading, setIsBulkDownloading] = useState(false);
 
   const getPdfBlobForReimbursement = async (
-    id: Id<"reimbursements">,
+    id: string,
   ): Promise<Blob | null> => {
-    const reimbursement = await convex.query(
-      api.reimbursements.queries.getReimbursement,
-      { reimbursementId: id },
-    );
-    if (!reimbursement) return null;
-
-    const organization = await convex.query(
-      api.organizations.queries.getOrganization,
-    );
-    const signatureUrl = reimbursement.signatureStorageId
-      ? await convex.query(api.reimbursements.queries.getFileUrl, {
-          storageId: reimbursement.signatureStorageId,
-        })
-      : null;
-
-    const receipts = await convex.query(
-      api.reimbursements.queries.getReceipts,
-      {
-        reimbursementId: id,
-      },
-    );
-    const receiptsWithUrls = await Promise.all(
-      receipts.map(async (receipt) => ({
-        ...receipt,
-        fileUrl: await convex.query(api.reimbursements.queries.getFileUrl, {
-          storageId: receipt.fileStorageId,
-        }),
-      })),
-    );
+    const data = await getReimbursementPdfData(id);
+    if (!data || !data.reimbursement) return null;
 
     return generateReimbursementPDF(
-      { ...reimbursement, organization, signatureUrl },
-      receiptsWithUrls,
+      {
+        ...data.reimbursement,
+        organization: data.organization,
+        signatureUrl: data.signatureUrl,
+      },
+      data.receiptsWithUrls,
     );
   };
 
@@ -67,9 +42,8 @@ export function usePdfDownloads({
     allowance: Allowance,
   ): Promise<Blob | null> => {
     if (!allowance.signatureStorageId) return null;
-    const signatureUrl = await convex.query(
-      api.volunteerAllowance.queries.getSignatureUrl,
-      { storageId: allowance.signatureStorageId },
+    const signatureUrl = await getSignatureUrlAction(
+      allowance.signatureStorageId,
     );
     return generateVolunteerAllowancePDF(
       { ...allowance, id: shortReferenceId(allowance._id) },
@@ -77,7 +51,7 @@ export function usePdfDownloads({
     );
   };
 
-  const handleDownloadReimbursement = async (id: Id<"reimbursements">) => {
+  const handleDownloadReimbursement = async (id: string) => {
     const blob = await getPdfBlobForReimbursement(id);
     if (blob) downloadBlob(blob, `Erstattung_${shortReferenceId(id)}.pdf`);
   };
@@ -100,12 +74,12 @@ export function usePdfDownloads({
 
       for (const key of selected) {
         if (key.startsWith("r:")) {
-          const id = key.slice(2) as Id<"reimbursements">;
+          const id = key.slice(2);
           const blob = await getPdfBlobForReimbursement(id);
           if (blob) zip.file(`Erstattung_${shortReferenceId(id)}.pdf`, blob);
         } else if (key.startsWith("a:")) {
-          const id = key.slice(2) as Id<"volunteerAllowance">;
-          const allowance = allowances.find((a) => a._id === id);
+          const id = key.slice(2);
+          const allowance = allowances.find((item) => item._id === id);
           if (allowance) {
             const blob = await getPdfBlobForAllowance(allowance);
             if (blob)

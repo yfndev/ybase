@@ -1,20 +1,24 @@
-import type { Doc, Id } from "@/convex/_generated/dataModel";
+import type {
+  Reimbursement as ReimbursementDoc,
+  TravelDetails,
+  VolunteerAllowance,
+} from "@/lib/db/types";
 
-export type Reimbursement = Doc<"reimbursements"> & {
+export type Reimbursement = ReimbursementDoc & {
   creatorName: string;
   projectName: string;
-  travelDetails?: Doc<"travelDetails">;
-  reviewedByName: string | undefined;
+  travelDetails?: TravelDetails;
+  reviewedByName?: string;
 };
 
-export type Allowance = Doc<"volunteerAllowance"> & {
+export type Allowance = VolunteerAllowance & {
   creatorName: string;
   projectName: string;
   organizationName: string;
   organizationStreet: string;
   organizationPlz: string;
   organizationCity: string;
-  reviewedByName: string | undefined;
+  reviewedByName?: string;
 };
 
 export type SelectionKey = `r:${string}` | `a:${string}`;
@@ -22,6 +26,6 @@ export type SelectionKey = `r:${string}` | `a:${string}`;
 export type RejectDialog = {
   open: boolean;
   type: "reimbursement" | "allowance";
-  id: Id<"reimbursements"> | Id<"volunteerAllowance"> | null;
+  id: string | null;
   note: string;
 };

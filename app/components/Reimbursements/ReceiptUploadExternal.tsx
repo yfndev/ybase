@@ -1,6 +1,5 @@
 "use client";
 
-import type { Id } from "@/convex/_generated/dataModel";
 import {
   convertToJPG,
   FileConversionError,
@@ -11,13 +10,20 @@ import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 interface Props {
-  onUploadComplete: (storageId: Id<"_storage">) => void;
-  storageId?: Id<"_storage">;
-  generateUploadUrl: () => Promise<string>;
-  getFileUrl?: (storageId: Id<"_storage">) => Promise<string | null>;
+  onUploadComplete: (key: string) => void;
+  storageId?: string;
+  generateUploadUrl: (
+    contentType: string,
+  ) => Promise<{ key: string; url: string }>;
+  getFileUrl?: (key: string) => Promise<string | null>;
 }
 
-export function ReceiptUploadExternal({ onUploadComplete, storageId, generateUploadUrl, getFileUrl }: Props) {
+export function ReceiptUploadExternal({
+  onUploadComplete,
+  storageId,
+  generateUploadUrl,
+  getFileUrl,
+}: Props) {
   const [isUploading, setIsUploading] = useState(false);
   const [isPdf, setIsPdf] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -34,22 +40,21 @@ export function ReceiptUploadExternal({ onUploadComplete, storageId, generateUpl
 
     try {
       const convertedFile = await convertToJPG(file);
-      const uploadUrl = await generateUploadUrl();
-      const result = await fetch(uploadUrl, {
-        method: "POST",
+      const { key, url } = await generateUploadUrl(convertedFile.type);
+      const result = await fetch(url, {
+        method: "PUT",
         headers: { "Content-Type": convertedFile.type },
         body: convertedFile,
       });
 
       if (!result.ok) throw new Error();
 
-      const json = await result.json();
-      onUploadComplete(json.storageId);
+      onUploadComplete(key);
 
       if (!fileIsPdf) {
         if (getFileUrl) {
-          const url = await getFileUrl(json.storageId);
-          if (url) setPreviewUrl(url);
+          const fileUrl = await getFileUrl(key);
+          if (fileUrl) setPreviewUrl(fileUrl);
         } else {
           setPreviewUrl(URL.createObjectURL(convertedFile));
         }
@@ -58,7 +63,9 @@ export function ReceiptUploadExternal({ onUploadComplete, storageId, generateUpl
       toast.success("Beleg hochgeladen");
     } catch (error) {
       toast.error(
-        error instanceof FileConversionError ? error.message : "Upload fehlgeschlagen",
+        error instanceof FileConversionError
+          ? error.message
+          : "Upload fehlgeschlagen",
       );
     } finally {
       setIsUploading(false);
@@ -124,8 +131,12 @@ export function ReceiptUploadExternal({ onUploadComplete, storageId, generateUpl
           <div className="p-4 rounded-full bg-primary/10">
             <Upload className="size-8 text-primary" />
           </div>
-          <p className="font-medium">Klicke hier oder ziehe deine Datei herein</p>
-          <p className="text-sm text-muted-foreground">JPG, PNG, HEIC oder PDF (max. 10 MB)</p>
+          <p className="font-medium">
+            Klicke hier oder ziehe deine Datei herein
+          </p>
+          <p className="text-sm text-muted-foreground">
+            JPG, PNG, HEIC oder PDF (max. 10 MB)
+          </p>
         </div>
       )}
       {fileInput}

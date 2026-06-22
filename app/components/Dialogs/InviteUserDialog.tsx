@@ -9,8 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { api } from "@/convex/_generated/api";
-import { useMutation } from "convex/react";
+import { sendInvitation } from "@/lib/server/invitations/actions";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
@@ -23,15 +22,13 @@ export function InviteUserDialog({ open, onOpenChange }: Props) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
 
-  const sendInvitation = useMutation(api.invitations.functions.sendInvitation);
-
   const handleInvite = async () => {
     try {
       await sendInvitation({ email, name });
 
       toast.success("Einladung erfolgreich gesendet!");
       onOpenChange(false);
-    } catch (error) {
+    } catch {
       toast.error("Fehler beim Versenden der Einladung.");
     }
   };

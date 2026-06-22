@@ -1,19 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ConvexHttpClient } from "convex/browser";
 import path from "path";
-import { api } from "../convex/_generated/api";
 
 const TEST_EMAIL = "reimbursement@test.com";
 const IMAGE_FILE = path.join(__dirname, "files/test-invoice.jpg");
 const PDF_FILE = path.join(__dirname, "files/test-invoice.pdf");
-
-function getConvex() {
-  return new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
-}
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
 
 async function cleanup() {
-  await getConvex().mutation(api.testing.functions.clearTestData, {
-    email: TEST_EMAIL,
+  await fetch(`${BASE_URL}/api/test/clear`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: TEST_EMAIL }),
   });
 }
 

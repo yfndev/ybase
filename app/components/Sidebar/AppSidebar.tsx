@@ -1,17 +1,6 @@
 "use client";
 
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { api } from "@/convex/_generated/api";
-import { useQuery } from "convex/react";
-import {
   Building2,
   Coins,
   FolderKanban,
@@ -21,6 +10,16 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useIsAdmin } from "@/lib/hooks/useCurrentUserRole";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
 import { MainNav, type NavItem } from "./MainNav";
 import { NavUser } from "./UserNav";
 
@@ -37,8 +36,7 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
 ];
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
-  const user = useQuery(api.users.queries.getCurrentUserProfile);
-  const isAdmin = user?.role === "admin";
+  const isAdmin = useIsAdmin();
 
   return (
     <Sidebar variant="sidebar" collapsible="icon" {...props}>
@@ -47,12 +45,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/reimbursements">
-                <Image
-                  src="/AppIcon.png"
-                  alt="YBase"
-                  width={32}
-                  height={32}
-                />
+                <Image src="/AppIcon.png" alt="YBase" width={32} height={32} />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">YBase</span>
                 </div>
@@ -66,7 +59,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         {isAdmin && <MainNav items={ADMIN_NAV_ITEMS} label="Verwaltung" />}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   );
