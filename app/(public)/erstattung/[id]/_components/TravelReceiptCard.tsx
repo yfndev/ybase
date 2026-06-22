@@ -1,0 +1,146 @@
+"use client";
+
+import { ReceiptUploadExternal } from "@/components/Reimbursements/ReceiptUploadExternal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Trash2 } from "lucide-react";
+import type { CostType, TravelReceipt } from "./types";
+
+type Props = {
+  receipt: TravelReceipt;
+  costLabels: Record<CostType, string>;
+  onRemove: () => void;
+  onUpdate: (updates: Partial<TravelReceipt>) => void;
+  toNet: (gross: number, tax: number) => number;
+  generateUploadUrl: (
+    contentType: string,
+  ) => Promise<{ key: string; url: string }>;
+  getFileUrl: (key: string) => Promise<string | null>;
+};
+
+export function TravelReceiptCard(props: Props) {
+  const { receipt } = props;
+  const isCar = receipt.costType === "car";
+
+  return (
+    <div className="border rounded-lg p-4 space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="font-medium">
+          {isCar ? "PKW (0,30€/km)" : props.costLabels[receipt.costType]}
+        </h3>
+        <Button variant="ghost" size="icon" onClick={props.onRemove}>
+          <Trash2 className="size-4" />
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <Label>Firma/Anbieter *</Label>
+          <Input
+            value={receipt.companyName}
+            onChange={(e) => props.onUpdate({ companyName: e.target.value })}
+            placeholder="z.B. Deutsche Bahn"
+          />
+        </div>
+
+        {isCar ? (
+          <>
+            <div>
+              <Label>Kilometer *</Label>
+              <Input
+                type="number"
+                min={0}
+                value={receipt.kilometers || ""}
+                onChange={(e) => {
+                  const kilometers = Math.max(
+                    0,
+                    Math.floor(parseFloat(e.target.value) || 0),
+                  );
+                  const amount = Math.round(kilometers * 0.3 * 100) / 100;
+                  props.onUpdate({
+                    kilometers,
+                    grossAmount: amount,
+                    netAmount: amount,
+                  });
+                }}
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <Label className="text-muted-foreground">Betrag</Label>
+              <Input
+                value={`${receipt.grossAmount.toFixed(2)} €`}
+                disabled
+                className="bg-muted/50 font-mono"
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <Label>Brutto (€) *</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min={0}
+                value={receipt.grossAmount || ""}
+                onChange={(e) => {
+                  const amount = Math.max(0, parseFloat(e.target.value) || 0);
+                  props.onUpdate({
+                    grossAmount: amount,
+                    netAmount: props.toNet(amount, receipt.taxRate),
+                  });
+                }}
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <Label>MwSt.</Label>
+              <Select
+                value={String(receipt.taxRate)}
+                onValueChange={(value) => {
+                  const tax = parseInt(value);
+                  props.onUpdate({
+                    taxRate: tax,
+                    netAmount: props.toNet(receipt.grossAmount, tax),
+                  });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="19">19%</SelectItem>
+                  <SelectItem value="7">7%</SelectItem>
+                  <SelectItem value="0">0%</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        )}
+      </div>
+
+      {receipt.grossAmount > 0 && (
+        <div>
+          <Label>Beleg *</Label>
+          <ReceiptUploadExternal
+            onUploadComplete={(storageId) =>
+              props.onUpdate({ fileStorageId: storageId })
+            }
+            storageId={receipt.fileStorageId || undefined}
+            generateUploadUrl={props.generateUploadUrl}
+            getFileUrl={props.getFileUrl}
+          />
+        </div>
+      )}
+    </div>
+  );
+}

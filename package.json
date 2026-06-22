@@ -8,6 +8,7 @@
     "start": "next start",
     "format": "prettier --write .",
     "lint": "biome lint --write",
+    "lint:lines": "node scripts/check-file-lines.mjs",
     "test": "vitest run && pnpm exec playwright test",
     "coverage": "vitest run --coverage"
   },
