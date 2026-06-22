@@ -62,10 +62,3 @@ export const createLinkSchema = z.object({
     })
     .optional(),
 });
-
-export const sendLinkSchema = z.object({
-  email: z.string(),
-  link: z.string(),
-  projectName: z.string(),
-  type: z.enum(["expense", "travel"]),
-});

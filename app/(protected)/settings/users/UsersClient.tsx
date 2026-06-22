@@ -1,9 +1,7 @@
 "use client";
 
-import { InviteUserDialog } from "@/components/Dialogs/InviteUserDialog";
 import { PageHeader } from "@/components/Layout/PageHeader";
 import { UserRow } from "@/components/Tables/Users/UserRow";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -14,9 +12,8 @@ import {
 import type { User, UserRole } from "@/lib/db/types";
 import { useIsAdmin } from "@/lib/hooks/useCurrentUserRole";
 import { updateUserRole } from "@/lib/server/users/actions";
-import { Plus, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { toast } from "react-hot-toast";
 
 interface Props {
@@ -26,7 +23,6 @@ interface Props {
 export function UsersClient({ users }: Props) {
   const router = useRouter();
   const isAdmin = useIsAdmin();
-  const [inviteUserDialogOpen, setInviteUserDialogOpen] = useState(false);
 
   const handleRoleChange = async (userId: string, role: UserRole) => {
     try {
@@ -64,19 +60,7 @@ export function UsersClient({ users }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="pr-6">
-                    <div className="flex items-center gap-2">
-                      Benutzer
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => setInviteUserDialogOpen(true)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableHead>
+                  <TableHead className="pr-6">Benutzer</TableHead>
                   <TableHead>E-Mail</TableHead>
                   <TableHead className="pr-6">Org-Rolle</TableHead>
                 </TableRow>
@@ -98,11 +82,6 @@ export function UsersClient({ users }: Props) {
           </div>
         )}
       </div>
-
-      <InviteUserDialog
-        open={inviteUserDialogOpen}
-        onOpenChange={setInviteUserDialogOpen}
-      />
     </div>
   );
 }

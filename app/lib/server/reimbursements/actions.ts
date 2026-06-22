@@ -6,7 +6,6 @@ import { newId } from "../../db/ids";
 import { presignUpload } from "../../s3/storage";
 import { addLog } from "../logs";
 import { getFileUrl } from "./data";
-import { sendApprovalEmail, sendRejectionEmail } from "./email";
 import {
   applyApproval,
   applyDecline,
@@ -120,8 +119,6 @@ export async function approve(input: {
     reimbursementId,
     `${reimbursement.amount}€`,
   );
-
-  await sendApprovalEmail(reimbursementId);
 }
 
 export async function decline(input: {
@@ -144,6 +141,4 @@ export async function decline(input: {
     reimbursementId,
     rejectionNote,
   );
-
-  await sendRejectionEmail(reimbursementId);
 }

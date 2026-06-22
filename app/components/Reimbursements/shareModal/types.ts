@@ -13,7 +13,6 @@ export type PendingLink = {
 export type FormState = {
   projectId: string | null;
   description: string;
-  email: string;
   startDate: string;
   endDate: string;
   destination: string;
@@ -27,16 +26,13 @@ export type ShareModalUIProps = {
   type: LinkType;
   form: FormState;
   projects: Project[];
-  isLoading: boolean;
   isGenerating: boolean;
-  isSending: boolean;
   needsDates: boolean;
   allLinks: PendingLink[];
   copiedId: string | null;
   onTypeChange: (type: LinkType) => void;
   onFormUpdate: (updates: Partial<FormState>) => void;
   onCopy: () => void;
-  onSendEmail: () => void;
   onCopyExistingLink: (id: string, linkType: LinkKind) => void;
   onDeleteLink: (id: string, linkType: LinkKind) => void;
 };

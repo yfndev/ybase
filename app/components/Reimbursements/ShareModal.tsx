@@ -17,7 +17,6 @@ export function ShareModal({
     type,
     form,
     isGenerating,
-    isSending,
     copiedId,
     allLinks,
     needsDates,
@@ -25,10 +24,9 @@ export function ShareModal({
     updateForm,
     handleClose,
     handleCopy,
-    handleSendEmail,
     handleCopyExisting,
     handleDelete,
-  } = useShareModal(open, onClose, projects);
+  } = useShareModal(open, onClose);
 
   return (
     <ShareModalUI
@@ -37,16 +35,13 @@ export function ShareModal({
       type={type}
       form={form}
       projects={projects}
-      isLoading={isGenerating || isSending}
       isGenerating={isGenerating}
-      isSending={isSending}
       needsDates={needsDates}
       allLinks={allLinks}
       copiedId={copiedId}
       onTypeChange={setType}
       onFormUpdate={updateForm}
       onCopy={handleCopy}
-      onSendEmail={handleSendEmail}
       onCopyExistingLink={handleCopyExisting}
       onDeleteLink={handleDelete}
     />

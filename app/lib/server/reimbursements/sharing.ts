@@ -8,15 +8,13 @@ import {
   volunteerAllowance,
 } from "../../db/collections";
 import { newId } from "../../db/ids";
-import { escapeHtml } from "../../email/escape";
-import { sendEmail } from "../../email/resend";
 import {
   insertReimbursementLink,
   loadPendingSharedLinks,
   type PendingAllowanceLink,
   type PendingReimbursementLink,
 } from "./sharingHelpers";
-import { createLinkSchema, sendLinkSchema } from "./validators";
+import { createLinkSchema } from "./validators";
 
 export async function createReimbursementLink(
   input: z.input<typeof createLinkSchema>,
@@ -28,32 +26,6 @@ export async function createReimbursementLink(
   await insertReimbursementLink(reimbursementId, user, args);
 
   return reimbursementId;
-}
-
-export async function sendReimbursementLink(
-  input: z.input<typeof sendLinkSchema>,
-): Promise<void> {
-  const user = await requireUser();
-  const args = sendLinkSchema.parse(input);
-  const typeLabel =
-    args.type === "expense" ? "Auslagenerstattung" : "Reisekostenerstattung";
-
-  if (!/^https?:\/\//i.test(args.link)) throw new Error("Invalid link");
-  const senderName = escapeHtml(user.firstName ?? "");
-  const projectName = escapeHtml(args.projectName);
-  const safeLink = escapeHtml(args.link);
-
-  await sendEmail({
-    from: "YBase <info@youngfounders.network>",
-    to: args.email,
-    subject: `${typeLabel} ausfüllen`,
-    html: `
-        <p>Hallo,</p>
-        <p>${senderName} hat dir einen Link zum Ausfüllen der ${typeLabel} für das Projekt "${projectName}" gesendet.</p>
-        <p><a href="${safeLink}">Hier klicken zum Ausfüllen</a></p>
-        <p>Viele Grüße,<br/>Dein YBase Team</p>
-      `,
-  });
 }
 
 export async function deleteSharedReimbursementLink(input: {

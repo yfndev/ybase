@@ -3,7 +3,6 @@ import type { FormState, LinkKind, LinkType } from "./types";
 export const INITIAL_FORM: FormState = {
   projectId: null,
   description: "",
-  email: "",
   startDate: "",
   endDate: "",
   destination: "",

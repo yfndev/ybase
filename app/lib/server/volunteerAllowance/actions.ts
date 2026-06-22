@@ -7,7 +7,6 @@ import { newId } from "../../db/ids";
 import { deleteObject } from "../../s3/storage";
 import { addLog } from "../logs";
 import { getSignatureUrl } from "./data";
-import { sendApprovalEmail, sendRejectionEmail } from "./email";
 
 const MAX_VOLUNTEER_ALLOWANCE_EUR = 960;
 
@@ -48,11 +47,15 @@ export async function create(input: {
     .parse(input);
 
   if (args.amount > MAX_VOLUNTEER_ALLOWANCE_EUR) {
-    throw new Error(`Volunteer allowance cannot exceed ${MAX_VOLUNTEER_ALLOWANCE_EUR}€`);
+    throw new Error(
+      `Volunteer allowance cannot exceed ${MAX_VOLUNTEER_ALLOWANCE_EUR}€`,
+    );
   }
 
   const _id = newId();
-  await (await volunteerAllowance()).insertOne({
+  await (
+    await volunteerAllowance()
+  ).insertOne({
     _id,
     _creationTime: Date.now(),
     organizationId: user.organizationId,
@@ -100,12 +103,22 @@ export async function approve(input: { id: string }): Promise<void> {
     throw new Error("Already processed");
   }
   if (doc.amount > MAX_VOLUNTEER_ALLOWANCE_EUR) {
-    throw new Error(`Cannot approve: amount exceeds ${MAX_VOLUNTEER_ALLOWANCE_EUR}€ legal limit`);
+    throw new Error(
+      `Cannot approve: amount exceeds ${MAX_VOLUNTEER_ALLOWANCE_EUR}€ legal limit`,
+    );
   }
 
-  await (await volunteerAllowance()).updateOne(
+  await (
+    await volunteerAllowance()
+  ).updateOne(
     { _id: id },
-    { $set: { status: "approved", reviewedBy: user._id, reviewedAt: Date.now() } },
+    {
+      $set: {
+        status: "approved",
+        reviewedBy: user._id,
+        reviewedAt: Date.now(),
+      },
+    },
   );
 
   await addLog(
@@ -115,8 +128,6 @@ export async function approve(input: { id: string }): Promise<void> {
     id,
     `${doc.amount}€`,
   );
-
-  await sendApprovalEmail(id);
 }
 
 export async function decline(input: {
@@ -136,7 +147,9 @@ export async function decline(input: {
     throw new Error("Already processed");
   }
 
-  await (await volunteerAllowance()).updateOne(
+  await (
+    await volunteerAllowance()
+  ).updateOne(
     { _id: id },
     {
       $set: {
@@ -155,8 +168,6 @@ export async function decline(input: {
     id,
     rejectionNote,
   );
-
-  await sendRejectionEmail(id);
 }
 
 export async function remove(input: { id: string }): Promise<void> {

@@ -15,16 +15,13 @@ export function ShareModalUI({
   type,
   form,
   projects,
-  isLoading,
   isGenerating,
-  isSending,
   needsDates,
   allLinks,
   copiedId,
   onTypeChange,
   onFormUpdate,
   onCopy,
-  onSendEmail,
   onCopyExistingLink,
   onDeleteLink,
 }: ShareModalUIProps) {
@@ -43,14 +40,11 @@ export function ShareModalUI({
           type={type}
           form={form}
           projects={projects}
-          isLoading={isLoading}
           isGenerating={isGenerating}
-          isSending={isSending}
           needsDates={needsDates}
           onTypeChange={onTypeChange}
           onFormUpdate={onFormUpdate}
           onCopy={onCopy}
-          onSendEmail={onSendEmail}
         />
 
         <ExistingLinks

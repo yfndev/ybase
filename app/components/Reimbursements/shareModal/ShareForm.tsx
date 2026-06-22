@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Copy, Loader2, Mail } from "lucide-react";
+import { Copy, Loader2 } from "lucide-react";
 import { TYPE_LABELS } from "./constants";
 import type { LinkType, ShareModalUIProps } from "./types";
 
@@ -14,28 +14,22 @@ type ShareFormProps = Pick<
   | "type"
   | "form"
   | "projects"
-  | "isLoading"
   | "isGenerating"
-  | "isSending"
   | "needsDates"
   | "onTypeChange"
   | "onFormUpdate"
   | "onCopy"
-  | "onSendEmail"
 >;
 
 export function ShareForm({
   type,
   form,
   projects,
-  isLoading,
   isGenerating,
-  isSending,
   needsDates,
   onTypeChange,
   onFormUpdate,
   onCopy,
-  onSendEmail,
 }: ShareFormProps) {
   return (
     <div className="space-y-4 py-4">
@@ -137,43 +131,19 @@ export function ShareForm({
         </div>
       )}
 
-      <div>
-        <Label>E-Mail (optional)</Label>
-        <Input
-          type="email"
-          value={form.email}
-          onChange={(e) => onFormUpdate({ email: e.target.value })}
-          placeholder="empfaenger@beispiel.de"
-        />
-      </div>
-
-      <div className="flex gap-2">
-        <Button
-          variant="outline"
-          onClick={onCopy}
-          className="flex-1"
-          disabled={isLoading || !form.projectId}
-        >
-          {isGenerating ? (
-            <Loader2 className="size-4 animate-spin mr-2" />
-          ) : (
-            <Copy className="size-4 mr-2" />
-          )}
-          Link kopieren
-        </Button>
-        <Button
-          onClick={onSendEmail}
-          className="flex-1"
-          disabled={isLoading || !form.projectId || !form.email}
-        >
-          {isSending ? (
-            <Loader2 className="size-4 animate-spin mr-2" />
-          ) : (
-            <Mail className="size-4 mr-2" />
-          )}
-          Per E-Mail senden
-        </Button>
-      </div>
+      <Button
+        variant="outline"
+        onClick={onCopy}
+        className="w-full"
+        disabled={isGenerating || !form.projectId}
+      >
+        {isGenerating ? (
+          <Loader2 className="size-4 animate-spin mr-2" />
+        ) : (
+          <Copy className="size-4 mr-2" />
+        )}
+        Link kopieren
+      </Button>
     </div>
   );
 }

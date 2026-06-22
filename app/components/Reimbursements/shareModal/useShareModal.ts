@@ -3,31 +3,21 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import type { Project } from "@/lib/db/types";
 import {
   createReimbursementLink,
   deleteSharedAllowanceLink,
   deleteSharedReimbursementLink,
   getPendingSharedLinks,
-  sendReimbursementLink,
 } from "@/lib/server/reimbursements/sharing";
-import {
-  createLink as createAllowanceLink,
-  sendAllowanceLink,
-} from "@/lib/server/volunteerAllowance/sharing";
+import { createLink as createAllowanceLink } from "@/lib/server/volunteerAllowance/sharing";
 import { INITIAL_FORM, linkUrl } from "./constants";
 import type { LinkKind, LinkType, PendingLink } from "./types";
 
-export function useShareModal(
-  open: boolean,
-  onClose: () => void,
-  projects: Project[],
-) {
+export function useShareModal(open: boolean, onClose: () => void) {
   const router = useRouter();
   const [type, setType] = useState<LinkType>("expense");
   const [form, setForm] = useState(INITIAL_FORM);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isSending, setIsSending] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [allLinks, setAllLinks] = useState<PendingLink[]>([]);
   const needsDates = type === "travel" || type === "allowance";
@@ -66,9 +56,6 @@ export function useShareModal(
     setType("expense");
     onClose();
   };
-
-  const projectName =
-    projects.find((p) => p._id === form.projectId)?.name ?? "";
 
   const generate = async (): Promise<{ id: string; linkType: LinkKind }> => {
     if (type === "allowance") {
@@ -113,31 +100,6 @@ export function useShareModal(
     }
   };
 
-  const handleSendEmail = async () => {
-    if (!form.projectId || !form.email) return;
-    setIsSending(true);
-    try {
-      const { id, linkType } = await generate();
-      const link = linkUrl(linkType, id);
-      if (linkType === "allowance") {
-        await sendAllowanceLink({ email: form.email, link, projectName });
-      } else {
-        await sendReimbursementLink({
-          email: form.email,
-          link,
-          projectName,
-          type: type === "travel" ? "travel" : "expense",
-        });
-      }
-      toast.success("E-Mail gesendet");
-      refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Fehler");
-    } finally {
-      setIsSending(false);
-    }
-  };
-
   const handleCopyExisting = async (id: string, linkType: LinkKind) => {
     await navigator.clipboard.writeText(linkUrl(linkType, id));
     setCopiedId(id);
@@ -163,7 +125,6 @@ export function useShareModal(
     type,
     form,
     isGenerating,
-    isSending,
     copiedId,
     allLinks,
     needsDates,
@@ -171,7 +132,6 @@ export function useShareModal(
     updateForm,
     handleClose,
     handleCopy,
-    handleSendEmail,
     handleCopyExisting,
     handleDelete,
   };
