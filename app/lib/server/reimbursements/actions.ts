@@ -7,12 +7,7 @@ import { newId } from "../../db/ids";
 import { presignUpload } from "../../s3/storage";
 import { getOrganization } from "../organizations/data";
 import { addLog } from "../logs";
-import {
-  getFileUrl,
-  getReceipts,
-  getReimbursement,
-} from "./data";
-import { sendApprovalEmail, sendRejectionEmail } from "./email";
+import { getFileUrl, getReceipts, getReimbursement } from "./data";
 import {
   cleanupReimbursement,
   insertReceipts,
@@ -94,7 +89,9 @@ export async function getFileUrlAction(key: string): Promise<string> {
   return getFileUrl(key);
 }
 
-export async function getReimbursementPdfData(reimbursementId: string): Promise<{
+export async function getReimbursementPdfData(
+  reimbursementId: string,
+): Promise<{
   reimbursement: Awaited<ReturnType<typeof getReimbursement>>;
   organization: Awaited<ReturnType<typeof getOrganization>>;
   signatureUrl: string | null;
@@ -185,8 +182,6 @@ export async function approve(input: {
     reimbursementId,
     `${reimbursement.amount}€`,
   );
-
-  await sendApprovalEmail(reimbursementId);
 }
 
 export async function decline(input: {
@@ -221,6 +216,4 @@ export async function decline(input: {
     reimbursementId,
     rejectionNote,
   );
-
-  await sendRejectionEmail(reimbursementId);
 }

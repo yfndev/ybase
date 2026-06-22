@@ -14,14 +14,21 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import type { Project } from "@/lib/db/types";
-import { Car, Check, Copy, Loader2, Mail, Receipt, Trash2, Users } from "lucide-react";
+import {
+  Car,
+  Check,
+  Copy,
+  Loader2,
+  Receipt,
+  Trash2,
+  Users,
+} from "lucide-react";
 
 type LinkType = "expense" | "travel" | "allowance";
 
 type FormState = {
   projectId: string | null;
   description: string;
-  email: string;
   startDate: string;
   endDate: string;
   destination: string;
@@ -42,17 +49,17 @@ type Props = {
   type: LinkType;
   form: FormState;
   projects: Project[];
-  isLoading: boolean;
   isGenerating: boolean;
-  isSending: boolean;
   needsDates: boolean;
   allLinks: PendingLink[];
   copiedId: string | null;
   onTypeChange: (type: LinkType) => void;
   onFormUpdate: (updates: Partial<FormState>) => void;
   onCopy: () => void;
-  onSendEmail: () => void;
-  onCopyExistingLink: (id: string, linkType: "reimbursement" | "allowance") => void;
+  onCopyExistingLink: (
+    id: string,
+    linkType: "reimbursement" | "allowance",
+  ) => void;
   onDeleteLink: (id: string, linkType: "reimbursement" | "allowance") => void;
 };
 
@@ -68,16 +75,13 @@ export function ShareModalUI({
   type,
   form,
   projects,
-  isLoading,
   isGenerating,
-  isSending,
   needsDates,
   allLinks,
   copiedId,
   onTypeChange,
   onFormUpdate,
   onCopy,
-  onSendEmail,
   onCopyExistingLink,
   onDeleteLink,
 }: Props) {
@@ -87,7 +91,8 @@ export function ShareModalUI({
         <DialogHeader>
           <DialogTitle>Erstattung anfordern</DialogTitle>
           <DialogDescription>
-            Erstelle einen Link zum Einreichen von Erstattungen oder Ehrenamtspauschalen.
+            Erstelle einen Link zum Einreichen von Erstattungen oder
+            Ehrenamtspauschalen.
           </DialogDescription>
         </DialogHeader>
 
@@ -111,17 +116,25 @@ export function ShareModalUI({
             <Label>Projekt</Label>
             <SelectProject
               value={form.projectId ?? ""}
-              onValueChange={(value) => onFormUpdate({ projectId: value || null })}
+              onValueChange={(value) =>
+                onFormUpdate({ projectId: value || null })
+              }
               projects={projects}
             />
           </div>
 
           <div>
-            <Label>{type === "allowance" ? "Tätigkeitsbeschreibung" : "Beschreibung"}</Label>
+            <Label>
+              {type === "allowance" ? "Tätigkeitsbeschreibung" : "Beschreibung"}
+            </Label>
             <Textarea
               value={form.description}
               onChange={(e) => onFormUpdate({ description: e.target.value })}
-              placeholder={type === "allowance" ? "z.B. Jugendarbeit, Vorstandstätigkeit" : "z.B. Einkäufe für Workshop"}
+              placeholder={
+                type === "allowance"
+                  ? "z.B. Jugendarbeit, Vorstandstätigkeit"
+                  : "z.B. Einkäufe für Workshop"
+              }
               rows={2}
               className="resize-none"
             />
@@ -134,7 +147,9 @@ export function ShareModalUI({
                   <Label>Reiseziel</Label>
                   <Input
                     value={form.destination}
-                    onChange={(e) => onFormUpdate({ destination: e.target.value })}
+                    onChange={(e) =>
+                      onFormUpdate({ destination: e.target.value })
+                    }
                     placeholder="z.B. München"
                   />
                 </div>
@@ -151,9 +166,14 @@ export function ShareModalUI({
                 <Checkbox
                   id="allowFoodAllowance"
                   checked={form.allowFoodAllowance}
-                  onCheckedChange={(checked) => onFormUpdate({ allowFoodAllowance: checked === true })}
+                  onCheckedChange={(checked) =>
+                    onFormUpdate({ allowFoodAllowance: checked === true })
+                  }
                 />
-                <Label htmlFor="allowFoodAllowance" className="font-normal cursor-pointer">
+                <Label
+                  htmlFor="allowFoodAllowance"
+                  className="font-normal cursor-pointer"
+                >
                   Verpflegungsmehraufwand erlauben
                 </Label>
               </div>
@@ -164,35 +184,34 @@ export function ShareModalUI({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Von</Label>
-                <DateInput value={form.startDate} onChange={(value) => onFormUpdate({ startDate: value })} />
+                <DateInput
+                  value={form.startDate}
+                  onChange={(value) => onFormUpdate({ startDate: value })}
+                />
               </div>
               <div>
                 <Label>Bis</Label>
-                <DateInput value={form.endDate} onChange={(value) => onFormUpdate({ endDate: value })} />
+                <DateInput
+                  value={form.endDate}
+                  onChange={(value) => onFormUpdate({ endDate: value })}
+                />
               </div>
             </div>
           )}
 
-          <div>
-            <Label>E-Mail (optional)</Label>
-            <Input
-              type="email"
-              value={form.email}
-              onChange={(e) => onFormUpdate({ email: e.target.value })}
-              placeholder="empfaenger@beispiel.de"
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onCopy} className="flex-1" disabled={isLoading || !form.projectId}>
-              {isGenerating ? <Loader2 className="size-4 animate-spin mr-2" /> : <Copy className="size-4 mr-2" />}
-              Link kopieren
-            </Button>
-            <Button onClick={onSendEmail} className="flex-1" disabled={isLoading || !form.projectId || !form.email}>
-              {isSending ? <Loader2 className="size-4 animate-spin mr-2" /> : <Mail className="size-4 mr-2" />}
-              Per E-Mail senden
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            onClick={onCopy}
+            className="w-full"
+            disabled={isGenerating || !form.projectId}
+          >
+            {isGenerating ? (
+              <Loader2 className="size-4 animate-spin mr-2" />
+            ) : (
+              <Copy className="size-4 mr-2" />
+            )}
+            Link kopieren
+          </Button>
         </div>
 
         {allLinks.length > 0 && (
@@ -257,7 +276,11 @@ function LinkRow({
       </div>
       <div className="flex items-center gap-1">
         <Button variant="ghost" size="icon" className="size-8" onClick={onCopy}>
-          {copiedId === link._id ? <Check className="size-4 text-green-500" /> : <Copy className="size-4" />}
+          {copiedId === link._id ? (
+            <Check className="size-4 text-green-500" />
+          ) : (
+            <Copy className="size-4" />
+          )}
         </Button>
         <Button
           variant="ghost"

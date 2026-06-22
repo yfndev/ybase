@@ -9,12 +9,8 @@ import {
   deleteSharedAllowanceLink,
   deleteSharedReimbursementLink,
   getPendingSharedLinks,
-  sendReimbursementLink,
 } from "@/lib/server/reimbursements/sharing";
-import {
-  createLink as createAllowanceLink,
-  sendAllowanceLink,
-} from "@/lib/server/volunteerAllowance/sharing";
+import { createLink as createAllowanceLink } from "@/lib/server/volunteerAllowance/sharing";
 import { ShareModalUI } from "./ShareModalUI";
 
 type LinkType = "expense" | "travel" | "allowance";
@@ -29,7 +25,6 @@ type PendingLink = {
 const INITIAL_FORM = {
   projectId: null as string | null,
   description: "",
-  email: "",
   startDate: "",
   endDate: "",
   destination: "",
@@ -38,7 +33,8 @@ const INITIAL_FORM = {
 };
 
 function linkUrl(linkType: LinkKind, id: string): string {
-  const segment = linkType === "allowance" ? "ehrenamtspauschale" : "erstattung";
+  const segment =
+    linkType === "allowance" ? "ehrenamtspauschale" : "erstattung";
   return `${window.location.origin}/${segment}/${id}`;
 }
 
@@ -55,28 +51,29 @@ export function ShareModal({
   const [type, setType] = useState<LinkType>("expense");
   const [form, setForm] = useState(INITIAL_FORM);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isSending, setIsSending] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [allLinks, setAllLinks] = useState<PendingLink[]>([]);
   const needsDates = type === "travel" || type === "allowance";
 
   useEffect(() => {
     if (!open) return;
-    void getPendingSharedLinks().then(({ reimbursementLinks, allowanceLinks }) => {
-      setAllLinks([
-        ...reimbursementLinks.map((link) => ({
-          _id: link._id,
-          projectName: link.projectName,
-          linkType: "reimbursement" as const,
-          type: link.type,
-        })),
-        ...allowanceLinks.map((link) => ({
-          _id: link._id,
-          projectName: link.projectName,
-          linkType: "allowance" as const,
-        })),
-      ]);
-    });
+    void getPendingSharedLinks().then(
+      ({ reimbursementLinks, allowanceLinks }) => {
+        setAllLinks([
+          ...reimbursementLinks.map((link) => ({
+            _id: link._id,
+            projectName: link.projectName,
+            linkType: "reimbursement" as const,
+            type: link.type,
+          })),
+          ...allowanceLinks.map((link) => ({
+            _id: link._id,
+            projectName: link.projectName,
+            linkType: "allowance" as const,
+          })),
+        ]);
+      },
+    );
   }, [open]);
 
   const refresh = () => {
@@ -92,8 +89,6 @@ export function ShareModal({
     setType("expense");
     onClose();
   };
-
-  const projectName = projects.find((p) => p._id === form.projectId)?.name ?? "";
 
   const generate = async (): Promise<{ id: string; linkType: LinkKind }> => {
     if (type === "allowance") {
@@ -138,31 +133,6 @@ export function ShareModal({
     }
   };
 
-  const handleSendEmail = async () => {
-    if (!form.projectId || !form.email) return;
-    setIsSending(true);
-    try {
-      const { id, linkType } = await generate();
-      const link = linkUrl(linkType, id);
-      if (linkType === "allowance") {
-        await sendAllowanceLink({ email: form.email, link, projectName });
-      } else {
-        await sendReimbursementLink({
-          email: form.email,
-          link,
-          projectName,
-          type: type === "travel" ? "travel" : "expense",
-        });
-      }
-      toast.success("E-Mail gesendet");
-      refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Fehler");
-    } finally {
-      setIsSending(false);
-    }
-  };
-
   const handleCopyExisting = async (id: string, linkType: LinkKind) => {
     await navigator.clipboard.writeText(linkUrl(linkType, id));
     setCopiedId(id);
@@ -191,16 +161,13 @@ export function ShareModal({
       type={type}
       form={form}
       projects={projects}
-      isLoading={isGenerating || isSending}
       isGenerating={isGenerating}
-      isSending={isSending}
       needsDates={needsDates}
       allLinks={allLinks}
       copiedId={copiedId}
       onTypeChange={setType}
       onFormUpdate={updateForm}
       onCopy={handleCopy}
-      onSendEmail={handleSendEmail}
       onCopyExistingLink={handleCopyExisting}
       onDeleteLink={handleDelete}
     />

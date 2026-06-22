@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Self-contained server build for Docker/Coolify deployment.
+  output: "standalone",
+  // Pin the file-tracing root to this project so standalone output lands at
+  // .next/standalone/server.js (otherwise a stray parent lockfile misroots it).
+  outputFileTracingRoot: import.meta.dirname,
   images: {
     remotePatterns: [
       {

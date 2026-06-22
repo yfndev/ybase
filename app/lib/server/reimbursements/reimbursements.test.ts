@@ -13,10 +13,6 @@ vi.mock("../../s3/storage", () => ({
   getObjectBuffer: vi.fn(async () => Buffer.from("file")),
 }));
 
-vi.mock("../../email/resend", () => ({
-  sendEmail: vi.fn(async () => {}),
-}));
-
 import { requireRole, requireUser } from "../../auth/session";
 import { getClient, getDb } from "../../db/client";
 import {
@@ -27,7 +23,6 @@ import {
   users,
 } from "../../db/collections";
 import { newId } from "../../db/ids";
-import { sendEmail } from "../../email/resend";
 import { deleteObject } from "../../s3/storage";
 import { approve, createReimbursement, deleteReimbursement } from "./actions";
 import { getAllReimbursements } from "./data";
@@ -164,14 +159,13 @@ test("getAllReimbursements stays scoped to the caller's org", async () => {
   expect(list[0]?.projectName).toBe("Projekt A");
 });
 
-test("approve sets the status and sends the email", async () => {
+test("approve sets the status", async () => {
   const id = await createReimbursement(reimbursementInput());
   await approve({ reimbursementId: id });
 
   const stored = await (await reimbursements()).findOne({ _id: id });
   expect(stored?.status).toBe("approved");
   expect(stored?.reviewedBy).toBe(userA);
-  expect(sendEmail).toHaveBeenCalledTimes(1);
 });
 
 test("deleteReimbursement removes receipts and deletes the stored files", async () => {
