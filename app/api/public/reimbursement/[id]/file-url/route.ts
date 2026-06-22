@@ -17,6 +17,9 @@ export async function POST(request: Request, context: RouteContext) {
       throw new Error("Invalid link");
     }
 
+    if (!(doc.pendingUploadKeys ?? []).includes(key))
+      throw new Error("Invalid key");
+
     const url = await presignDownload(key);
     return Response.json({ url });
   } catch (error) {

@@ -54,6 +54,18 @@ export async function POST(request: Request, context: RouteContext) {
     const args = bodySchema.parse(await request.json());
     const collection = await reimbursements();
 
+    const existing = await collection.findOne({ _id: id });
+    if (!existing) throw new Error("Invalid link");
+
+    const allowed = new Set(existing.pendingUploadKeys ?? []);
+    const allReceipts = [...args.receipts, ...(args.travelReceipts ?? [])];
+    const usedKeys = [
+      args.signatureStorageId,
+      ...allReceipts.map((receipt) => receipt.fileStorageId),
+    ];
+    if (usedKeys.some((key) => !allowed.has(key)))
+      return Response.json({ error: "Invalid key" }, { status: 400 });
+
     const result = await collection.updateOne(
       { _id: id, isSharedLink: true, submitterName: { $exists: false } },
       {

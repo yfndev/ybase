@@ -72,6 +72,7 @@ export interface Reimbursement {
   submitterName?: string;
   submitterEmail?: string;
   description?: string;
+  pendingUploadKeys?: string[];
 }
 
 export interface TravelDetails {
@@ -137,6 +138,7 @@ export interface VolunteerAllowance {
   volunteerPlz: string;
   volunteerCity: string;
   signatureStorageId?: string;
+  pendingSignatureStorageId?: string;
 }
 
 export interface SignatureToken {
@@ -147,5 +149,6 @@ export interface SignatureToken {
   createdBy: string;
   expiresAt: number;
   signatureStorageId?: string;
+  pendingSignatureStorageId?: string;
   usedAt?: number;
 }

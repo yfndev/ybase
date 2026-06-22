@@ -19,7 +19,6 @@ const bodySchema = z.object({
   volunteerStreet: z.string(),
   volunteerPlz: z.string(),
   volunteerCity: z.string(),
-  signatureStorageId: z.string(),
 });
 
 export async function POST(request: Request, context: RouteContext) {
@@ -34,27 +33,35 @@ export async function POST(request: Request, context: RouteContext) {
     const collection = await volunteerAllowance();
 
     const result = await collection.updateOne(
-      { _id: id, signatureStorageId: { $exists: false } },
       {
-        $set: {
-          amount: args.amount,
-          iban: args.iban,
-          bic: args.bic,
-          accountHolder: args.accountHolder,
-          activityDescription: args.activityDescription,
-          startDate: args.startDate,
-          endDate: args.endDate,
-          taxYear: args.taxYear,
-          volunteerName: args.volunteerName,
-          volunteerStreet: args.volunteerStreet,
-          volunteerPlz: args.volunteerPlz,
-          volunteerCity: args.volunteerCity,
-          signatureStorageId: args.signatureStorageId,
-        },
+        _id: id,
+        signatureStorageId: { $exists: false },
+        pendingSignatureStorageId: { $exists: true },
       },
+      [
+        {
+          $set: {
+            amount: args.amount,
+            iban: args.iban,
+            bic: args.bic,
+            accountHolder: args.accountHolder,
+            activityDescription: args.activityDescription,
+            startDate: args.startDate,
+            endDate: args.endDate,
+            taxYear: args.taxYear,
+            volunteerName: args.volunteerName,
+            volunteerStreet: args.volunteerStreet,
+            volunteerPlz: args.volunteerPlz,
+            volunteerCity: args.volunteerCity,
+            status: "pending",
+            signatureStorageId: "$pendingSignatureStorageId",
+          },
+        },
+      ],
     );
 
-    if (result.matchedCount !== 1) throw new Error("Already submitted");
+    if (result.matchedCount !== 1 || result.modifiedCount !== 1)
+      throw new Error("Already submitted");
 
     const doc = await collection.findOne({ _id: id });
     if (!doc) throw new Error("Invalid link");

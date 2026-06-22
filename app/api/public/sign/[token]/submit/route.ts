@@ -1,21 +1,30 @@
-import { z } from "zod";
 import { signatureTokens } from "@/lib/db/collections";
 
 type RouteContext = { params: Promise<{ token: string }> };
 
-const bodySchema = z.object({ signatureStorageId: z.string() });
-
-export async function POST(request: Request, context: RouteContext) {
+export async function POST(_request: Request, context: RouteContext) {
   const { token } = await context.params;
 
   try {
-    const { signatureStorageId } = bodySchema.parse(await request.json());
+    const now = Date.now();
 
     const result = await (
       await signatureTokens()
     ).updateOne(
-      { token, usedAt: { $exists: false }, expiresAt: { $gt: Date.now() } },
-      { $set: { signatureStorageId, usedAt: Date.now() } },
+      {
+        token,
+        usedAt: { $exists: false },
+        expiresAt: { $gt: now },
+        pendingSignatureStorageId: { $exists: true },
+      },
+      [
+        {
+          $set: {
+            signatureStorageId: "$pendingSignatureStorageId",
+            usedAt: now,
+          },
+        },
+      ],
     );
 
     if (result.modifiedCount !== 1) throw new Error("Link bereits verwendet");

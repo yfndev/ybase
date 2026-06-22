@@ -17,8 +17,16 @@ export async function POST(request: Request, context: RouteContext) {
     if (!doc.isSharedLink) throw new Error("Not a shared link");
     if (doc.submitterName) throw new Error("Already submitted");
 
-    const result = await presignUpload(contentType);
-    return Response.json(result);
+    const { key, url } = await presignUpload(contentType);
+
+    await (
+      await reimbursements()
+    ).updateOne(
+      { _id: id, isSharedLink: true, submitterName: { $exists: false } },
+      { $addToSet: { pendingUploadKeys: key } },
+    );
+
+    return Response.json({ key, url });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invalid request";
     return Response.json({ error: message }, { status: 400 });

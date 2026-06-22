@@ -27,13 +27,29 @@ function bucket(): string {
   return name;
 }
 
+const ALLOWED_UPLOAD_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  "application/pdf",
+]);
+
 export async function presignUpload(
   contentType?: string,
 ): Promise<{ key: string; url: string }> {
+  if (!contentType || !ALLOWED_UPLOAD_TYPES.has(contentType)) {
+    throw new Error("Unsupported file type");
+  }
   const key = crypto.randomUUID();
   const url = await getSignedUrl(
     s3(),
-    new PutObjectCommand({ Bucket: bucket(), Key: key, ContentType: contentType }),
+    new PutObjectCommand({
+      Bucket: bucket(),
+      Key: key,
+      ContentType: contentType,
+    }),
     { expiresIn: 300 },
   );
   return { key, url };

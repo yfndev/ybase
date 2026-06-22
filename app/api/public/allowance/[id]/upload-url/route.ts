@@ -17,8 +17,16 @@ export async function POST(request: Request, context: RouteContext) {
     if (doc.volunteerName && doc.signatureStorageId)
       throw new Error("Already submitted");
 
-    const result = await presignUpload(contentType);
-    return Response.json(result);
+    const { key, url } = await presignUpload(contentType);
+
+    await (
+      await volunteerAllowance()
+    ).updateOne(
+      { _id: id, signatureStorageId: { $exists: false } },
+      { $set: { pendingSignatureStorageId: key } },
+    );
+
+    return Response.json({ key, url });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invalid request";
     return Response.json({ error: message }, { status: 400 });
