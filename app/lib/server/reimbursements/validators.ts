@@ -47,3 +47,25 @@ export const createTravelReimbursementSchema = z.object({
   mealAllowanceDailyBudget: z.number().optional(),
   receipts: z.array(travelReceiptValidator),
 });
+
+export const createLinkSchema = z.object({
+  projectId: z.string(),
+  type: z.enum(["expense", "travel"]),
+  description: z.string().optional(),
+  travelDetails: z
+    .object({
+      destination: z.string().optional(),
+      purpose: z.string().optional(),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+      allowFoodAllowance: z.boolean().optional(),
+    })
+    .optional(),
+});
+
+export const sendLinkSchema = z.object({
+  email: z.string(),
+  link: z.string(),
+  projectName: z.string(),
+  type: z.enum(["expense", "travel"]),
+});
