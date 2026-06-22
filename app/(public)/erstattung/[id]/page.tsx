@@ -1,8 +1,13 @@
 "use client";
 
-import { SignatureQRModal } from "@/components/Reimbursements/SignatureField";
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
+import {
+  reimbursementFileUrl,
+  reimbursementUploadUrl,
+  submitReimbursement,
+  uploadViaPresign,
+  validateReimbursementLink,
+  type ReimbursementLink,
+} from "@/(public)/_lib/publicApi";
 import {
   BIC_REGEX,
   formatIban,
@@ -15,10 +20,9 @@ import {
   type CostType,
   DEFAULT_TAX_RATES,
 } from "@/lib/travel-costs";
-import { useConvex, useMutation, useQuery } from "convex/react";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import ExternalReimbursementPageUI from "./ExternalReimbursementPageUI";
 
@@ -30,7 +34,7 @@ type Receipt = {
   netAmount: number;
   taxRate: number;
   grossAmount: number;
-  fileStorageId: Id<"_storage"> | null;
+  fileStorageId: string | null;
 };
 
 type TravelReceipt = Receipt & {
@@ -39,22 +43,9 @@ type TravelReceipt = Receipt & {
 };
 
 export default function ExternalReimbursementPage() {
-  const params = useParams<{ id: string }>();
-  const reimbursementId = params.id as Id<"reimbursements">;
-  const convex = useConvex();
+  const { id } = useParams<{ id: string }>();
 
-  const link = useQuery(api.reimbursements.sharing.validateReimbursementLink, {
-    id: reimbursementId,
-  });
-  const generateUploadUrl = useMutation(
-    api.reimbursements.sharing.generatePublicUploadUrl
-  );
-  const submitExternal = useMutation(
-    api.reimbursements.sharing.submitExternalReimbursement
-  );
-  const createSignatureToken = useMutation(
-    api.signatures.functions.createToken
-  );
+  const [link, setLink] = useState<ReimbursementLink | null>(null);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -62,11 +53,9 @@ export default function ExternalReimbursementPage() {
   const [bic, setBic] = useState("");
   const [accountHolder, setAccountHolder] = useState("");
   const [confirmation, setConfirmation] = useState(false);
-  const [signature, setSignature] = useState<Id<"_storage"> | null>(null);
+  const [signature, setSignature] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [signatureToken, setSignatureToken] = useState<string | null>(null);
-  const [showSignatureModal, setShowSignatureModal] = useState(false);
 
   const [destination, setDestination] = useState("");
   const [purpose, setPurpose] = useState("");
@@ -86,16 +75,30 @@ export default function ExternalReimbursementPage() {
   const [gross, setGross] = useState(0);
   const [taxRate, setTaxRate] = useState(19);
   const [currency, setCurrency] = useState("EUR");
-  const [file, setFile] = useState<Id<"_storage"> | null>(null);
+  const [file, setFile] = useState<string | null>(null);
   const [showFoodAllowance, setShowFoodAllowance] = useState(false);
 
-  const isTravel = link?.valid && link.type === "travel";
+  useEffect(() => {
+    validateReimbursementLink(id).then(setLink);
+  }, [id]);
+
+  const isTravel = link?.valid === true && link.type === "travel";
   const mealTotal = mealDays * mealRate;
 
   const totalGross = isTravel
     ? travelReceipts.reduce((sum, receipt) => sum + receipt.grossAmount, 0) +
       mealTotal
     : receipts.reduce((sum, receipt) => sum + receipt.grossAmount, 0);
+
+  const generateUploadUrl = (contentType: string) =>
+    reimbursementUploadUrl(id, contentType);
+  const getFileUrl = (key: string) => reimbursementFileUrl(id, key);
+  const uploadSignature = (blob: Blob) =>
+    uploadViaPresign(
+      `/api/public/reimbursement/${id}/upload-url`,
+      { contentType: "image/png" },
+      blob,
+    );
 
   const addReceipt = () => {
     if (!company || !description || !gross || !file || !date) {
@@ -133,12 +136,12 @@ export default function ExternalReimbursementPage() {
 
   const toggleCostType = (costType: CostType) => {
     const exists = travelReceipts.some(
-      (receipt) => receipt.costType === costType
+      (receipt) => receipt.costType === costType,
     );
 
     if (exists) {
       setTravelReceipts(
-        travelReceipts.filter((receipt) => receipt.costType !== costType)
+        travelReceipts.filter((receipt) => receipt.costType !== costType),
       );
       return;
     }
@@ -162,19 +165,13 @@ export default function ExternalReimbursementPage() {
 
   const updateTravelReceipt = (
     costType: CostType,
-    updates: Partial<TravelReceipt>
+    updates: Partial<TravelReceipt>,
   ) => {
     setTravelReceipts(
       travelReceipts.map((receipt) =>
-        receipt.costType === costType ? { ...receipt, ...updates } : receipt
-      )
+        receipt.costType === costType ? { ...receipt, ...updates } : receipt,
+      ),
     );
-  };
-
-  const handleMobileSign = async () => {
-    const token = await createSignatureToken({});
-    setSignatureToken(token);
-    setShowSignatureModal(true);
   };
 
   const handleSubmit = async () => {
@@ -188,7 +185,7 @@ export default function ExternalReimbursementPage() {
       }
       if (travelReceipts.length === 0 && mealTotal === 0) {
         return toast.error(
-          "Bitte mindestens eine Kostenart oder Verpflegung hinzufügen"
+          "Bitte mindestens eine Kostenart oder Verpflegung hinzufügen",
         );
       }
     } else {
@@ -223,8 +220,7 @@ export default function ExternalReimbursementPage() {
           fileStorageId: receipt.fileStorageId!,
         }));
 
-      await submitExternal({
-        reimbursementId,
+      await submitReimbursement(id, {
         amount: totalGross,
         iban: normalizeIban(iban),
         bic: bic.toUpperCase(),
@@ -250,7 +246,7 @@ export default function ExternalReimbursementPage() {
       setSubmitted(true);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Fehler beim Einreichen"
+        error instanceof Error ? error.message : "Fehler beim Einreichen",
       );
     } finally {
       setIsSubmitting(false);
@@ -293,85 +289,73 @@ export default function ExternalReimbursementPage() {
   }
 
   return (
-    <>
-      <ExternalReimbursementPageUI
-        isTravel={isTravel ?? false}
-        organizationName={link.organizationName}
-        projectName={link.projectName}
-        allowFoodAllowance={link.travelDetails?.allowFoodAllowance ?? false}
-        showFoodAllowance={showFoodAllowance}
-        onShowFoodAllowanceChange={setShowFoodAllowance}
-        name={name}
-        email={email}
-        onNameChange={setName}
-        onEmailChange={setEmail}
-        destination={destination}
-        purpose={purpose}
-        startDate={startDate}
-        endDate={endDate}
-        isInternational={isInternational}
-        mealDays={mealDays}
-        mealRate={mealRate}
-        mealTotal={mealTotal}
-        onDestinationChange={setDestination}
-        onPurposeChange={setPurpose}
-        onStartDateChange={setStartDate}
-        onEndDateChange={setEndDate}
-        onIsInternationalChange={setIsInternational}
-        onMealDaysChange={setMealDays}
-        onMealRateChange={setMealRate}
-        company={company}
-        number={number}
-        description={description}
-        date={date}
-        gross={gross}
-        taxRate={taxRate}
-        currency={currency}
-        file={file}
-        onCompanyChange={setCompany}
-        onNumberChange={setNumber}
-        onDescriptionChange={setDescription}
-        onDateChange={setDate}
-        onGrossChange={setGross}
-        onTaxRateChange={setTaxRate}
-        onCurrencyChange={setCurrency}
-        onFileChange={setFile}
-        receipts={receipts}
-        travelReceipts={travelReceipts}
-        onAddReceipt={addReceipt}
-        onRemoveReceipt={removeReceipt}
-        onToggleCostType={toggleCostType}
-        onUpdateTravelReceipt={updateTravelReceipt}
-        totalGross={totalGross}
-        accountHolder={accountHolder}
-        iban={iban}
-        bic={bic}
-        onAccountHolderChange={setAccountHolder}
-        onIbanChange={setIban}
-        onBicChange={setBic}
-        confirmation={confirmation}
-        signature={signature}
-        onConfirmationChange={setConfirmation}
-        onSignatureChange={setSignature}
-        isSubmitting={isSubmitting}
-        onSubmit={handleSubmit}
-        reimbursementId={reimbursementId}
-        generateUploadUrl={() => generateUploadUrl({ reimbursementId })}
-        getFileUrl={(storageId) => convex.query(api.reimbursements.sharing.getPublicFileUrl, { storageId })}
-        toNet={toNet}
-        formatIban={formatIban}
-        costLabels={COST_LABELS}
-        onMobileSign={handleMobileSign}
-      />
-
-      {signatureToken && (
-        <SignatureQRModal
-          token={signatureToken}
-          open={showSignatureModal}
-          onClose={() => setShowSignatureModal(false)}
-          onSignatureReceived={setSignature}
-        />
-      )}
-    </>
+    <ExternalReimbursementPageUI
+      isTravel={isTravel}
+      organizationName={link.organizationName}
+      projectName={link.projectName}
+      allowFoodAllowance={link.travelDetails?.allowFoodAllowance ?? false}
+      showFoodAllowance={showFoodAllowance}
+      onShowFoodAllowanceChange={setShowFoodAllowance}
+      name={name}
+      email={email}
+      onNameChange={setName}
+      onEmailChange={setEmail}
+      destination={destination}
+      purpose={purpose}
+      startDate={startDate}
+      endDate={endDate}
+      isInternational={isInternational}
+      mealDays={mealDays}
+      mealRate={mealRate}
+      mealTotal={mealTotal}
+      onDestinationChange={setDestination}
+      onPurposeChange={setPurpose}
+      onStartDateChange={setStartDate}
+      onEndDateChange={setEndDate}
+      onIsInternationalChange={setIsInternational}
+      onMealDaysChange={setMealDays}
+      onMealRateChange={setMealRate}
+      company={company}
+      number={number}
+      description={description}
+      date={date}
+      gross={gross}
+      taxRate={taxRate}
+      currency={currency}
+      file={file}
+      onCompanyChange={setCompany}
+      onNumberChange={setNumber}
+      onDescriptionChange={setDescription}
+      onDateChange={setDate}
+      onGrossChange={setGross}
+      onTaxRateChange={setTaxRate}
+      onCurrencyChange={setCurrency}
+      onFileChange={setFile}
+      receipts={receipts}
+      travelReceipts={travelReceipts}
+      onAddReceipt={addReceipt}
+      onRemoveReceipt={removeReceipt}
+      onToggleCostType={toggleCostType}
+      onUpdateTravelReceipt={updateTravelReceipt}
+      totalGross={totalGross}
+      accountHolder={accountHolder}
+      iban={iban}
+      bic={bic}
+      onAccountHolderChange={setAccountHolder}
+      onIbanChange={setIban}
+      onBicChange={setBic}
+      confirmation={confirmation}
+      signature={signature}
+      onConfirmationChange={setConfirmation}
+      onSignatureChange={setSignature}
+      isSubmitting={isSubmitting}
+      onSubmit={handleSubmit}
+      generateUploadUrl={generateUploadUrl}
+      getFileUrl={getFileUrl}
+      uploadSignature={uploadSignature}
+      toNet={toNet}
+      formatIban={formatIban}
+      costLabels={COST_LABELS}
+    />
   );
 }

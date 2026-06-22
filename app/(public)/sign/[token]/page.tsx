@@ -1,8 +1,12 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { api } from "@/convex/_generated/api";
-import { useMutation, useQuery } from "convex/react";
+import {
+  submitSign,
+  uploadViaPresign,
+  validateSignToken,
+  type SignValidation,
+} from "@/(public)/_lib/publicApi";
 import {
   AlertCircle,
   CheckCircle2,
@@ -11,7 +15,7 @@ import {
   Signature,
 } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SignaturePad from "react-signature-canvas";
 import toast from "react-hot-toast";
 
@@ -39,16 +43,15 @@ function exitLandscapeFullscreen() {
 export default function SignaturePage() {
   const { token } = useParams<{ token: string }>();
 
-  const tokenData = useQuery(api.signatures.queries.validate, { token });
-  const generateUploadUrl = useMutation(
-    api.signatures.functions.generateUploadUrl,
-  );
-  const submitSignature = useMutation(api.signatures.functions.submit);
-
+  const [tokenData, setTokenData] = useState<SignValidation | null>(null);
   const signaturePadRef = useRef<SignaturePad>(null);
   const [started, setStarted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    validateSignToken(token).then(setTokenData);
+  }, [token]);
 
   const handleStart = async () => {
     await enterLandscapeFullscreen();
@@ -66,24 +69,20 @@ export default function SignaturePage() {
       const dataUrl = signaturePadRef.current
         .getTrimmedCanvas()
         .toDataURL("image/png");
-      const response = await fetch(dataUrl);
-      const blob = await response.blob();
+      const blob = await (await fetch(dataUrl)).blob();
 
-      const uploadUrl = await generateUploadUrl({ token });
-      const result = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": "image/png" },
-        body: blob,
-      });
-
-      if (!result.ok) throw new Error();
-
-      const { storageId } = await result.json();
-      await submitSignature({ token, signatureStorageId: storageId });
+      const key = await uploadViaPresign(
+        `/api/public/sign/${token}/upload-url`,
+        { contentType: "image/png" },
+        blob,
+      );
+      await submitSign(token, key);
       exitLandscapeFullscreen();
       setSubmitted(true);
-    } catch {
-      toast.error("Speichern fehlgeschlagen");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Speichern fehlgeschlagen",
+      );
     } finally {
       setIsSubmitting(false);
     }

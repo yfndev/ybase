@@ -7,20 +7,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TableCell, TableRow } from "@/components/ui/table";
-import type { Id } from "@/convex/_generated/dataModel";
-import type { UserRole } from "@/convex/users/permissions";
+import type { UserRole } from "@/lib/db/types";
 import { getInitials } from "@/lib/formatters/getInitials";
 import { Shield } from "lucide-react";
 
 interface Props {
   user: {
-    _id: Id<"users">;
+    _id: string;
     name?: string;
     email?: string;
     image?: string;
     role: UserRole;
   };
-  onRoleChange: (userId: Id<"users">, role: UserRole) => void;
+  onRoleChange: (userId: string, role: UserRole) => void;
   isAdmin: boolean;
 }
 

@@ -3,10 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { api } from "@/convex/_generated/api";
 import { BIC_REGEX, formatIban, IBAN_REGEX } from "@/lib/bank-utils";
-import { useMutation } from "convex/react";
+import { updateBankDetails } from "@/lib/server/users/actions";
 import { Pencil } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
@@ -18,7 +18,7 @@ interface Props {
 }
 export function BankDetailsEditor({ value, onChange }: Props) {
   const [editing, setEditing] = useState(false);
-  const save = useMutation(api.users.functions.updateBankDetails);
+  const router = useRouter();
 
   const toggle = async () => {
     if (!editing) {
@@ -31,7 +31,12 @@ export function BankDetailsEditor({ value, onChange }: Props) {
       return toast.error("Bitte Kontoinhaber eingeben");
     if (!IBAN_REGEX.test(iban)) return toast.error("Ungültige IBAN");
     if (bic && !BIC_REGEX.test(bic)) return toast.error("Ungültige BIC");
-    await save(value);
+    try {
+      await updateBankDetails(value);
+      router.refresh();
+    } catch {
+      return toast.error("Fehler beim Speichern");
+    }
     setEditing(false);
   };
 

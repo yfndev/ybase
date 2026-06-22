@@ -19,31 +19,35 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import type { Doc, Id } from "@/convex/_generated/dataModel";
+import type {
+  Reimbursement as ReimbursementDoc,
+  TravelDetails,
+  VolunteerAllowance,
+} from "@/lib/db/types";
 import { Download, FileCode2, Loader2, Plus, Share2 } from "lucide-react";
 import { ReimbursementRow } from "../../components/Tables/Reimbursements/ReimbursementRow";
 
-type Reimbursement = Doc<"reimbursements"> & {
+type Reimbursement = ReimbursementDoc & {
   creatorName: string;
   projectName: string;
-  travelDetails?: Doc<"travelDetails">;
-  reviewedByName: string | undefined;
+  travelDetails?: TravelDetails;
+  reviewedByName?: string;
 };
 
-type Allowance = Doc<"volunteerAllowance"> & {
+type Allowance = VolunteerAllowance & {
   creatorName: string;
   projectName: string;
   organizationName: string;
   organizationStreet: string;
   organizationPlz: string;
   organizationCity: string;
-  reviewedByName: string | undefined;
+  reviewedByName?: string;
 };
 
 type RejectDialog = {
   open: boolean;
   type: "reimbursement" | "allowance";
-  id: Id<"reimbursements"> | Id<"volunteerAllowance"> | null;
+  id: string | null;
   note: string;
 };
 
@@ -59,19 +63,19 @@ interface Props {
   isBulkDownloading: boolean;
   onNewClick: () => void;
   onShareClick: () => void;
-  onRowClick: (id: Id<"reimbursements">) => void;
-  onApproveReimbursement: (id: Id<"reimbursements">) => void;
-  onApproveAllowance: (id: Id<"volunteerAllowance">) => void;
+  onRowClick: (id: string) => void;
+  onApproveReimbursement: (id: string) => void;
+  onApproveAllowance: (id: string) => void;
   onOpenRejectDialog: (
     type: "reimbursement" | "allowance",
-    id: Id<"reimbursements"> | Id<"volunteerAllowance">,
+    id: string,
   ) => void;
   onRejectDialogChange: (dialog: RejectDialog) => void;
   onReject: () => void;
-  onDownloadReimbursement: (id: Id<"reimbursements">) => void;
+  onDownloadReimbursement: (id: string) => void;
   onDownloadAllowance: (allowance: Allowance) => void;
-  onDeleteReimbursement: (id: Id<"reimbursements">) => void;
-  onDeleteAllowance: (id: Id<"volunteerAllowance">) => void;
+  onDeleteReimbursement: (id: string) => void;
+  onDeleteAllowance: (id: string) => void;
   onToggleSelect: (key: SelectionKey) => void;
   onBulkDownload: () => void;
   onSepaXml: () => void;

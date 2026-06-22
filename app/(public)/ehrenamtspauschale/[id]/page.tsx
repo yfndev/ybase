@@ -1,21 +1,24 @@
 "use client";
 
-import { SignatureField } from "@/components/Reimbursements/SignatureField";
+import { PublicSignaturePad } from "@/(public)/_components/PublicSignaturePad";
+import {
+  submitAllowance,
+  uploadViaPresign,
+  validateAllowanceLink,
+  type AllowanceLink,
+} from "@/(public)/_lib/publicApi";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
-import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "@/convex/volunteerAllowance/constants";
-import { useMutation, useQuery } from "convex/react";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
+const MAX_VOLUNTEER_ALLOWANCE_EUR = 960;
 const IBAN_REGEX = /^[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}$/;
 const BIC_REGEX = /^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/;
 
@@ -26,20 +29,12 @@ const formatIban = (iban: string) =>
     .trim();
 
 export default function ExternalEhrenamtspauschalePage() {
-  const { id } = useParams<{ id: Id<"volunteerAllowance"> }>();
+  const { id } = useParams<{ id: string }>();
 
-  const linkData = useQuery(api.volunteerAllowance.queries.validateLink, {
-    id,
-  });
-  const generateUploadUrl = useMutation(
-    api.volunteerAllowance.functions.generatePublicUploadUrl,
+  const [linkData, setLinkData] = useState<AllowanceLink | null>(null);
+  const [signatureStorageId, setSignatureStorageId] = useState<string | null>(
+    null,
   );
-  const submitExternal = useMutation(
-    api.volunteerAllowance.functions.submitExternal,
-  );
-
-  const [signatureStorageId, setSignatureStorageId] =
-    useState<Id<"_storage"> | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -59,12 +54,17 @@ export default function ExternalEhrenamtspauschalePage() {
     confirmation: false,
   });
 
+  useEffect(() => {
+    validateAllowanceLink(id).then(setLinkData);
+  }, [id]);
+
   const updateField = (field: string, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const updateAmount = (value: string) => {
-    if (parseFloat(value.replace(",", ".")) > MAX_VOLUNTEER_ALLOWANCE_EUR) return;
+    if (parseFloat(value.replace(",", ".")) > MAX_VOLUNTEER_ALLOWANCE_EUR)
+      return;
     updateField("amount", value);
   };
 
@@ -83,6 +83,13 @@ export default function ExternalEhrenamtspauschalePage() {
     }
   }, [linkData, form.activityDescription]);
 
+  const uploadSignature = (blob: Blob) =>
+    uploadViaPresign(
+      `/api/public/allowance/${id}/upload-url`,
+      { contentType: "image/png" },
+      blob,
+    );
+
   const handleSubmit = async () => {
     if (!form.volunteerName) return toast.error("Bitte deinen Namen eingeben");
     if (!form.volunteerStreet)
@@ -96,7 +103,8 @@ export default function ExternalEhrenamtspauschalePage() {
     const amount = parseFloat(form.amount);
     if (!amount || amount <= 0)
       return toast.error("Bitte einen Betrag eingeben");
-    if (amount > MAX_VOLUNTEER_ALLOWANCE_EUR) return toast.error(`Maximal ${MAX_VOLUNTEER_ALLOWANCE_EUR}€ erlaubt`);
+    if (amount > MAX_VOLUNTEER_ALLOWANCE_EUR)
+      return toast.error(`Maximal ${MAX_VOLUNTEER_ALLOWANCE_EUR}€ erlaubt`);
     if (!form.accountHolder)
       return toast.error("Bitte den Kontoinhaber eingeben");
     const iban = form.iban.replace(/\s/g, "").toUpperCase();
@@ -109,8 +117,7 @@ export default function ExternalEhrenamtspauschalePage() {
 
     setIsSubmitting(true);
     try {
-      await submitExternal({
-        id,
+      await submitAllowance(id, {
         amount,
         iban,
         bic: bic || undefined,
@@ -180,7 +187,13 @@ export default function ExternalEhrenamtspauschalePage() {
           </p>
           {(linkData.organizationStreet || linkData.organizationCity) && (
             <p className="text-sm text-muted-foreground mt-1">
-              {[linkData.organizationStreet, linkData.organizationPlz, linkData.organizationCity].filter(Boolean).join(", ")}
+              {[
+                linkData.organizationStreet,
+                linkData.organizationPlz,
+                linkData.organizationCity,
+              ]
+                .filter(Boolean)
+                .join(", ")}
             </p>
           )}
         </div>
@@ -271,7 +284,9 @@ export default function ExternalEhrenamtspauschalePage() {
           <h2 className="text-lg font-medium">Betrag</h2>
           <div className="grid grid-cols-2 gap-4 max-w-sm">
             <div>
-              <Label>Betrag in Euro (max. {MAX_VOLUNTEER_ALLOWANCE_EUR}€) *</Label>
+              <Label>
+                Betrag in Euro (max. {MAX_VOLUNTEER_ALLOWANCE_EUR}€) *
+              </Label>
               <Input
                 type="number"
                 step="0.01"
@@ -359,10 +374,10 @@ export default function ExternalEhrenamtspauschalePage() {
 
         <div className="space-y-4">
           <h2 className="text-lg font-medium">Unterschrift</h2>
-          <SignatureField
-            onSignatureComplete={setSignatureStorageId}
+          <PublicSignaturePad
+            onUploadComplete={setSignatureStorageId}
             storageId={signatureStorageId || undefined}
-            generateUploadUrl={() => generateUploadUrl({ id })}
+            uploadSignature={uploadSignature}
           />
         </div>
 

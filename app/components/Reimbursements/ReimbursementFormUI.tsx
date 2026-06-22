@@ -16,10 +16,9 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/convex/_generated/api";
-import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { CURRENCIES, CURRENCY_SYMBOLS, toNet } from "@/lib/bank-utils";
-import { useMutation } from "convex/react";
+import type { Project, Receipt as ReceiptDoc } from "@/lib/db/types";
+import { createReimbursement } from "@/lib/server/reimbursements/actions";
 import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -28,22 +27,22 @@ import { ReceiptUpload } from "./ReceiptUpload";
 
 type BankDetails = { iban: string; bic: string; accountHolder: string };
 type Receipt = Omit<
-  Doc<"receipts">,
+  ReceiptDoc,
   "_id" | "_creationTime" | "reimbursementId" | "costType" | "kilometers"
 >;
 
 interface Props {
   defaultBankDetails: BankDetails;
+  projects: Project[];
 }
 
-export function ReimbursementFormUI({ defaultBankDetails }: Props) {
+export function ReimbursementFormUI({ defaultBankDetails, projects }: Props) {
   const router = useRouter();
-  const submit = useMutation(api.reimbursements.functions.createReimbursement);
 
-  const [projectId, setProjectId] = useState<Id<"projects"> | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [bank, setBank] = useState(defaultBankDetails);
   const [currency, setCurrency] = useState("EUR");
-  const [signature, setSignature] = useState<Id<"_storage"> | null>(null);
+  const [signature, setSignature] = useState<string | null>(null);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [draft, setDraft] = useState({
     company: "",
@@ -52,7 +51,7 @@ export function ReimbursementFormUI({ defaultBankDetails }: Props) {
     date: "",
     gross: 0,
     tax: 19,
-    file: null as Id<"_storage"> | null,
+    file: null as string | null,
   });
 
   const currencySymbol = CURRENCY_SYMBOLS[currency] || currency;
@@ -109,16 +108,20 @@ export function ReimbursementFormUI({ defaultBankDetails }: Props) {
     if (!projectId) return toast.error("Bitte ein Projekt auswählen");
     if (receipts.length === 0) return toast.error("Bitte mindestens einen Beleg hinzufügen");
     if (!signature) return toast.error("Bitte unterschreiben");
-    await submit({
-      projectId,
-      amount: totalGross,
-      ...bank,
-      currency,
-      signatureStorageId: signature,
-      receipts,
-    });
-    toast.success("Erstattung eingereicht");
-    router.push("/reimbursements");
+    try {
+      await createReimbursement({
+        projectId,
+        amount: totalGross,
+        ...bank,
+        currency,
+        signatureStorageId: signature,
+        receipts,
+      });
+      toast.success("Erstattung eingereicht");
+      router.push("/reimbursements");
+    } catch {
+      toast.error("Fehler beim Einreichen");
+    }
   };
 
   return (
@@ -128,9 +131,8 @@ export function ReimbursementFormUI({ defaultBankDetails }: Props) {
           <Label>Projekt *</Label>
           <SelectProject
             value={projectId || ""}
-            onValueChange={(value) =>
-              setProjectId(value ? (value as Id<"projects">) : null)
-            }
+            onValueChange={(value) => setProjectId(value || null)}
+            projects={projects}
           />
         </div>
         <div className="w-[120px]">

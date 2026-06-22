@@ -1,52 +1,17 @@
-"use client";
-
+import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/Sidebar/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { api } from "@/convex/_generated/api";
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { auth } from "@/lib/auth";
+import { OrgOnboarding } from "./OrgOnboarding";
 
-export default function ProtectedLayout({
+export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, isLoading } = useConvexAuth();
-  const router = useRouter();
-  const organizationId = useQuery(api.users.queries.getUserOrganizationId, {});
-  const initializeOrganization = useMutation(
-    api.organizations.functions.initializeOrganization,
-  );
-  const autoJoinStarted = useRef(false);
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push("/login");
-    }
-  }, [isAuthenticated, isLoading, router]);
-
-  useEffect(() => {
-    if (organizationId === null && !autoJoinStarted.current) {
-      autoJoinStarted.current = true;
-      void initializeOrganization({});
-    }
-  }, [organizationId, initializeOrganization]);
-
-  if (isLoading || !isAuthenticated || !organizationId) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Image
-          src="/AppIcon.png"
-          alt="Logo"
-          width={48}
-          height={48}
-          className="animate-spin"
-        />
-      </div>
-    );
-  }
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+  if (!session.user.organizationId) return <OrgOnboarding />;
 
   return (
     <SidebarProvider>

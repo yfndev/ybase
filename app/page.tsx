@@ -1,17 +1,7 @@
-"use client";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
 
-import { useConvexAuth } from "convex/react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-
-export default function Home() {
-  const { isAuthenticated, isLoading } = useConvexAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (isLoading) return;
-    router.replace(isAuthenticated ? "/dashboard" : "/login");
-  }, [isAuthenticated, isLoading, router]);
-
-  return null;
+export default async function Home() {
+  const session = await auth();
+  redirect(session ? "/dashboard" : "/login");
 }

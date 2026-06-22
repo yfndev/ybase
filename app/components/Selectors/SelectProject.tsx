@@ -1,22 +1,23 @@
 "use client";
 
 import { CreateProjectDialog } from "@/components/Dialogs/CreateProjectDialog";
-import { api } from "@/convex/_generated/api";
+import type { Project } from "@/lib/db/types";
 import { focusNextInput } from "@/lib/focusNextInput";
 import { cn } from "@/lib/utils";
-import { useQuery } from "convex/react";
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface Props {
   value: string | undefined;
   onValueChange: (value: string) => void;
+  projects: Project[];
   autoFocus?: boolean;
 }
 
 export function SelectProject({
   value,
   onValueChange,
+  projects,
   autoFocus,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -26,13 +27,10 @@ export function SelectProject({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const projects = useQuery(api.projects.queries.getAllProjects, {});
-
-  const selected = projects?.find((project) => project._id === value);
-  const filtered =
-    projects?.filter((project) =>
-      project.name.toLowerCase().includes(search.toLowerCase())
-    ) ?? [];
+  const selected = projects.find((project) => project._id === value);
+  const filtered = projects.filter((project) =>
+    project.name.toLowerCase().includes(search.toLowerCase()),
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -46,7 +44,7 @@ export function SelectProject({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
-  useEffect(() => setHighlightedIndex(0), [search]);
+  useEffect(() => setHighlightedIndex(0), []);
 
   useEffect(() => {
     if (autoFocus) inputRef.current?.focus();
@@ -77,7 +75,7 @@ export function SelectProject({
         if (open) {
           e.preventDefault();
           setHighlightedIndex(
-            (idx) => (idx - 1 + filtered.length) % filtered.length
+            (idx) => (idx - 1 + filtered.length) % filtered.length,
           );
         }
         break;
@@ -97,7 +95,7 @@ export function SelectProject({
           ref={inputRef}
           className={cn(
             "h-9 w-full bg-muted px-3 pr-8 text-sm outline-none border border-transparent focus:border-ring",
-            open || !selected ? "text-muted-foreground" : "text-foreground"
+            open || !selected ? "text-muted-foreground" : "text-foreground",
           )}
           placeholder="Projekt suchen..."
           value={open ? search : (selected?.name ?? "")}
@@ -123,7 +121,7 @@ export function SelectProject({
                 type="button"
                 className={cn(
                   "w-full text-left px-3 py-2 text-sm flex items-center justify-between",
-                  index === highlightedIndex && "bg-accent"
+                  index === highlightedIndex && "bg-accent",
                 )}
                 onClick={() => handleSelect(project._id)}
                 onMouseEnter={() => setHighlightedIndex(index)}

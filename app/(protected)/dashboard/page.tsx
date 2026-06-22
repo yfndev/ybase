@@ -1,8 +1,6 @@
-"use client";
-
-import { api } from "@/convex/_generated/api";
 import type { DashboardEntry } from "@/lib/dashboardStats";
-import { useQuery } from "convex/react";
+import { getAllReimbursements } from "@/lib/server/reimbursements/data";
+import { getAll } from "@/lib/server/volunteerAllowance/data";
 import { DashboardPageUI } from "./DashboardPageUI";
 
 const REIMBURSEMENT_LABEL = {
@@ -10,16 +8,14 @@ const REIMBURSEMENT_LABEL = {
   travel: "Reisekosten",
 } as const;
 
-export default function DashboardPage() {
-  const reimbursements = useQuery(
-    api.reimbursements.queries.getAllReimbursements,
-  );
-  const allowances = useQuery(api.volunteerAllowance.queries.getAll);
-
-  const isLoading = !reimbursements || !allowances;
+export default async function DashboardPage() {
+  const [reimbursements, allowances] = await Promise.all([
+    getAllReimbursements(),
+    getAll(),
+  ]);
 
   const entries: DashboardEntry[] = [
-    ...(reimbursements ?? []).map((item) => ({
+    ...reimbursements.map((item) => ({
       id: item._id,
       status: item.status,
       amount: item.amount,
@@ -28,7 +24,7 @@ export default function DashboardPage() {
       kind: "reimbursement" as const,
       label: REIMBURSEMENT_LABEL[item.type],
     })),
-    ...(allowances ?? []).map((item) => ({
+    ...allowances.map((item) => ({
       id: item._id,
       status: item.status,
       amount: item.amount,
@@ -40,5 +36,5 @@ export default function DashboardPage() {
     })),
   ];
 
-  return <DashboardPageUI isLoading={isLoading} entries={entries} />;
+  return <DashboardPageUI isLoading={false} entries={entries} />;
 }

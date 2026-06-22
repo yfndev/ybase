@@ -1,33 +1,42 @@
 "use client";
 
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
 import {
   convertToJPG,
   FileConversionError,
   isValidFileType,
 } from "@/lib/fileHandlers/fileConversion";
-import { useMutation, useQuery } from "convex/react";
+import {
+  generateUploadUrl,
+  getFileUrlAction,
+} from "@/lib/server/reimbursements/actions";
 import { FileText, Loader2, Upload } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 interface Props {
-  onUploadComplete: (storageId: Id<"_storage">) => void;
-  storageId?: Id<"_storage">;
+  onUploadComplete: (key: string) => void;
+  storageId?: string;
 }
 
 export function ReceiptUpload({ onUploadComplete, storageId }: Props) {
   const [isUploading, setIsUploading] = useState(false);
   const [isPdf, setIsPdf] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const generateUploadUrl = useMutation(
-    api.reimbursements.functions.generateUploadUrl,
-  );
-  const previewUrl = useQuery(
-    api.reimbursements.queries.getFileUrl,
-    storageId ? { storageId } : "skip",
-  );
+
+  useEffect(() => {
+    if (!storageId) {
+      setPreviewUrl(null);
+      return;
+    }
+    let active = true;
+    getFileUrlAction(storageId).then((url) => {
+      if (active) setPreviewUrl(url);
+    });
+    return () => {
+      active = false;
+    };
+  }, [storageId]);
 
   const handleFile = async (file: File) => {
     if (!isValidFileType(file)) {
@@ -39,16 +48,15 @@ export function ReceiptUpload({ onUploadComplete, storageId }: Props) {
     setIsUploading(true);
     try {
       const convertedFile = await convertToJPG(file);
-      const uploadUrl = await generateUploadUrl();
-      const result = await fetch(uploadUrl, {
-        method: "POST",
+      const { key, url } = await generateUploadUrl(convertedFile.type);
+      const result = await fetch(url, {
+        method: "PUT",
         headers: { "Content-Type": convertedFile.type },
         body: convertedFile,
       });
       if (!result.ok) throw new Error();
 
-      const { storageId } = await result.json();
-      onUploadComplete(storageId);
+      onUploadComplete(key);
       toast.success("Beleg hochgeladen");
     } catch (error) {
       toast.error(

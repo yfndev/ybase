@@ -1,9 +1,25 @@
-import { convexAuthNextjsMiddleware } from "@convex-dev/auth/nextjs/server";
+import { auth } from "@/lib/auth";
 
-export default convexAuthNextjsMiddleware();
+const PUBLIC_PREFIXES = [
+  "/login",
+  "/test-auth",
+  "/erstattung",
+  "/ehrenamtspauschale",
+  "/sign",
+  "/impressum",
+  "/datenschutz",
+];
+
+export default auth((req) => {
+  const { pathname } = req.nextUrl;
+  const isPublic = PUBLIC_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+  if (!req.auth && !isPublic) {
+    return Response.redirect(new URL("/login", req.nextUrl));
+  }
+});
 
 export const config = {
-  // The following matcher runs middleware on all routes
-  // except static assets.
-  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: ["/((?!api|_next/static|_next/image|.*\\..*).*)"],
 };

@@ -1,43 +1,24 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  generateUploadUrl,
-  getFileUrlAction,
-} from "@/lib/server/reimbursements/actions";
 import { Loader2, RotateCcw } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import SignaturePad from "react-signature-canvas";
 
 type Props = {
   onUploadComplete: (key: string) => void;
   storageId?: string;
-  generateUploadUrl?: () => Promise<string>;
+  uploadSignature: (blob: Blob) => Promise<string>;
 };
 
-export function SignatureCanvas({
+export function PublicSignaturePad({
   onUploadComplete,
   storageId,
-  generateUploadUrl: customUploadUrl,
+  uploadSignature,
 }: Props) {
   const padRef = useRef<SignaturePad>(null);
   const [uploading, setUploading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!storageId) {
-      setPreviewUrl(null);
-      return;
-    }
-    let active = true;
-    getFileUrlAction(storageId).then((url) => {
-      if (active) setPreviewUrl(url);
-    });
-    return () => {
-      active = false;
-    };
-  }, [storageId]);
 
   const handleSave = async () => {
     const pad = padRef.current;
@@ -50,41 +31,22 @@ export function SignatureCanvas({
     try {
       const dataUrl = pad.getTrimmedCanvas().toDataURL("image/png");
       const blob = await (await fetch(dataUrl)).blob();
-
-      if (customUploadUrl) {
-        const uploadUrl = await customUploadUrl();
-        const response = await fetch(uploadUrl, {
-          method: "POST",
-          headers: { "Content-Type": "image/png" },
-          body: blob,
-        });
-        if (!response.ok) throw new Error();
-        const { storageId: newStorageId } = await response.json();
-        onUploadComplete(newStorageId);
-      } else {
-        const { key, url } = await generateUploadUrl("image/png");
-        const response = await fetch(url, {
-          method: "PUT",
-          headers: { "Content-Type": "image/png" },
-          body: blob,
-        });
-        if (!response.ok) throw new Error();
-        onUploadComplete(key);
-      }
-
+      const key = await uploadSignature(blob);
+      onUploadComplete(key);
       toast.success("Unterschrift gespeichert");
-    } catch {
-      toast.error("Speichern fehlgeschlagen");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Speichern fehlgeschlagen",
+      );
     } finally {
       setUploading(false);
     }
   };
 
-  if (previewUrl) {
+  if (storageId) {
     return (
-      <div className="border rounded-lg p-4">
-        <img src={previewUrl} alt="Unterschrift" className="max-h-24 mx-auto" />
-        <p className="text-sm text-muted-foreground text-center mt-2">
+      <div className="border rounded-lg p-4 text-center">
+        <p className="text-sm text-muted-foreground">
           Unterschrift gespeichert
         </p>
       </div>

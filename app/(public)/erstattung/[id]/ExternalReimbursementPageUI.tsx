@@ -1,13 +1,18 @@
+import { PublicSignaturePad } from "@/(public)/_components/PublicSignaturePad";
 import { ReceiptUploadExternal } from "@/components/Reimbursements/ReceiptUploadExternal";
-import { SignatureCanvas } from "@/components/Reimbursements/SignatureCanvas";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import type { Id } from "@/convex/_generated/dataModel";
-import { Loader2, Plus, Smartphone, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 
 type CostType = "car" | "train" | "flight" | "taxi" | "bus" | "accommodation";
 
@@ -19,7 +24,7 @@ type Receipt = {
   netAmount: number;
   taxRate: number;
   grossAmount: number;
-  fileStorageId: Id<"_storage"> | null;
+  fileStorageId: string | null;
 };
 
 type TravelReceipt = Receipt & {
@@ -63,7 +68,7 @@ type Props = {
   gross: number;
   taxRate: number;
   currency: string;
-  file: Id<"_storage"> | null;
+  file: string | null;
   onCompanyChange: (value: string) => void;
   onNumberChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
@@ -71,14 +76,17 @@ type Props = {
   onGrossChange: (value: number) => void;
   onTaxRateChange: (value: number) => void;
   onCurrencyChange: (value: string) => void;
-  onFileChange: (value: Id<"_storage"> | null) => void;
+  onFileChange: (value: string | null) => void;
 
   receipts: Receipt[];
   travelReceipts: TravelReceipt[];
   onAddReceipt: () => void;
   onRemoveReceipt: (index: number) => void;
   onToggleCostType: (costType: CostType) => void;
-  onUpdateTravelReceipt: (costType: CostType, updates: Partial<TravelReceipt>) => void;
+  onUpdateTravelReceipt: (
+    costType: CostType,
+    updates: Partial<TravelReceipt>,
+  ) => void;
 
   totalGross: number;
 
@@ -90,17 +98,18 @@ type Props = {
   onBicChange: (value: string) => void;
 
   confirmation: boolean;
-  signature: Id<"_storage"> | null;
+  signature: string | null;
   onConfirmationChange: (value: boolean) => void;
-  onSignatureChange: (value: Id<"_storage">) => void;
+  onSignatureChange: (value: string) => void;
 
   isSubmitting: boolean;
   onSubmit: () => void;
-  onMobileSign: () => void;
 
-  reimbursementId: Id<"reimbursements">;
-  generateUploadUrl: () => Promise<string>;
-  getFileUrl: (storageId: Id<"_storage">) => Promise<string | null>;
+  generateUploadUrl: (
+    contentType: string,
+  ) => Promise<{ key: string; url: string }>;
+  getFileUrl: (key: string) => Promise<string | null>;
+  uploadSignature: (blob: Blob) => Promise<string>;
 
   toNet: (gross: number, tax: number) => number;
   formatIban: (iban: string) => string;
@@ -185,7 +194,9 @@ export default function ExternalReimbursementPageUI(props: Props) {
                 <Checkbox
                   id="international"
                   checked={props.isInternational}
-                  onCheckedChange={(checked) => props.onIsInternationalChange(checked === true)}
+                  onCheckedChange={(checked) =>
+                    props.onIsInternationalChange(checked === true)
+                  }
                 />
                 <Label htmlFor="international" className="font-normal">
                   Auslandsreise
@@ -196,32 +207,50 @@ export default function ExternalReimbursementPageUI(props: Props) {
             <div className="space-y-4">
               <h2 className="text-lg font-medium">Kostenarten</h2>
               <p className="text-sm text-muted-foreground">
-                Wähle alle Kostenarten aus, für die du Belege einreichen möchtest.
+                Wähle alle Kostenarten aus, für die du Belege einreichen
+                möchtest.
               </p>
 
               <div className="flex flex-wrap gap-2">
-                {(Object.keys(props.costLabels) as CostType[]).map((costType) => (
-                  <Button
-                    key={costType}
-                    type="button"
-                    variant={props.travelReceipts.some((receipt) => receipt.costType === costType) ? "default" : "outline"}
-                    onClick={() => props.onToggleCostType(costType)}
-                  >
-                    {props.costLabels[costType]}
-                  </Button>
-                ))}
+                {(Object.keys(props.costLabels) as CostType[]).map(
+                  (costType) => (
+                    <Button
+                      key={costType}
+                      type="button"
+                      variant={
+                        props.travelReceipts.some(
+                          (receipt) => receipt.costType === costType,
+                        )
+                          ? "default"
+                          : "outline"
+                      }
+                      onClick={() => props.onToggleCostType(costType)}
+                    >
+                      {props.costLabels[costType]}
+                    </Button>
+                  ),
+                )}
               </div>
 
               {props.travelReceipts.map((receipt) => {
                 const isCar = receipt.costType === "car";
 
                 return (
-                  <div key={receipt.costType} className="border rounded-lg p-4 space-y-4">
+                  <div
+                    key={receipt.costType}
+                    className="border rounded-lg p-4 space-y-4"
+                  >
                     <div className="flex justify-between items-center">
                       <h3 className="font-medium">
-                        {isCar ? "PKW (0,30€/km)" : props.costLabels[receipt.costType]}
+                        {isCar
+                          ? "PKW (0,30€/km)"
+                          : props.costLabels[receipt.costType]}
                       </h3>
-                      <Button variant="ghost" size="icon" onClick={() => props.onToggleCostType(receipt.costType)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => props.onToggleCostType(receipt.costType)}
+                      >
                         <Trash2 className="size-4" />
                       </Button>
                     </div>
@@ -231,7 +260,11 @@ export default function ExternalReimbursementPageUI(props: Props) {
                         <Label>Firma/Anbieter *</Label>
                         <Input
                           value={receipt.companyName}
-                          onChange={(e) => props.onUpdateTravelReceipt(receipt.costType, { companyName: e.target.value })}
+                          onChange={(e) =>
+                            props.onUpdateTravelReceipt(receipt.costType, {
+                              companyName: e.target.value,
+                            })
+                          }
                           placeholder="z.B. Deutsche Bahn"
                         />
                       </div>
@@ -245,8 +278,12 @@ export default function ExternalReimbursementPageUI(props: Props) {
                               min={0}
                               value={receipt.kilometers || ""}
                               onChange={(e) => {
-                                const kilometers = Math.max(0, Math.floor(parseFloat(e.target.value) || 0));
-                                const amount = Math.round(kilometers * 0.3 * 100) / 100;
+                                const kilometers = Math.max(
+                                  0,
+                                  Math.floor(parseFloat(e.target.value) || 0),
+                                );
+                                const amount =
+                                  Math.round(kilometers * 0.3 * 100) / 100;
                                 props.onUpdateTravelReceipt(receipt.costType, {
                                   kilometers,
                                   grossAmount: amount,
@@ -257,7 +294,9 @@ export default function ExternalReimbursementPageUI(props: Props) {
                             />
                           </div>
                           <div>
-                            <Label className="text-muted-foreground">Betrag</Label>
+                            <Label className="text-muted-foreground">
+                              Betrag
+                            </Label>
                             <Input
                               value={`${receipt.grossAmount.toFixed(2)} €`}
                               disabled
@@ -275,10 +314,16 @@ export default function ExternalReimbursementPageUI(props: Props) {
                               min={0}
                               value={receipt.grossAmount || ""}
                               onChange={(e) => {
-                                const amount = Math.max(0, parseFloat(e.target.value) || 0);
+                                const amount = Math.max(
+                                  0,
+                                  parseFloat(e.target.value) || 0,
+                                );
                                 props.onUpdateTravelReceipt(receipt.costType, {
                                   grossAmount: amount,
-                                  netAmount: props.toNet(amount, receipt.taxRate),
+                                  netAmount: props.toNet(
+                                    amount,
+                                    receipt.taxRate,
+                                  ),
                                 });
                               }}
                               placeholder="0.00"
@@ -292,7 +337,10 @@ export default function ExternalReimbursementPageUI(props: Props) {
                                 const tax = parseInt(value);
                                 props.onUpdateTravelReceipt(receipt.costType, {
                                   taxRate: tax,
-                                  netAmount: props.toNet(receipt.grossAmount, tax),
+                                  netAmount: props.toNet(
+                                    receipt.grossAmount,
+                                    tax,
+                                  ),
                                 });
                               }}
                             >
@@ -315,7 +363,9 @@ export default function ExternalReimbursementPageUI(props: Props) {
                         <Label>Beleg *</Label>
                         <ReceiptUploadExternal
                           onUploadComplete={(storageId) =>
-                            props.onUpdateTravelReceipt(receipt.costType, { fileStorageId: storageId })
+                            props.onUpdateTravelReceipt(receipt.costType, {
+                              fileStorageId: storageId,
+                            })
                           }
                           storageId={receipt.fileStorageId || undefined}
                           generateUploadUrl={props.generateUploadUrl}
@@ -334,9 +384,14 @@ export default function ExternalReimbursementPageUI(props: Props) {
                   <Checkbox
                     id="showFood"
                     checked={props.showFoodAllowance}
-                    onCheckedChange={(checked) => props.onShowFoodAllowanceChange(checked === true)}
+                    onCheckedChange={(checked) =>
+                      props.onShowFoodAllowanceChange(checked === true)
+                    }
                   />
-                  <Label htmlFor="showFood" className="text-lg font-medium cursor-pointer">
+                  <Label
+                    htmlFor="showFood"
+                    className="text-lg font-medium cursor-pointer"
+                  >
                     Verpflegungsmehraufwand geltend machen
                   </Label>
                 </div>
@@ -355,7 +410,11 @@ export default function ExternalReimbursementPageUI(props: Props) {
                         step="0.5"
                         min={0}
                         value={props.mealDays || ""}
-                        onChange={(e) => props.onMealDaysChange(parseFloat(e.target.value) || 0)}
+                        onChange={(e) =>
+                          props.onMealDaysChange(
+                            parseFloat(e.target.value) || 0,
+                          )
+                        }
                         placeholder="z.B. 2.5"
                       />
                     </div>
@@ -363,7 +422,9 @@ export default function ExternalReimbursementPageUI(props: Props) {
                       <Label>Tagessatz (€)</Label>
                       <Select
                         value={props.mealRate ? String(props.mealRate) : ""}
-                        onValueChange={(value) => props.onMealRateChange(parseFloat(value) || 0)}
+                        onValueChange={(value) =>
+                          props.onMealRateChange(parseFloat(value) || 0)
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Auswählen" />
@@ -390,7 +451,9 @@ export default function ExternalReimbursementPageUI(props: Props) {
         ) : (
           <div className="space-y-4">
             <h2 className="text-lg font-medium">Belege</h2>
-            <p className="text-sm text-muted-foreground">Füge alle Belege hinzu, die du einreichen möchtest.</p>
+            <p className="text-sm text-muted-foreground">
+              Füge alle Belege hinzu, die du einreichen möchtest.
+            </p>
 
             <div className="border rounded-lg p-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -424,12 +487,19 @@ export default function ExternalReimbursementPageUI(props: Props) {
               <div className="grid grid-cols-4 gap-4">
                 <div>
                   <Label>Belegdatum *</Label>
-                  <Input type="date" value={props.date} onChange={(e) => props.onDateChange(e.target.value)} />
+                  <Input
+                    type="date"
+                    value={props.date}
+                    onChange={(e) => props.onDateChange(e.target.value)}
+                  />
                 </div>
                 <div>
                   <Label>Brutto *</Label>
                   <div className="flex gap-1">
-                    <Select value={props.currency} onValueChange={props.onCurrencyChange}>
+                    <Select
+                      value={props.currency}
+                      onValueChange={props.onCurrencyChange}
+                    >
                       <SelectTrigger className="w-20 shrink-0">
                         <SelectValue />
                       </SelectTrigger>
@@ -444,14 +514,21 @@ export default function ExternalReimbursementPageUI(props: Props) {
                       type="number"
                       step="0.01"
                       value={props.gross || ""}
-                      onChange={(e) => props.onGrossChange(parseFloat(e.target.value) || 0)}
+                      onChange={(e) =>
+                        props.onGrossChange(parseFloat(e.target.value) || 0)
+                      }
                       placeholder="119.95"
                     />
                   </div>
                 </div>
                 <div>
                   <Label>MwSt.</Label>
-                  <Select value={String(props.taxRate)} onValueChange={(value) => props.onTaxRateChange(parseInt(value))}>
+                  <Select
+                    value={String(props.taxRate)}
+                    onValueChange={(value) =>
+                      props.onTaxRateChange(parseInt(value))
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -465,7 +542,11 @@ export default function ExternalReimbursementPageUI(props: Props) {
                 <div>
                   <Label className="text-muted-foreground">Netto</Label>
                   <Input
-                    value={props.gross ? props.toNet(props.gross, props.taxRate).toFixed(2) : ""}
+                    value={
+                      props.gross
+                        ? props.toNet(props.gross, props.taxRate).toFixed(2)
+                        : ""
+                    }
                     disabled
                     className="bg-muted/50 font-mono"
                   />
@@ -482,7 +563,11 @@ export default function ExternalReimbursementPageUI(props: Props) {
                 />
               </div>
 
-              <Button onClick={props.onAddReceipt} variant="outline" className="w-full">
+              <Button
+                onClick={props.onAddReceipt}
+                variant="outline"
+                className="w-full"
+              >
                 <Plus className="size-5 mr-2" />
                 Weiteren Beleg hinzufügen
               </Button>
@@ -492,7 +577,10 @@ export default function ExternalReimbursementPageUI(props: Props) {
               <div className="space-y-2">
                 <h3 className="font-medium">Hinzugefügte Belege</h3>
                 {props.receipts.map((receipt, index) => (
-                  <div key={index} className="flex items-center justify-between px-3 py-2 bg-gray-50 border rounded-md">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between px-3 py-2 bg-gray-50 border rounded-md"
+                  >
                     <div className="flex items-center gap-4">
                       <span className="font-medium">{receipt.companyName}</span>
                       <span className="text-sm text-muted-foreground">
@@ -500,7 +588,9 @@ export default function ExternalReimbursementPageUI(props: Props) {
                       </span>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="font-medium">{receipt.grossAmount.toFixed(2)} €</span>
+                      <span className="font-medium">
+                        {receipt.grossAmount.toFixed(2)} €
+                      </span>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -541,7 +631,9 @@ export default function ExternalReimbursementPageUI(props: Props) {
               <Label>IBAN *</Label>
               <Input
                 value={props.formatIban(props.iban)}
-                onChange={(e) => props.onIbanChange(e.target.value.replace(/\s/g, ""))}
+                onChange={(e) =>
+                  props.onIbanChange(e.target.value.replace(/\s/g, ""))
+                }
                 placeholder="DE89 3704 0044 0532 0130 00"
                 className="font-mono"
                 maxLength={27}
@@ -551,7 +643,9 @@ export default function ExternalReimbursementPageUI(props: Props) {
               <Label>BIC (optional)</Label>
               <Input
                 value={props.bic.toUpperCase()}
-                onChange={(e) => props.onBicChange(e.target.value.toUpperCase())}
+                onChange={(e) =>
+                  props.onBicChange(e.target.value.toUpperCase())
+                }
                 placeholder="COBADEFFXXX"
                 className="font-mono"
                 maxLength={11}
@@ -568,48 +662,35 @@ export default function ExternalReimbursementPageUI(props: Props) {
             <Checkbox
               id="confirmation"
               checked={props.confirmation}
-              onCheckedChange={(checked) => props.onConfirmationChange(checked === true)}
+              onCheckedChange={(checked) =>
+                props.onConfirmationChange(checked === true)
+              }
             />
             <Label htmlFor="confirmation" className="text-sm leading-relaxed">
-              Ich bestätige, dass alle Angaben korrekt sind und die eingereichten Belege tatsächlich entstandene Kosten
-              darstellen.
+              Ich bestätige, dass alle Angaben korrekt sind und die
+              eingereichten Belege tatsächlich entstandene Kosten darstellen.
             </Label>
           </div>
         </div>
 
         <div className="space-y-4">
           <h2 className="text-lg font-medium">Unterschrift</h2>
-          {!props.signature ? (
-            <div className="space-y-4">
-              <SignatureCanvas
-                onUploadComplete={props.onSignatureChange}
-                storageId={props.signature || undefined}
-                generateUploadUrl={props.generateUploadUrl}
-              />
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-muted-foreground">Oder</span>
-                </div>
-              </div>
-              <Button type="button" variant="outline" className="w-full" onClick={props.onMobileSign}>
-                <Smartphone className="size-4 mr-2" />
-                Auf Handy unterschreiben
-              </Button>
-            </div>
-          ) : (
-            <SignatureCanvas
-              onUploadComplete={props.onSignatureChange}
-              storageId={props.signature || undefined}
-              generateUploadUrl={props.generateUploadUrl}
-            />
-          )}
+          <PublicSignaturePad
+            onUploadComplete={props.onSignatureChange}
+            storageId={props.signature || undefined}
+            uploadSignature={props.uploadSignature}
+          />
         </div>
 
-        <Button onClick={props.onSubmit} className="w-full h-14 font-semibold" size="lg" disabled={props.isSubmitting}>
-          {props.isSubmitting && <Loader2 className="size-5 animate-spin mr-2" />}
+        <Button
+          onClick={props.onSubmit}
+          className="w-full h-14 font-semibold"
+          size="lg"
+          disabled={props.isSubmitting}
+        >
+          {props.isSubmitting && (
+            <Loader2 className="size-5 animate-spin mr-2" />
+          )}
           Einreichen
         </Button>
       </div>

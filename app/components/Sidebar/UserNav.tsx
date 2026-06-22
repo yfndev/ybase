@@ -1,5 +1,8 @@
 "use client";
 
+import { ChevronsUpDown } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { LogoutButton } from "../Auth/LogoutButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -16,16 +19,19 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Doc } from "@/convex/_generated/dataModel";
-import { ChevronsUpDown } from "lucide-react";
-import { LogoutButton } from "../Auth/LogoutButton";
 
-function UserAvatar({ user }: { user: Doc<"users"> }) {
+type NavUserData = {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+};
+
+function UserAvatar({ user }: { user: NavUserData }) {
   return (
     <Avatar className="h-8 w-8 rounded-lg">
       <AvatarImage
-        src={user.image}
-        alt={user.name}
+        src={user.image ?? undefined}
+        alt={user.name ?? ""}
         referrerPolicy="no-referrer"
       />
       <AvatarFallback className="rounded-lg">
@@ -35,7 +41,7 @@ function UserAvatar({ user }: { user: Doc<"users"> }) {
   );
 }
 
-function UserInfo({ user }: { user: Doc<"users"> }) {
+function UserInfo({ user }: { user: NavUserData }) {
   return (
     <div className="grid flex-1 text-left text-sm leading-tight">
       <span className="truncate font-medium">{user.name}</span>
@@ -44,24 +50,28 @@ function UserInfo({ user }: { user: Doc<"users"> }) {
   );
 }
 
-export function NavUser({ user }: { user: Doc<"users"> | null | undefined }) {
-  const { isMobile } = useSidebar();
+function UserNavSkeleton() {
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton size="lg" disabled>
+          <Skeleton className="h-8 w-8 rounded-lg" />
+          <div className="grid flex-1 gap-1.5">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-3 w-32" />
+          </div>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
+  );
+}
 
-  if (!user) {
-    return (
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <SidebarMenuButton size="lg" disabled>
-            <Skeleton className="h-8 w-8 rounded-lg" />
-            <div className="grid flex-1 gap-1.5">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-3 w-32" />
-            </div>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      </SidebarMenu>
-    );
-  }
+export function NavUser() {
+  const { isMobile } = useSidebar();
+  const { data } = useSession();
+  const user = data?.user;
+
+  if (!user) return <UserNavSkeleton />;
 
   return (
     <SidebarMenu>
