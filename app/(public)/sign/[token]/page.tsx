@@ -123,8 +123,11 @@ export default function SignaturePage() {
           onClick={handleSave}
           disabled={isSubmitting}
         >
-          {isSubmitting && <Loader2 className="size-5 animate-spin mr-2" />}
-          Speichern
+          {isSubmitting ? (
+            <Loader2 className="size-5 animate-spin" />
+          ) : (
+            "Speichern"
+          )}
         </Button>
       </div>
     </div>
