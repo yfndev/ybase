@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createProject } from "@/lib/server/projects/actions";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -29,6 +30,7 @@ export function CreateProjectDialog({
 }: Props) {
   const [name, setName] = useState("");
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const handleSubmit = async () => {
     if (!name.trim()) return;
@@ -36,6 +38,7 @@ export function CreateProjectDialog({
     try {
       const projectId = await createProject({ name: name.trim() });
       router.refresh();
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       toast.success("Projekt erstellt!");
       onProjectCreated?.(projectId);
       onOpenChange(false);

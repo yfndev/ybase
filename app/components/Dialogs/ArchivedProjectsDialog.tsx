@@ -7,9 +7,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useProjectMutations } from "@/lib/client/projects/hooks/useProjectMutations";
 import type { Project } from "@/lib/db/types";
-import { unarchiveProject } from "@/lib/server/projects/actions";
-import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 interface Props {
@@ -23,12 +22,11 @@ export function ArchivedProjectsDialog({
   onOpenChange,
   archivedProjects,
 }: Props) {
-  const router = useRouter();
+  const { unarchive } = useProjectMutations();
 
   const handleUnarchive = async (projectId: string) => {
     try {
-      await unarchiveProject({ projectId });
-      router.refresh();
+      await unarchive.mutateAsync({ projectId });
       toast.success("Projekt wiederhergestellt");
     } catch {
       toast.error("Fehler beim Wiederherstellen");

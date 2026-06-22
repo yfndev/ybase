@@ -13,24 +13,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Project } from "@/lib/db/types";
-import {
-  archiveProject,
-  deleteProject,
-  renameProject,
-} from "@/lib/server/projects/actions";
+import { useProjectMutations } from "@/lib/client/projects/hooks/useProjectMutations";
+import { useProjects } from "@/lib/client/projects/hooks/useProjects";
 import { Archive, FolderKanban, Plus, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 
-interface Props {
-  projects: Project[];
-  archivedProjects: Project[];
-}
+export function ProjectsClient() {
+  const { projects, isLoading } = useProjects();
+  const { projects: archivedProjects } = useProjects(true);
+  const { rename, archive, remove } = useProjectMutations();
 
-export function ProjectsClient({ projects, archivedProjects }: Props) {
-  const router = useRouter();
   const [createOpen, setCreateOpen] = useState(false);
   const [archivedOpen, setArchivedOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -41,8 +34,7 @@ export function ProjectsClient({ projects, archivedProjects }: Props) {
     setEditingId(null);
     if (!name) return;
     try {
-      await renameProject({ projectId, name });
-      router.refresh();
+      await rename.mutateAsync({ projectId, name });
       toast.success("Projekt umbenannt");
     } catch {
       toast.error("Fehler beim Umbenennen");
@@ -51,8 +43,7 @@ export function ProjectsClient({ projects, archivedProjects }: Props) {
 
   const handleArchive = async (projectId: string) => {
     try {
-      await archiveProject({ projectId });
-      router.refresh();
+      await archive.mutateAsync({ projectId });
       toast.success("Projekt archiviert");
     } catch {
       toast.error("Fehler beim Archivieren");
@@ -62,8 +53,7 @@ export function ProjectsClient({ projects, archivedProjects }: Props) {
   const handleDelete = async (projectId: string) => {
     if (!confirm("Projekt wirklich löschen?")) return;
     try {
-      await deleteProject({ projectId });
-      router.refresh();
+      await remove.mutateAsync({ projectId });
       toast.success("Projekt gelöscht");
     } catch {
       toast.error(
@@ -82,13 +72,19 @@ export function ProjectsClient({ projects, archivedProjects }: Props) {
             Projekte (z.B. Events oder Aktionen), denen Erstattungen zugeordnet
             werden.
           </p>
-          <Button variant="ghost" size="sm" onClick={() => setArchivedOpen(true)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setArchivedOpen(true)}
+          >
             <Archive className="h-4 w-4" />
             Archiv
           </Button>
         </div>
 
-        {projects.length === 0 ? (
+        {isLoading ? (
+          <p className="text-muted-foreground py-12 text-center">Lädt…</p>
+        ) : projects.length === 0 ? (
           <div className="text-center py-12 border rounded-lg">
             <FolderKanban className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-semibold">Keine Projekte</h3>

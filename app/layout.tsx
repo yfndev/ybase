@@ -1,3 +1,4 @@
+import { QueryProvider } from "@/lib/query/QueryProvider";
 import { GeistMono } from "geist/font/mono";
 import type { Metadata } from "next";
 import { Lexend_Deca } from "next/font/google";
@@ -28,8 +29,10 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <SessionProvider>
-          {children}
-          <Toaster position="bottom-center" />
+          <QueryProvider>
+            {children}
+            <Toaster position="bottom-center" />
+          </QueryProvider>
         </SessionProvider>
       </body>
     </html>
