@@ -2,14 +2,19 @@
 
 import { z } from "zod";
 import { requireRole, requireUser } from "../../auth/session";
-import { reimbursements, travelDetails } from "../../db/collections";
 import { newId } from "../../db/ids";
 import { presignUpload } from "../../s3/storage";
-import { getOrganization } from "../organizations/data";
 import { addLog } from "../logs";
-import { getFileUrl, getReceipts, getReimbursement } from "./data";
+import { getFileUrl } from "./data";
 import {
-  cleanupReimbursement,
+  applyApproval,
+  applyDecline,
+  buildReimbursementPdfData,
+  deleteReimbursementById,
+  insertTravelDetails,
+  type ReimbursementPdfData,
+} from "./actionsHelpers";
+import {
   insertReceipts,
   insertReimbursement,
   loadPendingForReview,
@@ -50,20 +55,7 @@ export async function createTravelReimbursement(
   const reimbursementId = newId();
   await insertReimbursement(reimbursementId, user, "travel", args);
 
-  await (
-    await travelDetails()
-  ).insertOne({
-    _id: newId(),
-    _creationTime: Date.now(),
-    reimbursementId,
-    startDate: args.startDate,
-    endDate: args.endDate,
-    destination: args.destination,
-    purpose: args.purpose,
-    isInternational: args.isInternational,
-    mealAllowanceDays: args.mealAllowanceDays,
-    mealAllowanceDailyBudget: args.mealAllowanceDailyBudget,
-  });
+  await insertTravelDetails(reimbursementId, args);
 
   await insertReceipts(reimbursementId, args.receipts);
 
@@ -91,31 +83,8 @@ export async function getFileUrlAction(key: string): Promise<string> {
 
 export async function getReimbursementPdfData(
   reimbursementId: string,
-): Promise<{
-  reimbursement: Awaited<ReturnType<typeof getReimbursement>>;
-  organization: Awaited<ReturnType<typeof getOrganization>>;
-  signatureUrl: string | null;
-  receiptsWithUrls: Array<
-    Awaited<ReturnType<typeof getReceipts>>[number] & { fileUrl: string }
-  >;
-} | null> {
-  const reimbursement = await getReimbursement(reimbursementId);
-  if (!reimbursement) return null;
-
-  const organization = await getOrganization();
-  const signatureUrl = reimbursement.signatureStorageId
-    ? await getFileUrl(reimbursement.signatureStorageId)
-    : null;
-
-  const receipts = await getReceipts(reimbursementId);
-  const receiptsWithUrls = await Promise.all(
-    receipts.map(async (receipt) => ({
-      ...receipt,
-      fileUrl: await getFileUrl(receipt.fileStorageId),
-    })),
-  );
-
-  return { reimbursement, organization, signatureUrl, receiptsWithUrls };
+): Promise<ReimbursementPdfData | null> {
+  return buildReimbursementPdfData(reimbursementId);
 }
 
 export async function deleteReimbursement(input: {
@@ -126,28 +95,7 @@ export async function deleteReimbursement(input: {
     .object({ reimbursementId: z.string() })
     .parse(input);
 
-  const reimbursement = await (
-    await reimbursements()
-  ).findOne({
-    _id: reimbursementId,
-  });
-
-  if (!reimbursement || reimbursement.organizationId !== user.organizationId) {
-    throw new Error("Reimbursement not found");
-  }
-
-  if (reimbursement.createdBy !== user._id && user.role !== "admin") {
-    throw new Error("Only the creator or an admin can delete reimbursements");
-  }
-
-  await cleanupReimbursement(reimbursement);
-  await addLog(
-    user.organizationId,
-    user._id,
-    "reimbursement.delete",
-    reimbursementId,
-    `${reimbursement.amount}€`,
-  );
+  await deleteReimbursementById(reimbursementId, user);
 }
 
 export async function approve(input: {
@@ -163,18 +111,7 @@ export async function approve(input: {
     user.organizationId,
   );
 
-  await (
-    await reimbursements()
-  ).updateOne(
-    { _id: reimbursementId },
-    {
-      $set: {
-        status: "approved",
-        reviewedBy: user._id,
-        reviewedAt: Date.now(),
-      },
-    },
-  );
+  await applyApproval(reimbursementId, user._id);
   await addLog(
     user.organizationId,
     user._id,
@@ -195,19 +132,7 @@ export async function decline(input: {
 
   await loadPendingForReview(reimbursementId, user.organizationId);
 
-  await (
-    await reimbursements()
-  ).updateOne(
-    { _id: reimbursementId },
-    {
-      $set: {
-        status: "declined",
-        rejectionNote,
-        reviewedBy: user._id,
-        reviewedAt: Date.now(),
-      },
-    },
-  );
+  await applyDecline(reimbursementId, user._id, rejectionNote);
 
   await addLog(
     user.organizationId,
