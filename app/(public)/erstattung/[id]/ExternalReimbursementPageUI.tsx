@@ -569,7 +569,9 @@ export default function ExternalReimbursementPageUI(props: Props) {
                 className="w-full"
               >
                 <Plus className="size-5 mr-2" />
-                Weiteren Beleg hinzufügen
+                {props.receipts.length === 0
+                  ? "Beleg hinzufügen"
+                  : "Weiteren Beleg hinzufügen"}
               </Button>
             </div>
 
