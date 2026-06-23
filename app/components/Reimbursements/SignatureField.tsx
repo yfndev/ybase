@@ -1,11 +1,11 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { getFileUrlAction } from "@/lib/server/reimbursements/actions";
-import { Loader2 } from "lucide-react";
+import { Loader2, Monitor, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { SignatureCanvas } from "./SignatureCanvas";
-
-export { SignatureQRModal } from "./SignatureQRModal";
+import { SignatureQRPanel } from "./SignatureQRPanel";
 
 interface Props {
   onSignatureComplete: (key: string) => void;
@@ -18,15 +18,46 @@ export function SignatureField({
   storageId,
   generateUploadUrl: customUploadUrl,
 }: Props) {
+  const [mode, setMode] = useState<"mobile" | "desktop">("mobile");
+
   if (storageId) {
     return <SignaturePreview storageId={storageId} />;
   }
 
   return (
-    <SignatureCanvas
-      onUploadComplete={onSignatureComplete}
-      generateUploadUrl={customUploadUrl}
-    />
+    <div className="space-y-3">
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant={mode === "mobile" ? "default" : "outline"}
+          size="sm"
+          className="flex-1"
+          onClick={() => setMode("mobile")}
+        >
+          <Smartphone className="size-4 mr-1" />
+          Auf dem Handy
+        </Button>
+        <Button
+          type="button"
+          variant={mode === "desktop" ? "default" : "outline"}
+          size="sm"
+          className="flex-1"
+          onClick={() => setMode("desktop")}
+        >
+          <Monitor className="size-4 mr-1" />
+          Am Computer
+        </Button>
+      </div>
+
+      {mode === "mobile" ? (
+        <SignatureQRPanel onSignatureComplete={onSignatureComplete} />
+      ) : (
+        <SignatureCanvas
+          onUploadComplete={onSignatureComplete}
+          generateUploadUrl={customUploadUrl}
+        />
+      )}
+    </div>
   );
 }
 
