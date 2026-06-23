@@ -99,3 +99,13 @@ export async function validateSignToken(
 export function submitSign(token: string, signatureStorageId: string) {
   return postJson(`/api/public/sign/${token}/submit`, { signatureStorageId });
 }
+
+export type SignStatus = {
+  signatureStorageId: string | null;
+  usedAt: number | null;
+} | null;
+
+export async function signStatus(token: string): Promise<SignStatus> {
+  const response = await fetch(`/api/public/sign/${token}/status`);
+  return response.json();
+}
