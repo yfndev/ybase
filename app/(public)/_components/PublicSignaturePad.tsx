@@ -5,6 +5,7 @@ import { Loader2, RotateCcw } from "lucide-react";
 import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import SignaturePad from "react-signature-canvas";
+import { useSignatureResize } from "@/lib/hooks/useSignatureResize";
 
 type Props = {
   onUploadComplete: (key: string) => void;
@@ -19,6 +20,7 @@ export function PublicSignaturePad({
 }: Props) {
   const padRef = useRef<SignaturePad>(null);
   const [uploading, setUploading] = useState(false);
+  useSignatureResize(padRef);
 
   const handleSave = async () => {
     const pad = padRef.current;

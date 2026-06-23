@@ -9,6 +9,7 @@ import { Loader2, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import SignaturePad from "react-signature-canvas";
+import { useSignatureResize } from "@/lib/hooks/useSignatureResize";
 
 type Props = {
   onUploadComplete: (key: string) => void;
@@ -24,6 +25,7 @@ export function SignatureCanvas({
   const padRef = useRef<SignaturePad>(null);
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  useSignatureResize(padRef);
 
   useEffect(() => {
     if (!storageId) {
