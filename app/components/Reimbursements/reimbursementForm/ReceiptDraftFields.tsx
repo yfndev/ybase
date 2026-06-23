@@ -135,8 +135,14 @@ export function ReceiptDraftFields({
         variant="outline"
         size="lg"
       >
-        <Plus className="size-5 mr-2" />
-        {receiptCount === 0 ? "Beleg hinzufügen" : "Weiteren Beleg hinzufügen"}
+        {receiptCount === 0 ? (
+          "Beleg speichern"
+        ) : (
+          <>
+            <Plus className="size-5 mr-2" />
+            Weiteren Beleg hinzufügen
+          </>
+        )}
       </Button>
     </div>
   );
