@@ -180,6 +180,7 @@ test("approve sets status approved", async () => {
 
   const id = await create(newAllowanceInput(projectA));
   await approve({ id });
+  expect(requireRole).toHaveBeenCalledWith("admin");
 
   const doc = await (await volunteerAllowance()).findOne({ _id: id });
   expect(doc?.status).toBe("approved");

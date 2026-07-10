@@ -1,8 +1,8 @@
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
-import type { UserRole } from "../db/types";
 import { ensureAppUser } from "./provisioning";
+import { normalizeOptionalUserRole } from "./roles";
 
 const ALLOWED_EMAIL_DOMAIN = "youngfounders.network";
 
@@ -79,7 +79,7 @@ export const authConfig = {
       if (session.user) {
         session.user.id = (token.userId as string | undefined) ?? "";
         session.user.organizationId = token.organizationId as string | undefined;
-        session.user.role = token.role as UserRole | undefined;
+        session.user.role = normalizeOptionalUserRole(token.role);
       }
       return session;
     },

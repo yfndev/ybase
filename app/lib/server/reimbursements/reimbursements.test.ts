@@ -162,6 +162,7 @@ test("getAllReimbursements stays scoped to the caller's org", async () => {
 test("approve sets the status", async () => {
   const id = await createReimbursement(reimbursementInput());
   await approve({ reimbursementId: id });
+  expect(requireRole).toHaveBeenCalledWith("admin");
 
   const stored = await (await reimbursements()).findOne({ _id: id });
   expect(stored?.status).toBe("approved");

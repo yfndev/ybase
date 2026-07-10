@@ -1,8 +1,7 @@
 import { users } from "../db/collections";
 import type { UserRole } from "../db/types";
 import { auth } from "./index";
-
-const roleHierarchy: Record<UserRole, number> = { member: 0, lead: 1, admin: 2 };
+import { isLegacyLeadRole, normalizeUserRole } from "./roles";
 
 export async function requireUser() {
   const session = await auth();
@@ -13,13 +12,17 @@ export async function requireUser() {
   if (!user) throw new Error("User not found");
   if (!user.organizationId) throw new Error("User has no organization");
 
-  return { ...user, organizationId: user.organizationId, role: user.role };
+  const role = normalizeUserRole(user.role);
+  if (isLegacyLeadRole(user.role)) {
+    await (await users()).updateOne({ _id: user._id }, { $set: { role } });
+  }
+
+  return { ...user, organizationId: user.organizationId, role };
 }
 
 export async function requireRole(minRole: UserRole) {
   const user = await requireUser();
-  const role = user.role ?? "member";
-  if (roleHierarchy[role] < roleHierarchy[minRole]) {
+  if (minRole === "admin" && user.role !== "admin") {
     throw new Error(`Insufficient permissions. Required role: ${minRole}`);
   }
   return user;

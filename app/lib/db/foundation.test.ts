@@ -58,3 +58,30 @@ test("ensureAppUser leaves organizationId unset when no org matches the domain",
   expect(user.organizationId).toBeUndefined();
   expect(user.role).toBeUndefined();
 });
+
+test("ensureAppUser migrates a legacy lead to admin", async () => {
+  const db = await getDb();
+  const rawUsers = db.collection<{
+    _id: string;
+    _creationTime: number;
+    email: string;
+    organizationId: string;
+    role: string;
+  }>("users");
+  await rawUsers.insertOne({
+    _id: newId(),
+    _creationTime: Date.now(),
+    email: "legacy@youngfounders.network",
+    organizationId: newId(),
+    role: "lead",
+  });
+
+  const user = await ensureAppUser({
+    email: "legacy@youngfounders.network",
+  });
+
+  expect(user.role).toBe("admin");
+  expect(await rawUsers.findOne({ _id: user._id })).toMatchObject({
+    role: "admin",
+  });
+});

@@ -122,7 +122,7 @@ test("initializeOrganization joins an existing org by email domain", async () =>
     _creationTime: Date.now(),
     email: "member@b.org",
     organizationId: undefined as unknown as string,
-    role: undefined,
+    role: "member",
   });
 
   const result = await initializeOrganization();
@@ -145,7 +145,7 @@ test("initializeOrganization creates a new org with an Allgemein project", async
     _creationTime: Date.now(),
     email: "founder@fresh.org",
     organizationId: undefined as unknown as string,
-    role: undefined,
+    role: "member",
   });
 
   const result = await initializeOrganization({ organizationName: "Fresh e.V." });

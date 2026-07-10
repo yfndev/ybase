@@ -1,25 +1,14 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import type { UserRole } from "../db/types";
 
-export type UserRole = "admin" | "lead" | "member";
-
-export function useCurrentUserRole(): UserRole | undefined {
+export function useCurrentUserRole(): UserRole {
   const { data } = useSession();
   return (data?.user?.role as UserRole) ?? "member";
 }
 
-export function useCanEdit(): boolean {
-  const role = useCurrentUserRole();
-  return role === "lead" || role === "admin";
-}
-
 export function useIsAdmin(): boolean {
-  const role = useCurrentUserRole();
-  return role === "admin";
-}
-
-export function useCanViewAllTransactions(): boolean {
   const role = useCurrentUserRole();
   return role === "admin";
 }
