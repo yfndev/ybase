@@ -1,13 +1,15 @@
 import type { z } from "zod";
+import { hasMinimumRole } from "../../auth/roles";
 import { reimbursements, travelDetails } from "../../db/collections";
 import { newId } from "../../db/ids";
+import type { UserRole } from "../../db/types";
 import { getOrganization } from "../organizations/data";
 import { addLog } from "../logs";
 import { getFileUrl, getReceipts, getReimbursement } from "./data";
 import { cleanupReimbursement } from "./helpers";
 import type { createTravelReimbursementSchema } from "./validators";
 
-type ReviewActor = { _id: string; organizationId: string };
+type ReviewActor = { _id: string; organizationId: string; role: UserRole };
 
 export type ReimbursementPdfData = {
   reimbursement: Awaited<ReturnType<typeof getReimbursement>>;
@@ -62,7 +64,7 @@ export async function buildReimbursementPdfData(
 
 export async function deleteReimbursementById(
   reimbursementId: string,
-  user: ReviewActor & { role?: string },
+  user: ReviewActor,
 ): Promise<void> {
   const reimbursement = await (
     await reimbursements()
@@ -72,8 +74,9 @@ export async function deleteReimbursementById(
     throw new Error("Reimbursement not found");
   }
 
-  if (reimbursement.createdBy !== user._id && user.role !== "admin") {
-    throw new Error("Only the creator or an admin can delete reimbursements");
+  const canManageReimbursements = hasMinimumRole(user.role, "finance");
+  if (reimbursement.createdBy !== user._id && !canManageReimbursements) {
+    throw new Error("Only the creator or finance can delete reimbursements");
   }
 
   await cleanupReimbursement(reimbursement);

@@ -96,13 +96,19 @@ test("updateUserRole promotes a member to admin and writes a log", async () => {
   expect(log?.entityId).toBe(memberA);
 });
 
+test("updateUserRole grants finance access without admin access", async () => {
+  await updateUserRole({ userId: memberA, role: "finance" });
+  const updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.role).toBe("finance");
+});
+
 test("updateUserRole cannot touch a user from another org", async () => {
   await expect(updateUserRole({ userId: memberB, role: "admin" })).rejects.toThrow(
     "Access denied",
   );
 });
 
-test("listOrganizationUsers migrates legacy leads to admins", async () => {
+test("listOrganizationUsers migrates legacy leads to finance", async () => {
   const legacyLead = newId();
   const rawUsers = (await getDb()).collection<{
     _id: string;
@@ -120,9 +126,9 @@ test("listOrganizationUsers migrates legacy leads to admins", async () => {
   });
 
   const list = await listOrganizationUsers();
-  expect(list.find((user) => user._id === legacyLead)?.role).toBe("admin");
+  expect(list.find((user) => user._id === legacyLead)?.role).toBe("finance");
   expect(await rawUsers.findOne({ _id: legacyLead })).toMatchObject({
-    role: "admin",
+    role: "finance",
   });
 });
 

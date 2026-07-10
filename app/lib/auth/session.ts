@@ -1,7 +1,7 @@
 import { users } from "../db/collections";
 import type { UserRole } from "../db/types";
 import { auth } from "./index";
-import { isLegacyLeadRole, normalizeUserRole } from "./roles";
+import { hasMinimumRole, isLegacyLeadRole, normalizeUserRole } from "./roles";
 
 export async function requireUser() {
   const session = await auth();
@@ -22,7 +22,7 @@ export async function requireUser() {
 
 export async function requireRole(minRole: UserRole) {
   const user = await requireUser();
-  if (minRole === "admin" && user.role !== "admin") {
+  if (!hasMinimumRole(user.role, minRole)) {
     throw new Error(`Insufficient permissions. Required role: ${minRole}`);
   }
   return user;

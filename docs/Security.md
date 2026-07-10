@@ -16,8 +16,8 @@ We take security seriously at YBase. Here's how we protect your financial data.
 
 **Role-Based Access Control**
 
-- `member` can submit and view their own reimbursements; `admin` manages and approves organization-wide data
-- `requireRole("admin")` validates privileged server actions in `app/lib/auth/session.ts`
+- `member` submits and views their own reimbursements; `finance` manages organization-wide submissions; `admin` has full control
+- `requireRole()` validates finance and admin actions in `app/lib/auth/session.ts`
 
 ## Data Protection
 

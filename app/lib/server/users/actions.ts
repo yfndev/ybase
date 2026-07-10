@@ -6,7 +6,7 @@ import { users } from "../../db/collections";
 import type { UserRole } from "../../db/types";
 import { addLog } from "../logs";
 
-const roleSchema = z.enum(["admin", "member"]);
+const roleSchema = z.enum(["admin", "finance", "member"]);
 
 export async function addUserToOrganization(input: {
   userId: string;

@@ -59,7 +59,7 @@ test("ensureAppUser leaves organizationId unset when no org matches the domain",
   expect(user.role).toBeUndefined();
 });
 
-test("ensureAppUser migrates a legacy lead to admin", async () => {
+test("ensureAppUser migrates a legacy lead to finance", async () => {
   const db = await getDb();
   const rawUsers = db.collection<{
     _id: string;
@@ -80,8 +80,8 @@ test("ensureAppUser migrates a legacy lead to admin", async () => {
     email: "legacy@youngfounders.network",
   });
 
-  expect(user.role).toBe("admin");
+  expect(user.role).toBe("finance");
   expect(await rawUsers.findOne({ _id: user._id })).toMatchObject({
-    role: "admin",
+    role: "finance",
   });
 });
