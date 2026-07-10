@@ -11,7 +11,7 @@ import { newId } from "../../db/ids";
 import { addLog } from "../logs";
 
 export async function createProject(input: { name: string }): Promise<string> {
-  const user = await requireRole("lead");
+  const user = await requireRole("admin");
   const { name } = z.object({ name: z.string().min(1) }).parse(input);
 
   const _id = newId();
@@ -31,7 +31,7 @@ export async function renameProject(input: {
   projectId: string;
   name: string;
 }): Promise<void> {
-  const user = await requireRole("lead");
+  const user = await requireRole("admin");
   const { projectId, name } = z
     .object({ projectId: z.string(), name: z.string().min(1) })
     .parse(input);
