@@ -14,6 +14,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toNet } from "@/lib/bank-utils";
 import { Plus } from "lucide-react";
+import { ReceiptAddressNotice } from "../ReceiptAddressNotice";
 import { ReceiptUpload } from "../ReceiptUpload";
 import type { Draft } from "./types";
 
@@ -41,6 +42,7 @@ export function ReceiptDraftFields({
         Du kannst mehrere Belege hinzufügen, um sie in einer Erstattung
         einzureichen.
       </p>
+      <ReceiptAddressNotice />
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label>Name/Firma *</Label>
