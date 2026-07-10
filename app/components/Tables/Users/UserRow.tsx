@@ -58,6 +58,7 @@ export function UserRow({ user, onRoleChange, isAdmin }: Props) {
                 Admin
               </div>
             </SelectItem>
+            <SelectItem value="finance">Finance</SelectItem>
             <SelectItem value="member">Member</SelectItem>
           </SelectContent>
         </Select>

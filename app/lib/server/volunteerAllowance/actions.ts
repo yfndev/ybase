@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { hasMinimumRole } from "../../auth/roles";
 import { requireRole, requireUser } from "../../auth/session";
 import { volunteerAllowance } from "../../db/collections";
 import { newId } from "../../db/ids";
@@ -9,7 +10,6 @@ import { addLog } from "../logs";
 import { getSignatureUrl } from "./data";
 
 const MAX_VOLUNTEER_ALLOWANCE_EUR = 960;
-
 export async function create(input: {
   projectId: string;
   amount: number;
@@ -92,7 +92,7 @@ export async function getSignatureUrlAction(key: string): Promise<string> {
 }
 
 export async function approve(input: { id: string }): Promise<void> {
-  const user = await requireRole("admin");
+  const user = await requireRole("finance");
   const { id } = z.object({ id: z.string() }).parse(input);
 
   const doc = await (await volunteerAllowance()).findOne({ _id: id });
@@ -134,7 +134,7 @@ export async function decline(input: {
   id: string;
   rejectionNote: string;
 }): Promise<void> {
-  const user = await requireRole("admin");
+  const user = await requireRole("finance");
   const { id, rejectionNote } = z
     .object({ id: z.string(), rejectionNote: z.string() })
     .parse(input);
@@ -178,8 +178,9 @@ export async function remove(input: { id: string }): Promise<void> {
   if (!doc || doc.organizationId !== user.organizationId) {
     throw new Error("Not found");
   }
-  if (doc.createdBy !== user._id && user.role !== "admin") {
-    throw new Error("Only the creator or an admin can delete");
+  const canManageReimbursements = hasMinimumRole(user.role, "finance");
+  if (doc.createdBy !== user._id && !canManageReimbursements) {
+    throw new Error("Only the creator or finance can delete");
   }
 
   if (doc.signatureStorageId) {

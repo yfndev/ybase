@@ -25,7 +25,7 @@ import {
 import { newId } from "../../db/ids";
 import { deleteObject } from "../../s3/storage";
 import { approve, createReimbursement, deleteReimbursement } from "./actions";
-import { getAllReimbursements } from "./data";
+import { getAllReimbursements, getReimbursement } from "./data";
 
 let mongod: MongoMemoryServer;
 let orgA: string;
@@ -89,13 +89,13 @@ beforeEach(async () => {
     name: "Max",
     email: "max@a.org",
     organizationId: orgA,
-    role: "admin",
+    role: "finance",
   });
   const actor = {
     _id: userA,
     _creationTime: Date.now(),
     organizationId: orgA,
-    role: "admin" as const,
+    role: "finance" as const,
   };
   vi.mocked(requireUser).mockResolvedValue(actor);
   vi.mocked(requireRole).mockResolvedValue(actor);
@@ -143,6 +143,20 @@ test("getAllReimbursements stays scoped to the caller's org", async () => {
   ).insertOne({
     _id: newId(),
     _creationTime: Date.now(),
+    organizationId: orgA,
+    projectId: projectA,
+    amount: 75,
+    type: "expense",
+    status: "pending",
+    iban: "DE75",
+    accountHolder: "Other member",
+    createdBy: newId(),
+  });
+  await (
+    await reimbursements()
+  ).insertOne({
+    _id: newId(),
+    _creationTime: Date.now(),
     organizationId: orgB,
     projectId: newId(),
     amount: 99,
@@ -154,15 +168,69 @@ test("getAllReimbursements stays scoped to the caller's org", async () => {
   });
 
   const list = await getAllReimbursements();
+  expect(list).toHaveLength(2);
+  expect(list.every((item) => item.organizationId === orgA)).toBe(true);
+  expect(list.every((item) => item.projectName === "Projekt A")).toBe(true);
+});
+
+test("members only see their own reimbursements", async () => {
+  await createReimbursement(reimbursementInput());
+  await (
+    await reimbursements()
+  ).insertOne({
+    _id: newId(),
+    _creationTime: Date.now(),
+    organizationId: orgA,
+    projectId: projectA,
+    amount: 75,
+    type: "expense",
+    status: "pending",
+    iban: "DE75",
+    accountHolder: "Other member",
+    createdBy: newId(),
+  });
+  vi.mocked(requireUser).mockResolvedValue({
+    _id: userA,
+    _creationTime: Date.now(),
+    organizationId: orgA,
+    role: "member",
+  });
+
+  const list = await getAllReimbursements();
   expect(list).toHaveLength(1);
-  expect(list[0]?.organizationId).toBe(orgA);
-  expect(list[0]?.projectName).toBe("Projekt A");
+  expect(list[0]?.createdBy).toBe(userA);
+});
+
+test("members cannot open another member's reimbursement", async () => {
+  const reimbursementId = newId();
+  await (
+    await reimbursements()
+  ).insertOne({
+    _id: reimbursementId,
+    _creationTime: Date.now(),
+    organizationId: orgA,
+    projectId: projectA,
+    amount: 75,
+    type: "expense",
+    status: "pending",
+    iban: "DE75",
+    accountHolder: "Other member",
+    createdBy: newId(),
+  });
+  vi.mocked(requireUser).mockResolvedValue({
+    _id: userA,
+    _creationTime: Date.now(),
+    organizationId: orgA,
+    role: "member",
+  });
+
+  await expect(getReimbursement(reimbursementId)).resolves.toBeNull();
 });
 
 test("approve sets the status", async () => {
   const id = await createReimbursement(reimbursementInput());
   await approve({ reimbursementId: id });
-  expect(requireRole).toHaveBeenCalledWith("admin");
+  expect(requireRole).toHaveBeenCalledWith("finance");
 
   const stored = await (await reimbursements()).findOne({ _id: id });
   expect(stored?.status).toBe("approved");
@@ -179,6 +247,28 @@ test("deleteReimbursement removes receipts and deletes the stored files", async 
   ).toHaveLength(0);
   expect(deleteObject).toHaveBeenCalledWith("receipt-key");
   expect(deleteObject).toHaveBeenCalledWith("sig-key");
+});
+
+test("finance can delete another member's reimbursement", async () => {
+  const reimbursementId = newId();
+  await (await reimbursements()).insertOne({
+    _id: reimbursementId,
+    _creationTime: Date.now(),
+    organizationId: orgA,
+    projectId: projectA,
+    amount: 75,
+    type: "expense",
+    status: "pending",
+    iban: "DE75",
+    accountHolder: "Other member",
+    createdBy: newId(),
+  });
+
+  await deleteReimbursement({ reimbursementId });
+
+  expect(
+    await (await reimbursements()).findOne({ _id: reimbursementId }),
+  ).toBeNull();
 });
 
 test("cannot delete a reimbursement from another org", async () => {

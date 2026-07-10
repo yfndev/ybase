@@ -1,3 +1,4 @@
+import { hasMinimumRole } from "../../auth/roles";
 import { requireUser } from "../../auth/session";
 import {
   organizations,
@@ -25,9 +26,9 @@ export type VolunteerAllowanceWithNames = VolunteerAllowance & {
 
 export async function getAll(): Promise<VolunteerAllowanceWithNames[]> {
   const user = await requireUser();
-  const isAdmin = user.role === "admin";
+  const canManageReimbursements = hasMinimumRole(user.role, "finance");
 
-  const filter = isAdmin
+  const filter = canManageReimbursements
     ? { organizationId: user.organizationId }
     : { organizationId: user.organizationId, createdBy: user._id };
 

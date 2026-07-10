@@ -17,7 +17,7 @@ export async function listOrganizationUsers(): Promise<User[]> {
   const user = await requireRole("admin");
   await (await getDb()).collection("users").updateMany(
     { organizationId: user.organizationId, role: "lead" },
-    { $set: { role: "admin" } },
+    { $set: { role: "finance" } },
   );
   return (await users())
     .find({ organizationId: user.organizationId })

@@ -1,7 +1,15 @@
 import type { UserRole } from "../db/types";
 
+const roleHierarchy: Record<UserRole, number> = {
+  member: 0,
+  finance: 1,
+  admin: 2,
+};
+
 export function normalizeUserRole(role: unknown): UserRole {
-  return role === "admin" || role === "lead" ? "admin" : "member";
+  if (role === "admin") return "admin";
+  if (role === "finance" || role === "lead") return "finance";
+  return "member";
 }
 
 export function normalizeOptionalUserRole(role: unknown): UserRole | undefined {
@@ -11,4 +19,8 @@ export function normalizeOptionalUserRole(role: unknown): UserRole | undefined {
 
 export function isLegacyLeadRole(role: unknown): boolean {
   return role === "lead";
+}
+
+export function hasMinimumRole(role: UserRole, minimumRole: UserRole): boolean {
+  return roleHierarchy[role] >= roleHierarchy[minimumRole];
 }

@@ -101,7 +101,7 @@ export async function deleteReimbursement(input: {
 export async function approve(input: {
   reimbursementId: string;
 }): Promise<void> {
-  const user = await requireRole("admin");
+  const user = await requireRole("finance");
   const { reimbursementId } = z
     .object({ reimbursementId: z.string() })
     .parse(input);
@@ -125,7 +125,7 @@ export async function decline(input: {
   reimbursementId: string;
   rejectionNote: string;
 }): Promise<void> {
-  const user = await requireRole("admin");
+  const user = await requireRole("finance");
   const { reimbursementId, rejectionNote } = z
     .object({ reimbursementId: z.string(), rejectionNote: z.string() })
     .parse(input);

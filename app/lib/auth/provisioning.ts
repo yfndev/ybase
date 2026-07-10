@@ -42,8 +42,8 @@ export async function ensureAppUser(profile: SignInProfile): Promise<User> {
   }
 
   if (isLegacyLeadRole(user.role)) {
-    await usersCol.updateOne({ _id: user._id }, { $set: { role: "admin" } });
-    user.role = "admin";
+    await usersCol.updateOne({ _id: user._id }, { $set: { role: "finance" } });
+    user.role = "finance";
   }
 
   return user;

@@ -60,7 +60,7 @@ pnpm exec playwright test e2e/createTransactionAndProject.spec.ts
 - `purpose-operations` (Zweckbetrieb)
 - `commercial-operations` (Wirtschaftlicher Geschäftsbetrieb)
 
-**User Roles:** `admin`, `member`
+**User Roles:** `admin`, `finance`, `member`
 
 ## Testing
 

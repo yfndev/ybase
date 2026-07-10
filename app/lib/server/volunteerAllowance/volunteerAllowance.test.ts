@@ -87,7 +87,7 @@ beforeEach(async () => {
     _id: userA,
     _creationTime: Date.now(),
     organizationId: orgA,
-    role: "admin" as const,
+    role: "finance" as const,
     email: "actor@a.org",
   };
   await (
@@ -97,7 +97,7 @@ beforeEach(async () => {
     _creationTime: Date.now(),
     name: "Actor",
     organizationId: orgA,
-    role: "admin",
+    role: "finance",
     email: "actor@a.org",
   });
   vi.mocked(requireUser).mockResolvedValue(actor);
@@ -124,6 +124,28 @@ test("create + getAll stay scoped to the caller's org", async () => {
   ).insertOne({
     _id: newId(),
     _creationTime: Date.now(),
+    organizationId: orgA,
+    projectId: projectA,
+    amount: 75,
+    status: "pending",
+    iban: "DE75",
+    accountHolder: "Other member",
+    createdBy: newId(),
+    activityDescription: "Other",
+    startDate: "2026-01-01",
+    endDate: "2026-01-31",
+    volunteerName: "Other member",
+    volunteerStreet: "x",
+    volunteerPlz: "x",
+    volunteerCity: "x",
+    signatureStorageId: "other-member-key",
+  });
+
+  await (
+    await volunteerAllowance()
+  ).insertOne({
+    _id: newId(),
+    _creationTime: Date.now(),
     organizationId: orgB,
     projectId: newId(),
     amount: 50,
@@ -142,8 +164,11 @@ test("create + getAll stay scoped to the caller's org", async () => {
   });
 
   const list = await getAll();
-  expect(list.map((item) => item.volunteerName)).toEqual(["Max Mustermann"]);
-  expect(list[0]?.projectName).toBe("Projekt A");
+  expect(list.map((item) => item.volunteerName).sort()).toEqual([
+    "Max Mustermann",
+    "Other member",
+  ]);
+  expect(list.every((item) => item.projectName === "Projekt A")).toBe(true);
 });
 
 test("create persists the allowance as pending", async () => {
@@ -180,7 +205,7 @@ test("approve sets status approved", async () => {
 
   const id = await create(newAllowanceInput(projectA));
   await approve({ id });
-  expect(requireRole).toHaveBeenCalledWith("admin");
+  expect(requireRole).toHaveBeenCalledWith("finance");
 
   const doc = await (await volunteerAllowance()).findOne({ _id: id });
   expect(doc?.status).toBe("approved");
@@ -205,6 +230,35 @@ test("remove deletes the signature from S3 and the document", async () => {
 
   expect(deleteObject).toHaveBeenCalledWith("sig-key");
   expect(await (await volunteerAllowance()).findOne({ _id: id })).toBeNull();
+});
+
+test("finance can delete another member's allowance", async () => {
+  const allowanceId = newId();
+  await (await volunteerAllowance()).insertOne({
+    _id: allowanceId,
+    _creationTime: Date.now(),
+    organizationId: orgA,
+    projectId: newId(),
+    amount: 75,
+    status: "pending",
+    iban: "DE75",
+    accountHolder: "Other member",
+    createdBy: newId(),
+    activityDescription: "Other",
+    startDate: "2026-01-01",
+    endDate: "2026-01-31",
+    volunteerName: "Other member",
+    volunteerStreet: "x",
+    volunteerPlz: "x",
+    volunteerCity: "x",
+    signatureStorageId: "other-member-key",
+  });
+
+  await remove({ id: allowanceId });
+
+  expect(
+    await (await volunteerAllowance()).findOne({ _id: allowanceId }),
+  ).toBeNull();
 });
 
 test("cannot approve an allowance from another org", async () => {

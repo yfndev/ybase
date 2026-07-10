@@ -1,3 +1,4 @@
+import { hasMinimumRole } from "../../auth/roles";
 import { requireUser } from "../../auth/session";
 import {
   projects,
@@ -30,14 +31,15 @@ export async function getReimbursement(reimbursementId: string): Promise<
   | null
 > {
   const user = await requireUser();
+  const canManageReimbursements = hasMinimumRole(user.role, "finance");
   const reimbursement = await (
     await reimbursements()
   ).findOne({
     _id: reimbursementId,
+    organizationId: user.organizationId,
+    ...(canManageReimbursements ? {} : { createdBy: user._id }),
   });
-  if (!reimbursement || reimbursement.organizationId !== user.organizationId) {
-    return null;
-  }
+  if (!reimbursement) return null;
 
   const reviewer = reimbursement.reviewedBy
     ? await (await users()).findOne({ _id: reimbursement.reviewedBy })
@@ -54,14 +56,15 @@ export async function getReimbursement(reimbursementId: string): Promise<
 
 export async function getReceipts(reimbursementId: string): Promise<Receipt[]> {
   const user = await requireUser();
+  const canManageReimbursements = hasMinimumRole(user.role, "finance");
   const reimbursement = await (
     await reimbursements()
   ).findOne({
     _id: reimbursementId,
+    organizationId: user.organizationId,
+    ...(canManageReimbursements ? {} : { createdBy: user._id }),
   });
-  if (!reimbursement || reimbursement.organizationId !== user.organizationId) {
-    return [];
-  }
+  if (!reimbursement) return [];
 
   return (await receipts()).find({ reimbursementId }).toArray();
 }
@@ -82,9 +85,9 @@ export async function getAllReimbursements(): Promise<
   >
 > {
   const user = await requireUser();
-  const isAdmin = user.role === "admin";
+  const canManageReimbursements = hasMinimumRole(user.role, "finance");
 
-  const scope = isAdmin
+  const scope = canManageReimbursements
     ? { organizationId: user.organizationId }
     : { organizationId: user.organizationId, createdBy: user._id };
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { requireUser } from "../../auth/session";
+import { requireRole } from "../../auth/session";
 import { volunteerAllowance } from "../../db/collections";
 import { newId } from "../../db/ids";
 
@@ -15,7 +15,7 @@ const createLinkSchema = z.object({
 export async function createLink(
   input: z.input<typeof createLinkSchema>,
 ): Promise<string> {
-  const user = await requireUser();
+  const user = await requireRole("finance");
   const args = createLinkSchema.parse(input);
 
   const id = newId();
