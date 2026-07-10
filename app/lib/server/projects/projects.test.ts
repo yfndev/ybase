@@ -38,6 +38,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await (await getDb()).dropDatabase();
+  vi.clearAllMocks();
   orgA = newId();
   orgB = newId();
   userA = newId();
@@ -57,6 +58,7 @@ beforeEach(async () => {
 
 test("createProject + getAllProjects stay scoped to the caller's org", async () => {
   await createProject({ name: "Projekt A1" });
+  expect(requireRole).toHaveBeenCalledWith("admin");
   await (await projects()).insertOne({
     _id: newId(),
     _creationTime: Date.now(),
@@ -73,6 +75,7 @@ test("createProject + getAllProjects stay scoped to the caller's org", async () 
 test("renameProject updates the name", async () => {
   const id = await createProject({ name: "Alt" });
   await renameProject({ projectId: id, name: "Neu" });
+  expect(requireRole).toHaveBeenLastCalledWith("admin");
   expect((await getAllProjects())[0]?.name).toBe("Neu");
 });
 
