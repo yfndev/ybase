@@ -16,8 +16,8 @@ We take security seriously at YBase. Here's how we protect your financial data.
 
 **Role-Based Access Control**
 
-- `member` (read-only) → `lead` (edit, manage teams) → `admin` (full control)
-- `requireRole(ctx, "admin")` validates permissions in `convex/users/permissions.ts`
+- `member` can submit and view their own reimbursements; `admin` manages and approves organization-wide data
+- `requireRole("admin")` validates privileged server actions in `app/lib/auth/session.ts`
 
 ## Data Protection
 
