@@ -88,18 +88,42 @@ test("listOrganizationUsers only returns users from the caller's org", async () 
   expect(list.map((u) => u.name).sort()).toEqual(["Admin A", "Member A"]);
 });
 
-test("updateUserRole promotes a member and writes a log", async () => {
-  await updateUserRole({ userId: memberA, role: "lead" });
+test("updateUserRole promotes a member to admin and writes a log", async () => {
+  await updateUserRole({ userId: memberA, role: "admin" });
   const updated = await (await users()).findOne({ _id: memberA });
-  expect(updated?.role).toBe("lead");
+  expect(updated?.role).toBe("admin");
   const log = await (await logs()).findOne({ action: "user.role_change" });
   expect(log?.entityId).toBe(memberA);
 });
 
 test("updateUserRole cannot touch a user from another org", async () => {
-  await expect(updateUserRole({ userId: memberB, role: "lead" })).rejects.toThrow(
+  await expect(updateUserRole({ userId: memberB, role: "admin" })).rejects.toThrow(
     "Access denied",
   );
+});
+
+test("listOrganizationUsers migrates legacy leads to admins", async () => {
+  const legacyLead = newId();
+  const rawUsers = (await getDb()).collection<{
+    _id: string;
+    _creationTime: number;
+    name: string;
+    organizationId: string;
+    role: string;
+  }>("users");
+  await rawUsers.insertOne({
+    _id: legacyLead,
+    _creationTime: Date.now(),
+    name: "Legacy Lead",
+    organizationId: orgA,
+    role: "lead",
+  });
+
+  const list = await listOrganizationUsers();
+  expect(list.find((user) => user._id === legacyLead)?.role).toBe("admin");
+  expect(await rawUsers.findOne({ _id: legacyLead })).toMatchObject({
+    role: "admin",
+  });
 });
 
 test("updateUserRole blocks demoting the last admin", async () => {

@@ -92,7 +92,7 @@ export async function getSignatureUrlAction(key: string): Promise<string> {
 }
 
 export async function approve(input: { id: string }): Promise<void> {
-  const user = await requireRole("lead");
+  const user = await requireRole("admin");
   const { id } = z.object({ id: z.string() }).parse(input);
 
   const doc = await (await volunteerAllowance()).findOne({ _id: id });
@@ -134,7 +134,7 @@ export async function decline(input: {
   id: string;
   rejectionNote: string;
 }): Promise<void> {
-  const user = await requireRole("lead");
+  const user = await requireRole("admin");
   const { id, rejectionNote } = z
     .object({ id: z.string(), rejectionNote: z.string() })
     .parse(input);
