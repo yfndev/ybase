@@ -13,6 +13,7 @@ import { SelectProject } from "@/components/Selectors/SelectProject";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Loader2 } from "lucide-react";
 
 export function VolunteerAllowanceFormUI({
   defaultBankDetails,
@@ -28,6 +29,7 @@ export function VolunteerAllowanceFormUI({
     form,
     update,
     updateAmount,
+    isSubmitting,
     handleSubmit,
   } = useVolunteerAllowanceForm(defaultBankDetails);
 
@@ -49,7 +51,7 @@ export function VolunteerAllowanceFormUI({
       <div className="space-y-4">
         <h2 className="text-lg font-medium">Betrag</h2>
         <div className="max-w-xs">
-          <Label>Betrag in Euro (max. {MAX_VOLUNTEER_ALLOWANCE_EUR}€) *</Label>
+          <Label>Betrag in Euro (max. {MAX_VOLUNTEER_ALLOWANCE_EUR} €) *</Label>
           <AmountInput value={form.amount} onChange={updateAmount} />
         </div>
       </div>
@@ -72,7 +74,9 @@ export function VolunteerAllowanceFormUI({
         onClick={handleSubmit}
         className="w-full h-14 font-semibold mt-8"
         size="lg"
+        disabled={isSubmitting}
       >
+        {isSubmitting && <Loader2 className="size-5 animate-spin mr-2" />}
         Zur Genehmigung einreichen
       </Button>
     </div>

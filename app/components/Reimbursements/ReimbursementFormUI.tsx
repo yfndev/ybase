@@ -38,6 +38,7 @@ export function ReimbursementFormUI({ defaultBankDetails, projects }: Props) {
           onRemoveReceipt={form.removeReceipt}
           signature={form.signature}
           onSignatureComplete={form.setSignature}
+          isSubmitting={form.isSubmitting}
           onSubmit={form.handleSubmit}
         />
       )}

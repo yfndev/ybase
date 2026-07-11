@@ -4,7 +4,8 @@ import { BankDetailsEditor } from "@/components/BankDetailsEditor";
 import { SignatureField } from "@/components/Reimbursements/SignatureField";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Trash2 } from "lucide-react";
+import { formatAmount } from "@/lib/formatters/formatCurrency";
+import { Loader2, Trash2 } from "lucide-react";
 import { sumGross, sumNet, taxForRate } from "./helpers";
 import type { BankDetails, Receipt } from "./types";
 
@@ -16,6 +17,7 @@ interface Props {
   onRemoveReceipt: (index: number) => void;
   signature: string | null;
   onSignatureComplete: (value: string) => void;
+  isSubmitting: boolean;
   onSubmit: () => void;
 }
 
@@ -27,6 +29,7 @@ export function ReimbursementSummary({
   onRemoveReceipt,
   signature,
   onSignatureComplete,
+  isSubmitting,
   onSubmit,
 }: Props) {
   const totalGross = sumGross(receipts);
@@ -53,13 +56,15 @@ export function ReimbursementSummary({
             </div>
             <div className="flex items-center gap-4">
               <span className="font-semibold">
-                {receipt.grossAmount.toFixed(2)} {currencySymbol}
+                {formatAmount(receipt.grossAmount)} {currencySymbol}
               </span>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => onRemoveReceipt(index)}
                 className="hover:bg-destructive/10 hover:text-destructive"
+                aria-label="Beleg entfernen"
+                title="Beleg entfernen"
               >
                 <Trash2 className="size-4" />
               </Button>
@@ -72,22 +77,22 @@ export function ReimbursementSummary({
         <div className="flex justify-between">
           <span className="text-muted-foreground">Netto gesamt</span>
           <span>
-            {totalNet.toFixed(2)} {currencySymbol}
+            {formatAmount(totalNet)} {currencySymbol}
           </span>
         </div>
         {tax7 > 0 && (
           <div className="flex justify-between">
-            <span className="text-muted-foreground">UST 7% gesamt</span>
+            <span className="text-muted-foreground">USt 7%</span>
             <span>
-              {tax7.toFixed(2)} {currencySymbol}
+              {formatAmount(tax7)} {currencySymbol}
             </span>
           </div>
         )}
         {tax19 > 0 && (
           <div className="flex justify-between">
-            <span className="text-muted-foreground">UST 19% gesamt</span>
+            <span className="text-muted-foreground">USt 19%</span>
             <span>
-              {tax19.toFixed(2)} {currencySymbol}
+              {formatAmount(tax19)} {currencySymbol}
             </span>
           </div>
         )}
@@ -95,7 +100,7 @@ export function ReimbursementSummary({
         <div className="flex justify-between text-lg font-semibold pt-2">
           <span>Brutto gesamt</span>
           <span>
-            {totalGross.toFixed(2)} {currencySymbol}
+            {formatAmount(totalGross)} {currencySymbol}
           </span>
         </div>
       </div>
@@ -112,7 +117,9 @@ export function ReimbursementSummary({
         onClick={onSubmit}
         className="w-full h-14 font-semibold mt-8"
         size="lg"
+        disabled={isSubmitting}
       >
+        {isSubmitting && <Loader2 className="size-5 animate-spin mr-2" />}
         Zur Genehmigung einreichen
       </Button>
     </div>
