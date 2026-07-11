@@ -13,6 +13,24 @@ import { formatDateTime } from "@/lib/formatters/formatDateTime";
 import { getLogs } from "@/lib/server/logs/data";
 import { ScrollText } from "lucide-react";
 
+const ACTION_LABELS: Record<string, string> = {
+  "organization.update": "Organisation aktualisiert",
+  "project.create": "Projekt erstellt",
+  "project.rename": "Projekt umbenannt",
+  "project.archive": "Projekt archiviert",
+  "project.unarchive": "Projekt wiederhergestellt",
+  "project.delete": "Projekt gelöscht",
+  "reimbursement.create": "Erstattung erstellt",
+  "reimbursement.approve": "Erstattung genehmigt",
+  "reimbursement.decline": "Erstattung abgelehnt",
+  "reimbursement.delete": "Erstattung gelöscht",
+  "volunteerAllowance.create": "Ehrenamtspauschale erstellt",
+  "volunteerAllowance.approve": "Ehrenamtspauschale genehmigt",
+  "volunteerAllowance.decline": "Ehrenamtspauschale abgelehnt",
+  "volunteerAllowance.delete": "Ehrenamtspauschale gelöscht",
+  "user.role_change": "Rolle geändert",
+};
+
 export default async function LogsPage() {
   const session = await auth();
   if (session?.user?.role !== "admin") {
@@ -54,7 +72,7 @@ export default async function LogsPage() {
                 <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                   {formatDateTime(log._creationTime)}
                 </TableCell>
-                <TableCell>{log.action}</TableCell>
+                <TableCell>{ACTION_LABELS[log.action] ?? log.action}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {log.details || "-"}
                 </TableCell>
