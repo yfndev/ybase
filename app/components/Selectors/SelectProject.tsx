@@ -3,6 +3,7 @@
 import { CreateProjectDialog } from "@/components/Dialogs/CreateProjectDialog";
 import type { Project } from "@/lib/db/types";
 import { focusNextInput } from "@/lib/focusNextInput";
+import { useIsAdmin } from "@/lib/hooks/useCurrentUserRole";
 import { cn } from "@/lib/utils";
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -20,6 +21,7 @@ export function SelectProject({
   projects,
   autoFocus,
 }: Props) {
+  const isAdmin = useIsAdmin();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(0);
@@ -132,26 +134,30 @@ export function SelectProject({
                 {value === project._id && <Check className="h-4 w-4" />}
               </button>
             ))}
-            <button
-              type="button"
-              className="w-full text-left px-3 py-2 text-sm text-foreground flex items-center gap-2 border-t hover:bg-accent"
-              onClick={() => {
-                setDialogOpen(true);
-                close();
-              }}
-            >
-              <Plus className="h-4 w-4" />
-              Neues Projekt erstellen
-            </button>
+            {isAdmin ? (
+              <button
+                type="button"
+                className="w-full text-left px-3 py-2 text-sm text-foreground flex items-center gap-2 border-t hover:bg-accent"
+                onClick={() => {
+                  setDialogOpen(true);
+                  close();
+                }}
+              >
+                <Plus className="h-4 w-4" />
+                Neues Projekt erstellen
+              </button>
+            ) : null}
           </div>
         )}
       </div>
 
-      <CreateProjectDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onProjectCreated={onValueChange}
-      />
+      {isAdmin ? (
+        <CreateProjectDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          onProjectCreated={onValueChange}
+        />
+      ) : null}
     </>
   );
 }
