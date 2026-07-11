@@ -13,10 +13,12 @@ export function useSignatureResize(padRef: RefObject<SignaturePad | null>) {
       const height = canvas.offsetHeight * ratio;
       if (!width || !height) return;
       if (canvas.width === width && canvas.height === height) return;
+      const drawing = pad.toData();
       canvas.width = width;
       canvas.height = height;
       canvas.getContext("2d")?.scale(ratio, ratio);
       pad.clear();
+      if (drawing.length > 0) pad.fromData(drawing);
     };
 
     resize();

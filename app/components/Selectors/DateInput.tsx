@@ -50,6 +50,13 @@ function displayToIso(display: string): string {
     return "";
   }
 
+  const date = new Date(yearNum, monthNum - 1, dayNum);
+  const isRealDate =
+    date.getFullYear() === yearNum &&
+    date.getMonth() === monthNum - 1 &&
+    date.getDate() === dayNum;
+  if (!isRealDate) return "";
+
   return `${year}-${month}-${day}`;
 }
 

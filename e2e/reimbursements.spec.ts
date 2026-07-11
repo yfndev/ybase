@@ -166,8 +166,8 @@ test.describe.serial("reimbursement flow", () => {
     await page.getByRole("combobox").click();
     await page.getByRole("option", { name: "28 € (24h+)" }).click();
 
-    await expect(page.getByText("PKW500 km × 0,30€")).toBeVisible();
-    await expect(page.getByText("Brutto gesamt192.00 €")).toBeVisible();
+    await expect(page.getByText("PKW500 km × 0,30 €")).toBeVisible();
+    await expect(page.getByText("Brutto gesamt192,00 €")).toBeVisible();
 
     await addSignature(page);
 

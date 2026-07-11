@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toNet } from "@/lib/bank-utils";
+import { formatAmount } from "@/lib/formatters/formatCurrency";
 import { Plus } from "lucide-react";
 import { ReceiptUpload } from "../ReceiptUpload";
 import type { Draft } from "./types";
@@ -84,15 +85,19 @@ export function ReceiptDraftFields({
           <Input
             type="number"
             step="0.01"
+            min={0}
             value={draft.gross || ""}
             onChange={(e) =>
-              setDraft({ ...draft, gross: parseFloat(e.target.value) || 0 })
+              setDraft({
+                ...draft,
+                gross: Math.max(0, parseFloat(e.target.value) || 0),
+              })
             }
             placeholder="119,95"
           />
         </div>
         <div>
-          <Label>Wie viel MwSt.?</Label>
+          <Label>USt.-Satz</Label>
           <Select
             value={String(draft.tax)}
             onValueChange={(value) =>
@@ -114,7 +119,7 @@ export function ReceiptDraftFields({
             Nettobetrag ({currencySymbol})
           </Label>
           <Input
-            value={net.toFixed(2)}
+            value={formatAmount(net)}
             disabled
             className="bg-muted/50 font-mono"
           />

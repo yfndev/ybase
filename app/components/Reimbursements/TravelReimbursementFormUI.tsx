@@ -58,6 +58,7 @@ export function TravelReimbursementFormUI({
           total={form.total}
           signature={form.signature}
           setSignature={form.setSignature}
+          isSubmitting={form.isSubmitting}
           handleSubmit={form.handleSubmit}
         />
       )}

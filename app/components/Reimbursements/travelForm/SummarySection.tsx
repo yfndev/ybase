@@ -4,7 +4,12 @@ import { BankDetailsEditor } from "@/components/BankDetailsEditor";
 import { SignatureField } from "@/components/Reimbursements/SignatureField";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { COST_LABELS as LABELS } from "@/lib/travel-costs";
+import { formatCurrency } from "@/lib/formatters/formatCurrency";
+import {
+  CAR_ALLOWANCE_RATE_EUR_PER_KM,
+  COST_LABELS as LABELS,
+} from "@/lib/travel-costs";
+import { Loader2 } from "lucide-react";
 import type { BankDetails, Receipt } from "./types";
 
 interface Props {
@@ -17,6 +22,7 @@ interface Props {
   total: number;
   signature: string | null;
   setSignature: (value: string | null) => void;
+  isSubmitting: boolean;
   handleSubmit: () => void;
 }
 
@@ -30,6 +36,7 @@ export function SummarySection({
   total,
   signature,
   setSignature,
+  isSubmitting,
   handleSubmit,
 }: Props) {
   return (
@@ -51,12 +58,13 @@ export function SummarySection({
                 </span>
                 {receipt.costType === "car" && (
                   <span className="text-sm text-muted-foreground">
-                    {receipt.kilometers} km × 0,30€
+                    {receipt.kilometers} km ×{" "}
+                    {formatCurrency(CAR_ALLOWANCE_RATE_EUR_PER_KM)}
                   </span>
                 )}
               </div>
               <span className="font-semibold">
-                {receipt.grossAmount.toFixed(2)} €
+                {formatCurrency(receipt.grossAmount)}
               </span>
             </div>
           ))}
@@ -65,36 +73,30 @@ export function SummarySection({
       <div className="space-y-2 pt-6">
         <div className="flex justify-between">
           <span className="text-muted-foreground">Netto gesamt</span>
-          <span>{totalNet.toFixed(2)} €</span>
+          <span>{formatCurrency(totalNet)}</span>
         </div>
-        {taxByRate(0) > 0 && (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">USt 0%</span>
-            <span>{taxByRate(0).toFixed(2)} €</span>
-          </div>
-        )}
         {taxByRate(7) > 0 && (
           <div className="flex justify-between">
             <span className="text-muted-foreground">USt 7%</span>
-            <span>{taxByRate(7).toFixed(2)} €</span>
+            <span>{formatCurrency(taxByRate(7))}</span>
           </div>
         )}
         {taxByRate(19) > 0 && (
           <div className="flex justify-between">
             <span className="text-muted-foreground">USt 19%</span>
-            <span>{taxByRate(19).toFixed(2)} €</span>
+            <span>{formatCurrency(taxByRate(19))}</span>
           </div>
         )}
         {mealTotal > 0 && (
           <div className="flex justify-between">
             <span className="text-muted-foreground">Verpflegung</span>
-            <span>{mealTotal.toFixed(2)} €</span>
+            <span>{formatCurrency(mealTotal)}</span>
           </div>
         )}
         <Separator className="my-4" />
         <div className="flex justify-between text-lg font-semibold pt-2">
           <span>Brutto gesamt</span>
-          <span>{total.toFixed(2)} €</span>
+          <span>{formatCurrency(total)}</span>
         </div>
       </div>
 
@@ -110,7 +112,9 @@ export function SummarySection({
         onClick={handleSubmit}
         className="w-full h-14 font-semibold mt-8"
         size="lg"
+        disabled={isSubmitting}
       >
+        {isSubmitting && <Loader2 className="size-5 animate-spin mr-2" />}
         Zur Genehmigung einreichen
       </Button>
     </div>

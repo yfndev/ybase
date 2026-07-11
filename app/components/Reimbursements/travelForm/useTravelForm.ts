@@ -15,6 +15,7 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
   const [signature, setSignature] = useState<string | null>(null);
   const [showMealAllowance, setShowMealAllowance] = useState(false);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [travel, setTravel] = useState({
     destination: "",
     purpose: "",
@@ -97,6 +98,8 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
   const handleSubmit = async () => {
     if (!projectId) return toast.error("Bitte ein Projekt auswählen");
     if (!signature) return toast.error("Bitte unterschreiben");
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await createTravelReimbursement({
         projectId,
@@ -116,6 +119,7 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
       router.push("/reimbursements");
     } catch {
       toast.error("Fehler beim Einreichen");
+      setIsSubmitting(false);
     }
   };
 
@@ -140,6 +144,7 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
     total,
     taxByRate,
     canSubmit,
+    isSubmitting,
     handleSubmit,
   };
 }

@@ -17,6 +17,7 @@ export function useVolunteerAllowanceForm(defaultBankDetails: BankDetails) {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [bank, setBank] = useState(defaultBankDetails);
   const [signature, setSignature] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [form, setForm] = useState<VolunteerAllowanceForm>({
     name: session?.user?.name || "",
@@ -47,11 +48,13 @@ export function useVolunteerAllowanceForm(defaultBankDetails: BankDetails) {
     if (!form.city) return "Bitte deinen Ort eingeben";
     if (!form.activity) return "Bitte die Tätigkeit beschreiben";
     if (!form.startDate || !form.endDate) return "Bitte den Zeitraum angeben";
+    if (form.startDate > form.endDate)
+      return "Das Enddatum liegt vor dem Startdatum";
     if (!form.taxYear) return "Bitte das Steuerjahr angeben";
     const amount = parseAmount(form.amount);
     if (!amount || amount <= 0) return "Bitte einen Betrag eingeben";
     if (amount > MAX_VOLUNTEER_ALLOWANCE_EUR)
-      return `Maximal ${MAX_VOLUNTEER_ALLOWANCE_EUR}€ erlaubt`;
+      return `Maximal ${MAX_VOLUNTEER_ALLOWANCE_EUR} € erlaubt`;
     if (!bank.accountHolder) return "Bitte den Kontoinhaber eingeben";
     if (!bank.iban) return "Bitte die IBAN eingeben";
     if (!form.confirmed) return "Bitte die Bestätigung ankreuzen";
@@ -62,7 +65,8 @@ export function useVolunteerAllowanceForm(defaultBankDetails: BankDetails) {
   const handleSubmit = async () => {
     const error = validate();
     if (error) return toast.error(error);
-
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await create({
         projectId: projectId!,
@@ -82,6 +86,7 @@ export function useVolunteerAllowanceForm(defaultBankDetails: BankDetails) {
       router.push("/reimbursements");
     } catch {
       toast.error("Fehler beim Einreichen");
+      setIsSubmitting(false);
     }
   };
 
@@ -95,6 +100,7 @@ export function useVolunteerAllowanceForm(defaultBankDetails: BankDetails) {
     form,
     update,
     updateAmount,
+    isSubmitting,
     handleSubmit,
   };
 }
