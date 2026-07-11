@@ -24,7 +24,7 @@ export function TestAuthForm() {
       setStatus(`Error: ${result.error}`);
       return;
     }
-    router.push("/reimbursements");
+    router.push("/dashboard");
   }
 
   return (
