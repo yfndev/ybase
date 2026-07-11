@@ -1,8 +1,8 @@
 import { expect, test } from "vitest";
 import { hasMinimumRole, normalizeUserRole } from "./roles";
 
-test("normalizes legacy leads to finance", () => {
-  expect(normalizeUserRole("lead")).toBe("finance");
+test("unknown roles default to member access", () => {
+  expect(normalizeUserRole("unknown")).toBe("member");
 });
 
 test("finance can manage reimbursements without admin access", () => {

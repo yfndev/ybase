@@ -1,7 +1,6 @@
 import { organizations, users } from "../db/collections";
 import { newId } from "../db/ids";
 import type { User } from "../db/types";
-import { isLegacyLeadRole } from "./roles";
 
 type SignInProfile = {
   email: string;
@@ -39,11 +38,6 @@ export async function ensureAppUser(profile: SignInProfile): Promise<User> {
       user.organizationId = organizationId;
       user.role = "member";
     }
-  }
-
-  if (isLegacyLeadRole(user.role)) {
-    await usersCol.updateOne({ _id: user._id }, { $set: { role: "finance" } });
-    user.role = "finance";
   }
 
   return user;
