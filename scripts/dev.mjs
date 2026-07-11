@@ -2,7 +2,17 @@ import { spawn } from "node:child_process";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
 const env = { ...process.env };
+const nextArgs = process.argv.slice(2);
 let mongo;
+
+if (
+  env.CONDUCTOR_PORT &&
+  !nextArgs.some(
+    (arg) => arg === "--port" || arg === "-p" || arg.startsWith("--port="),
+  )
+) {
+  nextArgs.push("--port", env.CONDUCTOR_PORT);
+}
 
 if (!env.MONGODB_URI) {
   const dbName = env.MONGODB_DB ?? "ybudget_dev";
@@ -16,7 +26,7 @@ if (!env.MONGODB_URI) {
 
 const next = spawn(
   "pnpm",
-  ["exec", "next", "dev", "--turbopack", ...process.argv.slice(2)],
+  ["exec", "next", "dev", "--turbopack", ...nextArgs],
   {
     env,
     stdio: "inherit",

@@ -1,10 +1,10 @@
 "use client";
 
-import { createTravelReimbursement } from "@/lib/server/reimbursements/actions";
-import { type CostType, DEFAULT_TAX_RATES } from "@/lib/travel-costs";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { createTravelReimbursement } from "@/lib/server/reimbursements/actions";
+import { type CostType, DEFAULT_TAX_RATES } from "@/lib/travel-costs";
 import type { BankDetails, Receipt } from "./types";
 
 export function useTravelForm(defaultBankDetails: BankDetails) {
@@ -92,8 +92,7 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
     hasBasicInfo &&
     (receipts.length > 0 || mealTotal > 0) &&
     (receipts.length === 0 || allComplete) &&
-    projectId &&
-    signature;
+    projectId;
 
   const handleSubmit = async () => {
     if (!projectId) return toast.error("Bitte ein Projekt auswählen");
