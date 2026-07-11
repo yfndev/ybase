@@ -1,7 +1,7 @@
 import { users } from "../db/collections";
 import type { UserRole } from "../db/types";
 import { auth } from "./index";
-import { hasMinimumRole, isLegacyLeadRole, normalizeUserRole } from "./roles";
+import { hasMinimumRole, normalizeUserRole } from "./roles";
 
 export async function requireUser() {
   const session = await auth();
@@ -13,10 +13,6 @@ export async function requireUser() {
   if (!user.organizationId) throw new Error("User has no organization");
 
   const role = normalizeUserRole(user.role);
-  if (isLegacyLeadRole(user.role)) {
-    await (await users()).updateOne({ _id: user._id }, { $set: { role } });
-  }
-
   return { ...user, organizationId: user.organizationId, role };
 }
 

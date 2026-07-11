@@ -8,17 +8,13 @@ const roleHierarchy: Record<UserRole, number> = {
 
 export function normalizeUserRole(role: unknown): UserRole {
   if (role === "admin") return "admin";
-  if (role === "finance" || role === "lead") return "finance";
+  if (role === "finance") return "finance";
   return "member";
 }
 
 export function normalizeOptionalUserRole(role: unknown): UserRole | undefined {
   if (role === undefined || role === null) return undefined;
   return normalizeUserRole(role);
-}
-
-export function isLegacyLeadRole(role: unknown): boolean {
-  return role === "lead";
 }
 
 export function hasMinimumRole(role: UserRole, minimumRole: UserRole): boolean {

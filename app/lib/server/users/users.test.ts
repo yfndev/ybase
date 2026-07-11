@@ -108,30 +108,6 @@ test("updateUserRole cannot touch a user from another org", async () => {
   );
 });
 
-test("listOrganizationUsers migrates legacy leads to finance", async () => {
-  const legacyLead = newId();
-  const rawUsers = (await getDb()).collection<{
-    _id: string;
-    _creationTime: number;
-    name: string;
-    organizationId: string;
-    role: string;
-  }>("users");
-  await rawUsers.insertOne({
-    _id: legacyLead,
-    _creationTime: Date.now(),
-    name: "Legacy Lead",
-    organizationId: orgA,
-    role: "lead",
-  });
-
-  const list = await listOrganizationUsers();
-  expect(list.find((user) => user._id === legacyLead)?.role).toBe("finance");
-  expect(await rawUsers.findOne({ _id: legacyLead })).toMatchObject({
-    role: "finance",
-  });
-});
-
 test("updateUserRole blocks demoting the last admin", async () => {
   await expect(updateUserRole({ userId: adminA, role: "member" })).rejects.toThrow(
     "Der letzte Admin kann nicht entfernt werden. Mindestens ein Admin ist erforderlich.",
