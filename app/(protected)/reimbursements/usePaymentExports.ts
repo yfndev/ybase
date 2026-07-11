@@ -7,7 +7,10 @@ import type { Reimbursement } from "./types";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export function usePaymentExports(reimbursements: Reimbursement[] | undefined) {
+export function usePaymentExports(
+  reimbursements: Reimbursement[] | undefined,
+  organizationName: string,
+) {
   const buildApprovedPayments = () =>
     (reimbursements ?? [])
       .filter((r) => r.status === "approved" && r.iban && r.accountHolder)
@@ -48,7 +51,7 @@ export function usePaymentExports(reimbursements: Reimbursement[] | undefined) {
       return;
     }
 
-    const blob = generateSEPAXML({ organizationName: "Verein", payments });
+    const blob = generateSEPAXML({ organizationName, payments });
     downloadBlob(blob, `SEPA_${today()}.xml`);
     toast.success(`${payments.length} Überweisungen exportiert`);
   };

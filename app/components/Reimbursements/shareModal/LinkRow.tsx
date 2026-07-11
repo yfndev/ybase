@@ -37,7 +37,14 @@ export function LinkRow({
         <span className="text-xs text-muted-foreground">{label}</span>
       </div>
       <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon" className="size-8" onClick={onCopy}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-8"
+          onClick={onCopy}
+          aria-label="Link kopieren"
+          title="Link kopieren"
+        >
           {copiedId === link._id ? (
             <Check className="size-4 text-green-500" />
           ) : (
@@ -49,6 +56,8 @@ export function LinkRow({
           size="icon"
           className="size-8 hover:bg-destructive/10 hover:text-destructive"
           onClick={onDelete}
+          aria-label="Link löschen"
+          title="Link löschen"
         >
           <Trash2 className="size-4" />
         </Button>

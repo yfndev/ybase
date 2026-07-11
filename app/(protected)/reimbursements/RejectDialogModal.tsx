@@ -10,18 +10,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Loader2 } from "lucide-react";
 import type { RejectDialog } from "./types";
 
 type Props = {
   rejectDialog: RejectDialog;
   onRejectDialogChange: (dialog: RejectDialog) => void;
   onReject: () => void;
+  isRejecting: boolean;
 };
 
 export function RejectDialogModal({
   rejectDialog,
   onRejectDialogChange,
   onReject,
+  isRejecting,
 }: Props) {
   return (
     <Dialog
@@ -46,13 +49,18 @@ export function RejectDialogModal({
         <DialogFooter>
           <Button
             variant="outline"
+            disabled={isRejecting}
             onClick={() =>
               onRejectDialogChange({ ...rejectDialog, open: false })
             }
           >
             Abbrechen
           </Button>
-          <Button onClick={onReject} disabled={!rejectDialog.note}>
+          <Button
+            onClick={onReject}
+            disabled={isRejecting || !rejectDialog.note.trim()}
+          >
+            {isRejecting && <Loader2 className="size-4 animate-spin" />}
             Ablehnen
           </Button>
         </DialogFooter>
