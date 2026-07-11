@@ -11,9 +11,13 @@ export async function GET(_request: Request, context: RouteContext) {
 
   const doc = await (await volunteerAllowance()).findOne({ _id: id });
 
-  if (!doc) return Response.json({ valid: false, error: "Invalid link" });
+  if (!doc)
+    return Response.json({ valid: false, error: "Dieser Link ist ungültig." });
   if (doc.volunteerName && doc.signatureStorageId)
-    return Response.json({ valid: false, error: "Already submitted" });
+    return Response.json({
+      valid: false,
+      error: "Dieses Formular wurde bereits eingereicht.",
+    });
 
   const organization = await (
     await organizations()

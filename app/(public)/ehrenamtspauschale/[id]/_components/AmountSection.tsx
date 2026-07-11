@@ -1,3 +1,4 @@
+import { AmountInput } from "@/components/Selectors/AmountInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "./constants";
@@ -15,14 +16,13 @@ export function AmountSection({ form, updateField, updateAmount }: Props) {
       <h2 className="text-lg font-medium">Betrag</h2>
       <div className="grid grid-cols-2 gap-4 max-w-sm">
         <div>
-          <Label>Betrag in Euro (max. {MAX_VOLUNTEER_ALLOWANCE_EUR}€) *</Label>
-          <Input
-            type="number"
-            step="0.01"
-            max={String(MAX_VOLUNTEER_ALLOWANCE_EUR)}
+          <Label htmlFor="allowance-amount">
+            Betrag in Euro (max. {MAX_VOLUNTEER_ALLOWANCE_EUR} €) *
+          </Label>
+          <AmountInput
+            id="allowance-amount"
             value={form.amount}
-            onChange={(e) => updateAmount(e.target.value)}
-            placeholder="0,00"
+            onChange={updateAmount}
           />
         </div>
         <div>

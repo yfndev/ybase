@@ -16,7 +16,6 @@ export function useReceipts(startDate: string) {
   const [date, setDate] = useState("");
   const [gross, setGross] = useState(0);
   const [taxRate, setTaxRate] = useState(19);
-  const [currency, setCurrency] = useState("EUR");
   const [file, setFile] = useState<string | null>(null);
 
   const addReceipt = () => {
@@ -102,7 +101,6 @@ export function useReceipts(startDate: string) {
     date,
     gross,
     taxRate,
-    currency,
     file,
     setCompany,
     setNumber,
@@ -110,7 +108,6 @@ export function useReceipts(startDate: string) {
     setDate,
     setGross,
     setTaxRate,
-    setCurrency,
     setFile,
     addReceipt,
     removeReceipt,

@@ -1,3 +1,6 @@
+const CONNECTION_ERROR =
+  "Verbindung fehlgeschlagen. Bitte versuche es später erneut.";
+
 async function postJson(url: string, body: unknown) {
   const response = await fetch(url, {
     method: "POST",
@@ -38,8 +41,12 @@ export type ReimbursementLink =
 export async function validateReimbursementLink(
   id: string,
 ): Promise<ReimbursementLink> {
-  const response = await fetch(`/api/public/reimbursement/${id}`);
-  return response.json();
+  try {
+    const response = await fetch(`/api/public/reimbursement/${id}`);
+    return await response.json();
+  } catch {
+    return { valid: false, error: CONNECTION_ERROR };
+  }
 }
 
 export function reimbursementUploadUrl(id: string, contentType: string) {
@@ -79,8 +86,12 @@ export type AllowanceLink =
 export async function validateAllowanceLink(
   id: string,
 ): Promise<AllowanceLink> {
-  const response = await fetch(`/api/public/allowance/${id}`);
-  return response.json();
+  try {
+    const response = await fetch(`/api/public/allowance/${id}`);
+    return await response.json();
+  } catch {
+    return { valid: false, error: CONNECTION_ERROR };
+  }
 }
 
 export function submitAllowance(id: string, body: unknown) {
@@ -92,8 +103,12 @@ export type SignValidation = { valid: false; error: string } | { valid: true };
 export async function validateSignToken(
   token: string,
 ): Promise<SignValidation> {
-  const response = await fetch(`/api/public/sign/${token}`);
-  return response.json();
+  try {
+    const response = await fetch(`/api/public/sign/${token}`);
+    return await response.json();
+  } catch {
+    return { valid: false, error: CONNECTION_ERROR };
+  }
 }
 
 export function submitSign(token: string, signatureStorageId: string) {

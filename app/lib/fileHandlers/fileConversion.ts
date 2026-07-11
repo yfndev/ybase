@@ -51,7 +51,8 @@ async function convertHEICtoJPG(file: File): Promise<File> {
 }
 
 export async function convertToJPG(file: File): Promise<File> {
-  if (file.size > MAX_SIZE) throw new FileConversionError("File too large");
+  if (file.size > MAX_SIZE)
+    throw new FileConversionError("Datei zu groß (max. 10 MB)");
   const name = file.name.toLowerCase();
   const type = file.type.toLowerCase();
   if (type === "application/pdf" || name.endsWith(".pdf")) return file;
@@ -66,7 +67,7 @@ export async function convertToJPG(file: File): Promise<File> {
     return convertHEICtoJPG(file);
   if (type === "image/png" || name.endsWith(".png"))
     return convertPNGtoJPG(file);
-  throw new FileConversionError("Unsupported format");
+  throw new FileConversionError("Dateiformat nicht unterstützt");
 }
 
 export function isValidFileType(file: File): boolean {
