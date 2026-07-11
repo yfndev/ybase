@@ -64,13 +64,7 @@ function BreakdownCard({
   );
 }
 
-export function DashboardPageUI({
-  isLoading,
-  entries,
-}: {
-  isLoading: boolean;
-  entries: DashboardEntry[];
-}) {
+export function DashboardPageUI({ entries }: { entries: DashboardEntry[] }) {
   const totals = statusTotals(entries);
   const projectRows: BreakdownRow[] = sumByProject(entries).map((row) => ({
     key: row.projectName,
@@ -92,88 +86,78 @@ export function DashboardPageUI({
     <div className="flex w-full flex-col">
       <PageHeader title="Dashboard" />
 
-      {isLoading ? (
+      <div className="flex flex-col gap-6">
         <div className="grid gap-4 sm:grid-cols-3">
           {STATUS_CARDS.map((card) => (
-            <div
-              key={card.status}
-              className="h-24 animate-pulse rounded-lg bg-muted"
-            />
+            <Card key={card.status}>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <StatusDot status={card.status} />
+                  {card.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-semibold">
+                  {formatCurrency(totals[card.status].sum)}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {totals[card.status].count}{" "}
+                  {totals[card.status].count === 1 ? "Antrag" : "Anträge"}
+                </p>
+              </CardContent>
+            </Card>
           ))}
         </div>
-      ) : (
-        <div className="flex flex-col gap-6">
-          <div className="grid gap-4 sm:grid-cols-3">
-            {STATUS_CARDS.map((card) => (
-              <Card key={card.status}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                    <StatusDot status={card.status} />
-                    {card.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-semibold">
-                    {formatCurrency(totals[card.status].sum)}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {totals[card.status].count} Anträge
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <BreakdownCard
-              title="Summe pro Projekt"
-              rows={projectRows}
-              emptyText="Noch keine genehmigten Anträge."
-            />
-            <BreakdownCard
-              title="Ehrenamt pro Steuerjahr"
-              rows={taxYearRows}
-              emptyText="Noch keine genehmigten Ehrenamtspauschalen."
-            />
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Letzte Aktivität</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {recent.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Noch keine Anträge.
-                </p>
-              ) : (
-                recent.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between gap-3 border-b py-2 last:border-0"
-                  >
-                    <div className="flex min-w-0 items-center gap-2">
-                      <StatusDot status={item.status} />
-                      <span className="truncate">{item.projectName}</span>
-                      <span className="truncate text-sm text-muted-foreground">
-                        {item.label}
-                      </span>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-3">
-                      <span className="text-sm text-muted-foreground">
-                        {formatDate(item.creationTime)}
-                      </span>
-                      <span className="font-medium">
-                        {formatCurrency(item.amount)}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
+        <div className="grid gap-4 md:grid-cols-2">
+          <BreakdownCard
+            title="Summe pro Projekt"
+            rows={projectRows}
+            emptyText="Noch keine genehmigten Anträge."
+          />
+          <BreakdownCard
+            title="Ehrenamt pro Steuerjahr"
+            rows={taxYearRows}
+            emptyText="Noch keine genehmigten Ehrenamtspauschalen."
+          />
         </div>
-      )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Letzte Aktivität</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {recent.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Noch keine Anträge.
+              </p>
+            ) : (
+              recent.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-3 border-b py-2 last:border-0"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <StatusDot status={item.status} />
+                    <span className="truncate">{item.projectName}</span>
+                    <span className="truncate text-sm text-muted-foreground">
+                      {item.label}
+                    </span>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <span className="text-sm text-muted-foreground">
+                      {formatDate(item.creationTime)}
+                    </span>
+                    <span className="font-medium">
+                      {formatCurrency(item.amount)}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

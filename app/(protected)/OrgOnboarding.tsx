@@ -1,5 +1,6 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -23,7 +24,9 @@ export function OrgOnboarding() {
       await update({});
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Etwas ist schiefgelaufen");
+      toast.error(
+        error instanceof Error ? error.message : "Etwas ist schiefgelaufen",
+      );
       setLoading(false);
     }
   };
@@ -41,10 +44,16 @@ export function OrgOnboarding() {
           onChange={(e) => setName(e.target.value)}
           placeholder="z.B. Young Founders Network"
           onKeyDown={(e) => {
-            if (e.key === "Enter") void handleSubmit();
+            if (e.key === "Enter" && !loading && name.trim())
+              void handleSubmit();
           }}
         />
-        <Button className="w-full" onClick={handleSubmit} disabled={loading}>
+        <Button
+          className="w-full"
+          onClick={handleSubmit}
+          disabled={loading || !name.trim()}
+        >
+          {loading && <Loader2 className="size-4 animate-spin" />}
           Loslegen
         </Button>
       </div>
