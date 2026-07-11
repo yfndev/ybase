@@ -194,7 +194,7 @@ test.describe.serial("reimbursement flow", () => {
       .fill("Falsche Angaben");
     await page.getByRole("button", { name: "Ablehnen" }).click();
 
-    await expect(page.getByText("Ablehnung: Falsche Angaben")).toBeVisible({
+    await expect(page.getByText("Ablehnungsgrund: Falsche Angaben")).toBeVisible({
       timeout: 10000,
     });
     await expect(

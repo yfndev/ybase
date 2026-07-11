@@ -20,7 +20,7 @@ export function ExistingLinks({
       <Separator />
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-muted-foreground">
-          Freigegebene Links ohne bisherige Unterzeichnung der Erstattung
+          Offene Freigabe-Links (noch nicht eingereicht)
         </h3>
         <div className="space-y-2 max-h-48 overflow-y-auto">
           {allLinks.map((link) => (

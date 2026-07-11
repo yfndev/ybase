@@ -12,16 +12,16 @@ export function TravelDetailsCard({
       <h3 className="font-medium">Reisedetails</h3>
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div>
-          <span className="text-muted-foreground">Reiseziel:</span>
+          <span className="text-muted-foreground">Reiseziel: </span>
           {travelDetails.destination}
         </div>
         <div>
-          <span className="text-muted-foreground">Zweck:</span>
+          <span className="text-muted-foreground">Zweck: </span>
           {travelDetails.purpose}
         </div>
         <div>
-          <span className="text-muted-foreground">Zeitraum:</span>
-          {formatDate(travelDetails.startDate)} –
+          <span className="text-muted-foreground">Zeitraum: </span>
+          {formatDate(travelDetails.startDate)} –{" "}
           {formatDate(travelDetails.endDate)}
         </div>
         {travelDetails.isInternational && (

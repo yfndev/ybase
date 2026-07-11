@@ -25,6 +25,6 @@ export const STATUS_DISPLAY: Record<
     variant: "destructive",
     label: "Abgelehnt",
     dot: "bg-red-500",
-    className: "bg",
+    className: "",
   },
 };

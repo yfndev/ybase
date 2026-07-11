@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import { formatDate } from "@/lib/formatters/formatDate";
 import {
   STATUS_DISPLAY,
@@ -67,13 +68,13 @@ export function ReimbursementRow({
         {description}
         {item.rejectionNote && (
           <span className="block text-xs text-red-600">
-            Ablehnung: {item.rejectionNote}
+            Ablehnungsgrund: {item.rejectionNote}
           </span>
         )}
       </TableCell>
       {isAdmin && <TableCell>{item.creatorName}</TableCell>}
       <TableCell className="text-right font-medium">
-        {item.amount.toFixed(2)} €
+        {formatCurrency(item.amount)}
       </TableCell>
       <TableCell>
         <Badge variant={display.variant} className={display.className}>
@@ -90,18 +91,20 @@ export function ReimbursementRow({
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Genehmigen"
                 className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
                 onClick={onApprove}
+                aria-label="Genehmigen"
+                title="Genehmigen"
               >
                 <Check className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Ablehnen"
                 className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
                 onClick={onReject}
+                aria-label="Ablehnen"
+                title="Ablehnen"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -110,9 +113,10 @@ export function ReimbursementRow({
           <Button
             variant="ghost"
             size="icon"
-            aria-label="PDF herunterladen"
             className="h-7 w-7"
             onClick={onDownload}
+            aria-label="PDF herunterladen"
+            title="PDF herunterladen"
           >
             <Download className="h-4 w-4" />
           </Button>
@@ -120,9 +124,10 @@ export function ReimbursementRow({
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Löschen"
               className="h-7 w-7"
               onClick={onDelete}
+              aria-label="Löschen"
+              title="Löschen"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

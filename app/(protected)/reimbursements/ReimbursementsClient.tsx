@@ -3,53 +3,38 @@
 import { ShareModal } from "@/components/Reimbursements/ShareModal";
 import type { Project } from "@/lib/db/types";
 import { useIsAdmin } from "@/lib/hooks/useCurrentUserRole";
-import {
-  approve as approveReimbursement,
-  decline as declineReimbursement,
-  deleteReimbursement,
-} from "@/lib/server/reimbursements/actions";
-import {
-  approve as approveAllowance,
-  decline as declineAllowance,
-  remove as removeAllowance,
-} from "@/lib/server/volunteerAllowance/actions";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import toast from "react-hot-toast";
 import { ReimbursementPageUI } from "./ReimbursementPageUI";
-import type {
-  Allowance,
-  Reimbursement,
-  RejectDialog,
-  SelectionKey,
-} from "./types";
+import type { Allowance, Reimbursement, SelectionKey } from "./types";
 import { usePaymentExports } from "./usePaymentExports";
 import { usePdfDownloads } from "./usePdfDownloads";
+import { useReimbursementActions } from "./useReimbursementActions";
 
 interface Props {
   reimbursements: Reimbursement[];
   allowances: Allowance[];
   projects: Project[];
+  organizationName: string;
 }
 
 export function ReimbursementsClient({
   reimbursements,
   allowances,
   projects,
+  organizationName,
 }: Props) {
   const isAdmin = useIsAdmin();
   const router = useRouter();
 
-  const [rejectDialog, setRejectDialog] = useState<RejectDialog>({
-    open: false,
-    type: "reimbursement",
-    id: null,
-    note: "",
-  });
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [selected, setSelected] = useState<Set<SelectionKey>>(new Set());
 
-  const { handleFinomCsv, handleSepaXml } = usePaymentExports(reimbursements);
+  const actions = useReimbursementActions();
+  const { handleFinomCsv, handleSepaXml } = usePaymentExports(
+    reimbursements,
+    organizationName,
+  );
   const {
     isBulkDownloading,
     handleDownloadReimbursement,
@@ -61,70 +46,6 @@ export function ReimbursementsClient({
     clearSelection: () => setSelected(new Set()),
   });
 
-  const handleReject = async () => {
-    if (!rejectDialog.id || !rejectDialog.note) return;
-
-    try {
-      if (rejectDialog.type === "reimbursement") {
-        await declineReimbursement({
-          reimbursementId: rejectDialog.id,
-          rejectionNote: rejectDialog.note,
-        });
-      } else {
-        await declineAllowance({
-          id: rejectDialog.id,
-          rejectionNote: rejectDialog.note,
-        });
-      }
-      toast.success("Abgelehnt");
-      router.refresh();
-    } catch {
-      toast.error("Fehler beim Ablehnen");
-    }
-
-    setRejectDialog({ open: false, type: "reimbursement", id: null, note: "" });
-  };
-
-  const handleApproveReimbursement = async (id: string) => {
-    try {
-      await approveReimbursement({ reimbursementId: id });
-      toast.success("Genehmigt");
-      router.refresh();
-    } catch {
-      toast.error("Fehler beim Markieren");
-    }
-  };
-
-  const handleApproveAllowance = async (id: string) => {
-    try {
-      await approveAllowance({ id });
-      toast.success("Genehmigt");
-      router.refresh();
-    } catch {
-      toast.error("Fehler beim Genehmigen");
-    }
-  };
-
-  const handleDeleteReimbursement = async (id: string) => {
-    try {
-      await deleteReimbursement({ reimbursementId: id });
-      toast.success("Gelöscht");
-      router.refresh();
-    } catch {
-      toast.error("Fehler beim Löschen");
-    }
-  };
-
-  const handleDeleteAllowance = async (id: string) => {
-    try {
-      await removeAllowance({ id });
-      toast.success("Gelöscht");
-      router.refresh();
-    } catch {
-      toast.error("Fehler beim Löschen");
-    }
-  };
-
   const handleToggleSelect = (key: SelectionKey) => {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -134,36 +55,40 @@ export function ReimbursementsClient({
     });
   };
 
-  const handleOpenRejectDialog = (
-    type: "reimbursement" | "allowance",
-    id: string,
-  ) => {
-    setRejectDialog({ open: true, type, id, note: "" });
+  const handleToggleSelectAll = () => {
+    const allKeys: SelectionKey[] = [
+      ...reimbursements.map((item): SelectionKey => `r:${item._id}`),
+      ...allowances.map((item): SelectionKey => `a:${item._id}`),
+    ];
+    setSelected((prev) =>
+      prev.size === allKeys.length ? new Set() : new Set(allKeys),
+    );
   };
 
   return (
     <>
       <ReimbursementPageUI
         isAdmin={isAdmin}
-        isLoading={false}
         reimbursements={reimbursements}
         allowances={allowances}
-        rejectDialog={rejectDialog}
+        rejectDialog={actions.rejectDialog}
         selected={selected}
         isBulkDownloading={isBulkDownloading}
         onNewClick={() => router.push("/reimbursements/new")}
         onShareClick={() => setShareModalOpen(true)}
         onRowClick={(id) => router.push(`/reimbursements/${id}`)}
-        onApproveReimbursement={handleApproveReimbursement}
-        onApproveAllowance={handleApproveAllowance}
-        onOpenRejectDialog={handleOpenRejectDialog}
-        onRejectDialogChange={setRejectDialog}
-        onReject={handleReject}
+        onApproveReimbursement={actions.handleApproveReimbursement}
+        onApproveAllowance={actions.handleApproveAllowance}
+        onOpenRejectDialog={actions.handleOpenRejectDialog}
+        onRejectDialogChange={actions.setRejectDialog}
+        onReject={actions.handleReject}
+        isRejecting={actions.isRejecting}
         onDownloadReimbursement={handleDownloadReimbursement}
         onDownloadAllowance={handleDownloadAllowance}
-        onDeleteReimbursement={handleDeleteReimbursement}
-        onDeleteAllowance={handleDeleteAllowance}
+        onDeleteReimbursement={actions.handleDeleteReimbursement}
+        onDeleteAllowance={actions.handleDeleteAllowance}
         onToggleSelect={handleToggleSelect}
+        onToggleSelectAll={handleToggleSelectAll}
         onBulkDownload={handleBulkDownload}
         onFinomCsv={handleFinomCsv}
         onSepaXml={handleSepaXml}
