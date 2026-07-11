@@ -45,6 +45,7 @@ export function PageHeader({
               size="icon"
               onClick={handleBackClick}
               className="h-8 w-8 shrink-0"
+              aria-label="Zurück"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>

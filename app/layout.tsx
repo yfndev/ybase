@@ -14,7 +14,7 @@ const lexendDeca = Lexend_Deca({
 
 export const metadata: Metadata = {
   title: "YBase",
-  description: "Budget management for organizations",
+  description: "Budgetverwaltung für Vereine und Organisationen",
 };
 
 export default function RootLayout({
@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="de">
       <body
         className={`${lexendDeca.variable} ${GeistMono.variable} antialiased`}
         suppressHydrationWarning

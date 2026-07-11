@@ -40,5 +40,5 @@ export default async function DashboardPage() {
     })),
   ];
 
-  return <DashboardPageUI isLoading={false} entries={entries} />;
+  return <DashboardPageUI entries={entries} />;
 }

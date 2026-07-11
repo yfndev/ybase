@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/sidebar";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export interface NavItem {
   name: string;
@@ -25,13 +26,21 @@ export function MainNav({
   id?: string;
   label?: string;
 }) {
+  const pathname = usePathname();
+
   return (
     <SidebarGroup id={id}>
       {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild tooltip={item.name}>
+            <SidebarMenuButton
+              asChild
+              tooltip={item.name}
+              isActive={
+                pathname === item.url || pathname.startsWith(`${item.url}/`)
+              }
+            >
               <Link href={item.url}>
                 <item.icon />
                 <span>{item.name}</span>

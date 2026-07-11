@@ -1,8 +1,10 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 type LoginFormProps = {
@@ -15,7 +17,10 @@ const DEVELOPMENT_USER = {
 };
 
 export function LoginForm({ isDevelopmentLoginEnabled }: LoginFormProps) {
+  const [isSigningIn, setIsSigningIn] = useState(false);
+
   function handleSignIn() {
+    setIsSigningIn(true);
     if (isDevelopmentLoginEnabled) {
       void signIn("development", {
         ...DEVELOPMENT_USER,
@@ -52,7 +57,9 @@ export function LoginForm({ isDevelopmentLoginEnabled }: LoginFormProps) {
         size="lg"
         className="w-full"
         onClick={handleSignIn}
+        disabled={isSigningIn}
       >
+        {isSigningIn && <Loader2 className="size-4 animate-spin" />}
         {isDevelopmentLoginEnabled ? null : (
           <svg
             xmlns="http://www.w3.org/2000/svg"

@@ -1,8 +1,7 @@
 "use client";
 
-import { ChevronsUpDown } from "lucide-react";
-import { useSession } from "next-auth/react";
-import { LogoutButton } from "../Auth/LogoutButton";
+import { ChevronsUpDown, LogOut } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -100,8 +99,11 @@ export function NavUser() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogoutButton>Abmelden</LogoutButton>
+            <DropdownMenuItem
+              onSelect={() => signOut({ callbackUrl: "/login" })}
+            >
+              <LogOut />
+              Abmelden
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
