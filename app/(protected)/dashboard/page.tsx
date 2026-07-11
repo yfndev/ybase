@@ -1,3 +1,4 @@
+import { auth } from "@/lib/auth";
 import type { DashboardEntry } from "@/lib/dashboardStats";
 import { getAllReimbursements } from "@/lib/server/reimbursements/data";
 import { getAll } from "@/lib/server/volunteerAllowance/data";
@@ -9,6 +10,9 @@ const REIMBURSEMENT_LABEL = {
 } as const;
 
 export default async function DashboardPage() {
+  const session = await auth();
+  if (!session?.user?.organizationId) return null;
+
   const [reimbursements, allowances] = await Promise.all([
     getAllReimbursements(),
     getAll(),

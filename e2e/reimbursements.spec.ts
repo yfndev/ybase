@@ -1,10 +1,14 @@
-import { expect, test, type Page } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, type Page, test } from "@playwright/test";
 
 const TEST_EMAIL = "reimbursement@test.com";
 const IMAGE_FILE = path.join(__dirname, "files/test-invoice.jpg");
 const PDF_FILE = path.join(__dirname, "files/test-invoice.pdf");
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
+const E2E_PORT = process.env.CI
+  ? 3000
+  : Number(process.env.CONDUCTOR_PORT ?? 2999) + 1;
+const BASE_URL =
+  process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${E2E_PORT}`;
 
 async function cleanup() {
   await fetch(`${BASE_URL}/api/test/clear`, {
@@ -14,6 +18,23 @@ async function cleanup() {
   });
 }
 
+async function addSignature(page: Page) {
+  await page.getByRole("button", { name: "Am Computer" }).click();
+  const canvas = page.locator("canvas");
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error("Signature canvas is not visible");
+
+  await page.mouse.move(box.x + 20, box.y + 40);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 80, box.y + 80, { steps: 5 });
+  await page.mouse.move(box.x + 140, box.y + 30, { steps: 5 });
+  await page.mouse.up();
+  await page.getByRole("button", { name: "Unterschrift speichern" }).click();
+  await expect(
+    page.getByRole("paragraph").filter({ hasText: "Unterschrift gespeichert" }),
+  ).toBeVisible();
+}
+
 test.describe.serial("reimbursement flow", () => {
   let page: Page;
 
@@ -21,7 +42,7 @@ test.describe.serial("reimbursement flow", () => {
     await cleanup();
     page = await browser.newPage();
     await page.context().clearCookies();
-    await page.goto("/test-auth");
+    await page.goto("/login");
     await page.evaluate(() => localStorage.clear());
     await page.getByTestId("test-auth-email").fill(TEST_EMAIL);
     await page.getByTestId("test-auth-submit").click();
@@ -56,9 +77,13 @@ test.describe.serial("reimbursement flow", () => {
     await expect(page.getByText("Projekt erstellt!")).toBeVisible();
 
     await page
-      .getByRole("textbox", { name: "z.B. Amazon, Deutsche Bahn" })
+      .getByRole("textbox", {
+        name: "z.B. Amazon GmbH, Deutsche Bahn AG",
+      })
       .fill("Test Firma");
-    await page.getByRole("textbox", { name: "z.B. INV-2024-" }).fill("01");
+    await page
+      .getByRole("textbox", { name: "z.B. INV-2024-001 (optional)" })
+      .fill("01");
     await page
       .getByRole("textbox", { name: "z.B. Büromaterial für Q1" })
       .fill("Beschreibung");
@@ -70,15 +95,17 @@ test.describe.serial("reimbursement flow", () => {
       timeout: 10000,
     });
 
-    await page.getByRole("button", { name: "Beleg hinzufügen" }).click();
+    await page.getByRole("button", { name: "Beleg speichern" }).click();
     await expect(page.getByText("Test Firma")).toBeVisible();
+
+    await addSignature(page);
 
     await page
       .getByRole("button", { name: "Zur Genehmigung einreichen" })
       .click();
     await expect(page.getByText("Erstattung eingereicht")).toBeVisible();
     await expect(
-      page.getByRole("cell", { name: "Test Projekt" }),
+      page.getByRole("cell", { name: "Test Projekt", exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole("cell", { name: "Auslagenerstattung" }),
@@ -86,15 +113,15 @@ test.describe.serial("reimbursement flow", () => {
     await expect(page.getByText("Ausstehend")).toBeVisible();
   });
 
-  test("2. Mark expense reimbursement as paid", async () => {
+  test("2. Approve expense reimbursement", async () => {
     await page
       .locator("table tbody tr")
       .first()
-      .locator("button")
-      .first()
+      .getByRole("button", { name: "Genehmigen" })
       .click();
-    await expect(page.getByText("Als bezahlt markiert")).toBeVisible();
-    await expect(page.getByText("Genehmigt", { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("table").getByText("Genehmigt", { exact: true }),
+    ).toBeVisible();
   });
 
   test("3. Create travel reimbursement with PDF receipt", async () => {
@@ -130,18 +157,29 @@ test.describe.serial("reimbursement flow", () => {
       timeout: 10000,
     });
 
+    await page
+      .getByRole("checkbox", {
+        name: "Verpflegungsmehraufwand geltend machen",
+      })
+      .check();
     await page.getByPlaceholder("z.B. 2.5").fill("1.5");
     await page.getByRole("combobox").click();
     await page.getByRole("option", { name: "28 € (24h+)" }).click();
 
     await expect(page.getByText("PKW500 km × 0,30€")).toBeVisible();
-    await expect(page.getByText("Gesamt192.00 €")).toBeVisible();
+    await expect(page.getByText("Brutto gesamt192.00 €")).toBeVisible();
+
+    await addSignature(page);
 
     await page
       .getByRole("button", { name: "Zur Genehmigung einreichen" })
       .click();
-    await expect(page.getByText("Erstattung eingereicht")).toBeVisible();
-    await expect(page.getByText("ReisekostenerstattungBerlin")).toBeVisible();
+    await expect(
+      page.getByText("Reisekostenerstattung eingereicht"),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Reisekostenerstattung - Berlin"),
+    ).toBeVisible();
     await expect(page.getByText("Ausstehend")).toBeVisible();
   });
 
@@ -149,8 +187,7 @@ test.describe.serial("reimbursement flow", () => {
     await page
       .locator("table tbody tr")
       .first()
-      .locator("button")
-      .nth(1)
+      .getByRole("button", { name: "Ablehnen" })
       .click();
     await page
       .getByRole("textbox", { name: "Grund für die Ablehnung..." })
@@ -164,5 +201,4 @@ test.describe.serial("reimbursement flow", () => {
       page.locator("table tbody tr").first().getByText("Abgelehnt"),
     ).toBeVisible();
   });
-
 });

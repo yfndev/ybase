@@ -2,11 +2,16 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 import { afterAll, beforeAll, beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({
+  requireAuthenticatedUser: vi.fn(),
   requireUser: vi.fn(),
   requireRole: vi.fn(),
 }));
 
-import { requireRole, requireUser } from "../../auth/session";
+import {
+  requireAuthenticatedUser,
+  requireRole,
+  requireUser,
+} from "../../auth/session";
 import { getClient, getDb } from "../../db/client";
 import { organizations, projects, users } from "../../db/collections";
 import { newId } from "../../db/ids";
@@ -53,6 +58,7 @@ beforeEach(async () => {
     organizationId: orgA,
     role: "admin" as const,
   };
+  vi.mocked(requireAuthenticatedUser).mockResolvedValue(actor);
   vi.mocked(requireUser).mockResolvedValue(actor);
   vi.mocked(requireRole).mockResolvedValue(actor);
 });
@@ -117,12 +123,10 @@ test("initializeOrganization joins an existing org by email domain", async () =>
     _creationTime: Date.now(),
     email: "member@b.org",
   });
-  vi.mocked(requireUser).mockResolvedValue({
+  vi.mocked(requireAuthenticatedUser).mockResolvedValue({
     _id: newUser,
     _creationTime: Date.now(),
     email: "member@b.org",
-    organizationId: undefined as unknown as string,
-    role: undefined,
   });
 
   const result = await initializeOrganization();
@@ -140,12 +144,10 @@ test("initializeOrganization creates a new org with an Allgemein project", async
     _creationTime: Date.now(),
     email: "founder@fresh.org",
   });
-  vi.mocked(requireUser).mockResolvedValue({
+  vi.mocked(requireAuthenticatedUser).mockResolvedValue({
     _id: founder,
     _creationTime: Date.now(),
     email: "founder@fresh.org",
-    organizationId: undefined as unknown as string,
-    role: undefined,
   });
 
   const result = await initializeOrganization({ organizationName: "Fresh e.V." });

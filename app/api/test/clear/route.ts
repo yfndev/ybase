@@ -1,3 +1,4 @@
+import { isTestMode } from "@/lib/auth/environment";
 import {
   logs,
   organizations,
@@ -10,14 +11,8 @@ import {
   volunteerAllowance,
 } from "@/lib/db/collections";
 
-function testingEnabled(): boolean {
-  return (
-    process.env.IS_TEST === "true" && process.env.NODE_ENV !== "production"
-  );
-}
-
 export async function POST(request: Request) {
-  if (!testingEnabled()) {
+  if (!isTestMode()) {
     return new Response("Forbidden", { status: 403 });
   }
 

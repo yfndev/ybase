@@ -2,7 +2,6 @@ import { auth } from "@/lib/auth";
 
 const PUBLIC_PREFIXES = [
   "/login",
-  "/test-auth",
   "/erstattung",
   "/ehrenamtspauschale",
   "/sign",

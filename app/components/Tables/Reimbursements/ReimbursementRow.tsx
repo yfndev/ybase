@@ -1,15 +1,15 @@
 "use client";
 
+import { Check, Download, Trash2, X } from "lucide-react";
+import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/formatters/formatDate";
 import {
-  type ReimbursementStatus as Status,
   STATUS_DISPLAY,
+  type ReimbursementStatus as Status,
 } from "@/lib/reimbursementStatus";
-import { Check, Download, Trash2, X } from "lucide-react";
-import type { ReactNode } from "react";
 
 interface ReimbursementRowProps {
   item: {
@@ -90,6 +90,7 @@ export function ReimbursementRow({
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="Genehmigen"
                 className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
                 onClick={onApprove}
               >
@@ -98,6 +99,7 @@ export function ReimbursementRow({
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="Ablehnen"
                 className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
                 onClick={onReject}
               >
@@ -108,6 +110,7 @@ export function ReimbursementRow({
           <Button
             variant="ghost"
             size="icon"
+            aria-label="PDF herunterladen"
             className="h-7 w-7"
             onClick={onDownload}
           >
@@ -117,6 +120,7 @@ export function ReimbursementRow({
             <Button
               variant="ghost"
               size="icon"
+              aria-label="Löschen"
               className="h-7 w-7"
               onClick={onDelete}
             >
