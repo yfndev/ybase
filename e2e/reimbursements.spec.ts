@@ -67,6 +67,17 @@ test.describe.serial("reimbursement flow", () => {
   test("1. Create expense reimbursement with JPG receipt", async () => {
     await page.getByRole("link", { name: "Erstattungen" }).click();
     await page.getByRole("button", { name: "Neue Erstattung" }).click();
+    const reimbursementTabs = page.getByRole("tab");
+    await expect(reimbursementTabs).toHaveCount(3);
+    expect(await reimbursementTabs.allTextContents()).toEqual([
+      "Reisekostenerstattung",
+      "Auslagenerstattung",
+      "Ehrenamtspauschale",
+    ]);
+    await expect(
+      page.getByRole("tab", { name: "Reisekostenerstattung" }),
+    ).toHaveAttribute("data-state", "active");
+    await page.getByRole("tab", { name: "Auslagenerstattung" }).click();
 
     await page.getByRole("textbox", { name: "Projekt suchen..." }).click();
     await page.getByRole("button", { name: "Neues Projekt erstellen" }).click();
@@ -74,7 +85,7 @@ test.describe.serial("reimbursement flow", () => {
       .getByRole("textbox", { name: "Projektname*" })
       .fill("Test Projekt");
     await page.getByRole("button", { name: "Projekt erstellen" }).click();
-    await expect(page.getByText("Projekt erstellt!")).toBeVisible();
+    await expect(page.getByText("Projekt erstellt")).toBeVisible();
 
     await page
       .getByRole("textbox", {
@@ -126,7 +137,6 @@ test.describe.serial("reimbursement flow", () => {
 
   test("3. Create travel reimbursement with PDF receipt", async () => {
     await page.getByRole("button", { name: "Neue Erstattung" }).click();
-    await page.getByRole("tab", { name: "Reisekostenerstattung" }).click();
 
     await page.getByRole("textbox", { name: "Projekt suchen..." }).click();
     await page.getByRole("button", { name: "Test Projekt" }).click();

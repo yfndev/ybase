@@ -17,7 +17,7 @@ interface Props {
 }
 
 export function NewReimbursementUI({ defaultBankDetails, projects }: Props) {
-  const [type, setType] = useState<ReimbursementType>("expense");
+  const [type, setType] = useState<ReimbursementType>("travel");
 
   return (
     <div>
@@ -28,8 +28,8 @@ export function NewReimbursementUI({ defaultBankDetails, projects }: Props) {
           onValueChange={(value) => setType(value as ReimbursementType)}
         >
           <TabsList>
-            <TabsTrigger value="expense">Auslagenerstattung</TabsTrigger>
             <TabsTrigger value="travel">Reisekostenerstattung</TabsTrigger>
+            <TabsTrigger value="expense">Auslagenerstattung</TabsTrigger>
             <TabsTrigger value="volunteerAllowance">
               Ehrenamtspauschale
             </TabsTrigger>
