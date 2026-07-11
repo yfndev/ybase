@@ -54,6 +54,7 @@ export function ArchivedProjectsDialog({
                 <Button
                   size="sm"
                   variant="ghost"
+                  disabled={unarchive.isPending}
                   onClick={() => handleUnarchive(project._id)}
                 >
                   Wiederherstellen

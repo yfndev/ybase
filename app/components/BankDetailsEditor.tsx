@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BIC_REGEX, formatIban, IBAN_REGEX } from "@/lib/bank-utils";
 import { updateBankDetails } from "@/lib/server/users/actions";
-import { Pencil } from "lucide-react";
+import { Loader2, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -18,6 +18,7 @@ interface Props {
 }
 export function BankDetailsEditor({ value, onChange }: Props) {
   const [editing, setEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
 
   const toggle = async () => {
@@ -27,17 +28,24 @@ export function BankDetailsEditor({ value, onChange }: Props) {
     }
     const iban = value.iban.replace(/\s/g, "").toUpperCase();
     const bic = value.bic.replace(/\s/g, "").toUpperCase();
-    if (!value.accountHolder)
+    if (!value.accountHolder.trim())
       return toast.error("Bitte Kontoinhaber eingeben");
     if (!IBAN_REGEX.test(iban)) return toast.error("Ungültige IBAN");
     if (bic && !BIC_REGEX.test(bic)) return toast.error("Ungültige BIC");
+
+    const normalized = { ...value, iban, bic };
+    setIsSaving(true);
     try {
-      await updateBankDetails(value);
+      await updateBankDetails(normalized);
+      onChange(normalized);
+      toast.success("Bankverbindung gespeichert");
       router.refresh();
+      setEditing(false);
     } catch {
-      return toast.error("Fehler beim Speichern");
+      toast.error("Fehler beim Speichern");
+    } finally {
+      setIsSaving(false);
     }
-    setEditing(false);
   };
 
   const update = (key: keyof BankDetails, val: string) =>
@@ -71,7 +79,7 @@ export function BankDetailsEditor({ value, onChange }: Props) {
               disabled={!editing}
               placeholder="DE12 3456 7890 0000 0000 00"
               className="font-mono"
-              maxLength={27}
+              maxLength={42}
             />
           </div>
           <div>
@@ -92,7 +100,11 @@ export function BankDetailsEditor({ value, onChange }: Props) {
           variant={editing ? "default" : "outline"}
           size="sm"
           onClick={toggle}
+          disabled={isSaving}
+          aria-label={editing ? "Speichern" : "Bearbeiten"}
+          title={editing ? undefined : "Bearbeiten"}
         >
+          {isSaving && <Loader2 className="size-4 animate-spin" />}
           {editing ? "Speichern" : <Pencil className="size-4" />}
         </Button>
       </div>
