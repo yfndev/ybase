@@ -1,7 +1,18 @@
 import { spawn } from "node:child_process";
+import dotenv from "dotenv";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
 const env = { ...process.env };
+const hasExplicitMongoUri = Boolean(env.MONGODB_URI);
+const nodeEnv = env.NODE_ENV ?? "development";
+const envFiles = [
+  `.env.${nodeEnv}.local`,
+  ...(nodeEnv === "test" ? [] : [".env.local"]),
+  `.env.${nodeEnv}`,
+  ".env",
+];
+dotenv.config({ path: envFiles, processEnv: env, quiet: true });
+
 const nextArgs = process.argv.slice(2);
 let mongo;
 
@@ -14,11 +25,12 @@ if (
   nextArgs.push("--port", env.CONDUCTOR_PORT);
 }
 
-if (!env.MONGODB_URI) {
+const shouldStartTemporaryDatabase =
+  !env.MONGODB_URI || (env.IS_TEST === "true" && !hasExplicitMongoUri);
+
+if (shouldStartTemporaryDatabase) {
   const dbName = env.MONGODB_DB ?? "ybudget_dev";
-  console.info(
-    `MONGODB_URI is not set; starting temporary database "${dbName}".`,
-  );
+  console.info(`Starting temporary database "${dbName}".`);
   mongo = await MongoMemoryServer.create({ instance: { dbName } });
   env.MONGODB_URI = mongo.getUri();
   env.MONGODB_DB = dbName;
