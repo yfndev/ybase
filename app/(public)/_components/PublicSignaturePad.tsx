@@ -47,10 +47,19 @@ export function PublicSignaturePad({
 
   if (storageId) {
     return (
-      <div className="border rounded-lg p-4 text-center">
+      <div className="border rounded-lg p-4 flex items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">
           Unterschrift gespeichert
         </p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onUploadComplete("")}
+        >
+          <RotateCcw className="size-4 mr-1" />
+          Neu unterschreiben
+        </Button>
       </div>
     );
   }

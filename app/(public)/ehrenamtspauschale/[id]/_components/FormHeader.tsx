@@ -1,11 +1,10 @@
 import type { ValidAllowanceLink } from "./types";
 
 export function FormHeader({ linkData }: { linkData: ValidAllowanceLink }) {
-  const address = [
-    linkData.organizationStreet,
-    linkData.organizationPlz,
-    linkData.organizationCity,
-  ]
+  const plzCity = [linkData.organizationPlz, linkData.organizationCity]
+    .filter(Boolean)
+    .join(" ");
+  const address = [linkData.organizationStreet, plzCity]
     .filter(Boolean)
     .join(", ");
 

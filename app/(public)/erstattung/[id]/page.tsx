@@ -60,7 +60,6 @@ export default function ExternalReimbursementPage() {
       date={form.date}
       gross={form.gross}
       taxRate={form.taxRate}
-      currency={form.currency}
       file={form.file}
       onCompanyChange={form.setCompany}
       onNumberChange={form.setNumber}
@@ -68,7 +67,6 @@ export default function ExternalReimbursementPage() {
       onDateChange={form.setDate}
       onGrossChange={form.setGross}
       onTaxRateChange={form.setTaxRate}
-      onCurrencyChange={form.setCurrency}
       onFileChange={form.setFile}
       receipts={form.receipts}
       travelReceipts={form.travelReceipts}

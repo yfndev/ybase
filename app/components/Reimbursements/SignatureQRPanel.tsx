@@ -16,15 +16,20 @@ export function SignatureQRPanel({
   onSignatureComplete: (key: string) => void;
 }) {
   const [token, setToken] = useState<string | null>(null);
+  const [tokenFailed, setTokenFailed] = useState(false);
   const [copied, setCopied] = useState(false);
   const onComplete = useRef(onSignatureComplete);
   onComplete.current = onSignatureComplete;
 
   useEffect(() => {
     let active = true;
-    createToken().then((value) => {
-      if (active) setToken(value);
-    });
+    createToken()
+      .then((value) => {
+        if (active) setToken(value);
+      })
+      .catch(() => {
+        if (active) setTokenFailed(true);
+      });
     return () => {
       active = false;
     };
@@ -41,6 +46,16 @@ export function SignatureQRPanel({
     }, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [token]);
+
+  if (tokenFailed) {
+    return (
+      <div className="border rounded-lg h-48 flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">
+          Link konnte nicht erstellt werden. Bitte versuche es später erneut.
+        </p>
+      </div>
+    );
+  }
 
   if (!token) {
     return (
@@ -78,6 +93,8 @@ export function SignatureQRPanel({
           variant="outline"
           size="icon"
           onClick={handleCopy}
+          aria-label="Link kopieren"
+          title="Link kopieren"
         >
           {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
         </Button>
