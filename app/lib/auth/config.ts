@@ -28,7 +28,9 @@ const google = Google({
       image: profile.picture,
       firstName: profile.given_name ?? profile.name?.split(" ")[0] ?? "",
       lastName:
-        profile.family_name ?? profile.name?.split(" ").slice(1).join(" ") ?? "",
+        profile.family_name ??
+        profile.name?.split(" ").slice(1).join(" ") ??
+        "",
     };
   },
 });
@@ -63,7 +65,9 @@ export const authConfig = {
     },
     async jwt({ token, user, trigger }) {
       const email = user?.email ?? (token.email as string | undefined);
-      if (email && (user || trigger === "update")) {
+      const shouldRefreshAppUser =
+        Boolean(user) || trigger === "update" || isLocalLoginEnabled;
+      if (email && shouldRefreshAppUser) {
         const appUser = await ensureAppUser({
           email,
           name: user?.name ?? (token.name as string | undefined),
@@ -81,7 +85,9 @@ export const authConfig = {
     session({ session, token }) {
       if (session.user) {
         session.user.id = (token.userId as string | undefined) ?? "";
-        session.user.organizationId = token.organizationId as string | undefined;
+        session.user.organizationId = token.organizationId as
+          | string
+          | undefined;
         session.user.role = token.role as UserRole | undefined;
       }
       return session;
