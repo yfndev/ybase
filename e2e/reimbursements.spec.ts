@@ -21,7 +21,7 @@ test.describe.serial("reimbursement flow", () => {
     await cleanup();
     page = await browser.newPage();
     await page.context().clearCookies();
-    await page.goto("/test-auth");
+    await page.goto("/login");
     await page.evaluate(() => localStorage.clear());
     await page.getByTestId("test-auth-email").fill(TEST_EMAIL);
     await page.getByTestId("test-auth-submit").click();
