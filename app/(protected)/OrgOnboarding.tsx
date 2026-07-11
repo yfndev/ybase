@@ -20,7 +20,7 @@ export function OrgOnboarding() {
       await initializeOrganization({
         organizationName: name.trim() || undefined,
       });
-      await update();
+      await update({});
       router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Etwas ist schiefgelaufen");
