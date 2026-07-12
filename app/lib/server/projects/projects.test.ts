@@ -14,8 +14,8 @@ import {
   archiveProject,
   createProject,
   deleteProject,
-  renameProject,
   unarchiveProject,
+  updateProject,
 } from "./actions";
 import { getAllProjects, getArchivedProjects } from "./data";
 
@@ -42,9 +42,23 @@ beforeEach(async () => {
   orgA = newId();
   orgB = newId();
   userA = newId();
-  await (await organizations()).insertMany([
-    { _id: orgA, _creationTime: Date.now(), name: "A", domain: "a.org", createdBy: userA },
-    { _id: orgB, _creationTime: Date.now(), name: "B", domain: "b.org", createdBy: newId() },
+  await (
+    await organizations()
+  ).insertMany([
+    {
+      _id: orgA,
+      _creationTime: Date.now(),
+      name: "A",
+      domain: "a.org",
+      createdBy: userA,
+    },
+    {
+      _id: orgB,
+      _creationTime: Date.now(),
+      name: "B",
+      domain: "b.org",
+      createdBy: newId(),
+    },
   ]);
   const actor = {
     _id: userA,
@@ -59,7 +73,9 @@ beforeEach(async () => {
 test("createProject + getAllProjects stay scoped to the caller's org", async () => {
   await createProject({ name: "Projekt A1" });
   expect(requireRole).toHaveBeenCalledWith("admin");
-  await (await projects()).insertOne({
+  await (
+    await projects()
+  ).insertOne({
     _id: newId(),
     _creationTime: Date.now(),
     name: "Projekt B1",
@@ -72,11 +88,24 @@ test("createProject + getAllProjects stay scoped to the caller's org", async () 
   expect(list.map((p) => p.name)).toEqual(["Projekt A1"]);
 });
 
-test("renameProject updates the name", async () => {
-  const id = await createProject({ name: "Alt" });
-  await renameProject({ projectId: id, name: "Neu" });
+test("updateProject updates the name and travel defaults", async () => {
+  const id = await createProject({
+    name: "Alt",
+    travelDestination: "Köln",
+    travelPurpose: "Workshop",
+  });
+  await updateProject({
+    projectId: id,
+    name: "Neu",
+    travelDestination: "Hamburg",
+    travelPurpose: "Team-Wochenende",
+  });
   expect(requireRole).toHaveBeenLastCalledWith("admin");
-  expect((await getAllProjects())[0]?.name).toBe("Neu");
+  expect((await getAllProjects())[0]).toMatchObject({
+    name: "Neu",
+    travelDestination: "Hamburg",
+    travelPurpose: "Team-Wochenende",
+  });
 });
 
 test("archive moves a project out of the active list and back", async () => {
@@ -91,7 +120,9 @@ test("archive moves a project out of the active list and back", async () => {
 test("deleteProject with merge reassigns reimbursements and removes the project", async () => {
   const source = await createProject({ name: "Quelle" });
   const target = await createProject({ name: "Ziel" });
-  await (await reimbursements()).insertOne({
+  await (
+    await reimbursements()
+  ).insertOne({
     _id: newId(),
     _creationTime: Date.now(),
     organizationId: orgA,
@@ -112,7 +143,9 @@ test("deleteProject with merge reassigns reimbursements and removes the project"
 
 test("cannot touch a project from another org", async () => {
   const foreign = newId();
-  await (await projects()).insertOne({
+  await (
+    await projects()
+  ).insertOne({
     _id: foreign,
     _creationTime: Date.now(),
     name: "Fremd",

@@ -27,6 +27,8 @@ erDiagram
 
     projects {
         string name
+        string travelDestination
+        string travelPurpose
         id organizationId FK
         id parentId FK
         boolean isArchived

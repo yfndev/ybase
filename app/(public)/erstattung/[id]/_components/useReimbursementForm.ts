@@ -40,7 +40,23 @@ export function useReimbursementForm(id: string) {
   const receiptState = useReceipts(startDate);
 
   useEffect(() => {
-    validateReimbursementLink(id).then(setLink);
+    let ignoreResult = false;
+
+    void validateReimbursementLink(id).then((result) => {
+      if (ignoreResult) return;
+      setLink(result);
+      if (!result.valid || result.type !== "travel" || !result.travelDetails) {
+        return;
+      }
+      setDestination(result.travelDetails.destination);
+      setPurpose(result.travelDetails.purpose);
+      setStartDate(result.travelDetails.startDate);
+      setEndDate(result.travelDetails.endDate);
+    });
+
+    return () => {
+      ignoreResult = true;
+    };
   }, [id]);
 
   const isTravel = link?.valid === true && link.type === "travel";

@@ -37,6 +37,8 @@ ALTER TABLE organizations
 CREATE TABLE projects (
   id VARCHAR(255) PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
+  travel_destination VARCHAR(255),
+  travel_purpose VARCHAR(255),
   parent_id VARCHAR(255),
   organization_id VARCHAR(255) NOT NULL,
   is_archived BOOLEAN NOT NULL DEFAULT false,

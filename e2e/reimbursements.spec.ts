@@ -79,11 +79,15 @@ test.describe.serial("reimbursement flow", () => {
     ).toHaveAttribute("data-state", "active");
     await page.getByRole("tab", { name: "Auslagenerstattung" }).click();
 
-    await page.getByRole("textbox", { name: "Projekt suchen..." }).click();
+    await page.getByRole("combobox", { name: "Projekt suchen..." }).click();
     await page.getByRole("button", { name: "Neues Projekt erstellen" }).click();
     await page
       .getByRole("textbox", { name: "Projektname*" })
       .fill("Test Projekt");
+    await page.getByRole("textbox", { name: "Reiseziel" }).fill("Köln");
+    await page
+      .getByRole("textbox", { name: "Reisezweck" })
+      .fill("Team-Wochenende");
     await page.getByRole("button", { name: "Projekt erstellen" }).click();
     await expect(page.getByText("Projekt erstellt")).toBeVisible();
 
@@ -138,15 +142,19 @@ test.describe.serial("reimbursement flow", () => {
   test("3. Create travel reimbursement with PDF receipt", async () => {
     await page.getByRole("button", { name: "Neue Erstattung" }).click();
 
-    await page.getByRole("textbox", { name: "Projekt suchen..." }).click();
+    await page.getByRole("combobox", { name: "Projekt suchen..." }).click();
     await page.getByRole("button", { name: "Test Projekt" }).click();
 
-    await page
-      .getByRole("textbox", { name: "z.B. München, Berlin" })
-      .fill("Berlin");
-    await page
-      .getByRole("textbox", { name: "z.B. Kundentermin, Konferenz" })
-      .fill("Event");
+    const destination = page.getByRole("textbox", {
+      name: "z.B. München, Berlin",
+    });
+    const purpose = page.getByRole("textbox", {
+      name: "z.B. Kundentermin, Konferenz",
+    });
+    await expect(destination).toHaveValue("Köln");
+    await expect(purpose).toHaveValue("Team-Wochenende");
+    await destination.fill("Berlin");
+    await purpose.fill("Event");
     await page
       .getByRole("textbox", { name: "TT.MM.JJJJ" })
       .first()
@@ -173,7 +181,7 @@ test.describe.serial("reimbursement flow", () => {
       })
       .check();
     await page.getByPlaceholder("z.B. 2.5").fill("1.5");
-    await page.getByRole("combobox").click();
+    await page.getByRole("combobox").filter({ hasText: "Auswählen" }).click();
     await page.getByRole("option", { name: "28 € (24h+)" }).click();
 
     await expect(page.getByText("PKW500 km × 0,30 €")).toBeVisible();
@@ -204,7 +212,9 @@ test.describe.serial("reimbursement flow", () => {
       .fill("Falsche Angaben");
     await page.getByRole("button", { name: "Ablehnen" }).click();
 
-    await expect(page.getByText("Ablehnungsgrund: Falsche Angaben")).toBeVisible({
+    await expect(
+      page.getByText("Ablehnungsgrund: Falsche Angaben"),
+    ).toBeVisible({
       timeout: 10000,
     });
     await expect(

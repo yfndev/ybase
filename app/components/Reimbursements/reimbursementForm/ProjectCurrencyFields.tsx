@@ -28,8 +28,8 @@ export function ProjectCurrencyFields({
   onCurrencyChange,
 }: Props) {
   return (
-    <div className="flex items-end gap-4">
-      <div className="w-[200px]">
+    <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-end">
+      <div className="w-full sm:w-[260px]">
         <Label>Projekt *</Label>
         <SelectProject
           value={projectId || ""}
@@ -37,7 +37,7 @@ export function ProjectCurrencyFields({
           projects={projects}
         />
       </div>
-      <div className="w-[120px]">
+      <div className="w-full sm:w-[120px]">
         <Label>Währung</Label>
         <Select value={currency} onValueChange={onCurrencyChange}>
           <SelectTrigger>

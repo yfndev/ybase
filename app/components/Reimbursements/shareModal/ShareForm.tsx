@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { ProjectTravelDefaults } from "@/lib/db/types";
 import { Copy, Loader2 } from "lucide-react";
 import { TYPE_LABELS } from "./constants";
 import type { LinkType, ShareModalUIProps } from "./types";
@@ -31,6 +32,19 @@ export function ShareForm({
   onFormUpdate,
   onCopy,
 }: ShareFormProps) {
+  const handleProjectChange = (
+    value: string,
+    selectedProject: ProjectTravelDefaults | undefined = projects.find(
+      (project) => project._id === value,
+    ),
+  ) => {
+    onFormUpdate({
+      projectId: value || null,
+      destination: selectedProject?.travelDestination ?? "",
+      purpose: selectedProject?.travelPurpose ?? "",
+    });
+  };
+
   return (
     <div className="space-y-4 py-4">
       <div className="flex gap-2">
@@ -52,7 +66,7 @@ export function ShareForm({
         <Label>Projekt</Label>
         <SelectProject
           value={form.projectId ?? ""}
-          onValueChange={(value) => onFormUpdate({ projectId: value || null })}
+          onValueChange={handleProjectChange}
           projects={projects}
         />
       </div>

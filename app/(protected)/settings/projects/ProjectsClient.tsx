@@ -24,28 +24,43 @@ import { ProjectRow } from "./ProjectRow";
 export function ProjectsClient() {
   const { projects, isLoading } = useProjects();
   const { projects: archivedProjects } = useProjects(true);
-  const { rename, archive, remove } = useProjectMutations();
+  const { update, archive, remove } = useProjectMutations();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [archivedOpen, setArchivedOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
+  const [editValues, setEditValues] = useState({
+    name: "",
+    travelDestination: "",
+    travelPurpose: "",
+  });
   const [deleteProject, setDeleteProject] = useState<Project | null>(null);
-  const isRenaming = useRef(false);
+  const isUpdating = useRef(false);
 
-  const handleRename = async (project: Project) => {
-    if (isRenaming.current) return;
-    const name = editName.trim();
+  const handleUpdate = async (project: Project) => {
+    if (isUpdating.current) return;
+    const values = {
+      name: editValues.name.trim(),
+      travelDestination: editValues.travelDestination.trim(),
+      travelPurpose: editValues.travelPurpose.trim(),
+    };
+    if (!values.name) return;
+
+    const isUnchanged =
+      values.name === project.name &&
+      values.travelDestination === (project.travelDestination ?? "") &&
+      values.travelPurpose === (project.travelPurpose ?? "");
     setEditingId(null);
-    if (!name || name === project.name) return;
-    isRenaming.current = true;
+    if (isUnchanged) return;
+
+    isUpdating.current = true;
     try {
-      await rename.mutateAsync({ projectId: project._id, name });
-      toast.success("Projekt umbenannt");
+      await update.mutateAsync({ projectId: project._id, ...values });
+      toast.success("Projekt aktualisiert");
     } catch {
-      toast.error("Fehler beim Umbenennen");
+      toast.error("Fehler beim Aktualisieren");
     } finally {
-      isRenaming.current = false;
+      isUpdating.current = false;
     }
   };
 
@@ -129,6 +144,8 @@ export function ProjectsClient() {
                       </Button>
                     </div>
                   </TableHead>
+                  <TableHead>Reiseziel</TableHead>
+                  <TableHead>Reisezweck</TableHead>
                   <TableHead className="w-px" />
                 </TableRow>
               </TableHeader>
@@ -138,15 +155,21 @@ export function ProjectsClient() {
                     key={project._id}
                     project={project}
                     isEditing={editingId === project._id}
-                    editName={editName}
+                    editValues={editValues}
                     isArchiving={archive.isPending}
-                    onEditNameChange={setEditName}
+                    onEditValuesChange={(values) =>
+                      setEditValues((current) => ({ ...current, ...values }))
+                    }
                     onStartEdit={() => {
                       setEditingId(project._id);
-                      setEditName(project.name);
+                      setEditValues({
+                        name: project.name,
+                        travelDestination: project.travelDestination ?? "",
+                        travelPurpose: project.travelPurpose ?? "",
+                      });
                     }}
                     onCancelEdit={() => setEditingId(null)}
-                    onRename={() => handleRename(project)}
+                    onUpdate={() => handleUpdate(project)}
                     onArchive={() => handleArchive(project._id)}
                     onDelete={() => setDeleteProject(project)}
                   />
