@@ -2,7 +2,7 @@
 
 import { ShareModal } from "@/components/Reimbursements/ShareModal";
 import type { Project } from "@/lib/db/types";
-import { useIsAdmin } from "@/lib/hooks/useCurrentUserRole";
+import { useCanManageReimbursements } from "@/lib/hooks/useCurrentUserRole";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ReimbursementPageUI } from "./ReimbursementPageUI";
@@ -24,7 +24,7 @@ export function ReimbursementsClient({
   projects,
   organizationName,
 }: Props) {
-  const isAdmin = useIsAdmin();
+  const canManageReimbursements = useCanManageReimbursements();
   const router = useRouter();
 
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -68,7 +68,7 @@ export function ReimbursementsClient({
   return (
     <>
       <ReimbursementPageUI
-        isAdmin={isAdmin}
+        canManageReimbursements={canManageReimbursements}
         reimbursements={reimbursements}
         allowances={allowances}
         rejectDialog={actions.rejectDialog}
@@ -93,11 +93,13 @@ export function ReimbursementsClient({
         onFinomCsv={handleFinomCsv}
         onSepaXml={handleSepaXml}
       />
-      <ShareModal
-        open={shareModalOpen}
-        onClose={() => setShareModalOpen(false)}
-        projects={projects}
-      />
+      {canManageReimbursements ? (
+        <ShareModal
+          open={shareModalOpen}
+          onClose={() => setShareModalOpen(false)}
+          projects={projects}
+        />
+      ) : null}
     </>
   );
 }

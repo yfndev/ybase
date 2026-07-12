@@ -23,7 +23,7 @@ interface ReimbursementRowProps {
     amount: number;
     reviewedByName?: string;
   };
-  isAdmin: boolean;
+  canManageReimbursements: boolean;
   description: ReactNode;
   selectionCheckbox?: ReactNode;
   onClick?: () => void;
@@ -35,7 +35,7 @@ interface ReimbursementRowProps {
 
 export function ReimbursementRow({
   item,
-  isAdmin,
+  canManageReimbursements,
   description,
   selectionCheckbox,
   onClick,
@@ -72,7 +72,9 @@ export function ReimbursementRow({
           </span>
         )}
       </TableCell>
-      {isAdmin && <TableCell>{item.creatorName}</TableCell>}
+      {canManageReimbursements ? (
+        <TableCell>{item.creatorName}</TableCell>
+      ) : null}
       <TableCell className="text-right font-medium">
         {formatCurrency(item.amount)}
       </TableCell>
@@ -86,7 +88,7 @@ export function ReimbursementRow({
       </TableCell>
       <TableCell onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-end gap-0.5">
-          {isAdmin && isPending && (
+          {canManageReimbursements && isPending ? (
             <>
               <Button
                 variant="ghost"
@@ -109,7 +111,7 @@ export function ReimbursementRow({
                 <X className="h-4 w-4" />
               </Button>
             </>
-          )}
+          ) : null}
           <Button
             variant="ghost"
             size="icon"
@@ -120,7 +122,7 @@ export function ReimbursementRow({
           >
             <Download className="h-4 w-4" />
           </Button>
-          {isAdmin && isPending && (
+          {canManageReimbursements && isPending ? (
             <Button
               variant="ghost"
               size="icon"
@@ -131,7 +133,7 @@ export function ReimbursementRow({
             >
               <Trash2 className="h-4 w-4" />
             </Button>
-          )}
+          ) : null}
         </div>
       </TableCell>
     </TableRow>

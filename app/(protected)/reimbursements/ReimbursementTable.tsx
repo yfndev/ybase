@@ -12,7 +12,7 @@ import { ReimbursementRow } from "../../components/Tables/Reimbursements/Reimbur
 import type { Allowance, Reimbursement, SelectionKey } from "./types";
 
 type Props = {
-  isAdmin: boolean;
+  canManageReimbursements: boolean;
   reimbursements: Reimbursement[];
   allowances: Allowance[];
   selected: Set<SelectionKey>;
@@ -29,7 +29,7 @@ type Props = {
 };
 
 export function ReimbursementTable({
-  isAdmin,
+  canManageReimbursements,
   reimbursements,
   allowances,
   selected,
@@ -80,7 +80,7 @@ export function ReimbursementTable({
             <TableHead>Datum</TableHead>
             <TableHead>Projekt</TableHead>
             <TableHead>Beschreibung</TableHead>
-            {isAdmin && <TableHead>Ersteller</TableHead>}
+            {canManageReimbursements ? <TableHead>Ersteller</TableHead> : null}
             <TableHead className="text-right">Betrag</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Geprüft von</TableHead>
@@ -92,7 +92,7 @@ export function ReimbursementTable({
             <ReimbursementRow
               key={item._id}
               item={item}
-              isAdmin={isAdmin}
+              canManageReimbursements={canManageReimbursements}
               selectionCheckbox={
                 <Checkbox
                   checked={selected.has(`r:${item._id}`)}
@@ -131,7 +131,7 @@ export function ReimbursementTable({
             <ReimbursementRow
               key={item._id}
               item={item}
-              isAdmin={isAdmin}
+              canManageReimbursements={canManageReimbursements}
               selectionCheckbox={
                 <Checkbox
                   checked={selected.has(`a:${item._id}`)}

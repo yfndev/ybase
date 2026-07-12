@@ -1,17 +1,12 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { hasMinimumRole } from "../auth/roles";
+import type { UserRole } from "../db/types";
 
-export type UserRole = "admin" | "lead" | "member";
-
-export function useCurrentUserRole(): UserRole | undefined {
+export function useCurrentUserRole(): UserRole {
   const { data } = useSession();
   return (data?.user?.role as UserRole) ?? "member";
-}
-
-export function useCanEdit(): boolean {
-  const role = useCurrentUserRole();
-  return role === "lead" || role === "admin";
 }
 
 export function useIsAdmin(): boolean {
@@ -19,7 +14,7 @@ export function useIsAdmin(): boolean {
   return role === "admin";
 }
 
-export function useCanViewAllTransactions(): boolean {
+export function useCanManageReimbursements(): boolean {
   const role = useCurrentUserRole();
-  return role === "admin";
+  return hasMinimumRole(role, "finance");
 }

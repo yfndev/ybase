@@ -3,14 +3,15 @@
 import { z } from "zod";
 import { requireRole, requireUser } from "../../auth/session";
 import { users } from "../../db/collections";
+import type { UserRole } from "../../db/types";
 import { addLog } from "../logs";
 
-const roleSchema = z.enum(["admin", "lead", "member"]);
+const roleSchema = z.enum(["admin", "finance", "member"]);
 
 export async function addUserToOrganization(input: {
   userId: string;
   organizationId: string;
-  role?: "admin" | "lead" | "member";
+  role?: UserRole;
 }): Promise<void> {
   const currentUser = await requireRole("admin");
   const { userId, organizationId, role } = z
@@ -33,14 +34,14 @@ export async function addUserToOrganization(input: {
         { organizationId: currentUser.organizationId },
       ],
     },
-    { $set: { organizationId, role: role ?? "lead" } },
+    { $set: { organizationId, role: role ?? "member" } },
   );
   if (result.matchedCount !== 1) throw new Error("User not found");
 }
 
 export async function updateUserRole(input: {
   userId: string;
-  role: "admin" | "lead" | "member";
+  role: UserRole;
 }): Promise<void> {
   const currentUser = await requireRole("admin");
   const { userId, role } = z

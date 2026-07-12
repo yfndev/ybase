@@ -1,6 +1,7 @@
 "use client";
 
 import { ReceiptUpload } from "@/components/Reimbursements/ReceiptUpload";
+import { ReceiptAddressNotice } from "@/components/Reimbursements/ReceiptAddressNotice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -140,7 +141,8 @@ export function ReceiptCard({ receipt, toggleType, updateReceipt }: Props) {
       </div>
 
       {(receipt.grossAmount > 0 || receipt.fileStorageId) && (
-        <div>
+        <div className="space-y-3">
+          {receipt.costType !== "car" ? <ReceiptAddressNotice /> : null}
           <Label>Beleg *</Label>
           <ReceiptUpload
             onUploadComplete={(id) =>

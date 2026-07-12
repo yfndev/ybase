@@ -95,6 +95,7 @@ export function SelectProject({
       <div ref={containerRef} className="relative">
         <input
           ref={inputRef}
+          role="combobox"
           className={cn(
             "h-9 w-full bg-muted px-3 pr-8 text-sm outline-none border border-transparent focus:border-ring",
             open || !selected ? "text-muted-foreground" : "text-foreground",

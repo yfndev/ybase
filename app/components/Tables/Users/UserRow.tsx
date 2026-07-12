@@ -53,7 +53,7 @@ export function UserRow({ user, onRoleChange, isAdmin, isUpdating }: Props) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="lead">Lead</SelectItem>
+            <SelectItem value="finance">Finance</SelectItem>
             <SelectItem value="member">Mitglied</SelectItem>
           </SelectContent>
         </Select>

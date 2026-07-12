@@ -20,7 +20,7 @@ import type {
 } from "./types";
 
 interface Props {
-  isAdmin: boolean;
+  canManageReimbursements: boolean;
   reimbursements: Reimbursement[];
   allowances: Allowance[];
   rejectDialog: RejectDialog;
@@ -47,7 +47,7 @@ interface Props {
 }
 
 export function ReimbursementPageUI({
-  isAdmin,
+  canManageReimbursements,
   reimbursements,
   allowances,
   rejectDialog,
@@ -93,26 +93,32 @@ export function ReimbursementPageUI({
               : `${selected.size} herunterladen`}
           </Button>
         )}
-        <Button variant="outline" onClick={onFinomCsv}>
-          <Table2 className="h-4 w-4 mr-2" />
-          Finom CSV
-        </Button>
-        <Button variant="outline" onClick={onSepaXml}>
-          <FileCode2 className="h-4 w-4 mr-2" />
-          SEPA XML
-        </Button>
+        {canManageReimbursements ? (
+          <>
+            <Button variant="outline" onClick={onFinomCsv}>
+              <Table2 className="h-4 w-4 mr-2" />
+              Finom CSV
+            </Button>
+            <Button variant="outline" onClick={onSepaXml}>
+              <FileCode2 className="h-4 w-4 mr-2" />
+              SEPA XML
+            </Button>
+          </>
+        ) : null}
         <Button variant="outline" onClick={onNewClick}>
           <Plus className="h-4 w-4 mr-2" />
           Neue Erstattung
         </Button>
-        <Button variant="outline" onClick={onShareClick}>
-          <Share2 className="h-4 w-4 mr-2" />
-          Erstattung anfordern
-        </Button>
+        {canManageReimbursements ? (
+          <Button variant="outline" onClick={onShareClick}>
+            <Share2 className="h-4 w-4 mr-2" />
+            Erstattung anfordern
+          </Button>
+        ) : null}
       </div>
 
       <ReimbursementTable
-        isAdmin={isAdmin}
+        canManageReimbursements={canManageReimbursements}
         reimbursements={reimbursements}
         allowances={allowances}
         selected={selected}

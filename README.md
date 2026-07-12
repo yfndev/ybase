@@ -24,7 +24,7 @@ Simple, free, intuitive budget and reimbursement tracking for non-profits.
 - **Project Organization:** Assign expenses to projects, see remaining budgets
 - **Reimbursements:** Submit expense and travel reimbursements with receipt uploads
 - **Volunteer Allowance:** "Ehrenamtspauschale" forms with shareable links for external signatures
-- **AI Assistant:** Chat with your budget data (admin/lead only)
+- **AI Assistant:** Chat with your budget data (admin/finance only)
 - **Team Management:** Organize members into teams with project access control
 - **Donor Export:** Export transactions by donor to CSV
 - **Email Invitations:** Invite team members via email (powered by Resend)

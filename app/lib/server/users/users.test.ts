@@ -88,16 +88,22 @@ test("listOrganizationUsers only returns users from the caller's org", async () 
   expect(list.map((u) => u.name).sort()).toEqual(["Admin A", "Member A"]);
 });
 
-test("updateUserRole promotes a member and writes a log", async () => {
-  await updateUserRole({ userId: memberA, role: "lead" });
+test("updateUserRole promotes a member to admin and writes a log", async () => {
+  await updateUserRole({ userId: memberA, role: "admin" });
   const updated = await (await users()).findOne({ _id: memberA });
-  expect(updated?.role).toBe("lead");
+  expect(updated?.role).toBe("admin");
   const log = await (await logs()).findOne({ action: "user.role_change" });
   expect(log?.entityId).toBe(memberA);
 });
 
+test("updateUserRole grants finance access without admin access", async () => {
+  await updateUserRole({ userId: memberA, role: "finance" });
+  const updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.role).toBe("finance");
+});
+
 test("updateUserRole cannot touch a user from another org", async () => {
-  await expect(updateUserRole({ userId: memberB, role: "lead" })).rejects.toThrow(
+  await expect(updateUserRole({ userId: memberB, role: "admin" })).rejects.toThrow(
     "Access denied",
   );
 });
