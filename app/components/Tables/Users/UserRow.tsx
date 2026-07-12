@@ -9,7 +9,6 @@ import {
 import { TableCell, TableRow } from "@/components/ui/table";
 import type { UserRole } from "@/lib/db/types";
 import { getInitials } from "@/lib/formatters/getInitials";
-import { Shield } from "lucide-react";
 
 interface Props {
   user: {
@@ -21,9 +20,10 @@ interface Props {
   };
   onRoleChange: (userId: string, role: UserRole) => void;
   isAdmin: boolean;
+  isUpdating: boolean;
 }
 
-export function UserRow({ user, onRoleChange, isAdmin }: Props) {
+export function UserRow({ user, onRoleChange, isAdmin, isUpdating }: Props) {
   return (
     <TableRow>
       <TableCell className="pl-6">
@@ -46,20 +46,15 @@ export function UserRow({ user, onRoleChange, isAdmin }: Props) {
         <Select
           value={user.role}
           onValueChange={(value) => onRoleChange(user._id, value as UserRole)}
-          disabled={!isAdmin}
+          disabled={!isAdmin || isUpdating}
         >
           <SelectTrigger className="w-[140px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="admin">
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                Admin
-              </div>
-            </SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
             <SelectItem value="finance">Finance</SelectItem>
-            <SelectItem value="member">Member</SelectItem>
+            <SelectItem value="member">Mitglied</SelectItem>
           </SelectContent>
         </Select>
       </TableCell>

@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { requireRole, requireUser } from "../../auth/session";
+import { requireAuthenticatedUser, requireRole } from "../../auth/session";
 import { organizations, projects, users } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { Organization } from "../../db/types";
@@ -14,7 +14,7 @@ type OrganizationUpdate = Partial<
 export async function initializeOrganization(input?: {
   organizationName?: string;
 }): Promise<{ organizationId: string; isNew: boolean }> {
-  const user = await requireUser();
+  const user = await requireAuthenticatedUser();
   const { organizationName } = z
     .object({ organizationName: z.string().optional() })
     .parse(input ?? {});

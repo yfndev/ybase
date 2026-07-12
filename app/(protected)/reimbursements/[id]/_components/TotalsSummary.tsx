@@ -14,12 +14,6 @@ export function TotalsSummary({ receipts }: { receipts: ReceiptWithUrl[] }) {
         <span className="text-muted-foreground">Netto gesamt</span>
         <span>{formatCurrency(totalNet)}</span>
       </div>
-      {taxByRate(0) > 0 && (
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">USt 0%</span>
-          <span>{formatCurrency(taxByRate(0))}</span>
-        </div>
-      )}
       {taxByRate(7) > 0 && (
         <div className="flex justify-between">
           <span className="text-muted-foreground">USt 7%</span>

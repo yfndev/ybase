@@ -1,10 +1,10 @@
 "use client";
 
-import { createTravelReimbursement } from "@/lib/server/reimbursements/actions";
-import { type CostType, DEFAULT_TAX_RATES } from "@/lib/travel-costs";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { createTravelReimbursement } from "@/lib/server/reimbursements/actions";
+import { type CostType, DEFAULT_TAX_RATES } from "@/lib/travel-costs";
 import type { BankDetails, Receipt } from "./types";
 
 export function useTravelForm(defaultBankDetails: BankDetails) {
@@ -15,6 +15,7 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
   const [signature, setSignature] = useState<string | null>(null);
   const [showMealAllowance, setShowMealAllowance] = useState(false);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [travel, setTravel] = useState({
     destination: "",
     purpose: "",
@@ -92,12 +93,13 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
     hasBasicInfo &&
     (receipts.length > 0 || mealTotal > 0) &&
     (receipts.length === 0 || allComplete) &&
-    projectId &&
-    signature;
+    projectId;
 
   const handleSubmit = async () => {
     if (!projectId) return toast.error("Bitte ein Projekt auswählen");
     if (!signature) return toast.error("Bitte unterschreiben");
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await createTravelReimbursement({
         projectId,
@@ -117,6 +119,7 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
       router.push("/reimbursements");
     } catch {
       toast.error("Fehler beim Einreichen");
+      setIsSubmitting(false);
     }
   };
 
@@ -141,6 +144,7 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
     total,
     taxByRate,
     canSubmit,
+    isSubmitting,
     handleSubmit,
   };
 }

@@ -1,15 +1,16 @@
 "use client";
 
+import { Check, Download, Trash2, X } from "lucide-react";
+import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import { formatDate } from "@/lib/formatters/formatDate";
 import {
-  type ReimbursementStatus as Status,
   STATUS_DISPLAY,
+  type ReimbursementStatus as Status,
 } from "@/lib/reimbursementStatus";
-import { Check, Download, Trash2, X } from "lucide-react";
-import type { ReactNode } from "react";
 
 interface ReimbursementRowProps {
   item: {
@@ -67,7 +68,7 @@ export function ReimbursementRow({
         {description}
         {item.rejectionNote && (
           <span className="block text-xs text-red-600">
-            Ablehnung: {item.rejectionNote}
+            Ablehnungsgrund: {item.rejectionNote}
           </span>
         )}
       </TableCell>
@@ -75,7 +76,7 @@ export function ReimbursementRow({
         <TableCell>{item.creatorName}</TableCell>
       ) : null}
       <TableCell className="text-right font-medium">
-        {item.amount.toFixed(2)} €
+        {formatCurrency(item.amount)}
       </TableCell>
       <TableCell>
         <Badge variant={display.variant} className={display.className}>
@@ -94,6 +95,8 @@ export function ReimbursementRow({
                 size="icon"
                 className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
                 onClick={onApprove}
+                aria-label="Genehmigen"
+                title="Genehmigen"
               >
                 <Check className="h-4 w-4" />
               </Button>
@@ -102,6 +105,8 @@ export function ReimbursementRow({
                 size="icon"
                 className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
                 onClick={onReject}
+                aria-label="Ablehnen"
+                title="Ablehnen"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -112,6 +117,8 @@ export function ReimbursementRow({
             size="icon"
             className="h-7 w-7"
             onClick={onDownload}
+            aria-label="PDF herunterladen"
+            title="PDF herunterladen"
           >
             <Download className="h-4 w-4" />
           </Button>
@@ -121,6 +128,8 @@ export function ReimbursementRow({
               size="icon"
               className="h-7 w-7"
               onClick={onDelete}
+              aria-label="Löschen"
+              title="Löschen"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

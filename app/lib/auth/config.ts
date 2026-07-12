@@ -1,6 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
+import { isLocalCredentialsEnabled } from "./environment";
 import { ensureAppUser } from "./provisioning";
 import { normalizeOptionalUserRole } from "./roles";
 
@@ -10,8 +11,7 @@ function isAllowedEmail(email: string | null | undefined): boolean {
   return Boolean(email?.toLowerCase().endsWith(`@${ALLOWED_EMAIL_DOMAIN}`));
 }
 
-const allowTestLogin =
-  process.env.IS_TEST === "true" && process.env.NODE_ENV !== "production";
+const isLocalLoginEnabled = isLocalCredentialsEnabled();
 
 const google = Google({
   authorization: {
@@ -28,23 +28,28 @@ const google = Google({
       image: profile.picture,
       firstName: profile.given_name ?? profile.name?.split(" ")[0] ?? "",
       lastName:
-        profile.family_name ?? profile.name?.split(" ").slice(1).join(" ") ?? "",
+        profile.family_name ??
+        profile.name?.split(" ").slice(1).join(" ") ??
+        "",
     };
   },
 });
 
-const testing = Credentials({
-  id: "testing",
-  name: "Testing",
+const developmentProvider = Credentials({
+  id: "development",
+  name: "Local development",
   credentials: { email: {}, name: {} },
   authorize(credentials) {
-    if (!allowTestLogin) return null;
-    const email = credentials?.email as string | undefined;
+    if (!isLocalLoginEnabled) return null;
+    const email = (credentials?.email as string | undefined)
+      ?.trim()
+      .toLowerCase();
     if (!email) return null;
     return {
       id: email,
       email,
-      name: (credentials?.name as string) ?? "Test User",
+      name:
+        (credentials?.name as string | undefined)?.trim() || "Local Developer",
     };
   },
 });
@@ -52,15 +57,17 @@ const testing = Credentials({
 export const authConfig = {
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
-  providers: allowTestLogin ? [google, testing] : [google],
+  providers: isLocalLoginEnabled ? [developmentProvider] : [google],
   callbacks: {
     signIn({ user }) {
-      if (allowTestLogin) return true;
+      if (isLocalLoginEnabled) return true;
       return isAllowedEmail(user.email);
     },
     async jwt({ token, user, trigger }) {
       const email = user?.email ?? (token.email as string | undefined);
-      if (email && (user || trigger === "update")) {
+      const shouldRefreshAppUser =
+        Boolean(user) || trigger === "update" || isLocalLoginEnabled;
+      if (email && shouldRefreshAppUser) {
         const appUser = await ensureAppUser({
           email,
           name: user?.name ?? (token.name as string | undefined),
@@ -78,7 +85,9 @@ export const authConfig = {
     session({ session, token }) {
       if (session.user) {
         session.user.id = (token.userId as string | undefined) ?? "";
-        session.user.organizationId = token.organizationId as string | undefined;
+        session.user.organizationId = token.organizationId as
+          | string
+          | undefined;
         session.user.role = normalizeOptionalUserRole(token.role);
       }
       return session;

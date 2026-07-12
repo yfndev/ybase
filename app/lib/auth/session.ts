@@ -3,13 +3,19 @@ import type { UserRole } from "../db/types";
 import { auth } from "./index";
 import { hasMinimumRole, normalizeUserRole } from "./roles";
 
-export async function requireUser() {
+export async function requireAuthenticatedUser() {
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) throw new Error("Unauthorized user");
 
   const user = await (await users()).findOne({ _id: userId });
   if (!user) throw new Error("User not found");
+
+  return user;
+}
+
+export async function requireUser() {
+  const user = await requireAuthenticatedUser();
   if (!user.organizationId) throw new Error("User has no organization");
 
   const role = normalizeUserRole(user.role);

@@ -6,7 +6,7 @@ import {
   isValidFileType,
 } from "@/lib/fileHandlers/fileConversion";
 import { FileText, Loader2, Upload } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 interface Props {
@@ -28,6 +28,12 @@ export function ReceiptUploadExternal({
   const [isPdf, setIsPdf] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (storageId) return;
+    setPreviewUrl(null);
+    setIsPdf(false);
+  }, [storageId]);
 
   const handleFile = async (file: File) => {
     if (!isValidFileType(file)) {
@@ -88,17 +94,19 @@ export function ReceiptUploadExternal({
         className="border rounded-lg p-4 relative group cursor-pointer"
         onClick={() => inputRef.current?.click()}
       >
-        {isPdf ? (
-          <div className="flex flex-col items-center gap-2 py-4">
-            <FileText className="size-16 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">PDF hochgeladen</p>
-          </div>
-        ) : (
+        {previewUrl && !isPdf ? (
           <img
-            src={previewUrl ?? ""}
+            src={previewUrl}
             alt="Beleg"
             className="max-h-48 mx-auto rounded"
           />
+        ) : (
+          <div className="flex flex-col items-center gap-2 py-4">
+            <FileText className="size-16 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              {isPdf ? "PDF hochgeladen" : "Beleg hochgeladen"}
+            </p>
+          </div>
         )}
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
           <div className="text-white text-center">

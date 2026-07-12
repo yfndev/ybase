@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import { Loader2 } from "lucide-react";
 import { BankAndConfirmation } from "./_components/BankAndConfirmation";
 import { FoodAllowanceSection } from "./_components/FoodAllowanceSection";
@@ -75,7 +76,6 @@ export default function ExternalReimbursementPageUI(
             date={props.date}
             gross={props.gross}
             taxRate={props.taxRate}
-            currency={props.currency}
             file={props.file}
             receipts={props.receipts}
             onCompanyChange={props.onCompanyChange}
@@ -84,7 +84,6 @@ export default function ExternalReimbursementPageUI(
             onDateChange={props.onDateChange}
             onGrossChange={props.onGrossChange}
             onTaxRateChange={props.onTaxRateChange}
-            onCurrencyChange={props.onCurrencyChange}
             onFileChange={props.onFileChange}
             onAddReceipt={props.onAddReceipt}
             onRemoveReceipt={props.onRemoveReceipt}
@@ -98,7 +97,7 @@ export default function ExternalReimbursementPageUI(
           <div className="border rounded-lg p-4 bg-gray-50">
             <div className="flex justify-between text-lg font-semibold">
               <span>Gesamtbetrag</span>
-              <span>{props.totalGross.toFixed(2)} €</span>
+              <span>{formatCurrency(props.totalGross)}</span>
             </div>
           </div>
         )}

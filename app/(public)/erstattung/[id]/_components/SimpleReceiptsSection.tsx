@@ -23,7 +23,6 @@ type Props = {
   date: string;
   gross: number;
   taxRate: number;
-  currency: string;
   file: string | null;
   receipts: Receipt[];
   onCompanyChange: (value: string) => void;
@@ -32,7 +31,6 @@ type Props = {
   onDateChange: (value: string) => void;
   onGrossChange: (value: number) => void;
   onTaxRateChange: (value: number) => void;
-  onCurrencyChange: (value: string) => void;
   onFileChange: (value: string | null) => void;
   onAddReceipt: () => void;
   onRemoveReceipt: (index: number) => void;
@@ -91,35 +89,22 @@ export function SimpleReceiptsSection(props: Props) {
             />
           </div>
           <div>
-            <Label>Brutto *</Label>
-            <div className="flex gap-1">
-              <Select
-                value={props.currency}
-                onValueChange={props.onCurrencyChange}
-              >
-                <SelectTrigger className="w-20 shrink-0">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="EUR">EUR</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="CHF">CHF</SelectItem>
-                  <SelectItem value="GBP">GBP</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input
-                type="number"
-                step="0.01"
-                value={props.gross || ""}
-                onChange={(e) =>
-                  props.onGrossChange(parseFloat(e.target.value) || 0)
-                }
-                placeholder="119.95"
-              />
-            </div>
+            <Label>Brutto in € *</Label>
+            <Input
+              type="number"
+              step="0.01"
+              min={0}
+              value={props.gross || ""}
+              onChange={(e) =>
+                props.onGrossChange(
+                  Math.max(0, parseFloat(e.target.value) || 0),
+                )
+              }
+              placeholder="119.95"
+            />
           </div>
           <div>
-            <Label>MwSt.</Label>
+            <Label>USt.-Satz</Label>
             <Select
               value={String(props.taxRate)}
               onValueChange={(value) => props.onTaxRateChange(parseInt(value))}

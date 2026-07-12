@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import {
   MEAL_ALLOWANCE_FULL_DAY_EUR,
   MEAL_ALLOWANCE_PARTIAL_DAY_EUR,
@@ -79,10 +80,10 @@ export function MealAllowanceSection({
                   <SelectValue placeholder="Auswählen" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="14">
+                  <SelectItem value={String(MEAL_ALLOWANCE_PARTIAL_DAY_EUR)}>
                     {MEAL_ALLOWANCE_PARTIAL_DAY_EUR} € (8-24h)
                   </SelectItem>
-                  <SelectItem value="28">
+                  <SelectItem value={String(MEAL_ALLOWANCE_FULL_DAY_EUR)}>
                     {MEAL_ALLOWANCE_FULL_DAY_EUR} € (24h+)
                   </SelectItem>
                 </SelectContent>
@@ -91,7 +92,7 @@ export function MealAllowanceSection({
             <div>
               <Label className="text-muted-foreground">Betrag</Label>
               <Input
-                value={`${mealTotal.toFixed(2)} €`}
+                value={formatCurrency(mealTotal)}
                 disabled
                 className="bg-muted/50 font-mono"
               />

@@ -30,8 +30,10 @@ export function SelectProject({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const selected = projects.find((project) => project._id === value);
-  const filtered = projects.filter((project) =>
-    project.name.toLowerCase().includes(search.toLowerCase()),
+  const filtered = projects.filter(
+    (project) =>
+      !project.isArchived &&
+      project.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   useEffect(() => {
@@ -45,8 +47,6 @@ export function SelectProject({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
-
-  useEffect(() => setHighlightedIndex(0), []);
 
   useEffect(() => {
     if (autoFocus) inputRef.current?.focus();
@@ -95,6 +95,7 @@ export function SelectProject({
       <div ref={containerRef} className="relative">
         <input
           ref={inputRef}
+          role="combobox"
           className={cn(
             "h-9 w-full bg-muted px-3 pr-8 text-sm outline-none border border-transparent focus:border-ring",
             open || !selected ? "text-muted-foreground" : "text-foreground",
@@ -103,10 +104,12 @@ export function SelectProject({
           value={open ? search : (selected?.name ?? "")}
           onChange={(e) => {
             setSearch(e.target.value);
+            setHighlightedIndex(0);
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
+          aria-expanded={open}
         />
         <ChevronsUpDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50 pointer-events-none" />
 

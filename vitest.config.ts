@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["app/**/*.test.ts"],
+    fileParallelism: !process.env.CI,
     env: {
       RESEND_API_KEY: "test-api-key",
     },

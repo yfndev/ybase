@@ -14,6 +14,7 @@ import { useIsAdmin } from "@/lib/hooks/useCurrentUserRole";
 import { updateUserRole } from "@/lib/server/users/actions";
 import { Users } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "react-hot-toast";
 
 interface Props {
@@ -23,16 +24,29 @@ interface Props {
 export function UsersClient({ users }: Props) {
   const router = useRouter();
   const isAdmin = useIsAdmin();
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const handleRoleChange = async (userId: string, role: UserRole) => {
+    const target = users.find((user) => user._id === userId);
+    const adminCount = users.filter((user) => user.role === "admin").length;
+    const removesLastAdmin =
+      target?.role === "admin" && role !== "admin" && adminCount <= 1;
+    if (removesLastAdmin) {
+      toast.error(
+        "Der letzte Admin kann nicht entfernt werden. Mindestens ein Admin ist erforderlich.",
+      );
+      return;
+    }
+
+    setUpdatingId(userId);
     try {
       await updateUserRole({ userId, role });
       router.refresh();
-      toast.success("Rolle erfolgreich aktualisiert");
+      toast.success("Rolle aktualisiert");
     } catch {
-      toast.error(
-        "Fehler beim Aktualisieren der Rolle. Mindestens ein Admin ist erforderlich.",
-      );
+      toast.error("Fehler beim Aktualisieren der Rolle");
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -62,7 +76,7 @@ export function UsersClient({ users }: Props) {
                 <TableRow>
                   <TableHead className="pr-6">Benutzer</TableHead>
                   <TableHead>E-Mail</TableHead>
-                  <TableHead className="pr-6">Org-Rolle</TableHead>
+                  <TableHead className="pr-6">Rolle</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -75,6 +89,7 @@ export function UsersClient({ users }: Props) {
                     }}
                     onRoleChange={handleRoleChange}
                     isAdmin={isAdmin}
+                    isUpdating={updatingId === user._id}
                   />
                 ))}
               </TableBody>

@@ -6,32 +6,50 @@ on:
   pull_request:
     branches: [main, master]
 
-jobs:
-  lint-lines:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-      - run: node scripts/check-file-lines.mjs
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
-  vitest:
+jobs:
+  unit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-      - run: npm install -g pnpm && pnpm install
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint:lines
+      - name: Cache MongoDB binary
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/mongodb-binaries
+          key: mongodb-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
       - run: pnpm vitest run
+        env:
+          MONGOMS_DOWNLOAD_DIR: ${{ runner.temp }}/mongodb-binaries
 
   playwright:
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:8
+        ports:
+          - 27017:27017
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-      - run: npm install -g pnpm && pnpm install
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
 
       - name: Get Playwright version
         id: playwright-version
-        run: echo "version=$(pnpm exec playwright --version)" >> $GITHUB_OUTPUT
+        run: node -p '"version=" + require("@playwright/test/package.json").version' >> "$GITHUB_OUTPUT"
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -42,14 +60,16 @@ jobs:
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm exec playwright install --with-deps
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Install Playwright deps only
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: pnpm exec playwright install-deps
+        run: pnpm exec playwright install-deps chromium
 
       - name: Run Playwright tests
         run: pnpm exec playwright test --reporter=list
         env:
-          NEXT_PUBLIC_CONVEX_URL: ${{ secrets.CONVEX_URL }}
+          AUTH_SECRET: ci-only-secret-ci-only-secret
+          MONGODB_URI: mongodb://localhost:27017
+          MONGODB_DB: ybase_e2e
           IS_TEST: "true"

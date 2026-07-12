@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createProject } from "@/lib/server/projects/actions";
 import { useQueryClient } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -29,27 +30,38 @@ export function CreateProjectDialog({
   onProjectCreated,
 }: Props) {
   const [name, setName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const handleSubmit = async () => {
-    if (!name.trim()) return;
+  const handleOpenChange = (value: boolean) => {
+    if (isSubmitting) return;
+    if (!value) setName("");
+    onOpenChange(value);
+  };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
     try {
       const projectId = await createProject({ name: name.trim() });
       router.refresh();
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast.success("Projekt erstellt!");
+      toast.success("Projekt erstellt");
       onProjectCreated?.(projectId);
       onOpenChange(false);
       setName("");
     } catch {
-      toast.error("Fehler beim Erstellen.");
+      toast.error("Fehler beim Erstellen");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Neues Projekt erstellen</DialogTitle>
@@ -59,7 +71,7 @@ export function CreateProjectDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="project-name">Projektname*</Label>
             <Input
@@ -70,13 +82,14 @@ export function CreateProjectDialog({
               autoFocus
             />
           </div>
-        </div>
 
-        <DialogFooter>
-          <Button onClick={handleSubmit} disabled={!name.trim()}>
-            Projekt erstellen
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="submit" disabled={!name.trim() || isSubmitting}>
+              {isSubmitting && <Loader2 className="size-4 animate-spin" />}
+              Projekt erstellen
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

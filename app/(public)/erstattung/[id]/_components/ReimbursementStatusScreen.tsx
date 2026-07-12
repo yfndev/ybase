@@ -13,8 +13,10 @@ export function ReimbursementInvalidScreen({ error }: { error?: string }) {
     <div className="flex min-h-svh items-center justify-center p-8">
       <div className="text-center max-w-md">
         <AlertCircle className="size-16 text-destructive mx-auto mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Link ungültig</h1>
-        <p className="text-muted-foreground">{error}</p>
+        <h1 className="text-2xl font-bold mb-2">Link nicht verfügbar</h1>
+        <p className="text-muted-foreground">
+          {error || "Dieser Link ist ungültig oder wurde bereits verwendet."}
+        </p>
       </div>
     </div>
   );

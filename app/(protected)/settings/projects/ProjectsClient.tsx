@@ -4,20 +4,22 @@ import { ArchivedProjectsDialog } from "@/components/Dialogs/ArchivedProjectsDia
 import { CreateProjectDialog } from "@/components/Dialogs/CreateProjectDialog";
 import { PageHeader } from "@/components/Layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import { useProjectMutations } from "@/lib/client/projects/hooks/useProjectMutations";
 import { useProjects } from "@/lib/client/projects/hooks/useProjects";
-import { Archive, FolderKanban, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import type { Project } from "@/lib/db/types";
+import { checkProjectLinkedData } from "@/lib/server/projects/actions";
+import { Archive, FolderKanban, Plus } from "lucide-react";
+import { useRef, useState } from "react";
 import { toast } from "react-hot-toast";
+import { DeleteProjectDialog } from "./DeleteProjectDialog";
+import { ProjectRow } from "./ProjectRow";
 
 export function ProjectsClient() {
   const { projects, isLoading } = useProjects();
@@ -28,16 +30,22 @@ export function ProjectsClient() {
   const [archivedOpen, setArchivedOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [deleteProject, setDeleteProject] = useState<Project | null>(null);
+  const isRenaming = useRef(false);
 
-  const handleRename = async (projectId: string) => {
+  const handleRename = async (project: Project) => {
+    if (isRenaming.current) return;
     const name = editName.trim();
     setEditingId(null);
-    if (!name) return;
+    if (!name || name === project.name) return;
+    isRenaming.current = true;
     try {
-      await rename.mutateAsync({ projectId, name });
+      await rename.mutateAsync({ projectId: project._id, name });
       toast.success("Projekt umbenannt");
     } catch {
       toast.error("Fehler beim Umbenennen");
+    } finally {
+      isRenaming.current = false;
     }
   };
 
@@ -50,15 +58,23 @@ export function ProjectsClient() {
     }
   };
 
-  const handleDelete = async (projectId: string) => {
-    if (!confirm("Projekt wirklich löschen?")) return;
+  const handleDelete = async () => {
+    if (!deleteProject) return;
+    const projectId = deleteProject._id;
     try {
+      const { hasLinkedData } = await checkProjectLinkedData({ projectId });
+      if (hasLinkedData) {
+        toast.error(
+          "Löschen nicht möglich: Es sind noch Erstattungen mit diesem Projekt verknüpft. Archiviere es stattdessen.",
+        );
+        return;
+      }
       await remove.mutateAsync({ projectId });
       toast.success("Projekt gelöscht");
     } catch {
-      toast.error(
-        "Löschen nicht möglich. Es sind noch Erstattungen mit diesem Projekt verknüpft.",
-      );
+      toast.error("Fehler beim Löschen");
+    } finally {
+      setDeleteProject(null);
     }
   };
 
@@ -106,6 +122,8 @@ export function ProjectsClient() {
                         size="icon"
                         className="h-6 w-6"
                         onClick={() => setCreateOpen(true)}
+                        title="Projekt erstellen"
+                        aria-label="Projekt erstellen"
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
@@ -116,55 +134,22 @@ export function ProjectsClient() {
               </TableHeader>
               <TableBody>
                 {projects.map((project) => (
-                  <TableRow key={project._id}>
-                    <TableCell>
-                      {editingId === project._id ? (
-                        <Input
-                          autoFocus
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          onBlur={() => handleRename(project._id)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleRename(project._id);
-                            if (e.key === "Escape") setEditingId(null);
-                          }}
-                        />
-                      ) : (
-                        <button
-                          type="button"
-                          className="text-left"
-                          onClick={() => {
-                            setEditingId(project._id);
-                            setEditName(project.name);
-                          }}
-                        >
-                          {project.name}
-                        </button>
-                      )}
-                    </TableCell>
-                    <TableCell className="pr-6">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          title="Archivieren"
-                          onClick={() => handleArchive(project._id)}
-                        >
-                          <Archive className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive"
-                          title="Löschen"
-                          onClick={() => handleDelete(project._id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                  <ProjectRow
+                    key={project._id}
+                    project={project}
+                    isEditing={editingId === project._id}
+                    editName={editName}
+                    isArchiving={archive.isPending}
+                    onEditNameChange={setEditName}
+                    onStartEdit={() => {
+                      setEditingId(project._id);
+                      setEditName(project.name);
+                    }}
+                    onCancelEdit={() => setEditingId(null)}
+                    onRename={() => handleRename(project)}
+                    onArchive={() => handleArchive(project._id)}
+                    onDelete={() => setDeleteProject(project)}
+                  />
                 ))}
               </TableBody>
             </Table>
@@ -177,6 +162,13 @@ export function ProjectsClient() {
         open={archivedOpen}
         onOpenChange={setArchivedOpen}
         archivedProjects={archivedProjects}
+      />
+      <DeleteProjectDialog
+        open={deleteProject !== null}
+        projectName={deleteProject?.name ?? ""}
+        isDeleting={remove.isPending}
+        onCancel={() => setDeleteProject(null)}
+        onConfirm={handleDelete}
       />
     </div>
   );

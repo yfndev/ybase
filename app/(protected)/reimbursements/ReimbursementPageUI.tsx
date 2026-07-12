@@ -21,7 +21,6 @@ import type {
 
 interface Props {
   canManageReimbursements: boolean;
-  isLoading: boolean;
   reimbursements: Reimbursement[];
   allowances: Allowance[];
   rejectDialog: RejectDialog;
@@ -32,17 +31,16 @@ interface Props {
   onRowClick: (id: string) => void;
   onApproveReimbursement: (id: string) => void;
   onApproveAllowance: (id: string) => void;
-  onOpenRejectDialog: (
-    type: "reimbursement" | "allowance",
-    id: string,
-  ) => void;
+  onOpenRejectDialog: (type: "reimbursement" | "allowance", id: string) => void;
   onRejectDialogChange: (dialog: RejectDialog) => void;
   onReject: () => void;
+  isRejecting: boolean;
   onDownloadReimbursement: (id: string) => void;
   onDownloadAllowance: (allowance: Allowance) => void;
   onDeleteReimbursement: (id: string) => void;
   onDeleteAllowance: (id: string) => void;
   onToggleSelect: (key: SelectionKey) => void;
+  onToggleSelectAll: () => void;
   onBulkDownload: () => void;
   onFinomCsv: () => void;
   onSepaXml: () => void;
@@ -50,7 +48,6 @@ interface Props {
 
 export function ReimbursementPageUI({
   canManageReimbursements,
-  isLoading,
   reimbursements,
   allowances,
   rejectDialog,
@@ -64,17 +61,19 @@ export function ReimbursementPageUI({
   onOpenRejectDialog,
   onRejectDialogChange,
   onReject,
+  isRejecting,
   onDownloadReimbursement,
   onDownloadAllowance,
   onDeleteReimbursement,
   onDeleteAllowance,
   onToggleSelect,
+  onToggleSelectAll,
   onBulkDownload,
   onFinomCsv,
   onSepaXml,
 }: Props) {
   return (
-    <div className="flex flex-col w-full h-screen">
+    <div className="flex flex-col w-full">
       <PageHeader title="Erstattungen" />
 
       <div className="flex justify-end gap-2 mb-4">
@@ -120,7 +119,6 @@ export function ReimbursementPageUI({
 
       <ReimbursementTable
         canManageReimbursements={canManageReimbursements}
-        isLoading={isLoading}
         reimbursements={reimbursements}
         allowances={allowances}
         selected={selected}
@@ -133,12 +131,14 @@ export function ReimbursementPageUI({
         onDeleteReimbursement={onDeleteReimbursement}
         onDeleteAllowance={onDeleteAllowance}
         onToggleSelect={onToggleSelect}
+        onToggleSelectAll={onToggleSelectAll}
       />
 
       <RejectDialogModal
         rejectDialog={rejectDialog}
         onRejectDialogChange={onRejectDialogChange}
         onReject={onReject}
+        isRejecting={isRejecting}
       />
     </div>
   );

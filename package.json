@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@10.24.0",
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "node scripts/dev.mjs",
     "build": "next build",
     "start": "next start",
     "format": "prettier --write .",

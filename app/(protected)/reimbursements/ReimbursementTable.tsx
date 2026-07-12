@@ -13,7 +13,6 @@ import type { Allowance, Reimbursement, SelectionKey } from "./types";
 
 type Props = {
   canManageReimbursements: boolean;
-  isLoading: boolean;
   reimbursements: Reimbursement[];
   allowances: Allowance[];
   selected: Set<SelectionKey>;
@@ -26,13 +25,11 @@ type Props = {
   onDeleteReimbursement: (id: string) => void;
   onDeleteAllowance: (id: string) => void;
   onToggleSelect: (key: SelectionKey) => void;
+  onToggleSelectAll: () => void;
 };
-
-const SKELETON_ROWS = ["s1", "s2", "s3", "s4", "s5"];
 
 export function ReimbursementTable({
   canManageReimbursements,
-  isLoading,
   reimbursements,
   allowances,
   selected,
@@ -45,20 +42,11 @@ export function ReimbursementTable({
   onDeleteReimbursement,
   onDeleteAllowance,
   onToggleSelect,
+  onToggleSelectAll,
 }: Props) {
   const isEmpty = reimbursements.length === 0 && allowances.length === 0;
-
-  if (isLoading) {
-    return (
-      <div className="rounded-lg border bg-card">
-        <div className="p-6 space-y-3">
-          {SKELETON_ROWS.map((key) => (
-            <div key={key} className="h-12 bg-muted animate-pulse rounded" />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const totalRows = reimbursements.length + allowances.length;
+  const allSelected = totalRows > 0 && selected.size === totalRows;
 
   if (isEmpty) {
     return (
@@ -75,7 +63,19 @@ export function ReimbursementTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[40px]" />
+            <TableHead className="w-[40px] px-2">
+              <Checkbox
+                checked={
+                  allSelected
+                    ? true
+                    : selected.size > 0
+                      ? "indeterminate"
+                      : false
+                }
+                onCheckedChange={onToggleSelectAll}
+                aria-label="Alle auswählen"
+              />
+            </TableHead>
             <TableHead className="w-[30px]" />
             <TableHead>Datum</TableHead>
             <TableHead>Projekt</TableHead>

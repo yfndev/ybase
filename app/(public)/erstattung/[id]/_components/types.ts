@@ -53,7 +53,6 @@ export type ExternalReimbursementPageUIProps = {
   date: string;
   gross: number;
   taxRate: number;
-  currency: string;
   file: string | null;
   onCompanyChange: (value: string) => void;
   onNumberChange: (value: string) => void;
@@ -61,7 +60,6 @@ export type ExternalReimbursementPageUIProps = {
   onDateChange: (value: string) => void;
   onGrossChange: (value: number) => void;
   onTaxRateChange: (value: number) => void;
-  onCurrencyChange: (value: string) => void;
   onFileChange: (value: string | null) => void;
 
   receipts: Receipt[];

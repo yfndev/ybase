@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toNet } from "@/lib/bank-utils";
+import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import {
   CAR_ALLOWANCE_RATE_EUR_PER_KM,
   COST_LABELS as LABELS,
@@ -34,13 +35,15 @@ export function ReceiptCard({ receipt, toggleType, updateReceipt }: Props) {
       <div className="flex justify-between items-center">
         <h3 className="font-medium">
           {receipt.costType === "car"
-            ? "PKW (0,30€/km)"
+            ? `PKW (${formatCurrency(CAR_ALLOWANCE_RATE_EUR_PER_KM)}/km)`
             : LABELS[receipt.costType]}
         </h3>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => toggleType(receipt.costType)}
+          aria-label="Position entfernen"
+          title="Position entfernen"
         >
           <Trash2 className="size-4" />
         </Button>
@@ -86,7 +89,7 @@ export function ReceiptCard({ receipt, toggleType, updateReceipt }: Props) {
             <div>
               <Label className="text-muted-foreground">Betrag</Label>
               <Input
-                value={`${receipt.grossAmount.toFixed(2)} €`}
+                value={formatCurrency(receipt.grossAmount)}
                 disabled
                 className="bg-muted/50 font-mono"
               />
@@ -112,7 +115,7 @@ export function ReceiptCard({ receipt, toggleType, updateReceipt }: Props) {
               />
             </div>
             <div>
-              <Label>MwSt.</Label>
+              <Label>USt.-Satz</Label>
               <Select
                 value={String(receipt.taxRate)}
                 onValueChange={(value) => {
@@ -137,7 +140,7 @@ export function ReceiptCard({ receipt, toggleType, updateReceipt }: Props) {
         )}
       </div>
 
-      {receipt.grossAmount > 0 && (
+      {(receipt.grossAmount > 0 || receipt.fileStorageId) && (
         <div className="space-y-3">
           {receipt.costType !== "car" ? <ReceiptAddressNotice /> : null}
           <Label>Beleg *</Label>

@@ -10,10 +10,25 @@ let client: S3Client | null = null;
 
 function s3(): S3Client {
   if (!client) {
+    const accessKeyId =
+      process.env.OBJECT_STORAGE_ACCESS_KEY_ID ?? process.env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey =
+      process.env.OBJECT_STORAGE_SECRET_ACCESS_KEY ??
+      process.env.AWS_SECRET_ACCESS_KEY;
+
     client = new S3Client({
-      region: process.env.AWS_REGION ?? "nbg1",
-      endpoint: process.env.S3_ENDPOINT_URL,
-      forcePathStyle: true,
+      region:
+        process.env.OBJECT_STORAGE_REGION ?? process.env.AWS_REGION ?? "nbg1",
+      endpoint:
+        process.env.OBJECT_STORAGE_ENDPOINT ?? process.env.S3_ENDPOINT_URL,
+      forcePathStyle:
+        process.env.OBJECT_STORAGE_FORCE_PATH_STYLE !== undefined
+          ? process.env.OBJECT_STORAGE_FORCE_PATH_STYLE === "true"
+          : true,
+      credentials:
+        accessKeyId && secretAccessKey
+          ? { accessKeyId, secretAccessKey }
+          : undefined,
       requestChecksumCalculation: "WHEN_REQUIRED",
       responseChecksumValidation: "WHEN_REQUIRED",
     });
@@ -22,8 +37,8 @@ function s3(): S3Client {
 }
 
 function bucket(): string {
-  const name = process.env.S3_BUCKET;
-  if (!name) throw new Error("S3_BUCKET is not set");
+  const name = process.env.OBJECT_STORAGE_BUCKET ?? process.env.S3_BUCKET;
+  if (!name) throw new Error("OBJECT_STORAGE_BUCKET is not set");
   return name;
 }
 

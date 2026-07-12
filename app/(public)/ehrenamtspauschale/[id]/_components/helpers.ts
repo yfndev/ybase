@@ -37,14 +37,18 @@ export const validateAllowanceForm = (
     return { ok: false, error: "Bitte die Tätigkeit beschreiben" };
   if (!form.startDate || !form.endDate)
     return { ok: false, error: "Bitte den Zeitraum angeben" };
+  if (form.startDate > form.endDate)
+    return { ok: false, error: "Das Enddatum liegt vor dem Startdatum" };
+  if (!form.taxYear)
+    return { ok: false, error: "Bitte das Steuerjahr angeben" };
 
-  const amount = parseFloat(form.amount);
+  const amount = parseFloat(form.amount.replace(",", "."));
   if (!amount || amount <= 0)
     return { ok: false, error: "Bitte einen Betrag eingeben" };
   if (amount > MAX_VOLUNTEER_ALLOWANCE_EUR)
     return {
       ok: false,
-      error: `Maximal ${MAX_VOLUNTEER_ALLOWANCE_EUR}€ erlaubt`,
+      error: `Maximal ${MAX_VOLUNTEER_ALLOWANCE_EUR} € erlaubt`,
     };
 
   if (!form.accountHolder)

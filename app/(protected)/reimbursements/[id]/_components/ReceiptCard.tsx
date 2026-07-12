@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import { formatDate } from "@/lib/formatters/formatDate";
+import { CAR_ALLOWANCE_RATE_EUR_PER_KM } from "@/lib/travel-costs";
 import { COST_TYPE_LABELS } from "./constants";
 import type { ReceiptWithUrl } from "./types";
 
@@ -17,7 +18,7 @@ export function ReceiptCard({ receipt }: { receipt: ReceiptWithUrl }) {
           <div>
             <p className="font-semibold">{receipt.companyName}</p>
             <p className="text-sm text-muted-foreground">
-              Beleg-Nr. {receipt.receiptNumber} •
+              Beleg-Nr. {receipt.receiptNumber} •{" "}
               {formatDate(receipt.receiptDate)}
             </p>
           </div>
@@ -26,7 +27,8 @@ export function ReceiptCard({ receipt }: { receipt: ReceiptWithUrl }) {
               {formatCurrency(receipt.grossAmount)}
             </p>
             <p className="text-sm text-muted-foreground">
-              {formatCurrency(receipt.netAmount)} netto +{receipt.taxRate}% USt
+              {formatCurrency(receipt.netAmount)} netto + {receipt.taxRate}%
+              USt.
             </p>
           </div>
         </div>
@@ -40,7 +42,8 @@ export function ReceiptCard({ receipt }: { receipt: ReceiptWithUrl }) {
             </Badge>
             {receipt.kilometers && (
               <span className="text-sm text-muted-foreground">
-                {receipt.kilometers} km × 0,30€
+                {receipt.kilometers} km ×{" "}
+                {formatCurrency(CAR_ALLOWANCE_RATE_EUR_PER_KM)}
               </span>
             )}
           </div>

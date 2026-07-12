@@ -52,17 +52,32 @@ export function usePdfDownloads({
   };
 
   const handleDownloadReimbursement = async (id: string) => {
-    const blob = await getPdfBlobForReimbursement(id);
-    if (blob) downloadBlob(blob, `Erstattung_${shortReferenceId(id)}.pdf`);
+    try {
+      const blob = await getPdfBlobForReimbursement(id);
+      if (!blob) {
+        toast.error("PDF konnte nicht erstellt werden");
+        return;
+      }
+      downloadBlob(blob, `Erstattung_${shortReferenceId(id)}.pdf`);
+    } catch {
+      toast.error("Fehler beim Herunterladen");
+    }
   };
 
   const handleDownloadAllowance = async (allowance: Allowance) => {
-    const blob = await getPdfBlobForAllowance(allowance);
-    if (blob)
+    try {
+      const blob = await getPdfBlobForAllowance(allowance);
+      if (!blob) {
+        toast.error("PDF konnte nicht erstellt werden");
+        return;
+      }
       downloadBlob(
         blob,
         `Ehrenamtspauschale_${shortReferenceId(allowance._id)}.pdf`,
       );
+    } catch {
+      toast.error("Fehler beim Herunterladen");
+    }
   };
 
   const handleBulkDownload = async () => {

@@ -19,6 +19,7 @@ export function OrganizationClient({ organization }: Props) {
   const router = useRouter();
   const [form, setForm] = useState(organization);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isDirty = JSON.stringify(form) !== JSON.stringify(organization);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +51,7 @@ export function OrganizationClient({ organization }: Props) {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div>
-              <Label htmlFor="name">Vereinsname *</Label>
+              <Label htmlFor="name">Organisationsname *</Label>
               <Input
                 id="name"
                 value={form.name}
@@ -127,7 +128,7 @@ export function OrganizationClient({ organization }: Props) {
             </div>
           </div>
 
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting || !isDirty}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Speichern
           </Button>

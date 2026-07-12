@@ -1,10 +1,15 @@
+import path from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 import dotenv from "dotenv";
-import path from "path";
 
 if (!process.env.CI) {
   dotenv.config({ path: path.resolve(__dirname, ".env.local") });
 }
+
+const port = process.env.CI
+  ? 3000
+  : Number(process.env.CONDUCTOR_PORT ?? 2999) + 1;
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${port}`;
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -17,12 +22,12 @@ export default defineConfig({
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: "html",
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    baseURL: process.env.SITE_URL || "http://localhost:3000",
+    baseURL,
     trace: "on-first-retry",
   },
 
@@ -34,9 +39,15 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "pnpm dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
+    command: `pnpm dev --port ${port}`,
+    env: {
+      ...process.env,
+      AUTH_SECRET: "ybase-playwright-test-secret",
+      IS_TEST: "true",
+      NEXT_DIST_DIR: ".next-playwright",
+    },
+    url: baseURL,
+    reuseExistingServer: false,
+    timeout: process.env.CI ? 30_000 : 120_000,
   },
 });

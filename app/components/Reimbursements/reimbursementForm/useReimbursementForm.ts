@@ -16,6 +16,7 @@ export function useReimbursementForm(defaultBankDetails: BankDetails) {
   const [signature, setSignature] = useState<string | null>(null);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const addReceipt = () => {
     if (
@@ -57,6 +58,8 @@ export function useReimbursementForm(defaultBankDetails: BankDetails) {
     if (receipts.length === 0)
       return toast.error("Bitte mindestens einen Beleg hinzufügen");
     if (!signature) return toast.error("Bitte unterschreiben");
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await createReimbursement({
         projectId,
@@ -70,6 +73,7 @@ export function useReimbursementForm(defaultBankDetails: BankDetails) {
       router.push("/reimbursements");
     } catch {
       toast.error("Fehler beim Einreichen");
+      setIsSubmitting(false);
     }
   };
 
@@ -87,6 +91,7 @@ export function useReimbursementForm(defaultBankDetails: BankDetails) {
     draft,
     setDraft,
     addReceipt,
+    isSubmitting,
     handleSubmit,
   };
 }

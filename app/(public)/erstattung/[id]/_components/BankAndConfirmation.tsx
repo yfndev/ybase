@@ -44,7 +44,7 @@ export function BankAndConfirmation(props: Props) {
               }
               placeholder="DE89 3704 0044 0532 0130 00"
               className="font-mono"
-              maxLength={27}
+              maxLength={42}
             />
           </div>
           <div>

@@ -44,7 +44,7 @@ export function TravelReceiptCard(props: Props) {
 
       <div className="grid grid-cols-3 gap-4">
         <div>
-          <Label>Firma/Anbieter *</Label>
+          <Label>Name/Firma *</Label>
           <Input
             value={receipt.companyName}
             onChange={(e) => props.onUpdate({ companyName: e.target.value })}

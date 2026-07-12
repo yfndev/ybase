@@ -1,11 +1,11 @@
 "use server";
 
 import { z } from "zod";
+import { isTestMode } from "../../auth/environment";
 import { requireRole, requireUser } from "../../auth/session";
 import { newId } from "../../db/ids";
 import { presignUpload } from "../../s3/storage";
 import { addLog } from "../logs";
-import { getFileUrl } from "./data";
 import {
   applyApproval,
   applyDecline,
@@ -14,6 +14,7 @@ import {
   insertTravelDetails,
   type ReimbursementPdfData,
 } from "./actionsHelpers";
+import { getFileUrl } from "./data";
 import {
   insertReceipts,
   insertReimbursement,
@@ -74,10 +75,16 @@ export async function generateUploadUrl(
   contentType?: string,
 ): Promise<{ key: string; url: string }> {
   await requireUser();
+  if (isTestMode()) {
+    return { key: crypto.randomUUID(), url: "/api/test/upload" };
+  }
   return presignUpload(contentType);
 }
 
 export async function getFileUrlAction(key: string): Promise<string> {
+  if (isTestMode()) {
+    return "data:image/gif;base64,R0lGODlhAQABAAAAACw=";
+  }
   return getFileUrl(key);
 }
 
