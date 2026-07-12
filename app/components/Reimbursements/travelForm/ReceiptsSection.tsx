@@ -2,9 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  COST_LABELS as LABELS,
   COST_TYPES,
   type CostType,
+  COST_LABELS as LABELS,
 } from "@/lib/travel-costs";
 import { MealAllowanceSection } from "./MealAllowanceSection";
 import { ReceiptCard } from "./ReceiptCard";
@@ -45,7 +45,8 @@ export function ReceiptsSection({
             <Button
               key={type}
               type="button"
-              variant={hasReceipt(type) ? "default" : "outline"}
+              variant={hasReceipt(type) ? "primary" : "outline"}
+              aria-pressed={hasReceipt(type)}
               onClick={() => toggleType(type)}
             >
               {LABELS[type]}
