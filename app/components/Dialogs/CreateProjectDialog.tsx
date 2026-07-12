@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { ProjectTravelDefaults } from "@/lib/db/types";
 import { createProject } from "@/lib/server/projects/actions";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
@@ -21,7 +22,10 @@ import toast from "react-hot-toast";
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onProjectCreated?: (projectId: string) => void;
+  onProjectCreated?: (
+    projectId: string,
+    travelDefaults: ProjectTravelDefaults,
+  ) => void;
 }
 
 export function CreateProjectDialog({
@@ -30,13 +34,19 @@ export function CreateProjectDialog({
   onProjectCreated,
 }: Props) {
   const [name, setName] = useState("");
+  const [travelDestination, setTravelDestination] = useState("");
+  const [travelPurpose, setTravelPurpose] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const queryClient = useQueryClient();
 
   const handleOpenChange = (value: boolean) => {
     if (isSubmitting) return;
-    if (!value) setName("");
+    if (!value) {
+      setName("");
+      setTravelDestination("");
+      setTravelPurpose("");
+    }
     onOpenChange(value);
   };
 
@@ -46,13 +56,20 @@ export function CreateProjectDialog({
 
     setIsSubmitting(true);
     try {
-      const projectId = await createProject({ name: name.trim() });
+      const project = {
+        name: name.trim(),
+        travelDestination: travelDestination.trim(),
+        travelPurpose: travelPurpose.trim(),
+      };
+      const projectId = await createProject(project);
       router.refresh();
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       toast.success("Projekt erstellt");
-      onProjectCreated?.(projectId);
+      onProjectCreated?.(projectId, project);
       onOpenChange(false);
       setName("");
+      setTravelDestination("");
+      setTravelPurpose("");
     } catch {
       toast.error("Fehler beim Erstellen");
     } finally {
@@ -81,6 +98,27 @@ export function CreateProjectDialog({
               onChange={(e) => setName(e.target.value)}
               autoFocus
             />
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="project-travel-destination">Reiseziel</Label>
+              <Input
+                id="project-travel-destination"
+                placeholder="z.B. Hamburg"
+                value={travelDestination}
+                onChange={(e) => setTravelDestination(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="project-travel-purpose">Reisezweck</Label>
+              <Input
+                id="project-travel-purpose"
+                placeholder="z.B. Team-Wochenende"
+                value={travelPurpose}
+                onChange={(e) => setTravelPurpose(e.target.value)}
+              />
+            </div>
           </div>
 
           <DialogFooter>

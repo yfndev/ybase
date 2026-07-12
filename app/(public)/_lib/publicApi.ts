@@ -35,7 +35,13 @@ export type ReimbursementLink =
       organizationName: string;
       projectName: string;
       description?: string;
-      travelDetails: { allowFoodAllowance?: boolean } | null;
+      travelDetails: {
+        destination: string;
+        purpose: string;
+        startDate: string;
+        endDate: string;
+        allowFoodAllowance?: boolean;
+      } | null;
     };
 
 export async function validateReimbursementLink(

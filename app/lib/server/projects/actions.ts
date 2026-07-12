@@ -10,15 +10,30 @@ import {
 import { newId } from "../../db/ids";
 import { addLog } from "../logs";
 
-export async function createProject(input: { name: string }): Promise<string> {
+const projectFieldsSchema = z.object({
+  name: z.string().trim().min(1),
+  travelDestination: z.string().trim().optional(),
+  travelPurpose: z.string().trim().optional(),
+});
+
+export async function createProject(input: {
+  name: string;
+  travelDestination?: string;
+  travelPurpose?: string;
+}): Promise<string> {
   const user = await requireRole("admin");
-  const { name } = z.object({ name: z.string().min(1) }).parse(input);
+  const { name, travelDestination, travelPurpose } =
+    projectFieldsSchema.parse(input);
 
   const _id = newId();
-  await (await projects()).insertOne({
+  await (
+    await projects()
+  ).insertOne({
     _id,
     _creationTime: Date.now(),
     name,
+    ...(travelDestination ? { travelDestination } : {}),
+    ...(travelPurpose ? { travelPurpose } : {}),
     organizationId: user.organizationId,
     isArchived: false,
     createdBy: user._id,
@@ -27,23 +42,36 @@ export async function createProject(input: { name: string }): Promise<string> {
   return _id;
 }
 
-export async function renameProject(input: {
+export async function updateProject(input: {
   projectId: string;
   name: string;
+  travelDestination?: string;
+  travelPurpose?: string;
 }): Promise<void> {
   const user = await requireRole("admin");
-  const { projectId, name } = z
-    .object({ projectId: z.string(), name: z.string().min(1) })
+  const { projectId, name, travelDestination, travelPurpose } = z
+    .object({ projectId: z.string(), ...projectFieldsSchema.shape })
     .parse(input);
 
-  const project = await requireOwnedProject(projectId, user.organizationId);
-  await (await projects()).updateOne({ _id: projectId }, { $set: { name } });
+  await requireOwnedProject(projectId, user.organizationId);
+  await (
+    await projects()
+  ).updateOne(
+    { _id: projectId },
+    {
+      $set: {
+        name,
+        travelDestination: travelDestination ?? "",
+        travelPurpose: travelPurpose ?? "",
+      },
+    },
+  );
   await addLog(
     user.organizationId,
     user._id,
-    "project.rename",
+    "project.update",
     projectId,
-    `${project.name} → ${name}`,
+    name,
   );
 }
 
@@ -80,7 +108,10 @@ export async function deleteProject(input: {
 }): Promise<void> {
   const user = await requireRole("admin");
   const { projectId, mergeIntoProjectId } = z
-    .object({ projectId: z.string(), mergeIntoProjectId: z.string().optional() })
+    .object({
+      projectId: z.string(),
+      mergeIntoProjectId: z.string().optional(),
+    })
     .parse(input);
 
   const project = await requireOwnedProject(projectId, user.organizationId);
@@ -89,7 +120,9 @@ export async function deleteProject(input: {
     if (mergeIntoProjectId === projectId) {
       throw new Error("Zielprojekt darf nicht das gleiche Projekt sein");
     }
-    const target = await (await projects()).findOne({ _id: mergeIntoProjectId });
+    const target = await (
+      await projects()
+    ).findOne({ _id: mergeIntoProjectId });
     if (!target || target.organizationId !== user.organizationId) {
       throw new Error("Zielprojekt nicht gefunden");
     }

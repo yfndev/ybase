@@ -17,6 +17,7 @@ const ACTION_LABELS: Record<string, string> = {
   "organization.update": "Organisation aktualisiert",
   "project.create": "Projekt erstellt",
   "project.rename": "Projekt umbenannt",
+  "project.update": "Projekt aktualisiert",
   "project.archive": "Projekt archiviert",
   "project.unarchive": "Projekt wiederhergestellt",
   "project.delete": "Projekt gelöscht",

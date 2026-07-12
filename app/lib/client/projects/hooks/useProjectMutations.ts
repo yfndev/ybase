@@ -2,8 +2,8 @@ import {
   archiveProject,
   createProject,
   deleteProject,
-  renameProject,
   unarchiveProject,
+  updateProject,
 } from "@/lib/server/projects/actions";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -14,7 +14,7 @@ export function useProjectMutations() {
 
   return {
     create: useMutation({ mutationFn: createProject, onSuccess }),
-    rename: useMutation({ mutationFn: renameProject, onSuccess }),
+    update: useMutation({ mutationFn: updateProject, onSuccess }),
     archive: useMutation({ mutationFn: archiveProject, onSuccess }),
     unarchive: useMutation({ mutationFn: unarchiveProject, onSuccess }),
     remove: useMutation({ mutationFn: deleteProject, onSuccess }),

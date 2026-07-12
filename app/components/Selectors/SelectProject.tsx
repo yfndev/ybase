@@ -1,7 +1,7 @@
 "use client";
 
 import { CreateProjectDialog } from "@/components/Dialogs/CreateProjectDialog";
-import type { Project } from "@/lib/db/types";
+import type { Project, ProjectTravelDefaults } from "@/lib/db/types";
 import { focusNextInput } from "@/lib/focusNextInput";
 import { useIsAdmin } from "@/lib/hooks/useCurrentUserRole";
 import { cn } from "@/lib/utils";
@@ -10,7 +10,10 @@ import { useEffect, useRef, useState } from "react";
 
 interface Props {
   value: string | undefined;
-  onValueChange: (value: string) => void;
+  onValueChange: (
+    value: string,
+    travelDefaults?: ProjectTravelDefaults,
+  ) => void;
   projects: Project[];
   autoFocus?: boolean;
 }
@@ -58,7 +61,9 @@ export function SelectProject({
   };
 
   const handleSelect = (id: string) => {
-    onValueChange(id === value ? "" : id);
+    const nextId = id === value ? "" : id;
+    const project = projects.find((item) => item._id === nextId);
+    onValueChange(nextId, project);
     close();
     setTimeout(() => focusNextInput(inputRef.current), 0);
   };
@@ -114,7 +119,7 @@ export function SelectProject({
         <ChevronsUpDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50 pointer-events-none" />
 
         {open && (
-          <div className="absolute mt-1 w-full bg-background border rounded-md shadow-lg z-50 max-h-64 overflow-auto">
+          <div className="absolute z-50 mt-1 max-h-64 min-w-full w-max max-w-[calc(100vw-3rem)] overflow-auto rounded-md border bg-background shadow-lg">
             {filtered.length === 0 && (
               <div className="px-3 py-2 text-sm text-muted-foreground">
                 Keine Projekte gefunden
@@ -125,20 +130,20 @@ export function SelectProject({
                 key={project._id}
                 type="button"
                 className={cn(
-                  "w-full text-left px-3 py-2 text-sm flex items-center justify-between",
+                  "flex w-full min-w-0 items-center justify-between gap-3 px-3 py-2 text-left text-sm",
                   index === highlightedIndex && "bg-accent",
                 )}
                 onClick={() => handleSelect(project._id)}
                 onMouseEnter={() => setHighlightedIndex(index)}
               >
-                {project.name}
+                <span className="truncate">{project.name}</span>
                 {value === project._id && <Check className="h-4 w-4" />}
               </button>
             ))}
             {isAdmin ? (
               <button
                 type="button"
-                className="w-full text-left px-3 py-2 text-sm text-foreground flex items-center gap-2 border-t hover:bg-accent"
+                className="flex w-full items-center gap-2 whitespace-nowrap border-t px-3 py-2 text-left text-sm text-foreground hover:bg-accent"
                 onClick={() => {
                   setDialogOpen(true);
                   close();
