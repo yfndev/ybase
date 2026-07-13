@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Check,
-  Download,
-  HandHeart,
-  ReceiptText,
-  Route,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Check, Download, Trash2, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,7 +24,6 @@ interface ReimbursementRowProps {
     reviewedAt?: number;
   };
   canManageReimbursements: boolean;
-  kind: "expense" | "travel" | "allowance";
   title: string;
   detail?: string;
   applicantName: string;
@@ -47,7 +38,6 @@ interface ReimbursementRowProps {
 export function ReimbursementRow({
   item,
   canManageReimbursements,
-  kind,
   title,
   detail,
   applicantName,
@@ -60,8 +50,6 @@ export function ReimbursementRow({
 }: ReimbursementRowProps) {
   const display = STATUS_DISPLAY[item.status];
   const isPending = item.status === "pending";
-  const KindIcon =
-    kind === "travel" ? Route : kind === "allowance" ? HandHeart : ReceiptText;
   const reviewDetails = [
     item.reviewedByName ? `von ${item.reviewedByName}` : undefined,
     item.reviewedAt ? formatDate(item.reviewedAt) : undefined,
@@ -71,7 +59,7 @@ export function ReimbursementRow({
 
   return (
     <TableRow
-      className={onClick ? "group cursor-pointer" : undefined}
+      className={onClick ? "cursor-pointer" : undefined}
       onClick={onClick}
     >
       {selectionCheckbox !== undefined && (
@@ -80,18 +68,13 @@ export function ReimbursementRow({
         </TableCell>
       )}
       <TableCell className="min-w-56 py-3">
-        <div className="flex items-center gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-muted/40 text-muted-foreground transition-colors group-hover:border-primary/20 group-hover:bg-primary/5 group-hover:text-primary">
-            <KindIcon className="size-4" aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <div className="font-medium text-foreground">{title}</div>
-            {detail ? (
-              <div className="max-w-72 truncate text-xs text-muted-foreground">
-                {detail}
-              </div>
-            ) : null}
-          </div>
+        <div className="min-w-0">
+          <div className="font-medium text-foreground">{title}</div>
+          {detail ? (
+            <div className="max-w-72 truncate text-xs text-muted-foreground">
+              {detail}
+            </div>
+          ) : null}
         </div>
       </TableCell>
       {canManageReimbursements ? (
