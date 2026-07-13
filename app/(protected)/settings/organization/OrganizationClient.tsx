@@ -128,7 +128,11 @@ export function OrganizationClient({ organization }: Props) {
             </div>
           </div>
 
-          <Button type="submit" disabled={isSubmitting || !isDirty}>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={isSubmitting || !isDirty}
+          >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Speichern
           </Button>

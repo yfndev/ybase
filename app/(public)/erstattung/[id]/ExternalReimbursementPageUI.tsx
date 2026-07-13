@@ -119,6 +119,7 @@ export default function ExternalReimbursementPageUI(
 
         <Button
           onClick={props.onSubmit}
+          variant="primary"
           className="w-full h-14 font-semibold"
           size="lg"
           disabled={props.isSubmitting}

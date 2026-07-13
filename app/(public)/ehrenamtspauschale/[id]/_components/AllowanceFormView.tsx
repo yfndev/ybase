@@ -61,6 +61,7 @@ export function AllowanceFormView({
 
         <Button
           onClick={handleSubmit}
+          variant="primary"
           className="w-full h-14 font-semibold"
           size="lg"
           disabled={isSubmitting}
