@@ -79,6 +79,7 @@ export async function getAllReimbursements(): Promise<
     Reimbursement & {
       creatorName: string;
       projectName: string;
+      receiptSummary?: string;
       travelDetails?: TravelDetails;
       reviewedByName?: string;
     }
@@ -105,14 +106,18 @@ export async function getAllReimbursements(): Promise<
     .filter((item) => item.type === "travel")
     .map((item) => item._id);
 
-  const [creators, projectList, reviewers, travelList] = await Promise.all([
-    (await users()).find({ _id: { $in: creatorIds } }).toArray(),
-    (await projects()).find({ _id: { $in: projectIds } }).toArray(),
-    (await users()).find({ _id: { $in: reviewerIds } }).toArray(),
-    (await travelDetails())
-      .find({ reimbursementId: { $in: travelIds } })
-      .toArray(),
-  ]);
+  const [creators, projectList, reviewers, travelList, receiptList] =
+    await Promise.all([
+      (await users()).find({ _id: { $in: creatorIds } }).toArray(),
+      (await projects()).find({ _id: { $in: projectIds } }).toArray(),
+      (await users()).find({ _id: { $in: reviewerIds } }).toArray(),
+      (await travelDetails())
+        .find({ reimbursementId: { $in: travelIds } })
+        .toArray(),
+      (await receipts())
+        .find({ reimbursementId: { $in: list.map((item) => item._id) } })
+        .toArray(),
+    ]);
 
   const creatorMap = new Map(creators.map((item) => [item._id, item.name]));
   const projectMap = new Map(projectList.map((item) => [item._id, item.name]));
@@ -120,14 +125,32 @@ export async function getAllReimbursements(): Promise<
   const travelMap = new Map(
     travelList.map((item) => [item.reimbursementId, item]),
   );
+  const receiptsByReimbursement = new Map<string, Receipt[]>();
+  for (const receipt of receiptList) {
+    const reimbursementReceipts =
+      receiptsByReimbursement.get(receipt.reimbursementId) ?? [];
+    reimbursementReceipts.push(receipt);
+    receiptsByReimbursement.set(receipt.reimbursementId, reimbursementReceipts);
+  }
 
-  return list.map((item) => ({
-    ...item,
-    creatorName: creatorMap.get(item.createdBy) || "Unknown",
-    projectName: projectMap.get(item.projectId) || "Unbekanntes Projekt",
-    travelDetails: travelMap.get(item._id),
-    reviewedByName: item.reviewedBy
-      ? reviewerMap.get(item.reviewedBy)
-      : undefined,
-  }));
+  return list.map((item) => {
+    const itemReceipts = receiptsByReimbursement.get(item._id) ?? [];
+    const firstReceipt = itemReceipts[0];
+    const receiptLabel = firstReceipt?.description || firstReceipt?.companyName;
+    const receiptSummary =
+      receiptLabel && itemReceipts.length > 1
+        ? `${receiptLabel} + ${itemReceipts.length - 1} weitere`
+        : receiptLabel;
+
+    return {
+      ...item,
+      creatorName: creatorMap.get(item.createdBy) || "Unbekannt",
+      projectName: projectMap.get(item.projectId) || "Unbekanntes Projekt",
+      receiptSummary,
+      travelDetails: travelMap.get(item._id),
+      reviewedByName: item.reviewedBy
+        ? reviewerMap.get(item.reviewedBy)
+        : undefined,
+    };
+  });
 }

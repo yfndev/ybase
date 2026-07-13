@@ -171,6 +171,9 @@ test("getAllReimbursements stays scoped to the caller's org", async () => {
   expect(list).toHaveLength(2);
   expect(list.every((item) => item.organizationId === orgA)).toBe(true);
   expect(list.every((item) => item.projectName === "Projekt A")).toBe(true);
+  expect(list.find((item) => item.createdBy === userA)?.receiptSummary).toBe(
+    "Material",
+  );
 });
 
 test("members only see their own reimbursements", async () => {
@@ -251,7 +254,9 @@ test("deleteReimbursement removes receipts and deletes the stored files", async 
 
 test("finance can delete another member's reimbursement", async () => {
   const reimbursementId = newId();
-  await (await reimbursements()).insertOne({
+  await (
+    await reimbursements()
+  ).insertOne({
     _id: reimbursementId,
     _creationTime: Date.now(),
     organizationId: orgA,

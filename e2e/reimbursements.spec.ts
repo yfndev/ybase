@@ -195,8 +195,12 @@ test.describe.serial("reimbursement flow", () => {
     await expect(
       page.getByText("Reisekostenerstattung eingereicht"),
     ).toBeVisible();
+    const travelRow = page.locator("table tbody tr").first();
     await expect(
-      page.getByText("Reisekostenerstattung - Berlin"),
+      travelRow.getByText("Reisekostenerstattung", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      travelRow.getByText("Event · Berlin", { exact: true }),
     ).toBeVisible();
     await expect(page.getByText("Ausstehend")).toBeVisible();
   });
@@ -212,9 +216,7 @@ test.describe.serial("reimbursement flow", () => {
       .fill("Falsche Angaben");
     await page.getByRole("button", { name: "Ablehnen" }).click();
 
-    await expect(
-      page.getByText("Ablehnungsgrund: Falsche Angaben"),
-    ).toBeVisible({
+    await expect(page.getByText("Grund: Falsche Angaben")).toBeVisible({
       timeout: 10000,
     });
     await expect(
