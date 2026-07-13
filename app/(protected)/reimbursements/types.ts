@@ -24,6 +24,12 @@ export type Allowance = VolunteerAllowance & {
 
 export type SelectionKey = `r:${string}` | `a:${string}`;
 
+export type ReimbursementTypeFilter =
+  | "all"
+  | "expense"
+  | "travel"
+  | "allowance";
+
 export type RejectDialog = {
   open: boolean;
   type: "reimbursement" | "allowance";

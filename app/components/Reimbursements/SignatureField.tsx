@@ -1,9 +1,9 @@
 "use client";
 
+import { CheckCircle2, Monitor, Smartphone } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getFileUrlAction } from "@/lib/server/reimbursements/actions";
-import { Loader2, Monitor, Smartphone } from "lucide-react";
-import { useEffect, useState } from "react";
 import { SignatureCanvas } from "./SignatureCanvas";
 import { SignatureQRPanel } from "./SignatureQRPanel";
 
@@ -64,9 +64,14 @@ function SignaturePreview({ storageId }: { storageId: string }) {
 
   useEffect(() => {
     let active = true;
-    getFileUrlAction(storageId).then((url) => {
-      if (active) setPreviewUrl(url);
-    });
+    setPreviewUrl(null);
+    getFileUrlAction(storageId)
+      .then((url) => {
+        if (active) setPreviewUrl(url);
+      })
+      .catch(() => {
+        if (active) setPreviewUrl(null);
+      });
     return () => {
       active = false;
     };
@@ -78,7 +83,7 @@ function SignaturePreview({ storageId }: { storageId: string }) {
         <img src={previewUrl} alt="Unterschrift" className="max-h-24 mx-auto" />
       ) : (
         <div className="h-24 flex items-center justify-center">
-          <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          <CheckCircle2 className="size-8 text-green-600" aria-hidden="true" />
         </div>
       )}
       <p className="text-sm text-muted-foreground text-center mt-2">

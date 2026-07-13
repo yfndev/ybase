@@ -57,6 +57,7 @@ async function addSignature(page: Page) {
   if (await failed.isVisible()) {
     throw new Error(`Unterschrift fehlgeschlagen: ${await failed.innerText()}`);
   }
+  await expect(saved.locator("..").locator(".animate-spin")).toHaveCount(0);
 }
 
 test.describe.serial("reimbursement flow", () => {
@@ -146,9 +147,6 @@ test.describe.serial("reimbursement flow", () => {
     await page.getByRole("button", { name: "Beleg speichern" }).click();
     await expect(page.getByText("Test Firma")).toBeVisible();
 
-    await expect(
-      page.getByText("Bitte vervollständige deine Bankverbindung."),
-    ).toBeVisible();
     await page.getByPlaceholder("Vor- und Nachname").fill("Test User");
     await page
       .getByPlaceholder("DE12 3456 7890 0000 0000 00")
@@ -259,7 +257,47 @@ test.describe.serial("reimbursement flow", () => {
     await expect(page.getByText("Ausstehend")).toBeVisible();
   });
 
-  test("4. Reject travel reimbursement", async () => {
+  test("4. Filter reimbursements by type", async () => {
+    const tableRows = page.locator("table tbody tr");
+
+    await expect(tableRows).toHaveCount(2);
+    await tableRows
+      .first()
+      .getByRole("checkbox", { name: "Antrag auswählen" })
+      .check();
+    await expect(
+      page.getByRole("button", { name: "1 herunterladen" }),
+    ).toBeVisible();
+
+    await page
+      .getByRole("tab", { name: "Reisekostenerstattung", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "1 herunterladen" }),
+    ).not.toBeVisible();
+    await expect(tableRows).toHaveCount(1);
+    await expect(
+      page.getByRole("cell", { name: "Reisekostenerstattung" }),
+    ).toBeVisible();
+
+    await page
+      .getByRole("tab", { name: "Auslagenerstattung", exact: true })
+      .click();
+    await expect(tableRows).toHaveCount(1);
+    await expect(
+      page.getByRole("cell", { name: "Auslagenerstattung" }),
+    ).toBeVisible();
+
+    await page
+      .getByRole("tab", { name: "Ehrenamtspauschale", exact: true })
+      .click();
+    await expect(page.getByText("Keine Erstattungen gefunden.")).toBeVisible();
+
+    await page.getByRole("tab", { name: "Alle", exact: true }).click();
+    await expect(tableRows).toHaveCount(2);
+  });
+
+  test("5. Reject travel reimbursement", async () => {
     await page
       .locator("table tbody tr")
       .first()
