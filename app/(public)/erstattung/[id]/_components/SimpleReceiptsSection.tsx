@@ -60,7 +60,7 @@ export function SimpleReceiptsSection(props: Props) {
             />
           </div>
           <div>
-            <Label>Beleg-Nr.</Label>
+            <Label>Beleg-/Rechnungsnummer</Label>
             <Input
               value={props.number}
               onChange={(e) => props.onNumberChange(e.target.value)}
