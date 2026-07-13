@@ -68,7 +68,7 @@ export function ReceiptDropzone({ inputRef, isUploading, onFile }: Props) {
           <Button
             type="button"
             variant="primary"
-            className="mt-1 rounded-[8px]"
+            className="mt-1 rounded-none"
             onClick={() => inputRef.current?.click()}
           >
             Datei auswählen
