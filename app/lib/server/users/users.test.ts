@@ -124,12 +124,18 @@ test("addUserToOrganization cannot pull in a user from another org", async () =>
 
 test("updateBankDetails updates the caller's own bank details", async () => {
   await updateBankDetails({
-    iban: "DE89",
-    bic: "ABCDEF",
+    iban: "de89 3704 0044 0532 0130 00",
+    bic: "cobadeffxxx",
     accountHolder: "Admin A",
   });
   const updated = await (await users()).findOne({ _id: adminA });
-  expect(updated?.iban).toBe("DE89");
-  expect(updated?.bic).toBe("ABCDEF");
+  expect(updated?.iban).toBe("DE89370400440532013000");
+  expect(updated?.bic).toBe("COBADEFFXXX");
   expect(updated?.accountHolder).toBe("Admin A");
+});
+
+test("updateBankDetails rejects missing bank details", async () => {
+  await expect(
+    updateBankDetails({ iban: "", bic: "", accountHolder: "" }),
+  ).rejects.toThrow();
 });

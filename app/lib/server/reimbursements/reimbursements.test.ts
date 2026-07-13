@@ -121,7 +121,7 @@ function reimbursementInput() {
   return {
     amount: 50,
     projectId: projectA,
-    iban: "DE00",
+    iban: "DE89370400440532013000",
     accountHolder: "Max",
     signatureStorageId: "sig-key",
     receipts: [
@@ -160,6 +160,16 @@ test("getFileInfo returns signed download metadata", async () => {
     contentType: "application/pdf",
   });
   expect(getDownloadInfo).toHaveBeenCalledWith("receipt-key");
+});
+
+test("createReimbursement rejects missing bank details", async () => {
+  await expect(
+    createReimbursement({
+      ...reimbursementInput(),
+      iban: "",
+      accountHolder: "",
+    }),
+  ).rejects.toThrow();
 });
 
 test("getAllReimbursements stays scoped to the caller's org", async () => {

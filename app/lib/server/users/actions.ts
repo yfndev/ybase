@@ -5,6 +5,7 @@ import { requireRole, requireUser } from "../../auth/session";
 import { users } from "../../db/collections";
 import type { UserRole } from "../../db/types";
 import { addLog } from "../logs";
+import { bankDetailsSchema } from "../bankDetails";
 
 const roleSchema = z.enum(["admin", "finance", "member"]);
 
@@ -82,13 +83,7 @@ export async function updateBankDetails(input: {
   accountHolder: string;
 }): Promise<void> {
   const user = await requireUser();
-  const { iban, bic, accountHolder } = z
-    .object({
-      iban: z.string(),
-      bic: z.string(),
-      accountHolder: z.string(),
-    })
-    .parse(input);
+  const { iban, bic, accountHolder } = bankDetailsSchema.parse(input);
 
   await (await users()).updateOne(
     { _id: user._id },
