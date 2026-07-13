@@ -26,7 +26,7 @@ Simple, free, intuitive budget and reimbursement tracking for non-profits.
 - **Volunteer Allowance:** "Ehrenamtspauschale" forms with shareable links for external signatures
 - **Team Management:** Organize members into teams with project access control
 - **Donor Export:** Export transactions by donor to CSV
-- **Email Notifications:** Transactional approval and rejection emails (powered by Brevo)
+- **Email Notifications:** Transactional request, submission, revision, approval, and rejection emails (powered by Brevo)
 - **Guided Onboarding:** Interactive tour for new users
 - **Audit Logs:** Track all actions for transparency and compliance
 

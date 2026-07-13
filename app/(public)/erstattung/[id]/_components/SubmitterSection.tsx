@@ -24,7 +24,7 @@ export function SubmitterSection(props: Props) {
           />
         </div>
         <div>
-          <Label>E-Mail (optional)</Label>
+          <Label>E-Mail *</Label>
           <Input
             type="email"
             value={props.email}

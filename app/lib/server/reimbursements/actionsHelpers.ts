@@ -103,6 +103,7 @@ export async function applyApproval(
         reviewedBy: reviewerId,
         reviewedAt: Date.now(),
       },
+      $unset: { reviewNote: "", rejectionNote: "" },
     },
   );
 }
@@ -123,6 +124,29 @@ export async function applyDecline(
         reviewedBy: reviewerId,
         reviewedAt: Date.now(),
       },
+      $unset: { reviewNote: "" },
+    },
+  );
+}
+
+export async function applyChangesRequest(
+  reimbursementId: string,
+  reviewerId: string,
+  reviewNote: string,
+): Promise<void> {
+  await (
+    await reimbursements()
+  ).updateOne(
+    { _id: reimbursementId },
+    {
+      $set: {
+        status: "changes_requested",
+        reviewNote,
+        reviewedBy: reviewerId,
+        reviewedAt: Date.now(),
+        isSharedLink: true,
+      },
+      $unset: { rejectionNote: "" },
     },
   );
 }

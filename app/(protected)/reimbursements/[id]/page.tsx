@@ -56,6 +56,10 @@ export default async function ReimbursementDetailPage({
           <RejectionNote note={reimbursement.rejectionNote} />
         )}
 
+        {reimbursement.reviewNote && (
+          <RejectionNote note={reimbursement.reviewNote} changesRequested />
+        )}
+
         {reimbursement.travelDetails && (
           <TravelDetailsCard travelDetails={reimbursement.travelDetails} />
         )}

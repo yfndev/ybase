@@ -15,14 +15,23 @@ export async function POST(request: Request, context: RouteContext) {
     const doc = await (await reimbursements()).findOne({ _id: id });
     if (!doc) throw new Error("Invalid link");
     if (!doc.isSharedLink) throw new Error("Not a shared link");
-    if (doc.submitterName) throw new Error("Already submitted");
+    if (doc.submitterName && doc.status !== "changes_requested") {
+      throw new Error("Already submitted");
+    }
 
     const { key, url } = await presignUpload(contentType);
 
     await (
       await reimbursements()
     ).updateOne(
-      { _id: id, isSharedLink: true, submitterName: { $exists: false } },
+      {
+        _id: id,
+        isSharedLink: true,
+        $or: [
+          { submitterName: { $exists: false } },
+          { status: "changes_requested" },
+        ],
+      },
       { $addToSet: { pendingUploadKeys: key } },
     );
 

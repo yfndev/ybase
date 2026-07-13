@@ -185,7 +185,43 @@ test.describe.serial("reimbursement flow", () => {
     await expect(page.getByText("Ausstehend")).toBeVisible();
   });
 
-  test("2. Approve expense reimbursement", async () => {
+  test("2. Request changes and resubmit an expense reimbursement", async () => {
+    const expenseRow = page.locator("table tbody tr").first();
+    await expenseRow
+      .getByRole("button", { name: "Änderungen anfordern" })
+      .click();
+    await page
+      .getByRole("textbox", { name: "Benötigte Änderungen..." })
+      .fill("Bitte Beschreibung präzisieren");
+    await page.getByRole("button", { name: "Änderungen anfordern" }).click();
+
+    await expect(
+      page.getByText("Änderung: Bitte Beschreibung präzisieren"),
+    ).toBeVisible();
+    await expect(expenseRow.getByText("Änderungen angefordert")).toBeVisible();
+
+    await expenseRow.click();
+    await expect(page).toHaveURL(/\/reimbursements\/[^/]+$/);
+    const reimbursementId = page.url().split("/").pop();
+    await page.goto(`/erstattung/${reimbursementId}`);
+
+    await expect(
+      page.getByText("Bitte Beschreibung präzisieren"),
+    ).toBeVisible();
+    await expect(page.getByText("Test Firma")).toBeVisible();
+    await page.getByRole("checkbox").check();
+    await page.getByRole("button", { name: "Einreichen" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Erfolgreich eingereicht" }),
+    ).toBeVisible();
+
+    await page.goto("/reimbursements");
+    await expect(
+      page.locator("table tbody tr").first().getByText("Ausstehend"),
+    ).toBeVisible();
+  });
+
+  test("3. Approve expense reimbursement", async () => {
     await page
       .locator("table tbody tr")
       .first()
@@ -196,7 +232,7 @@ test.describe.serial("reimbursement flow", () => {
     ).toBeVisible();
   });
 
-  test("3. Create travel reimbursement with PDF receipt", async () => {
+  test("4. Create travel reimbursement with PDF receipt", async () => {
     await page.getByRole("button", { name: "Neue Erstattung" }).click();
 
     await page.getByRole("combobox", { name: "Projekt suchen..." }).click();
@@ -289,7 +325,7 @@ test.describe.serial("reimbursement flow", () => {
     await expect(page.getByText("Ausstehend")).toBeVisible();
   });
 
-  test("4. Filter reimbursements by type", async () => {
+  test("5. Filter reimbursements by type", async () => {
     const tableRows = page.locator("table tbody tr");
 
     await expect(tableRows).toHaveCount(2);
@@ -329,7 +365,7 @@ test.describe.serial("reimbursement flow", () => {
     await expect(tableRows).toHaveCount(2);
   });
 
-  test("5. Reject travel reimbursement", async () => {
+  test("6. Reject travel reimbursement", async () => {
     await page
       .locator("table tbody tr")
       .first()
@@ -345,6 +381,81 @@ test.describe.serial("reimbursement flow", () => {
     });
     await expect(
       page.locator("table tbody tr").first().getByText("Abgelehnt"),
+    ).toBeVisible();
+  });
+
+  test("7. Request changes and resubmit a volunteer allowance", async () => {
+    await page.getByRole("button", { name: "Neue Erstattung" }).click();
+    await expect(page).toHaveURL(/\/reimbursements\/new$/);
+    await expect(
+      page.getByRole("heading", { name: "Reiseangaben" }),
+    ).toBeVisible();
+    const allowanceTab = page.getByRole("tab", { name: "Ehrenamtspauschale" });
+    await allowanceTab.click();
+    await expect(allowanceTab).toHaveAttribute("data-state", "active");
+    await expect(
+      page.getByRole("heading", { name: "Persönliche Daten" }),
+    ).toBeVisible();
+    await page.getByRole("combobox", { name: "Projekt suchen..." }).click();
+    await page.getByRole("button", { name: "Test Projekt" }).click();
+
+    await page.getByPlaceholder("Vor- und Nachname").first().fill("Test User");
+    await page.getByPlaceholder("Musterstraße 123").fill("Teststraße 1");
+    await page.getByPlaceholder("12345").fill("10115");
+    await page.getByPlaceholder("Musterstadt").fill("Berlin");
+    await page
+      .getByPlaceholder("z.B. Übungsleiter, Jugendarbeit, Vorstandstätigkeit")
+      .fill("Vorstandsarbeit");
+    await page
+      .getByRole("textbox", { name: "TT.MM.JJJJ" })
+      .first()
+      .fill("01.01.2026");
+    await page
+      .getByRole("textbox", { name: "TT.MM.JJJJ" })
+      .nth(1)
+      .fill("31.01.2026");
+    await page.getByPlaceholder("0,00").fill("120");
+    await page.getByRole("checkbox").check();
+    await addSignature(page);
+    await page
+      .getByRole("button", { name: "Zur Genehmigung einreichen" })
+      .click();
+    await expect(
+      page.getByText("Ehrenamtspauschale eingereicht"),
+    ).toBeVisible();
+
+    const allowanceRow = page
+      .locator("table tbody tr")
+      .filter({ hasText: "Ehrenamtspauschale" });
+    await allowanceRow
+      .getByRole("button", { name: "Änderungen anfordern" })
+      .click();
+    await page
+      .getByRole("textbox", { name: "Benötigte Änderungen..." })
+      .fill("Bitte Zeitraum prüfen");
+    await page.getByRole("button", { name: "Änderungen anfordern" }).click();
+    await expect(
+      allowanceRow.getByText("Änderungen angefordert"),
+    ).toBeVisible();
+
+    await allowanceRow.getByRole("button", { name: "Bearbeiten" }).click();
+    await expect(page).toHaveURL(/\/ehrenamtspauschale\/[^/]+$/);
+    await expect(page.getByText("Bitte Zeitraum prüfen")).toBeVisible();
+    await expect(page.getByPlaceholder("Musterstraße 123")).toHaveValue(
+      "Teststraße 1",
+    );
+    await page.getByRole("checkbox").check();
+    await page.getByRole("button", { name: "Einreichen" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Erfolgreich eingereicht" }),
+    ).toBeVisible();
+
+    await page.goto("/reimbursements");
+    await expect(
+      page
+        .locator("table tbody tr")
+        .filter({ hasText: "Ehrenamtspauschale" })
+        .getByText("Ausstehend"),
     ).toBeVisible();
   });
 });

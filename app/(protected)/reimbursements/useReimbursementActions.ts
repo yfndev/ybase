@@ -2,12 +2,14 @@ import {
   approve as approveReimbursement,
   decline as declineReimbursement,
   deleteReimbursement,
+  requestChanges as requestReimbursementChanges,
 } from "@/lib/server/reimbursements/actions";
+import { remove as removeAllowance } from "@/lib/server/volunteerAllowance/actions";
 import {
   approve as approveAllowance,
   decline as declineAllowance,
-  remove as removeAllowance,
-} from "@/lib/server/volunteerAllowance/actions";
+  requestChanges as requestAllowanceChanges,
+} from "@/lib/server/volunteerAllowance/reviewActions";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -15,6 +17,7 @@ import type { RejectDialog } from "./types";
 
 const CLOSED_DIALOG: RejectDialog = {
   open: false,
+  action: "reject",
   type: "reimbursement",
   id: null,
   note: "",
@@ -39,7 +42,7 @@ export function useReimbursementActions() {
     }
   };
 
-  const handleReject = async () => {
+  const handleReview = async () => {
     const note = rejectDialog.note.trim();
     if (!rejectDialog.id || !note || isRejecting) return;
     const id = rejectDialog.id;
@@ -47,18 +50,37 @@ export function useReimbursementActions() {
     setIsRejecting(true);
     try {
       if (rejectDialog.type === "reimbursement") {
-        await declineReimbursement({
-          reimbursementId: id,
-          rejectionNote: note,
-        });
+        if (rejectDialog.action === "changes") {
+          await requestReimbursementChanges({
+            reimbursementId: id,
+            reviewNote: note,
+          });
+        } else {
+          await declineReimbursement({
+            reimbursementId: id,
+            rejectionNote: note,
+          });
+        }
       } else {
-        await declineAllowance({ id, rejectionNote: note });
+        if (rejectDialog.action === "changes") {
+          await requestAllowanceChanges({ id, reviewNote: note });
+        } else {
+          await declineAllowance({ id, rejectionNote: note });
+        }
       }
-      toast.success("Abgelehnt");
+      toast.success(
+        rejectDialog.action === "changes"
+          ? "Änderungen angefordert"
+          : "Abgelehnt",
+      );
       router.refresh();
       setRejectDialog(CLOSED_DIALOG);
     } catch {
-      toast.error("Fehler beim Ablehnen");
+      toast.error(
+        rejectDialog.action === "changes"
+          ? "Änderungen konnten nicht angefordert werden"
+          : "Fehler beim Ablehnen",
+      );
     } finally {
       setIsRejecting(false);
     }
@@ -68,9 +90,12 @@ export function useReimbursementActions() {
     rejectDialog,
     setRejectDialog,
     isRejecting,
-    handleReject,
-    handleOpenRejectDialog: (type: "reimbursement" | "allowance", id: string) =>
-      setRejectDialog({ open: true, type, id, note: "" }),
+    handleReview,
+    handleOpenReviewDialog: (
+      action: "changes" | "reject",
+      type: "reimbursement" | "allowance",
+      id: string,
+    ) => setRejectDialog({ open: true, action, type, id, note: "" }),
     handleApproveReimbursement: (id: string) =>
       run(
         () => approveReimbursement({ reimbursementId: id }),

@@ -22,6 +22,7 @@ export function ShareModalUI({
   onTypeChange,
   onFormUpdate,
   onCopy,
+  onSend,
   onCopyExistingLink,
   onDeleteLink,
 }: ShareModalUIProps) {
@@ -45,6 +46,7 @@ export function ShareModalUI({
           onTypeChange={onTypeChange}
           onFormUpdate={onFormUpdate}
           onCopy={onCopy}
+          onSend={onSend}
         />
 
         <ExistingLinks

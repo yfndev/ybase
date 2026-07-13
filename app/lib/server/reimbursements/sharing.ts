@@ -15,6 +15,7 @@ import {
   type PendingReimbursementLink,
 } from "./sharingHelpers";
 import { createLinkSchema } from "./validators";
+import { sendSubmissionRequestedEmail } from "./email";
 
 export async function createReimbursementLink(
   input: z.input<typeof createLinkSchema>,
@@ -24,6 +25,9 @@ export async function createReimbursementLink(
 
   const reimbursementId = newId();
   await insertReimbursementLink(reimbursementId, user, args);
+  if (args.invitedEmail) {
+    await sendSubmissionRequestedEmail(reimbursementId);
+  }
 
   return reimbursementId;
 }

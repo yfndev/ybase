@@ -24,6 +24,7 @@ export function ShareModal({
     updateForm,
     handleClose,
     handleCopy,
+    handleSend,
     handleCopyExisting,
     handleDelete,
   } = useShareModal(open, onClose);
@@ -42,6 +43,7 @@ export function ShareModal({
       onTypeChange={setType}
       onFormUpdate={updateForm}
       onCopy={handleCopy}
+      onSend={handleSend}
       onCopyExistingLink={handleCopyExisting}
       onDeleteLink={handleDelete}
     />

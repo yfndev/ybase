@@ -15,6 +15,7 @@ import { STATUS_DISPLAY } from "@/lib/reimbursementStatus";
 
 const STATUS_CARDS = [
   { status: "pending", title: "Offen" },
+  { status: "changes_requested", title: "Änderungen angefordert" },
   { status: "approved", title: "Genehmigt" },
   { status: "declined", title: "Abgelehnt" },
 ] as const;
@@ -87,7 +88,7 @@ export function DashboardPageUI({ entries }: { entries: DashboardEntry[] }) {
       <PageHeader title="Dashboard" />
 
       <div className="flex flex-col gap-6">
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {STATUS_CARDS.map((card) => (
             <Card key={card.status}>
               <CardHeader className="pb-2">

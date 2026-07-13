@@ -38,6 +38,7 @@ export function useReimbursementForm(id: string) {
   const [showFoodAllowance, setShowFoodAllowance] = useState(false);
 
   const receiptState = useReceipts(startDate);
+  const { setReceipts, setTravelReceipts } = receiptState;
 
   useEffect(() => {
     let ignoreResult = false;
@@ -45,19 +46,47 @@ export function useReimbursementForm(id: string) {
     void validateReimbursementLink(id).then((result) => {
       if (ignoreResult) return;
       setLink(result);
-      if (!result.valid || result.type !== "travel" || !result.travelDetails) {
-        return;
+      if (!result.valid) return;
+
+      const submission = result.submission;
+      setName(submission?.name ?? result.invitedName ?? "");
+      setEmail(submission?.email ?? result.invitedEmail ?? "");
+      if (submission) {
+        setIban(submission.iban);
+        setBic(submission.bic);
+        setAccountHolder(submission.accountHolder);
+        setSignature(submission.signatureStorageId);
+        setReceipts(
+          submission.receipts
+            .filter((receipt) => !receipt.costType)
+            .map((receipt) => ({
+              ...receipt,
+              receiptNumber: receipt.receiptNumber,
+            })),
+        );
+        setTravelReceipts(
+          submission.receipts.filter(
+            (receipt) => receipt.costType,
+          ) as typeof receiptState.travelReceipts,
+        );
       }
-      setDestination(result.travelDetails.destination);
-      setPurpose(result.travelDetails.purpose);
-      setStartDate(result.travelDetails.startDate);
-      setEndDate(result.travelDetails.endDate);
+
+      if (result.type === "travel" && result.travelDetails) {
+        setDestination(result.travelDetails.destination);
+        setPurpose(result.travelDetails.purpose);
+        setStartDate(result.travelDetails.startDate);
+        setEndDate(result.travelDetails.endDate);
+        setIsInternational(result.travelDetails.isInternational ?? false);
+        setMealDays(result.travelDetails.mealAllowanceDays ?? 0);
+        setMealRate(result.travelDetails.mealAllowanceDailyBudget ?? 0);
+        setShowFoodAllowance((result.travelDetails.mealAllowanceDays ?? 0) > 0);
+      }
     });
 
     return () => {
       ignoreResult = true;
     };
-  }, [id]);
+  }, [id, setReceipts, setTravelReceipts]);
 
   const isTravel = link?.valid === true && link.type === "travel";
   const mealTotal = mealDays * mealRate;

@@ -33,6 +33,7 @@ export default function ExternalReimbursementPage() {
       organizationName={form.link.organizationName}
       projectName={form.link.projectName}
       allowFoodAllowance={form.link.travelDetails?.allowFoodAllowance ?? false}
+      changesRequested={form.link.changesRequested}
       showFoodAllowance={form.showFoodAllowance}
       onShowFoodAllowanceChange={form.setShowFoodAllowance}
       name={form.name}

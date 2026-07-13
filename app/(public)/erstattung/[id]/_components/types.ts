@@ -23,6 +23,7 @@ export type ExternalReimbursementPageUIProps = {
   organizationName: string;
   projectName: string;
   allowFoodAllowance: boolean;
+  changesRequested?: string;
   showFoodAllowance: boolean;
   onShowFoodAllowanceChange: (value: boolean) => void;
 

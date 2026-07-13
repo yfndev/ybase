@@ -18,6 +18,7 @@ export function statusTotals(
 ): Record<ReimbursementStatus, StatusTotal> {
   const totals: Record<ReimbursementStatus, StatusTotal> = {
     pending: { count: 0, sum: 0 },
+    changes_requested: { count: 0, sum: 0 },
     approved: { count: 0, sum: 0 },
     declined: { count: 0, sum: 0 },
   };

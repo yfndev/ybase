@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { volunteerAllowance } from "@/lib/db/collections";
 import { addLog } from "@/lib/server/logs";
+import { sendSubmissionReceivedEmail } from "@/lib/server/volunteerAllowance/email";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -16,9 +17,11 @@ const bodySchema = z.object({
   endDate: z.string(),
   taxYear: z.string().optional(),
   volunteerName: z.string(),
+  submitterEmail: z.string().email(),
   volunteerStreet: z.string(),
   volunteerPlz: z.string(),
   volunteerCity: z.string(),
+  signatureStorageId: z.string(),
 });
 
 export async function POST(request: Request, context: RouteContext) {
@@ -31,33 +34,53 @@ export async function POST(request: Request, context: RouteContext) {
       throw new Error(`Amount cannot exceed ${MAX_VOLUNTEER_ALLOWANCE_EUR}€`);
 
     const collection = await volunteerAllowance();
+    const existing = await collection.findOne({ _id: id });
+    if (!existing?.isSharedLink) throw new Error("Invalid link");
+    const isResubmission = existing.status === "changes_requested";
+    if (existing.signatureStorageId && !isResubmission) {
+      throw new Error("Already submitted");
+    }
+    const signatureAllowed =
+      args.signatureStorageId === existing.pendingSignatureStorageId ||
+      args.signatureStorageId === existing.signatureStorageId;
+    if (!signatureAllowed) throw new Error("Invalid signature");
 
     const result = await collection.updateOne(
       {
         _id: id,
-        signatureStorageId: { $exists: false },
-        pendingSignatureStorageId: { $exists: true },
+        isSharedLink: true,
+        $or: [
+          { signatureStorageId: { $exists: false } },
+          { status: "changes_requested" },
+        ],
       },
-      [
-        {
-          $set: {
-            amount: args.amount,
-            iban: args.iban,
-            bic: args.bic,
-            accountHolder: args.accountHolder,
-            activityDescription: args.activityDescription,
-            startDate: args.startDate,
-            endDate: args.endDate,
-            taxYear: args.taxYear,
-            volunteerName: args.volunteerName,
-            volunteerStreet: args.volunteerStreet,
-            volunteerPlz: args.volunteerPlz,
-            volunteerCity: args.volunteerCity,
-            status: "pending",
-            signatureStorageId: "$pendingSignatureStorageId",
-          },
+      {
+        $set: {
+          amount: args.amount,
+          iban: args.iban,
+          bic: args.bic,
+          accountHolder: args.accountHolder,
+          activityDescription: args.activityDescription,
+          startDate: args.startDate,
+          endDate: args.endDate,
+          taxYear: args.taxYear,
+          volunteerName: args.volunteerName,
+          submitterEmail: args.submitterEmail,
+          volunteerStreet: args.volunteerStreet,
+          volunteerPlz: args.volunteerPlz,
+          volunteerCity: args.volunteerCity,
+          status: "pending",
+          signatureStorageId: args.signatureStorageId,
+          submittedExternally: true,
         },
-      ],
+        $unset: {
+          reviewNote: "",
+          rejectionNote: "",
+          reviewedBy: "",
+          reviewedAt: "",
+          pendingSignatureStorageId: "",
+        },
+      },
     );
 
     if (result.matchedCount !== 1 || result.modifiedCount !== 1)
@@ -69,10 +92,13 @@ export async function POST(request: Request, context: RouteContext) {
     await addLog(
       doc.organizationId,
       doc.createdBy,
-      "volunteerAllowance.create",
+      isResubmission
+        ? "volunteerAllowance.resubmit"
+        : "volunteerAllowance.create",
       id,
       `extern ${args.amount}€`,
     );
+    await sendSubmissionReceivedEmail(id);
 
     return Response.json({ ok: true });
   } catch (error) {

@@ -26,6 +26,8 @@ export function RejectDialogModal({
   onReject,
   isRejecting,
 }: Props) {
+  const requestsChanges = rejectDialog.action === "changes";
+
   return (
     <Dialog
       open={rejectDialog.open}
@@ -33,9 +35,13 @@ export function RejectDialogModal({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Ablehnen</DialogTitle>
+          <DialogTitle>
+            {requestsChanges ? "Änderungen anfordern" : "Endgültig ablehnen"}
+          </DialogTitle>
           <DialogDescription>
-            Bitte gib einen Grund für die Ablehnung ein.
+            {requestsChanges
+              ? "Beschreibe, was vor der Genehmigung geändert werden muss."
+              : "Bitte gib einen Grund für die endgültige Ablehnung ein."}
           </DialogDescription>
         </DialogHeader>
         <Textarea
@@ -43,7 +49,11 @@ export function RejectDialogModal({
           onChange={(e) =>
             onRejectDialogChange({ ...rejectDialog, note: e.target.value })
           }
-          placeholder="Grund für die Ablehnung..."
+          placeholder={
+            requestsChanges
+              ? "Benötigte Änderungen..."
+              : "Grund für die Ablehnung..."
+          }
           rows={4}
         />
         <DialogFooter>
@@ -61,7 +71,7 @@ export function RejectDialogModal({
             disabled={isRejecting || !rejectDialog.note.trim()}
           >
             {isRejecting && <Loader2 className="size-4 animate-spin" />}
-            Ablehnen
+            {requestsChanges ? "Änderungen anfordern" : "Ablehnen"}
           </Button>
         </DialogFooter>
       </DialogContent>

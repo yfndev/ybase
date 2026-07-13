@@ -2,6 +2,7 @@ import type { AllowanceLink } from "@/(public)/_lib/publicApi";
 
 export type AllowanceForm = {
   volunteerName: string;
+  submitterEmail: string;
   volunteerStreet: string;
   volunteerPlz: string;
   volunteerCity: string;

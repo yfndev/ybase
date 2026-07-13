@@ -23,6 +23,17 @@ export function PersonalDataSection({ form, updateField }: Props) {
           />
         </div>
         <div className="col-span-2">
+          <Label>E-Mail (für Rückfragen und Statusmeldungen) *</Label>
+          <Input
+            type="email"
+            value={form.submitterEmail}
+            onChange={(event) =>
+              updateField("submitterEmail", event.target.value)
+            }
+            placeholder="max@beispiel.de"
+          />
+        </div>
+        <div className="col-span-2">
           <Label>Straße und Hausnummer *</Label>
           <Input
             value={form.volunteerStreet}

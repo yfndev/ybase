@@ -59,13 +59,22 @@ async function getMailData(
   return { ...reimbursement, organization, creator, project };
 }
 
-function recipient(data: ReimbursementMailData): EmailRecipient | null {
-  const email = data.submitterEmail ?? data.creator.email;
+function submitterRecipient(
+  data: ReimbursementMailData,
+): EmailRecipient | null {
+  const email =
+    data.submitterEmail ??
+    (data.requestedExternally ? undefined : data.creator.email);
   if (!email) return null;
   return {
     email,
     name: data.submitterName ?? data.creator.name,
   };
+}
+
+function invitedRecipient(data: ReimbursementMailData): EmailRecipient | null {
+  if (!data.invitedEmail) return null;
+  return { email: data.invitedEmail, name: data.invitedName };
 }
 
 function documentType(data: ReimbursementMailData): string {
@@ -82,9 +91,24 @@ function submissionUrl(data: ReimbursementMailData): string {
   );
 }
 
-async function sendDecisionEmail(
+type LifecycleEvent =
+  | "requested"
+  | "received"
+  | "changes-requested"
+  | "approved"
+  | "rejected";
+
+const TEMPLATE_BY_EVENT: Record<LifecycleEvent, number> = {
+  requested: BREVO_TEMPLATE_IDS.SUBMISSION_REQUESTED,
+  received: BREVO_TEMPLATE_IDS.SUBMISSION_RECEIVED,
+  "changes-requested": BREVO_TEMPLATE_IDS.CHANGES_REQUESTED,
+  approved: BREVO_TEMPLATE_IDS.SUBMISSION_APPROVED,
+  rejected: BREVO_TEMPLATE_IDS.SUBMISSION_REJECTED,
+};
+
+async function sendLifecycleEmail(
   reimbursementId: string,
-  decision: "approved" | "rejected",
+  event: LifecycleEvent,
 ): Promise<void> {
   if (!process.env.BREVO_API_KEY) return;
 
@@ -92,17 +116,15 @@ async function sendDecisionEmail(
     const data = await getMailData(reimbursementId);
     if (!data) return;
 
-    const to = recipient(data);
+    const to =
+      event === "requested" ? invitedRecipient(data) : submitterRecipient(data);
     const accountingEmail = data.organization.accountingEmail;
     if (!to || !accountingEmail) return;
 
     await sendMail({
       to: [to],
       replyTo: { email: accountingEmail },
-      templateId:
-        decision === "approved"
-          ? BREVO_TEMPLATE_IDS.SUBMISSION_APPROVED
-          : BREVO_TEMPLATE_IDS.SUBMISSION_REJECTED,
+      templateId: TEMPLATE_BY_EVENT[event],
       params: {
         recipientName: to.name ?? "",
         accountingEmail,
@@ -110,23 +132,41 @@ async function sendDecisionEmail(
         projectName: data.project.name,
         amount: formatAmount(data.amount, data.currency),
         reviewedAt: formatDate(data.reviewedAt),
-        reviewMessage: data.rejectionNote ?? "",
+        reviewMessage: data.reviewNote ?? data.rejectionNote ?? "",
         submissionUrl: submissionUrl(data),
       },
-      tags: ["ybase", "reimbursement", `submission-${decision}`],
+      tags: ["ybase", "reimbursement", `submission-${event}`],
     });
   } catch (error) {
     console.error(
-      `Could not send ${decision} email for reimbursement ${reimbursementId}`,
+      `Could not send ${event} email for reimbursement ${reimbursementId}`,
       error,
     );
   }
 }
 
 export function sendApprovalEmail(reimbursementId: string): Promise<void> {
-  return sendDecisionEmail(reimbursementId, "approved");
+  return sendLifecycleEmail(reimbursementId, "approved");
 }
 
 export function sendRejectionEmail(reimbursementId: string): Promise<void> {
-  return sendDecisionEmail(reimbursementId, "rejected");
+  return sendLifecycleEmail(reimbursementId, "rejected");
+}
+
+export function sendSubmissionRequestedEmail(
+  reimbursementId: string,
+): Promise<void> {
+  return sendLifecycleEmail(reimbursementId, "requested");
+}
+
+export function sendSubmissionReceivedEmail(
+  reimbursementId: string,
+): Promise<void> {
+  return sendLifecycleEmail(reimbursementId, "received");
+}
+
+export function sendChangesRequestedEmail(
+  reimbursementId: string,
+): Promise<void> {
+  return sendLifecycleEmail(reimbursementId, "changes-requested");
 }

@@ -58,6 +58,8 @@ export const createLinkSchema = z.object({
   projectId: z.string(),
   type: z.enum(["expense", "travel"]),
   description: z.string().optional(),
+  invitedName: z.string().trim().optional(),
+  invitedEmail: z.string().email().optional(),
   travelDetails: z
     .object({
       destination: z.string().optional(),

@@ -35,13 +35,45 @@ export type ReimbursementLink =
       organizationName: string;
       projectName: string;
       description?: string;
+      invitedName?: string;
+      invitedEmail?: string;
+      changesRequested?: string;
       travelDetails: {
         destination: string;
         purpose: string;
         startDate: string;
         endDate: string;
         allowFoodAllowance?: boolean;
+        isInternational?: boolean;
+        mealAllowanceDays?: number;
+        mealAllowanceDailyBudget?: number;
       } | null;
+      submission?: {
+        name: string;
+        email: string;
+        iban: string;
+        bic: string;
+        accountHolder: string;
+        signatureStorageId: string | null;
+        receipts: Array<{
+          receiptNumber?: string;
+          receiptDate: string;
+          companyName: string;
+          description: string;
+          netAmount: number;
+          taxRate: number;
+          grossAmount: number;
+          fileStorageId: string;
+          costType?:
+            | "car"
+            | "train"
+            | "flight"
+            | "taxi"
+            | "bus"
+            | "accommodation";
+          kilometers?: number;
+        }>;
+      };
     };
 
 export async function validateReimbursementLink(
@@ -87,6 +119,22 @@ export type AllowanceLink =
       activityDescription: string;
       startDate: string;
       endDate: string;
+      invitedName?: string;
+      invitedEmail?: string;
+      changesRequested?: string;
+      submission?: {
+        volunteerName: string;
+        submitterEmail: string;
+        volunteerStreet: string;
+        volunteerPlz: string;
+        volunteerCity: string;
+        amount: number;
+        iban: string;
+        bic: string;
+        accountHolder: string;
+        taxYear: string;
+        signatureStorageId: string | null;
+      };
     };
 
 export async function validateAllowanceLink(

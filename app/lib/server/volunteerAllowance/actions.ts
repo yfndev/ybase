@@ -2,14 +2,14 @@
 
 import { z } from "zod";
 import { hasMinimumRole } from "../../auth/roles";
-import { requireRole, requireUser } from "../../auth/session";
+import { requireUser } from "../../auth/session";
 import { volunteerAllowance } from "../../db/collections";
 import { newId } from "../../db/ids";
 import { deleteObject } from "../../s3/storage";
 import { bankDetailsFields } from "../bankDetails";
 import { addLog } from "../logs";
 import { getSignatureUrl } from "./data";
-import { sendApprovalEmail, sendRejectionEmail } from "./email";
+import { sendSubmissionReceivedEmail } from "./email";
 
 const MAX_VOLUNTEER_ALLOWANCE_EUR = 960;
 export async function create(input: {
@@ -75,6 +75,7 @@ export async function create(input: {
     volunteerPlz: args.volunteerPlz,
     volunteerCity: args.volunteerCity,
     signatureStorageId: args.signatureStorageId,
+    submitterEmail: user.email,
   });
 
   await addLog(
@@ -84,92 +85,12 @@ export async function create(input: {
     _id,
     `${args.amount}€`,
   );
+  await sendSubmissionReceivedEmail(_id);
   return _id;
 }
 
 export async function getSignatureUrlAction(key: string): Promise<string> {
   return getSignatureUrl(key);
-}
-
-export async function approve(input: { id: string }): Promise<void> {
-  const user = await requireRole("finance");
-  const { id } = z.object({ id: z.string() }).parse(input);
-
-  const doc = await (await volunteerAllowance()).findOne({ _id: id });
-  if (!doc || doc.organizationId !== user.organizationId) {
-    throw new Error("Not found");
-  }
-  if (doc.status !== "pending") {
-    throw new Error("Already processed");
-  }
-  if (doc.amount > MAX_VOLUNTEER_ALLOWANCE_EUR) {
-    throw new Error(
-      `Cannot approve: amount exceeds ${MAX_VOLUNTEER_ALLOWANCE_EUR}€ legal limit`,
-    );
-  }
-
-  await (
-    await volunteerAllowance()
-  ).updateOne(
-    { _id: id },
-    {
-      $set: {
-        status: "approved",
-        reviewedBy: user._id,
-        reviewedAt: Date.now(),
-      },
-    },
-  );
-
-  await addLog(
-    user.organizationId,
-    user._id,
-    "volunteerAllowance.approve",
-    id,
-    `${doc.amount}€`,
-  );
-  await sendApprovalEmail(id);
-}
-
-export async function decline(input: {
-  id: string;
-  rejectionNote: string;
-}): Promise<void> {
-  const user = await requireRole("finance");
-  const { id, rejectionNote } = z
-    .object({ id: z.string(), rejectionNote: z.string() })
-    .parse(input);
-
-  const doc = await (await volunteerAllowance()).findOne({ _id: id });
-  if (!doc || doc.organizationId !== user.organizationId) {
-    throw new Error("Not found");
-  }
-  if (doc.status !== "pending") {
-    throw new Error("Already processed");
-  }
-
-  await (
-    await volunteerAllowance()
-  ).updateOne(
-    { _id: id },
-    {
-      $set: {
-        status: "declined",
-        rejectionNote,
-        reviewedBy: user._id,
-        reviewedAt: Date.now(),
-      },
-    },
-  );
-
-  await addLog(
-    user.organizationId,
-    user._id,
-    "volunteerAllowance.decline",
-    id,
-    rejectionNote,
-  );
-  await sendRejectionEmail(id);
 }
 
 export async function remove(input: { id: string }): Promise<void> {

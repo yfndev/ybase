@@ -27,7 +27,10 @@ vi.mock("../../s3/storage", () => ({
 
 vi.mock("./email", () => ({
   sendApprovalEmail: vi.fn(async () => {}),
+  sendChangesRequestedEmail: vi.fn(async () => {}),
   sendRejectionEmail: vi.fn(async () => {}),
+  sendSubmissionReceivedEmail: vi.fn(async () => {}),
+  sendSubmissionRequestedEmail: vi.fn(async () => {}),
 }));
 
 import { requireRole, requireUser } from "../../auth/session";
@@ -46,9 +49,17 @@ import {
   createReimbursement,
   decline,
   deleteReimbursement,
+  requestChanges,
 } from "./actions";
 import { getAllReimbursements, getFileInfo, getReimbursement } from "./data";
-import { sendApprovalEmail, sendRejectionEmail } from "./email";
+import {
+  sendApprovalEmail,
+  sendChangesRequestedEmail,
+  sendRejectionEmail,
+  sendSubmissionReceivedEmail,
+  sendSubmissionRequestedEmail,
+} from "./email";
+import { createReimbursementLink } from "./sharing";
 
 let mongod: MongoMemoryServer;
 let orgA: string;
@@ -161,6 +172,20 @@ test("createReimbursement writes the reimbursement and receipts scoped to the or
     .toArray();
   expect(receiptList).toHaveLength(1);
   expect(receiptList[0]?.fileStorageId).toBe("receipt-key");
+  expect(sendSubmissionReceivedEmail).toHaveBeenCalledWith(id);
+});
+
+test("creating an emailed submission request sends the request template", async () => {
+  const id = await createReimbursementLink({
+    projectId: projectA,
+    type: "expense",
+    invitedName: "Erika",
+    invitedEmail: "erika@example.com",
+  });
+
+  const stored = await (await reimbursements()).findOne({ _id: id });
+  expect(stored?.invitedEmail).toBe("erika@example.com");
+  expect(sendSubmissionRequestedEmail).toHaveBeenCalledWith(id);
 });
 
 test("getFileInfo returns signed download metadata", async () => {
@@ -296,6 +321,17 @@ test("decline sets the status and sends the review email", async () => {
   expect(stored?.status).toBe("declined");
   expect(stored?.rejectionNote).toBe("Beleg fehlt");
   expect(sendRejectionEmail).toHaveBeenCalledWith(id);
+});
+
+test("requestChanges opens the submission for editing and sends an email", async () => {
+  const id = await createReimbursement(reimbursementInput());
+  await requestChanges({ reimbursementId: id, reviewNote: "Beleg ergänzen" });
+
+  const stored = await (await reimbursements()).findOne({ _id: id });
+  expect(stored?.status).toBe("changes_requested");
+  expect(stored?.reviewNote).toBe("Beleg ergänzen");
+  expect(stored?.isSharedLink).toBe(true);
+  expect(sendChangesRequestedEmail).toHaveBeenCalledWith(id);
 });
 
 test("deleteReimbursement removes receipts and deletes the stored files", async () => {

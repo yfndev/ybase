@@ -2,6 +2,7 @@ import { z } from "zod";
 import { receipts, reimbursements, travelDetails } from "@/lib/db/collections";
 import { newId } from "@/lib/db/ids";
 import { addLog } from "@/lib/server/logs";
+import { sendSubmissionReceivedEmail } from "@/lib/server/reimbursements/email";
 import {
   getTravelDateRangeError,
   TRAVEL_DATE_RANGE_ERROR,
@@ -34,7 +35,7 @@ const bodySchema = z.object({
   bic: z.string(),
   accountHolder: z.string(),
   submitterName: z.string(),
-  submitterEmail: z.string().optional(),
+  submitterEmail: z.string().email(),
   signatureStorageId: z.string(),
   receipts: z.array(receiptSchema),
   travelReceipts: z.array(travelReceiptSchema).optional(),
@@ -64,8 +65,21 @@ export async function POST(request: Request, context: RouteContext) {
 
     const existing = await collection.findOne({ _id: id });
     if (!existing) throw new Error("Invalid link");
+    if (!existing.isSharedLink) throw new Error("Not a shared link");
+    const isResubmission = existing.status === "changes_requested";
+    if (existing.submitterName && !isResubmission) {
+      throw new Error("Already submitted");
+    }
 
-    const allowed = new Set(existing.pendingUploadKeys ?? []);
+    const existingReceipts = await (await receipts())
+      .find({ reimbursementId: id })
+      .toArray();
+
+    const allowed = new Set([
+      ...(existing.pendingUploadKeys ?? []),
+      ...existingReceipts.map((receipt) => receipt.fileStorageId),
+      ...(existing.signatureStorageId ? [existing.signatureStorageId] : []),
+    ]);
     const allReceipts = [...args.receipts, ...(args.travelReceipts ?? [])];
     const usedKeys = [
       args.signatureStorageId,
@@ -75,7 +89,14 @@ export async function POST(request: Request, context: RouteContext) {
       return Response.json({ error: "Invalid key" }, { status: 400 });
 
     const result = await collection.updateOne(
-      { _id: id, isSharedLink: true, submitterName: { $exists: false } },
+      {
+        _id: id,
+        isSharedLink: true,
+        $or: [
+          { submitterName: { $exists: false } },
+          { status: "changes_requested" },
+        ],
+      },
       {
         $set: {
           amount: args.amount,
@@ -85,6 +106,15 @@ export async function POST(request: Request, context: RouteContext) {
           submitterName: args.submitterName,
           submitterEmail: args.submitterEmail,
           signatureStorageId: args.signatureStorageId,
+          status: "pending",
+          submittedExternally: true,
+        },
+        $unset: {
+          reviewNote: "",
+          rejectionNote: "",
+          reviewedBy: "",
+          reviewedAt: "",
+          pendingUploadKeys: "",
         },
       },
     );
@@ -96,6 +126,9 @@ export async function POST(request: Request, context: RouteContext) {
 
     const receiptsToInsert =
       doc.type === "travel" ? args.travelReceipts || [] : args.receipts;
+    if (isResubmission) {
+      await (await receipts()).deleteMany({ reimbursementId: id });
+    }
     for (const receipt of receiptsToInsert) {
       await (
         await receipts()
@@ -132,10 +165,13 @@ export async function POST(request: Request, context: RouteContext) {
     await addLog(
       doc.organizationId,
       doc.createdBy,
-      "reimbursement.externalSubmit",
+      isResubmission
+        ? "reimbursement.resubmit"
+        : "reimbursement.externalSubmit",
       id,
       `extern ${args.amount}€`,
     );
+    await sendSubmissionReceivedEmail(id);
 
     return Response.json({ ok: true });
   } catch (error) {

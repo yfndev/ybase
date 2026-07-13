@@ -21,6 +21,7 @@ interface Props {
   allowances: Allowance[];
   projects: Project[];
   organizationName: string;
+  currentUserId: string;
 }
 
 export function ReimbursementsClient({
@@ -28,6 +29,7 @@ export function ReimbursementsClient({
   allowances,
   projects,
   organizationName,
+  currentUserId,
 }: Props) {
   const canManageReimbursements = useCanManageReimbursements();
   const router = useRouter();
@@ -86,6 +88,7 @@ export function ReimbursementsClient({
     <>
       <ReimbursementPageUI
         canManageReimbursements={canManageReimbursements}
+        currentUserId={currentUserId}
         reimbursements={filteredReimbursements}
         allowances={filteredAllowances}
         typeFilter={typeFilter}
@@ -97,12 +100,19 @@ export function ReimbursementsClient({
         onRowClick={(id) => router.push(`/reimbursements/${id}`)}
         onApproveReimbursement={actions.handleApproveReimbursement}
         onApproveAllowance={actions.handleApproveAllowance}
-        onOpenRejectDialog={actions.handleOpenRejectDialog}
+        onOpenChangesDialog={(type, id) =>
+          actions.handleOpenReviewDialog("changes", type, id)
+        }
+        onOpenRejectDialog={(type, id) =>
+          actions.handleOpenReviewDialog("reject", type, id)
+        }
         onRejectDialogChange={actions.setRejectDialog}
-        onReject={actions.handleReject}
+        onReject={actions.handleReview}
         isRejecting={actions.isRejecting}
         onOpenReimbursement={handleOpenReimbursement}
         onOpenAllowance={handleOpenAllowance}
+        onEditReimbursement={(id) => router.push(`/erstattung/${id}`)}
+        onEditAllowance={(id) => router.push(`/ehrenamtspauschale/${id}`)}
         onDeleteReimbursement={actions.handleDeleteReimbursement}
         onDeleteAllowance={actions.handleDeleteAllowance}
         onToggleSelect={handleToggleSelect}
