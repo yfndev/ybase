@@ -1,13 +1,14 @@
 "use client";
 
+import { FileText, Upload } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import {
   convertToJPG,
   FileConversionError,
   isValidFileType,
 } from "@/lib/fileHandlers/fileConversion";
-import { FileText, Loader2, Upload } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import toast from "react-hot-toast";
+import { ReceiptDropzone } from "./ReceiptDropzone";
 
 interface Props {
   onUploadComplete: (key: string) => void;
@@ -41,7 +42,6 @@ export function ReceiptUploadExternal({
     }
 
     const fileIsPdf = file.type === "application/pdf";
-    setIsPdf(fileIsPdf);
     setIsUploading(true);
 
     try {
@@ -55,6 +55,7 @@ export function ReceiptUploadExternal({
 
       if (!result.ok) throw new Error();
 
+      setIsPdf(fileIsPdf);
       onUploadComplete(key);
 
       if (!fileIsPdf) {
@@ -83,71 +84,54 @@ export function ReceiptUploadExternal({
       ref={inputRef}
       type="file"
       accept=".jpg,.jpeg,.png,.heic,.pdf"
-      onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+      onChange={(event) => {
+        const file = event.target.files?.[0];
+        if (file) handleFile(file);
+        event.target.value = "";
+      }}
       className="hidden"
     />
   );
 
   if (previewUrl || storageId || isPdf) {
     return (
-      <div
-        className="border rounded-lg p-4 relative group cursor-pointer"
-        onClick={() => inputRef.current?.click()}
-      >
-        {previewUrl && !isPdf ? (
-          <img
-            src={previewUrl}
-            alt="Beleg"
-            className="max-h-48 mx-auto rounded"
-          />
-        ) : (
-          <div className="flex flex-col items-center gap-2 py-4">
-            <FileText className="size-16 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              {isPdf ? "PDF hochgeladen" : "Beleg hochgeladen"}
-            </p>
+      <>
+        <button
+          type="button"
+          className="group relative block w-full cursor-pointer border bg-transparent p-4 text-inherit"
+          onClick={() => inputRef.current?.click()}
+        >
+          {previewUrl && !isPdf ? (
+            <img
+              src={previewUrl}
+              alt="Beleg"
+              className="max-h-48 mx-auto rounded"
+            />
+          ) : (
+            <div className="flex flex-col items-center gap-2 py-4">
+              <FileText className="size-16 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                {isPdf ? "PDF hochgeladen" : "Beleg hochgeladen"}
+              </p>
+            </div>
+          )}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+            <div className="text-center text-white">
+              <Upload className="mx-auto mb-2 size-8" />
+              <p className="text-sm font-medium">Klicken zum Ändern</p>
+            </div>
           </div>
-        )}
-        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-          <div className="text-white text-center">
-            <Upload className="size-8 mx-auto mb-2" />
-            <p className="text-sm font-medium">Klicken zum Ändern</p>
-          </div>
-        </div>
+        </button>
         {fileInput}
-      </div>
+      </>
     );
   }
 
   return (
-    <div
-      onClick={() => inputRef.current?.click()}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => {
-        e.preventDefault();
-        e.dataTransfer.files[0] && handleFile(e.dataTransfer.files[0]);
-      }}
-      className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition cursor-pointer"
-    >
-      {isUploading ? (
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="size-8 text-primary animate-spin" />
-          <p className="font-medium">Beleg wird verarbeitet...</p>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center gap-3">
-          <div className="p-4 rounded-full bg-primary/10">
-            <Upload className="size-8 text-primary" />
-          </div>
-          <p className="font-medium">
-            Klicke hier oder ziehe deine Datei herein
-          </p>
-          <p className="text-sm text-muted-foreground">
-            JPG, PNG, HEIC oder PDF (max. 10 MB)
-          </p>
-        </div>
-      )}
-      {fileInput}
-    </div>
+    <ReceiptDropzone
+      inputRef={inputRef}
+      isUploading={isUploading}
+      onFile={handleFile}
+    />
   );
 }
