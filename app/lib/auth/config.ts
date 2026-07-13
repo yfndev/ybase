@@ -63,11 +63,9 @@ export const authConfig = {
       if (isLocalLoginEnabled) return true;
       return isAllowedEmail(user.email);
     },
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user }) {
       const email = user?.email ?? (token.email as string | undefined);
-      const shouldRefreshAppUser =
-        Boolean(user) || trigger === "update" || isLocalLoginEnabled;
-      if (email && shouldRefreshAppUser) {
+      if (email) {
         const appUser = await ensureAppUser({
           email,
           name: user?.name ?? (token.name as string | undefined),
