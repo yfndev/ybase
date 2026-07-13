@@ -19,7 +19,7 @@ export function AddedReceiptsList(props: Props) {
       <h3 className="font-medium">Hinzugefügte Belege</h3>
       {props.receipts.map((receipt, index) => (
         <div
-          key={index}
+          key={receipt.fileStorageId}
           className="flex items-center justify-between px-3 py-2 bg-gray-50 border rounded-md"
         >
           <div className="flex items-center gap-4">

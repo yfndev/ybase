@@ -40,7 +40,7 @@ export function ReimbursementSummary({
           <div className="space-y-2">
             {receipts.map((receipt, index) => (
               <div
-                key={index}
+                key={receipt.fileStorageId}
                 className="flex items-start justify-between gap-2 border bg-muted px-3 py-2"
               >
                 <div className="min-w-0">

@@ -11,7 +11,8 @@ YBase is an open-source budget management application for German non-profit asso
 ```bash
 pnpm dev                     # Start Next.js dev server with turbopack
 pnpm build                   # Production build
-pnpm lint                    # Biome linting with auto-fix
+pnpm lint                    # Biome linting
+pnpm lint:fix                # Biome linting with auto-fix
 pnpm format                  # Prettier formatting
 pnpm test                    # Run all tests (Vitest + Playwright)
 pnpm vitest run              # Unit/integration tests only
