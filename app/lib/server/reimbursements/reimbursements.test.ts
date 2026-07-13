@@ -25,6 +25,11 @@ vi.mock("../../s3/storage", () => ({
   getObjectBuffer: vi.fn(async () => Buffer.from("file")),
 }));
 
+vi.mock("./email", () => ({
+  sendApprovalEmail: vi.fn(async () => {}),
+  sendRejectionEmail: vi.fn(async () => {}),
+}));
+
 import { requireRole, requireUser } from "../../auth/session";
 import { getClient, getDb } from "../../db/client";
 import {
@@ -36,8 +41,14 @@ import {
 } from "../../db/collections";
 import { newId } from "../../db/ids";
 import { deleteObject, getDownloadInfo } from "../../s3/storage";
-import { approve, createReimbursement, deleteReimbursement } from "./actions";
+import {
+  approve,
+  createReimbursement,
+  decline,
+  deleteReimbursement,
+} from "./actions";
 import { getAllReimbursements, getFileInfo, getReimbursement } from "./data";
+import { sendApprovalEmail, sendRejectionEmail } from "./email";
 
 let mongod: MongoMemoryServer;
 let orgA: string;
@@ -274,6 +285,17 @@ test("approve sets the status", async () => {
   const stored = await (await reimbursements()).findOne({ _id: id });
   expect(stored?.status).toBe("approved");
   expect(stored?.reviewedBy).toBe(userA);
+  expect(sendApprovalEmail).toHaveBeenCalledWith(id);
+});
+
+test("decline sets the status and sends the review email", async () => {
+  const id = await createReimbursement(reimbursementInput());
+  await decline({ reimbursementId: id, rejectionNote: "Beleg fehlt" });
+
+  const stored = await (await reimbursements()).findOne({ _id: id });
+  expect(stored?.status).toBe("declined");
+  expect(stored?.rejectionNote).toBe("Beleg fehlt");
+  expect(sendRejectionEmail).toHaveBeenCalledWith(id);
 });
 
 test("deleteReimbursement removes receipts and deletes the stored files", async () => {

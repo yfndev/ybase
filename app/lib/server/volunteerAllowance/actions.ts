@@ -6,9 +6,10 @@ import { requireRole, requireUser } from "../../auth/session";
 import { volunteerAllowance } from "../../db/collections";
 import { newId } from "../../db/ids";
 import { deleteObject } from "../../s3/storage";
+import { bankDetailsFields } from "../bankDetails";
 import { addLog } from "../logs";
 import { getSignatureUrl } from "./data";
-import { bankDetailsFields } from "../bankDetails";
+import { sendApprovalEmail, sendRejectionEmail } from "./email";
 
 const MAX_VOLUNTEER_ALLOWANCE_EUR = 960;
 export async function create(input: {
@@ -127,6 +128,7 @@ export async function approve(input: { id: string }): Promise<void> {
     id,
     `${doc.amount}€`,
   );
+  await sendApprovalEmail(id);
 }
 
 export async function decline(input: {
@@ -167,6 +169,7 @@ export async function decline(input: {
     id,
     rejectionNote,
   );
+  await sendRejectionEmail(id);
 }
 
 export async function remove(input: { id: string }): Promise<void> {
