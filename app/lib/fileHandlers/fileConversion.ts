@@ -1,5 +1,3 @@
-import heic2any from "heic2any";
-
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 const QUALITY = 0.7;
 
@@ -14,14 +12,24 @@ async function convertPNGtoJPG(file: File): Promise<File> {
         const canvas = document.createElement("canvas");
         canvas.width = img.width;
         canvas.height = img.height;
-        const ctx = canvas.getContext("2d")!;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new FileConversionError("Bild konnte nicht gelesen werden"));
+          return;
+        }
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0);
         canvas.toBlob(
           (blob) => {
+            if (!blob) {
+              reject(
+                new FileConversionError("Bild konnte nicht konvertiert werden"),
+              );
+              return;
+            }
             resolve(
-              new File([blob!], file.name.replace(/\.png$/i, ".jpg"), {
+              new File([blob], file.name.replace(/\.png$/i, ".jpg"), {
                 type: "image/jpeg",
               }),
             );
@@ -39,6 +47,7 @@ async function convertPNGtoJPG(file: File): Promise<File> {
 }
 
 async function convertHEICtoJPG(file: File): Promise<File> {
+  const { default: heic2any } = await import("heic2any");
   const blob = await heic2any({
     blob: file,
     toType: "image/jpeg",
