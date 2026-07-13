@@ -1,7 +1,6 @@
 "use client";
 
 import { ReceiptUploadExternal } from "@/components/Reimbursements/ReceiptUploadExternal";
-import { ReceiptAddressNotice } from "@/components/Reimbursements/ReceiptAddressNotice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -131,7 +130,6 @@ export function TravelReceiptCard(props: Props) {
 
       {receipt.grossAmount > 0 && (
         <div className="space-y-3">
-          {!isCar ? <ReceiptAddressNotice /> : null}
           <Label>Beleg *</Label>
           <ReceiptUploadExternal
             onUploadComplete={(storageId) =>
