@@ -54,8 +54,7 @@ export function ShareForm({
             type="button"
             variant={type === linkType ? "default" : "outline"}
             onClick={() => onTypeChange(linkType)}
-            className="flex-1"
-            size="sm"
+            className="h-12 flex-1"
           >
             {TYPE_LABELS[linkType]}
           </Button>
@@ -148,7 +147,7 @@ export function ShareForm({
       <Button
         variant="outline"
         onClick={onCopy}
-        className="w-full"
+        className="h-12 w-full"
         disabled={isGenerating || !form.projectId}
       >
         {isGenerating ? (
