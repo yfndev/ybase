@@ -37,7 +37,7 @@ export function TravelReimbursementFormUI({
   };
 
   return (
-    <div className="p-6 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-10">
+    <div className="p-6 xl:grid xl:grid-cols-[minmax(0,1fr)_400px] xl:items-start xl:gap-10">
       <div className="space-y-8 min-w-0">
         <div className="w-full sm:w-[260px]">
           <Label>Projekt *</Label>
@@ -78,7 +78,7 @@ export function TravelReimbursementFormUI({
         )}
       </div>
 
-      <div className="mt-8 lg:mt-0 lg:sticky lg:top-6">
+      <div className="mt-8 xl:mt-0 xl:sticky xl:top-6">
         <SummarySection
           receipts={form.receipts}
           totalNet={form.totalNet}
