@@ -38,8 +38,8 @@ interface Props {
   onRejectDialogChange: (dialog: RejectDialog) => void;
   onReject: () => void;
   isRejecting: boolean;
-  onDownloadReimbursement: (id: string) => void;
-  onDownloadAllowance: (allowance: Allowance) => void;
+  onOpenReimbursement: (id: string) => void;
+  onOpenAllowance: (allowance: Allowance) => void;
   onDeleteReimbursement: (id: string) => void;
   onDeleteAllowance: (id: string) => void;
   onToggleSelect: (key: SelectionKey) => void;
@@ -67,8 +67,8 @@ export function ReimbursementPageUI({
   onRejectDialogChange,
   onReject,
   isRejecting,
-  onDownloadReimbursement,
-  onDownloadAllowance,
+  onOpenReimbursement,
+  onOpenAllowance,
   onDeleteReimbursement,
   onDeleteAllowance,
   onToggleSelect,
@@ -147,8 +147,8 @@ export function ReimbursementPageUI({
         onApproveReimbursement={onApproveReimbursement}
         onApproveAllowance={onApproveAllowance}
         onOpenRejectDialog={onOpenRejectDialog}
-        onDownloadReimbursement={onDownloadReimbursement}
-        onDownloadAllowance={onDownloadAllowance}
+        onOpenReimbursement={onOpenReimbursement}
+        onOpenAllowance={onOpenAllowance}
         onDeleteReimbursement={onDeleteReimbursement}
         onDeleteAllowance={onDeleteAllowance}
         onToggleSelect={onToggleSelect}

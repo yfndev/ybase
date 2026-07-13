@@ -49,8 +49,8 @@ export function ReimbursementsClient({
   );
   const {
     isBulkDownloading,
-    handleDownloadReimbursement,
-    handleDownloadAllowance,
+    handleOpenReimbursement,
+    handleOpenAllowance,
     handleBulkDownload,
   } = usePdfDownloads({
     allowances,
@@ -101,8 +101,8 @@ export function ReimbursementsClient({
         onRejectDialogChange={actions.setRejectDialog}
         onReject={actions.handleReject}
         isRejecting={actions.isRejecting}
-        onDownloadReimbursement={handleDownloadReimbursement}
-        onDownloadAllowance={handleDownloadAllowance}
+        onOpenReimbursement={handleOpenReimbursement}
+        onOpenAllowance={handleOpenAllowance}
         onDeleteReimbursement={actions.handleDeleteReimbursement}
         onDeleteAllowance={actions.handleDeleteAllowance}
         onToggleSelect={handleToggleSelect}

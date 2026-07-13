@@ -20,8 +20,8 @@ type Props = {
   onApproveReimbursement: (id: string) => void;
   onApproveAllowance: (id: string) => void;
   onOpenRejectDialog: (type: "reimbursement" | "allowance", id: string) => void;
-  onDownloadReimbursement: (id: string) => void;
-  onDownloadAllowance: (allowance: Allowance) => void;
+  onOpenReimbursement: (id: string) => void;
+  onOpenAllowance: (allowance: Allowance) => void;
   onDeleteReimbursement: (id: string) => void;
   onDeleteAllowance: (id: string) => void;
   onToggleSelect: (key: SelectionKey) => void;
@@ -37,8 +37,8 @@ export function ReimbursementTable({
   onApproveReimbursement,
   onApproveAllowance,
   onOpenRejectDialog,
-  onDownloadReimbursement,
-  onDownloadAllowance,
+  onOpenReimbursement,
+  onOpenAllowance,
   onDeleteReimbursement,
   onDeleteAllowance,
   onToggleSelect,
@@ -115,7 +115,7 @@ export function ReimbursementTable({
               onClick={() => onRowClick(item._id)}
               onApprove={() => onApproveReimbursement(item._id)}
               onReject={() => onOpenRejectDialog("reimbursement", item._id)}
-              onDownload={() => onDownloadReimbursement(item._id)}
+              onOpen={() => onOpenReimbursement(item._id)}
               onDelete={() => onDeleteReimbursement(item._id)}
             />
           ))}
@@ -138,7 +138,7 @@ export function ReimbursementTable({
               applicantName={item.volunteerName || item.creatorName}
               onApprove={() => onApproveAllowance(item._id)}
               onReject={() => onOpenRejectDialog("allowance", item._id)}
-              onDownload={() => onDownloadAllowance(item)}
+              onOpen={() => onOpenAllowance(item)}
               onDelete={() => onDeleteAllowance(item._id)}
             />
           ))}

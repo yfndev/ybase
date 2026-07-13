@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Download, Trash2, X } from "lucide-react";
+import { Check, ExternalLink, Trash2, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ interface ReimbursementRowProps {
   onClick?: () => void;
   onApprove: () => void;
   onReject: () => void;
-  onDownload: () => void;
+  onOpen: () => void;
   onDelete: () => void;
 }
 
@@ -45,7 +45,7 @@ export function ReimbursementRow({
   onClick,
   onApprove,
   onReject,
-  onDownload,
+  onOpen,
   onDelete,
 }: ReimbursementRowProps) {
   const display = STATUS_DISPLAY[item.status];
@@ -135,13 +135,14 @@ export function ReimbursementRow({
           ) : null}
           <Button
             variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={onDownload}
-            aria-label="PDF herunterladen"
-            title="PDF herunterladen"
+            size="sm"
+            className="h-7 px-2"
+            onClick={onOpen}
+            aria-label="PDF in neuem Tab öffnen"
+            title="PDF in neuem Tab öffnen"
           >
-            <Download className="h-4 w-4" />
+            <ExternalLink className="h-4 w-4" />
+            Öffnen
           </Button>
           {canManageReimbursements && isPending ? (
             <Button
