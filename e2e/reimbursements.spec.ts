@@ -18,9 +18,20 @@ async function cleanup() {
   });
 }
 
-async function addSignature(page: Page) {
-  await page.getByRole("button", { name: "Am Computer" }).click();
-  const canvas = page.locator("canvas");
+async function drawSignature(page: Page) {
+  const canvas = page.locator("canvas:visible").last();
+  await expect
+    .poll(() =>
+      canvas.evaluate((element) => {
+        const signatureCanvas = element as HTMLCanvasElement;
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        return (
+          signatureCanvas.width === signatureCanvas.offsetWidth * ratio &&
+          signatureCanvas.height === signatureCanvas.offsetHeight * ratio
+        );
+      }),
+    )
+    .toBe(true);
   const box = await canvas.boundingBox();
   if (!box) throw new Error("Signature canvas is not visible");
 
@@ -29,10 +40,23 @@ async function addSignature(page: Page) {
   await page.mouse.move(box.x + 80, box.y + 80, { steps: 5 });
   await page.mouse.move(box.x + 140, box.y + 30, { steps: 5 });
   await page.mouse.up();
+}
+
+async function addSignature(page: Page) {
+  await page.getByRole("button", { name: "Am Computer" }).click();
+  await page.waitForTimeout(100);
+  await drawSignature(page);
   await page.getByRole("button", { name: "Unterschrift speichern" }).click();
-  await expect(
-    page.getByRole("paragraph").filter({ hasText: "Unterschrift gespeichert" }),
-  ).toBeVisible();
+  const saved = page
+    .getByRole("paragraph")
+    .filter({ hasText: "Unterschrift gespeichert" });
+  const failed = page.getByText(
+    /Bitte unterschreiben|Speichern fehlgeschlagen/,
+  );
+  await expect(saved.or(failed)).toBeVisible({ timeout: 10_000 });
+  if (await failed.isVisible()) {
+    throw new Error(`Unterschrift fehlgeschlagen: ${await failed.innerText()}`);
+  }
 }
 
 test.describe.serial("reimbursement flow", () => {

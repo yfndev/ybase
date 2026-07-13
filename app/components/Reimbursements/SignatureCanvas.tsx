@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useSignatureResize } from "@/lib/hooks/useSignatureResize";
 import {
   generateUploadUrl,
   getFileUrlAction,
@@ -9,7 +10,6 @@ import { Loader2, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import SignaturePad from "react-signature-canvas";
-import { useSignatureResize } from "@/lib/hooks/useSignatureResize";
 
 type Props = {
   onUploadComplete: (key: string) => void;
@@ -94,20 +94,20 @@ export function SignatureCanvas({
   }
 
   return (
-    <div className="space-y-2">
-      <div className="border rounded-lg bg-white">
+    <div className="space-y-3">
+      <div className="overflow-hidden rounded-lg border bg-white">
         <SignaturePad
           ref={padRef}
           minWidth={2}
           maxWidth={3}
-          canvasProps={{ className: "w-full h-32" }}
+          canvasProps={{ className: "h-48 w-full sm:h-64" }}
         />
       </div>
       <div className="flex gap-2">
         <Button
           type="button"
           variant="outline"
-          size="sm"
+          className="h-11 flex-1 px-3 sm:h-10 sm:flex-none"
           onClick={() => padRef.current?.clear()}
         >
           <RotateCcw className="size-4 mr-1" />
@@ -115,7 +115,7 @@ export function SignatureCanvas({
         </Button>
         <Button
           type="button"
-          size="sm"
+          className="h-11 flex-1 px-3 sm:h-10 sm:flex-none"
           onClick={handleSave}
           disabled={uploading}
         >

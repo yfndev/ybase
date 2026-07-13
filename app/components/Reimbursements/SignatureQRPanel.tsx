@@ -49,7 +49,7 @@ export function SignatureQRPanel({
 
   if (tokenFailed) {
     return (
-      <div className="border rounded-lg h-48 flex items-center justify-center">
+      <div className="flex h-40 items-center justify-center rounded-lg border px-4 sm:h-48">
         <p className="text-sm text-muted-foreground">
           Link konnte nicht erstellt werden. Bitte versuche es später erneut.
         </p>
@@ -59,7 +59,7 @@ export function SignatureQRPanel({
 
   if (!token) {
     return (
-      <div className="border rounded-lg h-48 flex items-center justify-center">
+      <div className="flex h-40 items-center justify-center rounded-lg border sm:h-48">
         <Loader2 className="size-5 animate-spin text-muted-foreground" />
       </div>
     );
@@ -75,12 +75,16 @@ export function SignatureQRPanel({
   };
 
   return (
-    <div className="border rounded-lg p-6 flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-4 rounded-lg border p-4 sm:p-6">
       <p className="text-sm text-muted-foreground text-center">
         Scanne den QR-Code mit deinem Handy und unterschreibe dort.
       </p>
       <div className="bg-white p-3 rounded-lg border">
-        <QRCodeSVG value={signatureUrl} size={180} />
+        <QRCodeSVG
+          value={signatureUrl}
+          size={180}
+          className="size-36 sm:size-44"
+        />
       </div>
       <div className="flex w-full max-w-sm gap-2">
         <input
