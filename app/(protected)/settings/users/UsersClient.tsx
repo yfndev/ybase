@@ -54,49 +54,43 @@ export function UsersClient({ users }: Props) {
     <div>
       <PageHeader title="Benutzer" />
 
-      <div className="space-y-6">
-        <p className="text-muted-foreground">
-          Hier kannst du Benutzer und deren Rollen verwalten.
-        </p>
-
-        {users.length === 0 ? (
-          <div className="text-center py-12 border rounded-lg">
-            <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">
-              Keine Benutzer gefunden
-            </h3>
-            <p className="text-muted-foreground mt-2">
-              Noch keine Benutzer in deiner Organisation.
-            </p>
-          </div>
-        ) : (
-          <div className="rounded-md border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="pr-6">Benutzer</TableHead>
-                  <TableHead>E-Mail</TableHead>
-                  <TableHead className="pr-6">Rolle</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <UserRow
-                    key={user._id}
-                    user={{
-                      ...user,
-                      role: user.role || "member",
-                    }}
-                    onRoleChange={handleRoleChange}
-                    isAdmin={isAdmin}
-                    isUpdating={updatingId === user._id}
-                  />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </div>
+      {users.length === 0 ? (
+        <div className="text-center py-12 border rounded-lg">
+          <Users className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h3 className="mt-4 text-lg font-semibold">
+            Keine Benutzer gefunden
+          </h3>
+          <p className="text-muted-foreground mt-2">
+            Noch keine Benutzer in deiner Organisation.
+          </p>
+        </div>
+      ) : (
+        <div className="rounded-md border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="pr-6">Benutzer</TableHead>
+                <TableHead>E-Mail</TableHead>
+                <TableHead className="pr-6">Rolle</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <UserRow
+                  key={user._id}
+                  user={{
+                    ...user,
+                    role: user.role || "member",
+                  }}
+                  onRoleChange={handleRoleChange}
+                  isAdmin={isAdmin}
+                  isUpdating={updatingId === user._id}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }

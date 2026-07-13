@@ -98,11 +98,7 @@ export function ProjectsClient() {
       <PageHeader title="Projekte" />
 
       <div className="space-y-6">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-muted-foreground">
-            Projekte (z.B. Events oder Aktionen), denen Erstattungen zugeordnet
-            werden.
-          </p>
+        <div className="flex justify-end">
           <Button
             variant="ghost"
             size="sm"
