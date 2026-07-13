@@ -48,7 +48,7 @@ export function ReceiptCard({ receipt, toggleType, updateReceipt }: Props) {
         </Button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <Label>Firma/Anbieter *</Label>
           <Input
@@ -59,6 +59,18 @@ export function ReceiptCard({ receipt, toggleType, updateReceipt }: Props) {
               })
             }
             placeholder={PLACEHOLDERS[receipt.costType]}
+          />
+        </div>
+        <div>
+          <Label>Beleg-Nr.</Label>
+          <Input
+            value={receipt.receiptNumber ?? ""}
+            onChange={(e) =>
+              updateReceipt(receipt.costType, {
+                receiptNumber: e.target.value || undefined,
+              })
+            }
+            placeholder="z.B. RE-2026-001 (optional)"
           />
         </div>
         {receipt.costType === "car" ? (
@@ -118,7 +130,7 @@ export function ReceiptCard({ receipt, toggleType, updateReceipt }: Props) {
               <Select
                 value={String(receipt.taxRate)}
                 onValueChange={(value) => {
-                  const tax = parseInt(value);
+                  const tax = parseInt(value, 10);
                   updateReceipt(receipt.costType, {
                     taxRate: tax,
                     netAmount: toNet(receipt.grossAmount, tax),

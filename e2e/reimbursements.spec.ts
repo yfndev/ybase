@@ -233,6 +233,9 @@ test.describe.serial("reimbursement flow", () => {
     await page.getByRole("button", { name: "PKW" }).click();
 
     await page.getByPlaceholder("Eigenfahrt, Miles, Sixt, etc.").fill("Miles");
+    await page
+      .getByPlaceholder("z.B. RE-2026-001 (optional)")
+      .fill("RK-2026-001");
     await page.getByRole("spinbutton").first().fill("500");
 
     await page.locator('input[type="file"]').setInputFiles(PDF_FILE);

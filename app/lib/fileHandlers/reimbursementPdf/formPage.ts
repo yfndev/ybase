@@ -108,7 +108,6 @@ function drawBankColumn(
     ["Kontoinhaber:", data.accountHolder],
     ["IBAN:", data.iban],
     ["BIC:", data.bic ?? ""],
-    ["Bankname:", ""],
   ];
   let y = top - 96;
   for (const [label, value] of rows) {

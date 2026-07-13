@@ -68,7 +68,7 @@ export function useReceipts(startDate: string) {
       ...travelReceipts,
       {
         costType,
-        receiptNumber: `${costType.toUpperCase()}-001`,
+        receiptNumber: undefined,
         receiptDate: startDate,
         companyName: "",
         description: "",

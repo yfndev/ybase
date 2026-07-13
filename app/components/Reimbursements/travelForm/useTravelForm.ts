@@ -44,7 +44,7 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
       ...receipts,
       {
         costType: type,
-        receiptNumber: `${type.toUpperCase()}-001`,
+        receiptNumber: undefined,
         receiptDate: travel.startDate,
         companyName: "",
         description: "",
