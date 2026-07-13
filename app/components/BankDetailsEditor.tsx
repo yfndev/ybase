@@ -55,12 +55,6 @@ export function BankDetailsEditor({ value, onChange }: Props) {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-medium">Bankverbindung</h2>
-      {editing && !!getBankDetailsError(value) && (
-        <p className="text-sm text-amber-700" aria-live="polite">
-          Bitte vervollständige deine Bankverbindung. Ohne gültige Bankdaten
-          kannst du den Antrag nicht einreichen.
-        </p>
-      )}
       <div className="flex items-end gap-4">
         <div className="grid grid-cols-[1fr_2fr_1fr] gap-4 flex-1">
           <div>
