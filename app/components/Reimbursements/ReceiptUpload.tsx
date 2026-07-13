@@ -7,10 +7,10 @@ import {
 } from "@/lib/fileHandlers/fileConversion";
 import {
   generateUploadUrl,
-  getFileUrlAction,
+  getFileInfoAction,
 } from "@/lib/server/reimbursements/actions";
 import { FileText, Loader2, Upload } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import toast from "react-hot-toast";
 
 interface Props {
@@ -19,20 +19,29 @@ interface Props {
 }
 
 export function ReceiptUpload({ onUploadComplete, storageId }: Props) {
+  const inputId = useId();
   const [isUploading, setIsUploading] = useState(false);
   const [isPdf, setIsPdf] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!storageId) {
       setPreviewUrl(null);
+      setIsPdf(false);
       return;
     }
     let active = true;
-    getFileUrlAction(storageId).then((url) => {
-      if (active) setPreviewUrl(url);
-    });
+    getFileInfoAction(storageId)
+      .then(({ url, contentType }) => {
+        if (!active) return;
+        setPreviewUrl(url);
+        setIsPdf(contentType === "application/pdf");
+      })
+      .catch(() => {
+        if (!active) return;
+        setPreviewUrl(null);
+        setIsPdf(false);
+      });
     return () => {
       active = false;
     };
@@ -71,7 +80,7 @@ export function ReceiptUpload({ onUploadComplete, storageId }: Props) {
 
   const fileInput = (
     <input
-      ref={inputRef}
+      id={inputId}
       type="file"
       accept=".jpg,.jpeg,.png,.heic,.pdf"
       onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
@@ -81,9 +90,9 @@ export function ReceiptUpload({ onUploadComplete, storageId }: Props) {
 
   if (previewUrl || isPdf) {
     return (
-      <div
-        className="border rounded-lg p-4 relative group cursor-pointer"
-        onClick={() => inputRef.current?.click()}
+      <label
+        htmlFor={inputId}
+        className="block border rounded-lg p-4 relative group cursor-pointer"
       >
         {isPdf ? (
           <div className="flex flex-col items-center gap-2 py-4">
@@ -104,13 +113,13 @@ export function ReceiptUpload({ onUploadComplete, storageId }: Props) {
           </div>
         </div>
         {fileInput}
-      </div>
+      </label>
     );
   }
 
   return (
-    <div
-      onClick={() => inputRef.current?.click()}
+    <label
+      htmlFor={inputId}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault();
@@ -137,6 +146,6 @@ export function ReceiptUpload({ onUploadComplete, storageId }: Props) {
         </div>
       )}
       {fileInput}
-    </div>
+    </label>
   );
 }

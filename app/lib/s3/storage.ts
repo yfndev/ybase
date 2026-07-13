@@ -1,6 +1,7 @@
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -76,6 +77,20 @@ export function presignDownload(key: string): Promise<string> {
     new GetObjectCommand({ Bucket: bucket(), Key: key }),
     { expiresIn: 300 },
   );
+}
+
+export async function getDownloadInfo(
+  key: string,
+): Promise<{ url: string; contentType: string }> {
+  const [url, metadata] = await Promise.all([
+    presignDownload(key),
+    s3().send(new HeadObjectCommand({ Bucket: bucket(), Key: key })),
+  ]);
+
+  return {
+    url,
+    contentType: metadata.ContentType ?? "application/octet-stream",
+  };
 }
 
 export async function deleteObject(key: string): Promise<void> {

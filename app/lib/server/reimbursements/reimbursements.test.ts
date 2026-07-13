@@ -1,5 +1,13 @@
 import { MongoMemoryServer } from "mongodb-memory-server";
-import { afterAll, beforeAll, beforeEach, expect, test, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  expect,
+  test,
+  vi,
+} from "vitest";
 
 vi.mock("../../auth/session", () => ({
   requireUser: vi.fn(),
@@ -9,6 +17,10 @@ vi.mock("../../auth/session", () => ({
 vi.mock("../../s3/storage", () => ({
   presignUpload: vi.fn(async () => ({ key: "key", url: "url" })),
   presignDownload: vi.fn(async () => "url"),
+  getDownloadInfo: vi.fn(async () => ({
+    url: "signed-url",
+    contentType: "application/pdf",
+  })),
   deleteObject: vi.fn(async () => {}),
   getObjectBuffer: vi.fn(async () => Buffer.from("file")),
 }));
@@ -23,9 +35,9 @@ import {
   users,
 } from "../../db/collections";
 import { newId } from "../../db/ids";
-import { deleteObject } from "../../s3/storage";
+import { deleteObject, getDownloadInfo } from "../../s3/storage";
 import { approve, createReimbursement, deleteReimbursement } from "./actions";
-import { getAllReimbursements, getReimbursement } from "./data";
+import { getAllReimbursements, getFileInfo, getReimbursement } from "./data";
 
 let mongod: MongoMemoryServer;
 let orgA: string;
@@ -44,6 +56,10 @@ afterAll(async () => {
   await client.close();
   await mongod.stop();
 }, 30_000);
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 beforeEach(async () => {
   await (await getDb()).dropDatabase();
@@ -134,6 +150,16 @@ test("createReimbursement writes the reimbursement and receipts scoped to the or
     .toArray();
   expect(receiptList).toHaveLength(1);
   expect(receiptList[0]?.fileStorageId).toBe("receipt-key");
+});
+
+test("getFileInfo returns signed download metadata", async () => {
+  vi.stubEnv("IS_TEST", "false");
+
+  await expect(getFileInfo("receipt-key")).resolves.toEqual({
+    url: "signed-url",
+    contentType: "application/pdf",
+  });
+  expect(getDownloadInfo).toHaveBeenCalledWith("receipt-key");
 });
 
 test("getAllReimbursements stays scoped to the caller's org", async () => {

@@ -14,7 +14,7 @@ import {
   insertTravelDetails,
   type ReimbursementPdfData,
 } from "./actionsHelpers";
-import { getFileUrl } from "./data";
+import { getFileInfo, getFileUrl } from "./data";
 import {
   insertReceipts,
   insertReimbursement,
@@ -86,6 +86,12 @@ export async function getFileUrlAction(key: string): Promise<string> {
     return "data:image/gif;base64,R0lGODlhAQABAAAAACw=";
   }
   return getFileUrl(key);
+}
+
+export async function getFileInfoAction(
+  key: string,
+): Promise<{ url: string; contentType: string }> {
+  return getFileInfo(key);
 }
 
 export async function getReimbursementPdfData(

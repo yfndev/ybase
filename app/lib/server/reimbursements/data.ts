@@ -1,4 +1,5 @@
 import { hasMinimumRole } from "../../auth/roles";
+import { isTestMode } from "../../auth/environment";
 import { requireUser } from "../../auth/session";
 import {
   projects,
@@ -8,7 +9,7 @@ import {
   users,
 } from "../../db/collections";
 import type { Receipt, Reimbursement, TravelDetails } from "../../db/types";
-import { presignDownload } from "../../s3/storage";
+import { getDownloadInfo, presignDownload } from "../../s3/storage";
 
 export async function getUserBankDetails(): Promise<{
   iban: string;
@@ -72,6 +73,19 @@ export async function getReceipts(reimbursementId: string): Promise<Receipt[]> {
 export async function getFileUrl(storageId: string): Promise<string> {
   await requireUser();
   return presignDownload(storageId);
+}
+
+export async function getFileInfo(
+  storageId: string,
+): Promise<{ url: string; contentType: string }> {
+  await requireUser();
+  if (isTestMode()) {
+    return {
+      url: "data:image/gif;base64,R0lGODlhAQABAAAAACw=",
+      contentType: "image/gif",
+    };
+  }
+  return getDownloadInfo(storageId);
 }
 
 export async function getAllReimbursements(): Promise<

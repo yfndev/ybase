@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/Layout/PageHeader";
 import {
-  getFileUrl,
+  getFileInfo,
   getReceipts,
   getReimbursement,
 } from "@/lib/server/reimbursements/data";
@@ -21,10 +21,14 @@ export default async function ReimbursementDetailPage({
   const reimbursement = await getReimbursement(id);
   const rawReceipts = reimbursement ? await getReceipts(id) : [];
   const receipts = await Promise.all(
-    rawReceipts.map(async (receipt) => ({
-      ...receipt,
-      fileUrl: await getFileUrl(receipt.fileStorageId),
-    })),
+    rawReceipts.map(async (receipt) => {
+      const file = await getFileInfo(receipt.fileStorageId);
+      return {
+        ...receipt,
+        fileUrl: file.url,
+        fileContentType: file.contentType,
+      };
+    }),
   );
 
   if (!reimbursement) {
