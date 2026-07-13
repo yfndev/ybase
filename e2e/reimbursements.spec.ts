@@ -252,7 +252,7 @@ test.describe.serial("reimbursement flow", () => {
       travelRow.getByText("Reisekostenerstattung", { exact: true }),
     ).toBeVisible();
     await expect(
-      travelRow.getByText("Event · Berlin", { exact: true }),
+      travelRow.getByText("Test Projekt", { exact: true }),
     ).toBeVisible();
     await expect(page.getByText("Ausstehend")).toBeVisible();
   });
