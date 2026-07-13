@@ -27,7 +27,7 @@ type NavUserData = {
 
 function UserAvatar({ user }: { user: NavUserData }) {
   return (
-    <Avatar className="h-8 w-8 rounded-full">
+    <Avatar className="size-9 rounded-full group-data-[collapsible=icon]:size-8">
       <AvatarImage
         src={user.image ?? undefined}
         alt={user.name ?? ""}
@@ -42,9 +42,9 @@ function UserAvatar({ user }: { user: NavUserData }) {
 
 function UserInfo({ user }: { user: NavUserData }) {
   return (
-    <div className="grid flex-1 text-left text-sm leading-tight">
+    <div className="grid flex-1 text-left leading-tight">
       <span className="truncate font-medium">{user.name}</span>
-      <span className="truncate text-xs">{user.email}</span>
+      <span className="truncate text-sm">{user.email}</span>
     </div>
   );
 }
@@ -53,11 +53,15 @@ function UserNavSkeleton() {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <SidebarMenuButton size="lg" disabled>
-          <Skeleton className="h-8 w-8 rounded-full" />
+        <SidebarMenuButton
+          size="lg"
+          className="h-auto gap-3 px-[1.125rem] py-3"
+          disabled
+        >
+          <Skeleton className="size-9 rounded-full group-data-[collapsible=icon]:size-8" />
           <div className="grid flex-1 gap-1.5">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-3.5 w-32" />
           </div>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -79,7 +83,7 @@ export function NavUser() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="border border-border data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="h-auto gap-3 border border-border px-[1.125rem] py-3 text-base data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <UserAvatar user={user} />
               <UserInfo user={user} />
