@@ -27,6 +27,8 @@ keeps authentication, authorization and organization isolation on the server.
 ## Secrets and deployment
 
 - Credentials belong exclusively in Coolify environment variables.
+- `TALLY_MASTER_KEY` exists only in the server runtime and is never persisted or
+  returned to the browser.
 - `.env` and `.env.local` are ignored by Git.
 - Production email requires `SERVICE_STAGE=production`; non-production email is
   restricted by `BREVO_RECIPIENT_ALLOWLIST`.
