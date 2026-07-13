@@ -5,43 +5,15 @@ export function PluginsUndToolsSection() {
 
       <h3 className="text-xl font-semibold mt-6 mb-3">Google Fonts</h3>
       <p className="mb-4">
-        Diese Seite nutzt zur einheitlichen Darstellung von Schriftarten so
-        genannte Google Fonts, die von Google bereitgestellt werden. Beim Aufruf
-        einer Seite lädt Ihr Browser die benötigten Fonts in ihren Browsercache,
-        um Texte und Schriftarten korrekt anzuzeigen.
+        Diese Seite nutzt zur einheitlichen Darstellung eine Google-Schriftart.
+        Die Schriftdateien werden zusammen mit der Anwendung auf unseren eigenen
+        Servern bereitgestellt und von dort geladen.
       </p>
       <p className="mb-4">
-        Zu diesem Zweck muss der von Ihnen verwendete Browser Verbindung zu den
-        Servern von Google aufnehmen. Hierdurch erlangt Google Kenntnis darüber,
-        dass über Ihre IP-Adresse diese Website aufgerufen wurde. Die Nutzung
-        von Google Fonts erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO.
-        Der Websitebetreiber hat ein berechtigtes Interesse an der einheitlichen
-        Darstellung des Schriftbildes auf seiner Website.
-      </p>
-      <p className="mb-4">
-        Wenn Ihr Browser Google Fonts nicht unterstützt, wird eine
-        Standardschrift von Ihrem Computer genutzt.
-      </p>
-      <p className="mb-4">
-        Weitere Informationen zu Google Fonts finden Sie unter{" "}
-        <a
-          href="https://developers.google.com/fonts/faq"
-          className="underline"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          https://developers.google.com/fonts/faq
-        </a>{" "}
-        und in der Datenschutzerklärung von Google:{" "}
-        <a
-          href="https://policies.google.com/privacy?hl=de"
-          className="underline"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          https://policies.google.com/privacy?hl=de
-        </a>
-        .
+        Beim Seitenaufruf wird deshalb keine Verbindung zu Google-Servern zum
+        Laden der Schriftart hergestellt. Rechtsgrundlage ist Art. 6 Abs. 1 lit.
+        f DSGVO; unser berechtigtes Interesse liegt in einer einheitlichen und
+        performanten Darstellung unseres Angebots.
       </p>
 
       <h3 className="text-xl font-semibold mt-6 mb-3">Google OAuth</h3>
@@ -110,58 +82,31 @@ export function PluginsUndToolsSection() {
         .
       </p>
 
-      <h3 className="text-xl font-semibold mt-6 mb-3">Convex</h3>
+      <h3 className="text-xl font-semibold mt-6 mb-3">Brevo</h3>
       <p className="mb-4">
-        Wir nutzen Convex als Backend-Datenbank und für serverlose Funktionen.
-        Convex speichert und verarbeitet die Daten, die Sie in unserer Anwendung
-        eingeben, einschließlich Benutzerdaten, Projektdaten und
-        Transaktionsdaten.
+        Wir nutzen Brevo für den Versand transaktionaler E-Mails, beispielsweise
+        für Statusmeldungen zu eingereichten Erstattungen. Dabei werden die für
+        den Versand erforderliche E-Mail-Adresse und die Inhalte der Nachricht
+        an Brevo übermittelt.
       </p>
       <p className="mb-4">
         Die Verarbeitung erfolgt auf Grundlage von Art. 6 Abs. 1 lit. b DSGVO
         (Vertragserfüllung) und Art. 6 Abs. 1 lit. f DSGVO (berechtigtes
-        Interesse an einer zuverlässigen und performanten Datenverarbeitung).
+        Interesse an einer zuverlässigen Kommunikation).
       </p>
-      <p className="mb-4">Anbieter: Convex, Inc., San Francisco, CA, USA.</p>
       <p className="mb-4">
-        Weitere Informationen finden Sie in der Datenschutzerklärung von Convex:{" "}
+        Anbieter: Brevo, Sendinblue GmbH, Köpenicker Straße 126, 10179 Berlin,
+        Deutschland.
+      </p>
+      <p className="mb-4">
+        Weitere Informationen finden Sie in der Datenschutzerklärung von Brevo:{" "}
         <a
-          href="https://www.convex.dev/privacy"
+          href="https://www.brevo.com/de/legal/privacypolicy/"
           className="underline"
           target="_blank"
           rel="noopener noreferrer"
         >
-          https://www.convex.dev/privacy
-        </a>
-        .
-      </p>
-
-      <h3 className="text-xl font-semibold mt-6 mb-3">OpenAI ChatGPT</h3>
-      <p className="mb-4">
-        Wir nutzen die API von OpenAI (ChatGPT) für Chat-Funktionen innerhalb
-        unserer Anwendung. Wenn Sie die Chat-Funktion nutzen, werden Ihre
-        Nachrichten an die Server von OpenAI übermittelt und dort verarbeitet,
-        um eine Antwort zu generieren.
-      </p>
-      <p className="mb-4">
-        Die Nutzung erfolgt auf Grundlage von Art. 6 Abs. 1 lit. a DSGVO
-        (Einwilligung) und Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung).
-        OpenAI verarbeitet die übermittelten Daten gemäß ihrer
-        Datenschutzrichtlinie.
-      </p>
-      <p className="mb-4">
-        Anbieter: OpenAI, L.L.C., 3180 18th Street, San Francisco, CA 94110,
-        USA.
-      </p>
-      <p className="mb-4">
-        Weitere Informationen finden Sie in der Datenschutzerklärung von OpenAI:{" "}
-        <a
-          href="https://openai.com/privacy/"
-          className="underline"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          https://openai.com/privacy/
+          https://www.brevo.com/de/legal/privacypolicy/
         </a>
         .
       </p>

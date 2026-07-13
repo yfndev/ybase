@@ -1,82 +1,37 @@
 # Security
 
-We take security seriously at YBase. Here's how we protect your financial data.
+YBase processes financial and reimbursement data. The application therefore
+keeps authentication, authorization and organization isolation on the server.
 
-## Authentication & Authorization
+## Runtime architecture
 
-**OAuth instead of Password**
+- The Next.js application runs as a standalone Docker container deployed by
+  Coolify on Hetzner infrastructure.
+- MongoDB is the primary database.
+- Files and signatures are stored in S3-compatible Hetzner Object Storage.
+- Coolify manages production environment variables and TLS termination.
+- Google OAuth provides authentication through Auth.js.
+- Brevo sends transactional email; PostHog provides product analytics.
 
-- OAuth 2.0 with Google eliminates password vulnerabilities
-- Implemented with [Convex Auth](https://labs.convex.dev/auth) in `convex/auth.ts`
+## Application controls
 
-**Organizational Isolation**
+- Every protected operation requires an authenticated user.
+- Database access is scoped by `organizationId`.
+- Roles distinguish members, finance users and administrators.
+- Server-side Zod validation protects action and API inputs.
+- Uploaded objects use generated keys and time-limited download URLs.
+- Audit logs record important organization and reimbursement actions.
+- Security headers deny framing, disable MIME sniffing and restrict referrer
+  information.
 
-- Every query is filtered by `organizationId`
-- Organizations can only access their own data
+## Secrets and deployment
 
-**Role-Based Access Control**
+- Credentials belong exclusively in Coolify environment variables.
+- `.env` and `.env.local` are ignored by Git.
+- Production email requires `SERVICE_STAGE=production`; non-production email is
+  restricted by `BREVO_RECIPIENT_ALLOWLIST`.
+- The application container runs as an unprivileged user.
 
-- `member` submits and views their own reimbursements; `finance` manages organization-wide submissions; `admin` has full control
-- `requireRole()` validates finance and admin actions in `app/lib/auth/session.ts`
+## Reporting issues
 
-## Data Protection
-
-**Credentials & Secrets**
-
-- All secrets stored server-side in Convex Dashboard
-- Client never receives API keys
-
-**Encryption**
-
-- HTTPS/TLS enforced by Convex and Vercel
-- Database encrypted at rest on Convex Cloud
-
-**JWT Security**
-
-- Tokens signed with private keys
-- HTTPOnly cookies with SameSite=Strict
-
-## API Security
-
-**Input Validation**
-
-- Every function argument validated with Convex validators
-
-**Type-Safe Queries**
-
-- Prevents NoSQL injection attacks
-
-**Internal Functions**
-
-- Sensitive operations use `internalMutation`/`internalQuery`
-
-## Third Party Integrations
-
-**Stripe**
-
-- Webhook signature verification
-- No credit card data stored
-
-## Attack Prevention
-
-**XSS**
-
-- CSP headers configured
-- React escapes user input
-
-**Rate Limiting**
-
-- Built into Convex
-
-**Infrastructure**
-
-- Vercel: HTTPS, DDoS protection, CDN
-- Convex Cloud: managed security patches, encrypted backups
-
-## Threat Model
-
-For STRIDE analysis and data flow diagrams, see [ThreatModel.md](ThreatModel.md).
-
-## Report an Issue
-
-Email info@youngfounders.network with security concerns.
+Report security concerns to info@youngfounders.network.

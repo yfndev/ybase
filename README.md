@@ -5,16 +5,16 @@
 YBase helps German (non-profit) associations manage their budgets when Excel gets too complicated.
 
 ## Free for Associations
+
 We believe every association deserves proper budget tools. That's why we cover all hosting and server costs—so you can use YBase at no charge. No hidden fees, no premium tiers, just free budget management for the nonprofit community.
 
- [Young Founders Network e.V.](https://youngfounders.network) provides YBase **completely free** for other associations. We cover all server costs so you don't have to.
+[Young Founders Network e.V.](https://youngfounders.network) provides YBase **completely free** for other associations. We cover all server costs so you don't have to.
 
 **The problem?**
 Most budget tools are too expensive or too complex for associations. Excel is flexible but keeping track of all expenses is plenty of work.
 
 **Our solution?**
 Simple, free, intuitive budget and reimbursement tracking for non-profits.
-
 
 ## Features
 
@@ -24,17 +24,16 @@ Simple, free, intuitive budget and reimbursement tracking for non-profits.
 - **Project Organization:** Assign expenses to projects, see remaining budgets
 - **Reimbursements:** Submit expense and travel reimbursements with receipt uploads
 - **Volunteer Allowance:** "Ehrenamtspauschale" forms with shareable links for external signatures
-- **AI Assistant:** Chat with your budget data (admin/finance only)
 - **Team Management:** Organize members into teams with project access control
 - **Donor Export:** Export transactions by donor to CSV
-- **Email Invitations:** Invite team members via email (powered by Resend)
+- **Email Notifications:** Transactional approval and rejection emails (powered by Brevo)
 - **Guided Onboarding:** Interactive tour for new users
 - **Audit Logs:** Track all actions for transparency and compliance
 
 ## Tech Stack
 
-![Next.js](https://img.shields.io/badge/Next.js_15-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
-![Convex](https://img.shields.io/badge/Convex-FF6F00?style=for-the-badge&logo=convex&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 ![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-000000?style=for-the-badge&logo=shadcnui&logoColor=white)
@@ -46,7 +45,8 @@ YBase uses Next.js App Router with protected and public routes:
 - `app/(public)/` → Login and public pages
 - `app/(protected)/` → Authenticated dashboard with sidebar navigation
 
-Data flows through Convex for real-time sync. Every query is scoped by `organizationId` for data isolation.
+Server actions and route handlers access MongoDB through the server-only data
+layer. Every protected query is scoped by `organizationId` for data isolation.
 
 **[Database Schema](docs/schema.md)** - Full ER diagram with all tables and relationships
 
@@ -61,44 +61,30 @@ Transactions are categorized by status for budget calculations:
 
 ## Self-Hosting
 
-**Prerequisites:** Node.js 20+, pnpm, [Convex account](https://www.convex.dev/)
+**Prerequisites:** Node.js 22+, pnpm, MongoDB, and S3-compatible object storage
 
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/joelheile/ybase.git
+git clone https://github.com/yfndev/ybase.git
 cd ybase
 pnpm install
-npx convex dev  # Creates .env.local with CONVEX_DEPLOYMENT and NEXT_PUBLIC_CONVEX_URL
+cp .env.example .env.local
 ```
 
-### 2. Initialize Auth
-
-```bash
-npx @convex-dev/auth
-```
-
-### 3. Set Up Google OAuth
+### 2. Set Up Google OAuth
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
 2. Create OAuth 2.0 Client ID (Web application)
-3. Add authorized redirect URI: `https://<your-convex-deployment>.convex.site/api/auth/callback/google`
+3. Add authorized redirect URI: `https://<your-domain>/api/auth/callback/google`
 4. Copy Client ID and Client Secret
 
-### 4. Configure Environment Variables
+### 3. Configure Environment Variables
 
-Set in Convex Dashboard → Settings → Environment Variables or via CLI:
+Fill the values documented in `.env.example`. Keep all credentials server-side
+and set `NEXT_PUBLIC_APP_URL` to the externally reachable URL.
 
-```bash
-npx convex env set AUTH_GOOGLE_ID "your-google-client-id"
-npx convex env set AUTH_GOOGLE_SECRET "your-google-client-secret"
-
-# Optional
-npx convex env set OPENAI_API_KEY "sk_proj_..."
-npx convex env set RESEND_API_KEY "re_..."
-```
-
-### 5. Run
+### 4. Run
 
 ```bash
 pnpm dev
@@ -106,14 +92,14 @@ pnpm dev
 
 Test CSV functionality with the [example file](docs/exampleTransactions.csv).
 
-### 6. Deploy
+### 5. Deploy with Coolify
 
-```bash
-npx convex deploy
-npx vercel
-```
+Create a Coolify application from this repository and use the included
+`Dockerfile`. Expose port `3000`, configure the domain and copy the production
+environment variables into Coolify.
 
-Update `SITE_URL` to your production URL after deploying.
+Set `SERVICE_STAGE=production` and update `NEXT_PUBLIC_APP_URL` to your
+production URL after deploying.
 
 ## Keyboard Shortcuts
 
@@ -137,7 +123,7 @@ We're building a tool to support NGOs by making budgeting as easy as possible.
 6. Open a Pull Request
 
 **Ideas, feedback, or questions?**
-[info@youngfounders.network](mailto:info@youngfounders.network) | [Open an issue](https://github.com/joelheile/ybase/issues)
+[info@youngfounders.network](mailto:info@youngfounders.network) | [Open an issue](https://github.com/yfndev/ybase/issues)
 
 ## Testing
 

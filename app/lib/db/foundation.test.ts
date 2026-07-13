@@ -10,7 +10,7 @@ let mongod: MongoMemoryServer;
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   process.env.MONGODB_URI = mongod.getUri();
-  process.env.MONGODB_DB = "ybudget_test";
+  process.env.MONGODB_DB = "ybase_test";
 }, 120_000);
 
 afterAll(async () => {
@@ -26,7 +26,9 @@ beforeEach(async () => {
 
 test("ensureAppUser creates a user and auto-joins an existing org by domain", async () => {
   const organizationId = newId();
-  await (await organizations()).insertOne({
+  await (
+    await organizations()
+  ).insertOne({
     _id: organizationId,
     _creationTime: Date.now(),
     name: "YFN",

@@ -15,6 +15,7 @@ import {
   type ReimbursementPdfData,
 } from "./actionsHelpers";
 import { getFileInfo, getFileUrl } from "./data";
+import { sendApprovalEmail, sendRejectionEmail } from "./email";
 import {
   insertReceipts,
   insertReimbursement,
@@ -132,6 +133,7 @@ export async function approve(input: {
     reimbursementId,
     `${reimbursement.amount}€`,
   );
+  await sendApprovalEmail(reimbursementId);
 }
 
 export async function decline(input: {
@@ -154,4 +156,5 @@ export async function decline(input: {
     reimbursementId,
     rejectionNote,
   );
+  await sendRejectionEmail(reimbursementId);
 }

@@ -11,6 +11,11 @@ vi.mock("../../s3/storage", () => ({
   deleteObject: vi.fn(),
 }));
 
+vi.mock("./email", () => ({
+  sendApprovalEmail: vi.fn(async () => {}),
+  sendRejectionEmail: vi.fn(async () => {}),
+}));
+
 import { requireRole, requireUser } from "../../auth/session";
 import { getClient, getDb } from "../../db/client";
 import {
@@ -21,8 +26,9 @@ import {
 } from "../../db/collections";
 import { newId } from "../../db/ids";
 import { deleteObject } from "../../s3/storage";
-import { approve, create, remove } from "./actions";
+import { approve, create, decline, remove } from "./actions";
 import { getAll } from "./data";
+import { sendApprovalEmail, sendRejectionEmail } from "./email";
 
 let mongod: MongoMemoryServer;
 let orgA: string;
@@ -222,6 +228,29 @@ test("approve sets status approved", async () => {
   const doc = await (await volunteerAllowance()).findOne({ _id: id });
   expect(doc?.status).toBe("approved");
   expect(doc?.reviewedBy).toBe(userA);
+  expect(sendApprovalEmail).toHaveBeenCalledWith(id);
+});
+
+test("decline sets status and sends the review email", async () => {
+  const projectA = newId();
+  await (
+    await projects()
+  ).insertOne({
+    _id: projectA,
+    _creationTime: Date.now(),
+    name: "Projekt A",
+    organizationId: orgA,
+    isArchived: false,
+    createdBy: userA,
+  });
+
+  const id = await create(newAllowanceInput(projectA));
+  await decline({ id, rejectionNote: "Angaben fehlen" });
+
+  const doc = await (await volunteerAllowance()).findOne({ _id: id });
+  expect(doc?.status).toBe("declined");
+  expect(doc?.rejectionNote).toBe("Angaben fehlen");
+  expect(sendRejectionEmail).toHaveBeenCalledWith(id);
 });
 
 test("remove deletes the signature from S3 and the document", async () => {
@@ -246,7 +275,9 @@ test("remove deletes the signature from S3 and the document", async () => {
 
 test("finance can delete another member's allowance", async () => {
   const allowanceId = newId();
-  await (await volunteerAllowance()).insertOne({
+  await (
+    await volunteerAllowance()
+  ).insertOne({
     _id: allowanceId,
     _creationTime: Date.now(),
     organizationId: orgA,

@@ -29,7 +29,7 @@ const shouldStartTemporaryDatabase =
   !env.MONGODB_URI || (env.IS_TEST === "true" && !hasExplicitMongoUri);
 
 if (shouldStartTemporaryDatabase) {
-  const dbName = env.MONGODB_DB ?? "ybudget_dev";
+  const dbName = env.MONGODB_DB ?? "ybase_dev";
   console.info(`Starting temporary database "${dbName}".`);
   mongo = await MongoMemoryServer.create({ instance: { dbName } });
   env.MONGODB_URI = mongo.getUri();
