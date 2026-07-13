@@ -250,7 +250,47 @@ test.describe.serial("reimbursement flow", () => {
     await expect(page.getByText("Ausstehend")).toBeVisible();
   });
 
-  test("4. Reject travel reimbursement", async () => {
+  test("4. Filter reimbursements by type", async () => {
+    const tableRows = page.locator("table tbody tr");
+
+    await expect(tableRows).toHaveCount(2);
+    await tableRows
+      .first()
+      .getByRole("checkbox", { name: "Antrag auswählen" })
+      .check();
+    await expect(
+      page.getByRole("button", { name: "1 herunterladen" }),
+    ).toBeVisible();
+
+    await page
+      .getByRole("tab", { name: "Reisekostenerstattung", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "1 herunterladen" }),
+    ).not.toBeVisible();
+    await expect(tableRows).toHaveCount(1);
+    await expect(
+      page.getByRole("cell", { name: "Reisekostenerstattung" }),
+    ).toBeVisible();
+
+    await page
+      .getByRole("tab", { name: "Auslagenerstattung", exact: true })
+      .click();
+    await expect(tableRows).toHaveCount(1);
+    await expect(
+      page.getByRole("cell", { name: "Auslagenerstattung" }),
+    ).toBeVisible();
+
+    await page
+      .getByRole("tab", { name: "Ehrenamtspauschale", exact: true })
+      .click();
+    await expect(page.getByText("Keine Erstattungen gefunden.")).toBeVisible();
+
+    await page.getByRole("tab", { name: "Alle", exact: true }).click();
+    await expect(tableRows).toHaveCount(2);
+  });
+
+  test("5. Reject travel reimbursement", async () => {
     await page
       .locator("table tbody tr")
       .first()
