@@ -5,6 +5,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { createTravelReimbursement } from "@/lib/server/reimbursements/actions";
 import { type CostType, DEFAULT_TAX_RATES } from "@/lib/travel-costs";
+import { getTravelDateRangeError } from "@/lib/travelDates";
 import type { BankDetails, Receipt } from "./types";
 
 export function useTravelForm(defaultBankDetails: BankDetails) {
@@ -67,7 +68,7 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
     travel.purpose &&
     travel.startDate &&
     travel.endDate &&
-    travel.endDate >= travel.startDate;
+    !getTravelDateRangeError(travel.startDate, travel.endDate);
   const mealTotal = travel.mealDays * travel.mealRate;
   const totalNet = receipts.reduce(
     (sum, receipt) => sum + receipt.netAmount,

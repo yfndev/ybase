@@ -3,6 +3,7 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getTravelDateRangeError } from "@/lib/travelDates";
 
 type Props = {
   destination: string;
@@ -18,6 +19,11 @@ type Props = {
 };
 
 export function TravelDetailsSection(props: Props) {
+  const dateRangeError = getTravelDateRangeError(
+    props.startDate,
+    props.endDate,
+  );
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-medium">Reiseangaben</h2>
@@ -52,9 +58,23 @@ export function TravelDetailsSection(props: Props) {
             type="date"
             value={props.endDate}
             onChange={(e) => props.onEndDateChange(e.target.value)}
+            min={props.startDate || undefined}
+            aria-invalid={Boolean(dateRangeError) || undefined}
+            aria-describedby={
+              dateRangeError ? "travel-date-range-error" : undefined
+            }
           />
         </div>
       </div>
+      {dateRangeError ? (
+        <p
+          id="travel-date-range-error"
+          role="alert"
+          className="text-sm font-medium text-destructive"
+        >
+          {dateRangeError}
+        </p>
+      ) : null}
       <div className="flex items-center space-x-2">
         <Checkbox
           id="international"

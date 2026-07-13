@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  getTravelDateRangeError,
+  TRAVEL_DATE_RANGE_ERROR,
+} from "../../travelDates";
 
 const baseReceiptFields = {
   receiptNumber: z.string().optional(),
@@ -30,23 +34,28 @@ export const createReimbursementSchema = z.object({
   receipts: z.array(receiptValidator),
 });
 
-export const createTravelReimbursementSchema = z.object({
-  amount: z.number(),
-  projectId: z.string(),
-  iban: z.string(),
-  bic: z.string().optional(),
-  accountHolder: z.string(),
-  currency: z.string().optional(),
-  signatureStorageId: z.string(),
-  startDate: z.string(),
-  endDate: z.string(),
-  destination: z.string(),
-  purpose: z.string(),
-  isInternational: z.boolean(),
-  mealAllowanceDays: z.number().optional(),
-  mealAllowanceDailyBudget: z.number().optional(),
-  receipts: z.array(travelReceiptValidator),
-});
+export const createTravelReimbursementSchema = z
+  .object({
+    amount: z.number(),
+    projectId: z.string(),
+    iban: z.string(),
+    bic: z.string().optional(),
+    accountHolder: z.string(),
+    currency: z.string().optional(),
+    signatureStorageId: z.string(),
+    startDate: z.string(),
+    endDate: z.string(),
+    destination: z.string(),
+    purpose: z.string(),
+    isInternational: z.boolean(),
+    mealAllowanceDays: z.number().optional(),
+    mealAllowanceDailyBudget: z.number().optional(),
+    receipts: z.array(travelReceiptValidator),
+  })
+  .refine((data) => !getTravelDateRangeError(data.startDate, data.endDate), {
+    message: TRAVEL_DATE_RANGE_ERROR,
+    path: ["endDate"],
+  });
 
 export const createLinkSchema = z.object({
   projectId: z.string(),

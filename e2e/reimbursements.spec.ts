@@ -158,11 +158,22 @@ test.describe.serial("reimbursement flow", () => {
     await page
       .getByRole("textbox", { name: "TT.MM.JJJJ" })
       .first()
-      .fill("01.01.2025");
+      .fill("15.05.2026");
     await page
       .getByRole("textbox", { name: "TT.MM.JJJJ" })
       .nth(1)
-      .fill("02.01.2025");
+      .fill("20.05.2025");
+    await page.getByRole("textbox", { name: "TT.MM.JJJJ" }).nth(1).blur();
+    await expect(
+      page.getByText(
+        "Das Reiseende muss am oder nach dem Reisebeginn liegen. Korrigiere das Datum, um die Kostenarten anzuzeigen.",
+      ),
+    ).toBeVisible();
+
+    await page
+      .getByRole("textbox", { name: "TT.MM.JJJJ" })
+      .nth(1)
+      .fill("20.05.2026");
     await page.getByRole("textbox", { name: "TT.MM.JJJJ" }).nth(1).blur();
 
     await page.getByRole("button", { name: "PKW" }).click();

@@ -10,6 +10,8 @@ interface Props {
   placeholder?: string;
   className?: string;
   id?: string;
+  invalid?: boolean;
+  describedBy?: string;
 }
 
 function isoToDisplay(iso: string): string {
@@ -73,6 +75,8 @@ export function DateInput({
   placeholder = "TT.MM.JJJJ",
   className,
   id,
+  invalid = false,
+  describedBy,
 }: Props) {
   const [displayValue, setDisplayValue] = useState(() => isoToDisplay(value));
   const [isFocused, setIsFocused] = useState(false);
@@ -113,6 +117,8 @@ export function DateInput({
       placeholder={placeholder}
       className={className}
       maxLength={10}
+      aria-invalid={invalid || undefined}
+      aria-describedby={describedBy}
     />
   );
 }

@@ -4,6 +4,7 @@ import { DateInput } from "@/components/Selectors/DateInput";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getTravelDateRangeError } from "@/lib/travelDates";
 import type { Travel } from "./types";
 
 interface Props {
@@ -12,6 +13,11 @@ interface Props {
 }
 
 export function TravelDetailsSection({ travel, update }: Props) {
+  const dateRangeError = getTravelDateRangeError(
+    travel.startDate,
+    travel.endDate,
+  );
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-medium">Reiseangaben</h2>
@@ -46,6 +52,8 @@ export function TravelDetailsSection({ travel, update }: Props) {
           <DateInput
             value={travel.endDate}
             onChange={(value) => update({ endDate: value })}
+            invalid={Boolean(dateRangeError)}
+            describedBy={dateRangeError ? "travel-date-range-error" : undefined}
           />
         </div>
         <div className="col-span-2 flex items-end pb-2">
@@ -63,6 +71,15 @@ export function TravelDetailsSection({ travel, update }: Props) {
           </div>
         </div>
       </div>
+      {dateRangeError ? (
+        <p
+          id="travel-date-range-error"
+          role="alert"
+          className="text-sm font-medium text-destructive"
+        >
+          {dateRangeError}
+        </p>
+      ) : null}
     </div>
   );
 }
