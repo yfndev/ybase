@@ -19,6 +19,7 @@ import {
   type CostType,
 } from "@/lib/travel-costs";
 import { Trash2 } from "lucide-react";
+import { InvoiceOrganizationHint } from "../InvoiceOrganizationHint";
 import { PLACEHOLDERS } from "./constants";
 import type { Receipt } from "./types";
 
@@ -26,9 +27,15 @@ interface Props {
   receipt: Receipt;
   toggleType: (type: CostType) => void;
   updateReceipt: (type: CostType, updates: Partial<Receipt>) => void;
+  organizationName: string;
 }
 
-export function ReceiptCard({ receipt, toggleType, updateReceipt }: Props) {
+export function ReceiptCard({
+  receipt,
+  toggleType,
+  updateReceipt,
+  organizationName,
+}: Props) {
   return (
     <div className="border rounded-lg p-4 space-y-4">
       <div className="flex justify-between items-center">
@@ -154,6 +161,7 @@ export function ReceiptCard({ receipt, toggleType, updateReceipt }: Props) {
       {(receipt.grossAmount > 0 || receipt.fileStorageId) && (
         <div className="space-y-3">
           <Label>Beleg *</Label>
+          <InvoiceOrganizationHint organizationName={organizationName} />
           <ReceiptUpload
             onUploadComplete={(id) =>
               updateReceipt(receipt.costType, { fileStorageId: id })

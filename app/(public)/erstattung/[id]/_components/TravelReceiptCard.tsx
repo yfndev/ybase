@@ -1,6 +1,7 @@
 "use client";
 
 import { ReceiptUploadExternal } from "@/components/Reimbursements/ReceiptUploadExternal";
+import { InvoiceOrganizationHint } from "@/components/Reimbursements/InvoiceOrganizationHint";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +25,7 @@ type Props = {
     contentType: string,
   ) => Promise<{ key: string; url: string }>;
   getFileUrl: (key: string) => Promise<string | null>;
+  organizationName: string;
 };
 
 export function TravelReceiptCard(props: Props) {
@@ -141,6 +143,7 @@ export function TravelReceiptCard(props: Props) {
       {receipt.grossAmount > 0 && (
         <div className="space-y-3">
           <Label>Beleg *</Label>
+          <InvoiceOrganizationHint organizationName={props.organizationName} />
           <ReceiptUploadExternal
             onUploadComplete={(storageId) =>
               props.onUpdate({ fileStorageId: storageId })

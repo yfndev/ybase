@@ -45,7 +45,6 @@ export function ReceiptDraftFields({
         Du kannst mehrere Belege hinzufügen, um sie in einer Erstattung
         einzureichen.
       </p>
-      <InvoiceOrganizationHint organizationName={organizationName} />
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label>Name/Firma *</Label>
@@ -130,8 +129,9 @@ export function ReceiptDraftFields({
         </div>
       </div>
 
-      <div>
+      <div className="space-y-3">
         <Label>Beleg hochladen *</Label>
+        <InvoiceOrganizationHint organizationName={organizationName} />
         <ReceiptUpload
           onUploadComplete={(id) => setDraft({ ...draft, file: id })}
           storageId={draft.file || undefined}

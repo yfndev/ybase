@@ -49,7 +49,6 @@ export function SimpleReceiptsSection(props: Props) {
       <p className="text-sm text-muted-foreground">
         Füge alle Belege hinzu, die du einreichen möchtest.
       </p>
-      <InvoiceOrganizationHint organizationName={props.organizationName} />
       <div className="border rounded-lg p-4 space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -135,8 +134,9 @@ export function SimpleReceiptsSection(props: Props) {
           </div>
         </div>
 
-        <div>
+        <div className="space-y-3">
           <Label>Beleg hochladen *</Label>
+          <InvoiceOrganizationHint organizationName={props.organizationName} />
           <ReceiptUploadExternal
             onUploadComplete={props.onFileChange}
             storageId={props.file || undefined}
