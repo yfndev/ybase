@@ -27,13 +27,13 @@ type NavUserData = {
 
 function UserAvatar({ user }: { user: NavUserData }) {
   return (
-    <Avatar className="h-8 w-8 rounded-lg">
+    <Avatar className="h-8 w-8 rounded-full">
       <AvatarImage
         src={user.image ?? undefined}
         alt={user.name ?? ""}
         referrerPolicy="no-referrer"
       />
-      <AvatarFallback className="rounded-lg">
+      <AvatarFallback className="rounded-full">
         {user.name?.charAt(0).toUpperCase()}
       </AvatarFallback>
     </Avatar>
@@ -54,7 +54,7 @@ function UserNavSkeleton() {
     <SidebarMenu>
       <SidebarMenuItem>
         <SidebarMenuButton size="lg" disabled>
-          <Skeleton className="h-8 w-8 rounded-lg" />
+          <Skeleton className="h-8 w-8 rounded-full" />
           <div className="grid flex-1 gap-1.5">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-3 w-32" />
@@ -79,7 +79,7 @@ export function NavUser() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="border border-border data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <UserAvatar user={user} />
               <UserInfo user={user} />
