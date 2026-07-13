@@ -9,4 +9,7 @@ export type Reimbursement = NonNullable<
 
 export type Receipt = Awaited<ReturnType<typeof getReceipts>>[number];
 
-export type ReceiptWithUrl = Receipt & { fileUrl: string };
+export type ReceiptWithUrl = Receipt & {
+  fileUrl: string;
+  fileContentType: string;
+};
