@@ -2,6 +2,10 @@ import { z } from "zod";
 import { receipts, reimbursements, travelDetails } from "@/lib/db/collections";
 import { newId } from "@/lib/db/ids";
 import { addLog } from "@/lib/server/logs";
+import {
+  getTravelDateRangeError,
+  TRAVEL_DATE_RANGE_ERROR,
+} from "@/lib/travelDates";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -43,6 +47,10 @@ const bodySchema = z.object({
       isInternational: z.boolean(),
       mealAllowanceDays: z.number().optional(),
       mealAllowanceDailyBudget: z.number().optional(),
+    })
+    .refine((data) => !getTravelDateRangeError(data.startDate, data.endDate), {
+      message: TRAVEL_DATE_RANGE_ERROR,
+      path: ["endDate"],
     })
     .optional(),
 });

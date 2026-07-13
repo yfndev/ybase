@@ -1,5 +1,6 @@
 import { submitReimbursement } from "@/(public)/_lib/publicApi";
 import { BIC_REGEX, IBAN_REGEX, normalizeIban } from "@/lib/bank-utils";
+import { getTravelDateRangeError } from "@/lib/travelDates";
 import toast from "react-hot-toast";
 import type { Receipt, TravelReceipt } from "./types";
 
@@ -52,6 +53,11 @@ export function validateReimbursement(params: SubmitParams) {
     ) {
       return "Bitte alle Reiseangaben ausfüllen";
     }
+    const dateRangeError = getTravelDateRangeError(
+      params.startDate,
+      params.endDate,
+    );
+    if (dateRangeError) return dateRangeError;
     if (params.travelReceipts.length === 0 && params.mealTotal === 0) {
       return "Bitte mindestens eine Kostenart oder Verpflegung hinzufügen";
     }

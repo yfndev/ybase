@@ -25,13 +25,12 @@ export function SignatureField({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex gap-2">
+    <div className="w-full space-y-4">
+      <div className="grid grid-cols-2 gap-2">
         <Button
           type="button"
           variant={mode === "mobile" ? "default" : "outline"}
-          size="sm"
-          className="flex-1"
+          className="h-12 min-w-0 w-full px-3"
           onClick={() => setMode("mobile")}
         >
           <Smartphone className="size-4 mr-1" />
@@ -40,8 +39,7 @@ export function SignatureField({
         <Button
           type="button"
           variant={mode === "desktop" ? "default" : "outline"}
-          size="sm"
-          className="flex-1"
+          className="h-12 min-w-0 w-full px-3"
           onClick={() => setMode("desktop")}
         >
           <Monitor className="size-4 mr-1" />

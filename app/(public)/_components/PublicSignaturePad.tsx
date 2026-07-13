@@ -47,14 +47,14 @@ export function PublicSignaturePad({
 
   if (storageId) {
     return (
-      <div className="border rounded-lg p-4 flex items-center justify-between gap-4">
+      <div className="flex flex-col items-stretch gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <p className="text-sm text-muted-foreground">
           Unterschrift gespeichert
         </p>
         <Button
           type="button"
           variant="outline"
-          size="sm"
+          className="h-11 sm:h-10"
           onClick={() => onUploadComplete("")}
         >
           <RotateCcw className="size-4 mr-1" />
@@ -65,20 +65,20 @@ export function PublicSignaturePad({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="border rounded-lg bg-white">
         <SignaturePad
           ref={padRef}
           minWidth={2}
           maxWidth={3}
-          canvasProps={{ className: "w-full h-32" }}
+          canvasProps={{ className: "h-48 w-full sm:h-64" }}
         />
       </div>
       <div className="flex gap-2">
         <Button
           type="button"
           variant="outline"
-          size="sm"
+          className="h-11 flex-1 px-3 sm:h-10 sm:flex-none"
           onClick={() => padRef.current?.clear()}
         >
           <RotateCcw className="size-4 mr-1" />
@@ -86,7 +86,7 @@ export function PublicSignaturePad({
         </Button>
         <Button
           type="button"
-          size="sm"
+          className="h-11 flex-1 px-3 sm:h-10 sm:flex-none"
           onClick={handleSave}
           disabled={uploading}
         >

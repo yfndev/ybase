@@ -30,7 +30,6 @@ export default function SignaturePage() {
       toast.error("Bitte unterschreiben");
       return;
     }
-
     setIsSubmitting(true);
     try {
       const dataUrl = signaturePadRef.current
@@ -90,7 +89,7 @@ export default function SignaturePage() {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-white">
-      <div className="flex-1 p-4 flex flex-col min-h-0">
+      <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col p-4 sm:p-6">
         <p className="text-center text-muted-foreground mb-2">
           Bitte hier unterschreiben
         </p>
@@ -106,28 +105,30 @@ export default function SignaturePage() {
           <div className="absolute left-4 right-4 bottom-1/4 border-b border-gray-300 pointer-events-none" />
         </div>
       </div>
-      <div className="p-4 flex gap-4 border-t">
-        <Button
-          variant="outline"
-          size="lg"
-          className="flex-1 h-14"
-          onClick={() => signaturePadRef.current?.clear()}
-        >
-          <RotateCcw className="size-5 mr-2" />
-          Löschen
-        </Button>
-        <Button
-          size="lg"
-          className="flex-1 h-14"
-          onClick={handleSave}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <Loader2 className="size-5 animate-spin" />
-          ) : (
-            "Speichern"
-          )}
-        </Button>
+      <div className="border-t p-4 sm:p-6">
+        <div className="mx-auto flex w-full max-w-3xl gap-3 sm:gap-4">
+          <Button
+            variant="outline"
+            size="lg"
+            className="h-12 flex-1 sm:h-14"
+            onClick={() => signaturePadRef.current?.clear()}
+          >
+            <RotateCcw className="size-5 mr-2" />
+            Löschen
+          </Button>
+          <Button
+            size="lg"
+            className="h-12 flex-1 sm:h-14"
+            onClick={handleSave}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <Loader2 className="size-5 animate-spin" />
+            ) : (
+              "Speichern"
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );

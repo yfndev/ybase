@@ -78,7 +78,7 @@ async function drawSignature(
   const dateTop = top - h - 36;
   box(page, x, dateTop - 28, width, 28);
   text(page, dateFmt(data.createdAt), x + 6, dateTop - 18, 9, fonts.font);
-  text(page, "Ort, Datum", x, dateTop - 40, 8, fonts.font, GRAY);
+  text(page, "Datum", x, dateTop - 40, 8, fonts.font, GRAY);
 }
 
 function drawTotals(

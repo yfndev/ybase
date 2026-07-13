@@ -18,9 +18,20 @@ async function cleanup() {
   });
 }
 
-async function addSignature(page: Page) {
-  await page.getByRole("button", { name: "Am Computer" }).click();
-  const canvas = page.locator("canvas");
+async function drawSignature(page: Page) {
+  const canvas = page.locator("canvas:visible").last();
+  await expect
+    .poll(() =>
+      canvas.evaluate((element) => {
+        const signatureCanvas = element as HTMLCanvasElement;
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        return (
+          signatureCanvas.width === signatureCanvas.offsetWidth * ratio &&
+          signatureCanvas.height === signatureCanvas.offsetHeight * ratio
+        );
+      }),
+    )
+    .toBe(true);
   const box = await canvas.boundingBox();
   if (!box) throw new Error("Signature canvas is not visible");
 
@@ -29,10 +40,23 @@ async function addSignature(page: Page) {
   await page.mouse.move(box.x + 80, box.y + 80, { steps: 5 });
   await page.mouse.move(box.x + 140, box.y + 30, { steps: 5 });
   await page.mouse.up();
+}
+
+async function addSignature(page: Page) {
+  await page.getByRole("button", { name: "Am Computer" }).click();
+  await page.waitForTimeout(100);
+  await drawSignature(page);
   await page.getByRole("button", { name: "Unterschrift speichern" }).click();
-  await expect(
-    page.getByRole("paragraph").filter({ hasText: "Unterschrift gespeichert" }),
-  ).toBeVisible();
+  const saved = page
+    .getByRole("paragraph")
+    .filter({ hasText: "Unterschrift gespeichert" });
+  const failed = page.getByText(
+    /Bitte unterschreiben|Speichern fehlgeschlagen/,
+  );
+  await expect(saved.or(failed)).toBeVisible({ timeout: 10_000 });
+  if (await failed.isVisible()) {
+    throw new Error(`Unterschrift fehlgeschlagen: ${await failed.innerText()}`);
+  }
 }
 
 test.describe.serial("reimbursement flow", () => {
@@ -168,11 +192,22 @@ test.describe.serial("reimbursement flow", () => {
     await page
       .getByRole("textbox", { name: "TT.MM.JJJJ" })
       .first()
-      .fill("01.01.2025");
+      .fill("15.05.2026");
     await page
       .getByRole("textbox", { name: "TT.MM.JJJJ" })
       .nth(1)
-      .fill("02.01.2025");
+      .fill("20.05.2025");
+    await page.getByRole("textbox", { name: "TT.MM.JJJJ" }).nth(1).blur();
+    await expect(
+      page.getByText(
+        "Das Reiseende muss am oder nach dem Reisebeginn liegen. Korrigiere das Datum, um die Kostenarten anzuzeigen.",
+      ),
+    ).toBeVisible();
+
+    await page
+      .getByRole("textbox", { name: "TT.MM.JJJJ" })
+      .nth(1)
+      .fill("20.05.2026");
     await page.getByRole("textbox", { name: "TT.MM.JJJJ" }).nth(1).blur();
 
     await page.getByRole("button", { name: "PKW" }).click();
