@@ -1,5 +1,7 @@
 "use client";
 
+import { BankDetailsEditor } from "@/components/BankDetailsEditor";
+import { SignatureField } from "@/components/Reimbursements/SignatureField";
 import { SelectProject } from "@/components/Selectors/SelectProject";
 import { Label } from "@/components/ui/label";
 import type { Project, ProjectTravelDefaults } from "@/lib/db/types";
@@ -35,47 +37,59 @@ export function TravelReimbursementFormUI({
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
-      <div className="w-full sm:w-[260px]">
-        <Label>Projekt *</Label>
-        <SelectProject
-          value={form.projectId || ""}
-          onValueChange={handleProjectChange}
-          projects={projects}
-        />
+    <div className="p-6 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-10">
+      <div className="space-y-8 min-w-0">
+        <div className="w-full sm:w-[260px]">
+          <Label>Projekt *</Label>
+          <SelectProject
+            value={form.projectId || ""}
+            onValueChange={handleProjectChange}
+            projects={projects}
+          />
+        </div>
+
+        <TravelDetailsSection travel={form.travel} update={form.update} />
+
+        {form.hasBasicInfo && (
+          <ReceiptsSection
+            receipts={form.receipts}
+            hasReceipt={form.hasReceipt}
+            toggleType={form.toggleType}
+            updateReceipt={form.updateReceipt}
+            travel={form.travel}
+            update={form.update}
+            showMealAllowance={form.showMealAllowance}
+            setShowMealAllowance={form.setShowMealAllowance}
+            mealTotal={form.mealTotal}
+          />
+        )}
+
+        {form.canSubmit && (
+          <>
+            <BankDetailsEditor value={form.bank} onChange={form.setBank} />
+            <div className="space-y-4">
+              <h2 className="text-lg font-medium">Unterschrift *</h2>
+              <SignatureField
+                onSignatureComplete={form.setSignature}
+                storageId={form.signature || undefined}
+              />
+            </div>
+          </>
+        )}
       </div>
 
-      <TravelDetailsSection travel={form.travel} update={form.update} />
-
-      {form.hasBasicInfo && (
-        <ReceiptsSection
-          receipts={form.receipts}
-          hasReceipt={form.hasReceipt}
-          toggleType={form.toggleType}
-          updateReceipt={form.updateReceipt}
-          travel={form.travel}
-          update={form.update}
-          showMealAllowance={form.showMealAllowance}
-          setShowMealAllowance={form.setShowMealAllowance}
-          mealTotal={form.mealTotal}
-        />
-      )}
-
-      {form.canSubmit && (
+      <div className="mt-8 lg:mt-0 lg:sticky lg:top-6">
         <SummarySection
-          bank={form.bank}
-          setBank={form.setBank}
           receipts={form.receipts}
           totalNet={form.totalNet}
           taxByRate={form.taxByRate}
           mealTotal={form.mealTotal}
           total={form.total}
-          signature={form.signature}
-          setSignature={form.setSignature}
           isSubmitting={form.isSubmitting}
+          canSubmit={!!form.canSubmit}
           handleSubmit={form.handleSubmit}
         />
-      )}
+      </div>
     </div>
   );
 }
