@@ -55,7 +55,7 @@ export function ReceiptDraftFields({
           />
         </div>
         <div>
-          <Label>Beleg-Nr.</Label>
+          <Label>Beleg-/Rechnungsnummer</Label>
           <Input
             value={draft.number}
             onChange={(e) => setDraft({ ...draft, number: e.target.value })}

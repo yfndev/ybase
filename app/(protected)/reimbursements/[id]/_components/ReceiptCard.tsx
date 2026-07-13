@@ -39,7 +39,7 @@ export function ReceiptCard({ receipt }: { receipt: ReceiptWithUrl }) {
           <div>
             <p className="font-semibold">{receipt.companyName}</p>
             <p className="text-sm text-muted-foreground">
-              Beleg-Nr. {receipt.receiptNumber} •{" "}
+              Beleg-/Rechnungsnummer {receipt.receiptNumber} •{" "}
               {formatDate(receipt.receiptDate)}
             </p>
           </div>
