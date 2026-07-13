@@ -10,7 +10,12 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useIsAdmin } from "@/lib/hooks/useCurrentUserRole";
+import {
+  hasPermission,
+  USER_PERMISSIONS,
+  type UserPermission,
+} from "@/lib/auth/roles";
+import { useCurrentUserRole } from "@/lib/hooks/useCurrentUserRole";
 import {
   Sidebar,
   SidebarContent,
@@ -28,15 +33,40 @@ const NAV_ITEMS: NavItem[] = [
   { name: "Erstattungen", url: "/reimbursements", icon: Coins },
 ];
 
-const ADMIN_NAV_ITEMS: NavItem[] = [
-  { name: "Organisation", url: "/settings/organization", icon: Building2 },
-  { name: "Benutzer", url: "/settings/users", icon: Users },
-  { name: "Projekte", url: "/settings/projects", icon: FolderKanban },
-  { name: "Logs", url: "/settings/logs", icon: ScrollText },
+type ProtectedNavItem = NavItem & { permission: UserPermission };
+
+const ADMINISTRATION_NAV_ITEMS: ProtectedNavItem[] = [
+  {
+    name: "Organisation",
+    url: "/settings/organization",
+    icon: Building2,
+    permission: USER_PERMISSIONS.organizationSettings,
+  },
+  {
+    name: "Benutzer",
+    url: "/settings/users",
+    icon: Users,
+    permission: USER_PERMISSIONS.roles,
+  },
+  {
+    name: "Projekte",
+    url: "/settings/projects",
+    icon: FolderKanban,
+    permission: USER_PERMISSIONS.projects,
+  },
+  {
+    name: "Logs",
+    url: "/settings/logs",
+    icon: ScrollText,
+    permission: USER_PERMISSIONS.auditLogs,
+  },
 ];
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
-  const isAdmin = useIsAdmin();
+  const role = useCurrentUserRole();
+  const administrationItems = ADMINISTRATION_NAV_ITEMS.filter(
+    ({ permission }) => hasPermission(role, permission),
+  );
 
   return (
     <Sidebar variant="sidebar" collapsible="icon" {...props}>
@@ -56,7 +86,9 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <MainNav items={NAV_ITEMS} />
-        {isAdmin && <MainNav items={ADMIN_NAV_ITEMS} label="Verwaltung" />}
+        {administrationItems.length > 0 && (
+          <MainNav items={administrationItems} label="Verwaltung" />
+        )}
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

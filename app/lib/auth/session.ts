@@ -1,7 +1,12 @@
 import { users } from "../db/collections";
 import type { UserRole } from "../db/types";
 import { auth } from "./index";
-import { hasMinimumRole, normalizeUserRole } from "./roles";
+import {
+  hasRoleAccess,
+  hasPermission,
+  normalizeUserRole,
+  type UserPermission,
+} from "./roles";
 
 export async function requireAuthenticatedUser() {
   const session = await auth();
@@ -22,10 +27,20 @@ export async function requireUser() {
   return { ...user, organizationId: user.organizationId, role };
 }
 
-export async function requireRole(minRole: UserRole) {
+export async function requireRole(requiredRole: UserRole) {
   const user = await requireUser();
-  if (!hasMinimumRole(user.role, minRole)) {
-    throw new Error(`Insufficient permissions. Required role: ${minRole}`);
+  if (!hasRoleAccess(user.role, requiredRole)) {
+    throw new Error(`Insufficient permissions. Required role: ${requiredRole}`);
+  }
+  return user;
+}
+
+export async function requirePermission(permission: UserPermission) {
+  const user = await requireUser();
+  if (!hasPermission(user.role, permission)) {
+    throw new Error(
+      `Insufficient permissions. Required permission: ${permission}`,
+    );
   }
   return user;
 }

@@ -51,4 +51,34 @@ describe("auth config", () => {
       role: "finance",
     });
   });
+
+  it("keeps the People & Culture role in the session", () => {
+    const session = { user: { id: "", role: undefined }, expires: "later" };
+
+    const result = authConfig.callbacks.session({
+      session,
+      token: {
+        userId: "user-id",
+        organizationId: "organization-id",
+        role: "people_culture",
+      },
+    } as unknown as Parameters<typeof authConfig.callbacks.session>[0]);
+
+    expect(result.user).toMatchObject({
+      id: "user-id",
+      organizationId: "organization-id",
+      role: "people_culture",
+    });
+  });
+
+  it("limits invalid session roles to member access", () => {
+    const session = { user: { id: "", role: undefined }, expires: "later" };
+
+    const result = authConfig.callbacks.session({
+      session,
+      token: { userId: "user-id", role: "invalid" },
+    } as unknown as Parameters<typeof authConfig.callbacks.session>[0]);
+
+    expect(result.user.role).toBe("member");
+  });
 });

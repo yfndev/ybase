@@ -58,7 +58,7 @@ pnpm exec playwright test e2e/reimbursements.spec.ts
 - `purpose-operations` (Zweckbetrieb)
 - `commercial-operations` (Wirtschaftlicher Geschäftsbetrieb)
 
-**User Roles:** `admin`, `finance`, `member`
+**User Roles:** `admin`, `finance`, `people_culture`, `member`
 
 ## Testing
 

@@ -48,12 +48,13 @@ export function UserRow({ user, onRoleChange, isAdmin, isUpdating }: Props) {
           onValueChange={(value) => onRoleChange(user._id, value as UserRole)}
           disabled={!isAdmin || isUpdating}
         >
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-[180px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="admin">Admin</SelectItem>
             <SelectItem value="finance">Finance</SelectItem>
+            <SelectItem value="people_culture">People &amp; Culture</SelectItem>
             <SelectItem value="member">Mitglied</SelectItem>
           </SelectContent>
         </Select>

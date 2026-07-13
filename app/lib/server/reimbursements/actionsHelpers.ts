@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import { hasMinimumRole } from "../../auth/roles";
+import { hasPermission, USER_PERMISSIONS } from "../../auth/roles";
 import { reimbursements, travelDetails } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { UserRole } from "../../db/types";
@@ -74,7 +74,10 @@ export async function deleteReimbursementById(
     throw new Error("Reimbursement not found");
   }
 
-  const canManageReimbursements = hasMinimumRole(user.role, "finance");
+  const canManageReimbursements = hasPermission(
+    user.role,
+    USER_PERMISSIONS.finance,
+  );
   if (reimbursement.createdBy !== user._id && !canManageReimbursements) {
     throw new Error("Only the creator or finance can delete reimbursements");
   }

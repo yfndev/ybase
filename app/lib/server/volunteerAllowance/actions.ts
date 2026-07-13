@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { hasMinimumRole } from "../../auth/roles";
+import { hasPermission, USER_PERMISSIONS } from "../../auth/roles";
 import { requireUser } from "../../auth/session";
 import { volunteerAllowance } from "../../db/collections";
 import { newId } from "../../db/ids";
@@ -101,7 +101,10 @@ export async function remove(input: { id: string }): Promise<void> {
   if (!doc || doc.organizationId !== user.organizationId) {
     throw new Error("Not found");
   }
-  const canManageReimbursements = hasMinimumRole(user.role, "finance");
+  const canManageReimbursements = hasPermission(
+    user.role,
+    USER_PERMISSIONS.finance,
+  );
   if (doc.createdBy !== user._id && !canManageReimbursements) {
     throw new Error("Only the creator or finance can delete");
   }
