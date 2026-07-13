@@ -101,21 +101,15 @@ export function ReimbursementTable({
                   aria-label="Antrag auswählen"
                 />
               }
-              kind={item.type}
               title={
                 item.type === "travel"
                   ? "Reisekostenerstattung"
                   : "Auslagenerstattung"
               }
               detail={
-                item.type === "travel"
-                  ? [
-                      item.travelDetails?.purpose,
-                      item.travelDetails?.destination,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")
-                  : item.description?.trim() || item.receiptSummary
+                item.type === "expense"
+                  ? item.description?.trim() || item.receiptSummary
+                  : undefined
               }
               applicantName={item.submitterName || item.creatorName}
               onClick={() => onRowClick(item._id)}
@@ -139,7 +133,6 @@ export function ReimbursementTable({
                   aria-label="Antrag auswählen"
                 />
               }
-              kind="allowance"
               title="Ehrenamtspauschale"
               detail={item.activityDescription}
               applicantName={item.volunteerName || item.creatorName}
