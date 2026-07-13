@@ -41,13 +41,23 @@ export function TravelReceiptCard(props: Props) {
         </Button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <Label>Name/Firma *</Label>
           <Input
             value={receipt.companyName}
             onChange={(e) => props.onUpdate({ companyName: e.target.value })}
             placeholder="z.B. Deutsche Bahn"
+          />
+        </div>
+        <div>
+          <Label>Beleg-Nr.</Label>
+          <Input
+            value={receipt.receiptNumber ?? ""}
+            onChange={(e) =>
+              props.onUpdate({ receiptNumber: e.target.value || undefined })
+            }
+            placeholder="z.B. RE-2026-001 (optional)"
           />
         </div>
 
@@ -107,7 +117,7 @@ export function TravelReceiptCard(props: Props) {
               <Select
                 value={String(receipt.taxRate)}
                 onValueChange={(value) => {
-                  const tax = parseInt(value);
+                  const tax = parseInt(value, 10);
                   props.onUpdate({
                     taxRate: tax,
                     netAmount: props.toNet(receipt.grossAmount, tax),
