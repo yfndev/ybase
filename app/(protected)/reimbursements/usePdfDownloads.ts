@@ -51,34 +51,38 @@ export function usePdfDownloads({
     );
   };
 
-  const handleDownloadReimbursement = async (id: string) => {
+  const openPdfInNewTab = async (createPdf: () => Promise<Blob | null>) => {
+    const pdfWindow = window.open("about:blank", "_blank");
+
+    if (!pdfWindow) {
+      toast.error("Neuer Tab konnte nicht geöffnet werden");
+      return;
+    }
+
+    pdfWindow.opener = null;
+
     try {
-      const blob = await getPdfBlobForReimbursement(id);
+      const blob = await createPdf();
       if (!blob) {
+        pdfWindow.close();
         toast.error("PDF konnte nicht erstellt werden");
         return;
       }
-      downloadBlob(blob, `Erstattung_${shortReferenceId(id)}.pdf`);
+
+      const url = URL.createObjectURL(blob);
+      pdfWindow.location.replace(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch {
-      toast.error("Fehler beim Herunterladen");
+      pdfWindow.close();
+      toast.error("Fehler beim Öffnen der PDF");
     }
   };
 
-  const handleDownloadAllowance = async (allowance: Allowance) => {
-    try {
-      const blob = await getPdfBlobForAllowance(allowance);
-      if (!blob) {
-        toast.error("PDF konnte nicht erstellt werden");
-        return;
-      }
-      downloadBlob(
-        blob,
-        `Ehrenamtspauschale_${shortReferenceId(allowance._id)}.pdf`,
-      );
-    } catch {
-      toast.error("Fehler beim Herunterladen");
-    }
-  };
+  const handleOpenReimbursement = (id: string) =>
+    openPdfInNewTab(() => getPdfBlobForReimbursement(id));
+
+  const handleOpenAllowance = (allowance: Allowance) =>
+    openPdfInNewTab(() => getPdfBlobForAllowance(allowance));
 
   const handleBulkDownload = async () => {
     if (selected.size === 0) return;
@@ -118,8 +122,8 @@ export function usePdfDownloads({
 
   return {
     isBulkDownloading,
-    handleDownloadReimbursement,
-    handleDownloadAllowance,
+    handleOpenReimbursement,
+    handleOpenAllowance,
     handleBulkDownload,
   };
 }
