@@ -130,6 +130,15 @@ test.describe.serial("reimbursement flow", () => {
     await page.getByRole("textbox", { name: "TT.MM.JJJJ" }).fill("01.01.2025");
     await page.getByPlaceholder("119,95").fill("100");
 
+    const receiptDropzone = page.getByRole("region", {
+      name: "Beleg hochladen",
+    });
+    await expect(receiptDropzone).toHaveCSS("display", "flex");
+    await expect(receiptDropzone).toHaveCSS("border-style", "dashed");
+    await expect(
+      page.getByRole("button", { name: "Datei auswählen" }),
+    ).toBeVisible();
+
     await page.locator('input[type="file"]').setInputFiles(IMAGE_FILE);
     await expect(page.getByText("Beleg hochgeladen")).toBeVisible({
       timeout: 10000,
@@ -243,7 +252,7 @@ test.describe.serial("reimbursement flow", () => {
       travelRow.getByText("Reisekostenerstattung", { exact: true }),
     ).toBeVisible();
     await expect(
-      travelRow.getByText("Event · Berlin", { exact: true }),
+      travelRow.getByText("Test Projekt", { exact: true }),
     ).toBeVisible();
     await expect(page.getByText("Ausstehend")).toBeVisible();
   });
