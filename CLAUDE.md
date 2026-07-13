@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents working with this repository.
 
 ## Project Overview
 
@@ -10,38 +10,36 @@ YBase is an open-source budget management application for German non-profit asso
 
 ```bash
 pnpm dev                     # Start Next.js dev server with turbopack
-pnpm dev:stripe              # Dev with Stripe webhooks + Convex backend
 pnpm build                   # Production build
 pnpm lint                    # Biome linting with auto-fix
 pnpm format                  # Prettier formatting
 pnpm test                    # Run all tests (Vitest + Playwright)
 pnpm vitest run              # Unit/integration tests only
-pnpm vitest run --coverage   # Tests with coverage report
+pnpm coverage                # Tests with coverage report
 pnpm exec playwright test    # E2E tests only
 ```
 
 **Run a single test file:**
 ```bash
-pnpm vitest run convex/projects/queries.test.ts
-pnpm exec playwright test e2e/createTransactionAndProject.spec.ts
+pnpm vitest run app/lib/server/projects/projects.test.ts
+pnpm exec playwright test e2e/reimbursements.spec.ts
 ```
 
 ## Architecture
 
-**Tech Stack:** Next.js 16 (App Router) + Convex (real-time serverless backend) + TypeScript + Tailwind CSS + shadcn/ui
+**Tech Stack:** Next.js 16 (App Router) + MongoDB + Auth.js + TypeScript + Tailwind CSS + shadcn/ui
 
 **Route Structure:**
 - `app/(protected)/` - Authenticated routes (dashboard, projects, transactions, reimbursements)
 - `app/(public)/` - Public routes (login, shareable forms)
 
-**Backend (Convex):**
-- `convex/schema.ts` - Database schema definition
-- Each feature has its own directory: `convex/{feature}/queries.ts`, `functions.ts`, `*.test.ts`
-- All queries are scoped by `organizationId` for multi-tenant data isolation
+**Backend:**
+- `app/lib/db/` - MongoDB client, collections, indexes, and shared database types
+- `app/lib/server/` - Server-only data access and domain actions grouped by feature
+- `app/lib/auth/` - Auth.js configuration and authorization helpers
+- Protected reads and writes are scoped by `organizationId` for multi-tenant data isolation
 
-**Path Aliases:**
-- `@/` → `app/`
-- `@/convex/` → `convex/`
+**Path Alias:** `@/` → `app/`
 
 ## Key Domain Concepts
 
@@ -64,10 +62,10 @@ pnpm exec playwright test e2e/createTransactionAndProject.spec.ts
 
 ## Testing
 
-- **Vitest** for unit/integration tests (`convex/**/*.test.ts`, `app/**/*.test.ts`)
+- **Vitest** for unit/integration tests (`app/**/*.test.ts`)
 - **Playwright** for E2E tests (`e2e/*.spec.ts`)
-- Convex tests use `convex-test` with edge-runtime environment
-- Test helpers in `convex/test.setup.ts`
+- MongoDB integration tests use `mongodb-memory-server`
+- Shared test setup lives in `vitest.setup.ts`
 
 ## Documentation
 

@@ -27,9 +27,15 @@ export function HostingSection() {
         Wir setzen folgende(n) Hoster ein:
         <br />
         <br />
-        Vercel Inc.
+        Hetzner Online GmbH
         <br />
-        340 S Lemon Ave #4133, Walnut, CA 91789, USA
+        Industriestr. 25
+        <br />
+        91710 Gunzenhausen, Deutschland
+      </p>
+      <p className="mb-4">
+        Die Anwendung wird über eine selbst betriebene Coolify-Instanz auf
+        Servern von Hetzner bereitgestellt.
       </p>
     </>
   );

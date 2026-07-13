@@ -19,5 +19,5 @@ export function getClient(): Promise<MongoClient> {
 
 export async function getDb(): Promise<Db> {
   const client = await clientPromise();
-  return client.db(process.env.MONGODB_DB ?? "ybudget");
+  return client.db(process.env.MONGODB_DB ?? "ybase");
 }
