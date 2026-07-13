@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "@/lib/server/volunteerAllowance/actions";
+import { getBankDetailsError } from "@/lib/bank-utils";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -55,8 +56,8 @@ export function useVolunteerAllowanceForm(defaultBankDetails: BankDetails) {
     if (!amount || amount <= 0) return "Bitte einen Betrag eingeben";
     if (amount > MAX_VOLUNTEER_ALLOWANCE_EUR)
       return `Maximal ${MAX_VOLUNTEER_ALLOWANCE_EUR} € erlaubt`;
-    if (!bank.accountHolder) return "Bitte den Kontoinhaber eingeben";
-    if (!bank.iban) return "Bitte die IBAN eingeben";
+    const bankDetailsError = getBankDetailsError(bank);
+    if (bankDetailsError) return bankDetailsError;
     if (!form.confirmed) return "Bitte die Bestätigung ankreuzen";
     if (!signature) return "Bitte unterschreiben";
     return null;
@@ -65,11 +66,12 @@ export function useVolunteerAllowanceForm(defaultBankDetails: BankDetails) {
   const handleSubmit = async () => {
     const error = validate();
     if (error) return toast.error(error);
+    if (!projectId || !signature) return;
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
       await create({
-        projectId: projectId!,
+        projectId,
         amount: parseAmount(form.amount),
         ...bank,
         activityDescription: form.activity,
@@ -80,7 +82,7 @@ export function useVolunteerAllowanceForm(defaultBankDetails: BankDetails) {
         volunteerStreet: form.street,
         volunteerPlz: form.plz,
         volunteerCity: form.city,
-        signatureStorageId: signature!,
+        signatureStorageId: signature,
       });
       toast.success("Ehrenamtspauschale eingereicht");
       router.push("/reimbursements");

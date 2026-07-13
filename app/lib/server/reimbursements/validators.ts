@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { bankDetailsFields } from "../bankDetails";
 
 const baseReceiptFields = {
   receiptNumber: z.string().optional(),
@@ -22,9 +23,7 @@ const travelReceiptValidator = z.object({
 export const createReimbursementSchema = z.object({
   amount: z.number(),
   projectId: z.string(),
-  iban: z.string(),
-  bic: z.string().optional(),
-  accountHolder: z.string(),
+  ...bankDetailsFields,
   currency: z.string().optional(),
   signatureStorageId: z.string(),
   receipts: z.array(receiptValidator),
@@ -33,9 +32,7 @@ export const createReimbursementSchema = z.object({
 export const createTravelReimbursementSchema = z.object({
   amount: z.number(),
   projectId: z.string(),
-  iban: z.string(),
-  bic: z.string().optional(),
-  accountHolder: z.string(),
+  ...bankDetailsFields,
   currency: z.string().optional(),
   signatureStorageId: z.string(),
   startDate: z.string(),

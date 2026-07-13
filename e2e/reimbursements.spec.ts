@@ -113,6 +113,16 @@ test.describe.serial("reimbursement flow", () => {
     await page.getByRole("button", { name: "Beleg speichern" }).click();
     await expect(page.getByText("Test Firma")).toBeVisible();
 
+    await expect(
+      page.getByText("Bitte vervollständige deine Bankverbindung."),
+    ).toBeVisible();
+    await page.getByPlaceholder("Vor- und Nachname").fill("Test User");
+    await page
+      .getByPlaceholder("DE12 3456 7890 0000 0000 00")
+      .fill("DE89370400440532013000");
+    await page.getByRole("button", { name: "Speichern" }).click();
+    await expect(page.getByText("Bankverbindung gespeichert")).toBeVisible();
+
     await addSignature(page);
 
     await page
