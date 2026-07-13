@@ -1,4 +1,4 @@
-export type UserRole = "admin" | "finance" | "member";
+export type UserRole = "admin" | "finance" | "people_culture" | "member";
 export type ReimbursementType = "expense" | "travel";
 export type ReviewStatus =
   | "pending"

@@ -1,15 +1,70 @@
-import { expect, test } from "vitest";
-import { hasMinimumRole, normalizeUserRole } from "./roles";
+import { describe, expect, test } from "vitest";
+import type { UserRole } from "../db/types";
+import {
+  hasPermission,
+  hasRoleAccess,
+  normalizeOptionalUserRole,
+  normalizeUserRole,
+  USER_PERMISSIONS,
+  type UserPermission,
+} from "./roles";
 
-test("unknown roles default to member access", () => {
-  expect(normalizeUserRole("unknown")).toBe("member");
+const roles: UserRole[] = ["member", "finance", "people_culture", "admin"];
+
+const expectedRoleAccess: Record<UserRole, UserRole[]> = {
+  member: ["member"],
+  finance: ["member", "finance"],
+  people_culture: ["member", "people_culture"],
+  admin: roles,
+};
+
+const permissions = Object.values(USER_PERMISSIONS);
+const expectedPermissions: Record<UserRole, UserPermission[]> = {
+  member: [],
+  finance: [USER_PERMISSIONS.finance],
+  people_culture: [
+    USER_PERMISSIONS.recruiting,
+    USER_PERMISSIONS.members,
+    USER_PERMISSIONS.organizationStructure,
+  ],
+  admin: permissions,
+};
+
+test.each(roles)("normalizes the supported %s role", (role) => {
+  expect(normalizeUserRole(role)).toBe(role);
 });
 
-test("finance can manage reimbursements without admin access", () => {
-  expect(hasMinimumRole("finance", "finance")).toBe(true);
-  expect(hasMinimumRole("finance", "admin")).toBe(false);
+test.each(["unknown", "ADMIN", "", 1, null, undefined])(
+  "normalizes invalid role %j to member",
+  (role) => {
+    expect(normalizeUserRole(role)).toBe("member");
+  },
+);
+
+test("keeps an absent optional role absent", () => {
+  expect(normalizeOptionalUserRole(undefined)).toBeUndefined();
+  expect(normalizeOptionalUserRole(null)).toBeUndefined();
+  expect(normalizeOptionalUserRole("invalid")).toBe("member");
 });
 
-test("admin inherits finance access", () => {
-  expect(hasMinimumRole("admin", "finance")).toBe(true);
+describe.each(roles)("%s role access", (role) => {
+  test.each(roles)("required role %s", (requiredRole) => {
+    expect(hasRoleAccess(role, requiredRole)).toBe(
+      expectedRoleAccess[role].includes(requiredRole),
+    );
+  });
+});
+
+describe.each(roles)("%s permissions", (role) => {
+  test.each(permissions)("permission %s", (permission) => {
+    expect(hasPermission(role, permission)).toBe(
+      expectedPermissions[role].includes(permission),
+    );
+  });
+});
+
+test("unknown roles only receive member permissions", () => {
+  expect(hasPermission("unknown", USER_PERMISSIONS.finance)).toBe(false);
+  expect(hasRoleAccess("unknown", "member")).toBe(true);
+  expect(hasRoleAccess("unknown", "finance")).toBe(false);
 });

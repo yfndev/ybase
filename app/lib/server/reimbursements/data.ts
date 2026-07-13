@@ -1,4 +1,4 @@
-import { hasMinimumRole } from "../../auth/roles";
+import { hasPermission, USER_PERMISSIONS } from "../../auth/roles";
 import { isTestMode } from "../../auth/environment";
 import { requireUser } from "../../auth/session";
 import {
@@ -32,7 +32,10 @@ export async function getReimbursement(reimbursementId: string): Promise<
   | null
 > {
   const user = await requireUser();
-  const canManageReimbursements = hasMinimumRole(user.role, "finance");
+  const canManageReimbursements = hasPermission(
+    user.role,
+    USER_PERMISSIONS.finance,
+  );
   const reimbursement = await (
     await reimbursements()
   ).findOne({
@@ -57,7 +60,10 @@ export async function getReimbursement(reimbursementId: string): Promise<
 
 export async function getReceipts(reimbursementId: string): Promise<Receipt[]> {
   const user = await requireUser();
-  const canManageReimbursements = hasMinimumRole(user.role, "finance");
+  const canManageReimbursements = hasPermission(
+    user.role,
+    USER_PERMISSIONS.finance,
+  );
   const reimbursement = await (
     await reimbursements()
   ).findOne({
@@ -100,7 +106,10 @@ export async function getAllReimbursements(): Promise<
   >
 > {
   const user = await requireUser();
-  const canManageReimbursements = hasMinimumRole(user.role, "finance");
+  const canManageReimbursements = hasPermission(
+    user.role,
+    USER_PERMISSIONS.finance,
+  );
 
   const scope = canManageReimbursements
     ? { organizationId: user.organizationId }

@@ -102,6 +102,12 @@ test("updateUserRole grants finance access without admin access", async () => {
   expect(updated?.role).toBe("finance");
 });
 
+test("updateUserRole supports the People & Culture role", async () => {
+  await updateUserRole({ userId: memberA, role: "people_culture" });
+  const updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.role).toBe("people_culture");
+});
+
 test("updateUserRole cannot touch a user from another org", async () => {
   await expect(updateUserRole({ userId: memberB, role: "admin" })).rejects.toThrow(
     "Access denied",
