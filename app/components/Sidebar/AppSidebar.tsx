@@ -46,8 +46,8 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
                 <Image src="/AppIcon.png" alt="YBase" width={32} height={32} />
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">YBase</span>
+                <div className="grid flex-1 text-left leading-tight">
+                  <span className="truncate text-base font-bold">YBase</span>
                 </div>
               </Link>
             </SidebarMenuButton>

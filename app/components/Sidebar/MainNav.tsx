@@ -30,13 +30,19 @@ export function MainNav({
 
   return (
     <SidebarGroup id={id}>
-      {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
+      {label && (
+        <SidebarGroupLabel className="gap-2 font-semibold">
+          <span>{label}</span>
+          <span className="h-px flex-1 bg-ring" />
+        </SidebarGroupLabel>
+      )}
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton
               asChild
               tooltip={item.name}
+              className="h-10 px-3 font-medium text-sidebar-foreground/75 data-[active=true]:text-sidebar-foreground"
               isActive={
                 pathname === item.url || pathname.startsWith(`${item.url}/`)
               }

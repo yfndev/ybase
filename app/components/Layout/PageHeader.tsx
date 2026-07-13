@@ -52,9 +52,7 @@ export function PageHeader({
           )}
           <div className="min-w-0">
             {title ? (
-              <h1 className="text-lg sm:text-xl font-semibold truncate">
-                {title}
-              </h1>
+              <h1 className="text-xl font-bold truncate">{title}</h1>
             ) : (
               <Skeleton className="h-7 w-48" />
             )}
