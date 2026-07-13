@@ -33,7 +33,7 @@ export function TravelReceiptCard(props: Props) {
   const isCar = receipt.costType === "car";
 
   return (
-    <div className="border rounded-lg p-4 space-y-4">
+    <div className="@container border rounded-lg p-4 space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="font-medium">
           {isCar ? "PKW (0,30€/km)" : props.costLabels[receipt.costType]}
@@ -43,7 +43,7 @@ export function TravelReceiptCard(props: Props) {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 @sm:grid-cols-2 @3xl:grid-cols-4">
         <div>
           <Label>Name/Firma *</Label>
           <Input

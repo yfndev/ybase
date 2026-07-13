@@ -235,6 +235,19 @@ test.describe.serial("reimbursement flow", () => {
 
     await page.getByRole("button", { name: "PKW" }).click();
 
+    const receiptCard = page
+      .getByRole("heading", { name: /^PKW/ })
+      .locator("..")
+      .locator("..");
+    const overflowingLabels = await receiptCard
+      .locator("label")
+      .evaluateAll((labels) =>
+        labels
+          .filter((label) => label.scrollWidth > label.clientWidth)
+          .map((label) => label.textContent),
+      );
+    expect(overflowingLabels).toEqual([]);
+
     await page.getByPlaceholder("Eigenfahrt, Miles, Sixt, etc.").fill("Miles");
     await page
       .getByPlaceholder("z.B. RE-2026-001 (optional)")
