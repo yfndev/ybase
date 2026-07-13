@@ -2,6 +2,7 @@
 
 import { PageHeader } from "@/components/Layout/PageHeader";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Download,
   FileCode2,
@@ -16,6 +17,7 @@ import type {
   Allowance,
   RejectDialog,
   Reimbursement,
+  ReimbursementTypeFilter,
   SelectionKey,
 } from "./types";
 
@@ -23,6 +25,7 @@ interface Props {
   canManageReimbursements: boolean;
   reimbursements: Reimbursement[];
   allowances: Allowance[];
+  typeFilter: ReimbursementTypeFilter;
   rejectDialog: RejectDialog;
   selected: Set<SelectionKey>;
   isBulkDownloading: boolean;
@@ -41,6 +44,7 @@ interface Props {
   onDeleteAllowance: (id: string) => void;
   onToggleSelect: (key: SelectionKey) => void;
   onToggleSelectAll: () => void;
+  onTypeFilterChange: (value: ReimbursementTypeFilter) => void;
   onBulkDownload: () => void;
   onFinomCsv: () => void;
   onSepaXml: () => void;
@@ -50,6 +54,7 @@ export function ReimbursementPageUI({
   canManageReimbursements,
   reimbursements,
   allowances,
+  typeFilter,
   rejectDialog,
   selected,
   isBulkDownloading,
@@ -68,6 +73,7 @@ export function ReimbursementPageUI({
   onDeleteAllowance,
   onToggleSelect,
   onToggleSelectAll,
+  onTypeFilterChange,
   onBulkDownload,
   onFinomCsv,
   onSepaXml,
@@ -116,6 +122,21 @@ export function ReimbursementPageUI({
           </Button>
         ) : null}
       </div>
+
+      <Tabs
+        value={typeFilter}
+        onValueChange={(value) =>
+          onTypeFilterChange(value as ReimbursementTypeFilter)
+        }
+        className="mb-4"
+      >
+        <TabsList aria-label="Erstattungsart filtern">
+          <TabsTrigger value="all">Alle</TabsTrigger>
+          <TabsTrigger value="travel">Reisekostenerstattung</TabsTrigger>
+          <TabsTrigger value="expense">Auslagenerstattung</TabsTrigger>
+          <TabsTrigger value="allowance">Ehrenamtspauschale</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <ReimbursementTable
         canManageReimbursements={canManageReimbursements}

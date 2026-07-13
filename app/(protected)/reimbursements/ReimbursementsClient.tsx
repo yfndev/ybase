@@ -6,7 +6,12 @@ import { useCanManageReimbursements } from "@/lib/hooks/useCurrentUserRole";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ReimbursementPageUI } from "./ReimbursementPageUI";
-import type { Allowance, Reimbursement, SelectionKey } from "./types";
+import type {
+  Allowance,
+  Reimbursement,
+  ReimbursementTypeFilter,
+  SelectionKey,
+} from "./types";
 import { usePaymentExports } from "./usePaymentExports";
 import { usePdfDownloads } from "./usePdfDownloads";
 import { useReimbursementActions } from "./useReimbursementActions";
@@ -29,6 +34,13 @@ export function ReimbursementsClient({
 
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [selected, setSelected] = useState<Set<SelectionKey>>(new Set());
+  const [typeFilter, setTypeFilter] = useState<ReimbursementTypeFilter>("all");
+
+  const filteredReimbursements = reimbursements.filter(
+    (item) => typeFilter === "all" || item.type === typeFilter,
+  );
+  const filteredAllowances =
+    typeFilter === "all" || typeFilter === "allowance" ? allowances : [];
 
   const actions = useReimbursementActions();
   const { handleFinomCsv, handleSepaXml } = usePaymentExports(
@@ -57,20 +69,26 @@ export function ReimbursementsClient({
 
   const handleToggleSelectAll = () => {
     const allKeys: SelectionKey[] = [
-      ...reimbursements.map((item): SelectionKey => `r:${item._id}`),
-      ...allowances.map((item): SelectionKey => `a:${item._id}`),
+      ...filteredReimbursements.map((item): SelectionKey => `r:${item._id}`),
+      ...filteredAllowances.map((item): SelectionKey => `a:${item._id}`),
     ];
     setSelected((prev) =>
       prev.size === allKeys.length ? new Set() : new Set(allKeys),
     );
   };
 
+  const handleTypeFilterChange = (value: ReimbursementTypeFilter) => {
+    setTypeFilter(value);
+    setSelected(new Set());
+  };
+
   return (
     <>
       <ReimbursementPageUI
         canManageReimbursements={canManageReimbursements}
-        reimbursements={reimbursements}
-        allowances={allowances}
+        reimbursements={filteredReimbursements}
+        allowances={filteredAllowances}
+        typeFilter={typeFilter}
         rejectDialog={actions.rejectDialog}
         selected={selected}
         isBulkDownloading={isBulkDownloading}
@@ -89,6 +107,7 @@ export function ReimbursementsClient({
         onDeleteAllowance={actions.handleDeleteAllowance}
         onToggleSelect={handleToggleSelect}
         onToggleSelectAll={handleToggleSelectAll}
+        onTypeFilterChange={handleTypeFilterChange}
         onBulkDownload={handleBulkDownload}
         onFinomCsv={handleFinomCsv}
         onSepaXml={handleSepaXml}
