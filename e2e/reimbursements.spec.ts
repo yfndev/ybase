@@ -1,5 +1,5 @@
 import path from "node:path";
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 const TEST_EMAIL = "reimbursement@test.com";
 const IMAGE_FILE = path.join(__dirname, "files/test-invoice.jpg");
@@ -58,6 +58,11 @@ async function addSignature(page: Page) {
     throw new Error(`Unterschrift fehlgeschlagen: ${await failed.innerText()}`);
   }
   await expect(saved.locator("..").locator(".animate-spin")).toHaveCount(0);
+}
+
+async function selectRowAction(page: Page, row: Locator, action: string) {
+  await row.getByRole("button", { name: "Aktionen anzeigen" }).click();
+  await page.getByRole("menuitem", { name: action, exact: true }).click();
 }
 
 test.describe.serial("reimbursement flow", () => {
@@ -187,9 +192,7 @@ test.describe.serial("reimbursement flow", () => {
 
   test("2. Request changes and resubmit an expense reimbursement", async () => {
     const expenseRow = page.locator("table tbody tr").first();
-    await expenseRow
-      .getByRole("button", { name: "Änderungen anfordern" })
-      .click();
+    await selectRowAction(page, expenseRow, "Änderungen anfordern");
     await page
       .getByRole("textbox", { name: "Benötigte Änderungen..." })
       .fill("Bitte Beschreibung präzisieren");
@@ -222,11 +225,11 @@ test.describe.serial("reimbursement flow", () => {
   });
 
   test("3. Approve expense reimbursement", async () => {
-    await page
-      .locator("table tbody tr")
-      .first()
-      .getByRole("button", { name: "Genehmigen" })
-      .click();
+    await selectRowAction(
+      page,
+      page.locator("table tbody tr").first(),
+      "Genehmigen",
+    );
     await expect(
       page.getByRole("table").getByText("Genehmigt", { exact: true }),
     ).toBeVisible();
@@ -366,11 +369,11 @@ test.describe.serial("reimbursement flow", () => {
   });
 
   test("6. Reject travel reimbursement", async () => {
-    await page
-      .locator("table tbody tr")
-      .first()
-      .getByRole("button", { name: "Ablehnen" })
-      .click();
+    await selectRowAction(
+      page,
+      page.locator("table tbody tr").first(),
+      "Ablehnen",
+    );
     await page
       .getByRole("textbox", { name: "Grund für die Ablehnung..." })
       .fill("Falsche Angaben");
@@ -427,9 +430,7 @@ test.describe.serial("reimbursement flow", () => {
     const allowanceRow = page
       .locator("table tbody tr")
       .filter({ hasText: "Ehrenamtspauschale" });
-    await allowanceRow
-      .getByRole("button", { name: "Änderungen anfordern" })
-      .click();
+    await selectRowAction(page, allowanceRow, "Änderungen anfordern");
     await page
       .getByRole("textbox", { name: "Benötigte Änderungen..." })
       .fill("Bitte Zeitraum prüfen");
@@ -438,7 +439,7 @@ test.describe.serial("reimbursement flow", () => {
       allowanceRow.getByText("Änderungen angefordert"),
     ).toBeVisible();
 
-    await allowanceRow.getByRole("button", { name: "Bearbeiten" }).click();
+    await selectRowAction(page, allowanceRow, "Bearbeiten");
     await expect(page).toHaveURL(/\/ehrenamtspauschale\/[^/]+$/);
     await expect(page.getByText("Bitte Zeitraum prüfen")).toBeVisible();
     await expect(page.getByPlaceholder("Musterstraße 123")).toHaveValue(
