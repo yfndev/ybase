@@ -20,4 +20,5 @@ export type Draft = {
 export interface Props {
   defaultBankDetails: BankDetails;
   projects: Project[];
+  organizationName: string;
 }

@@ -14,11 +14,13 @@ import { useTravelForm } from "./travelForm/useTravelForm";
 interface Props {
   defaultBankDetails: BankDetails;
   projects: Project[];
+  organizationName: string;
 }
 
 export function TravelReimbursementFormUI({
   defaultBankDetails,
   projects,
+  organizationName,
 }: Props) {
   const form = useTravelForm(defaultBankDetails);
 
@@ -61,6 +63,7 @@ export function TravelReimbursementFormUI({
             showMealAllowance={form.showMealAllowance}
             setShowMealAllowance={form.setShowMealAllowance}
             mealTotal={form.mealTotal}
+            organizationName={organizationName}
           />
         )}
 

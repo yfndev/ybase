@@ -1,10 +1,12 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { InvoiceOrganizationHint } from "@/components/Reimbursements/InvoiceOrganizationHint";
 import { TravelReceiptCard } from "./TravelReceiptCard";
 import type { CostType, TravelReceipt } from "./types";
 
 type Props = {
+  organizationName: string;
   travelReceipts: TravelReceipt[];
   costLabels: Record<CostType, string>;
   onToggleCostType: (costType: CostType) => void;
@@ -26,6 +28,7 @@ export function TravelCostsSection(props: Props) {
       <p className="text-sm text-muted-foreground">
         Wähle alle Kostenarten aus, für die du Belege einreichen möchtest.
       </p>
+      <InvoiceOrganizationHint organizationName={props.organizationName} />
 
       <div className="flex flex-wrap gap-2">
         {(Object.keys(props.costLabels) as CostType[]).map((costType) => (

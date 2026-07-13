@@ -47,6 +47,7 @@ export default function ExternalReimbursementPageUI(
             />
 
             <TravelCostsSection
+              organizationName={props.organizationName}
               travelReceipts={props.travelReceipts}
               costLabels={props.costLabels}
               onToggleCostType={props.onToggleCostType}
@@ -70,6 +71,7 @@ export default function ExternalReimbursementPageUI(
           </>
         ) : (
           <SimpleReceiptsSection
+            organizationName={props.organizationName}
             company={props.company}
             number={props.number}
             description={props.description}
