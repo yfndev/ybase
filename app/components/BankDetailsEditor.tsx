@@ -98,7 +98,7 @@ export function BankDetailsEditor({ value, onChange }: Props) {
         </div>
         <Button
           variant={editing ? "default" : "outline"}
-          size="sm"
+          className="h-[52px] min-w-[52px] border-input px-4 hover:border-ring focus-visible:border-foreground focus-visible:ring-0 md:h-12 md:min-w-12"
           onClick={toggle}
           disabled={isSaving}
           aria-label={editing ? "Speichern" : "Bearbeiten"}
