@@ -96,7 +96,7 @@ export function ReimbursementTable({
             <TableHead className="text-right">Betrag</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Bearbeitet von</TableHead>
-            <TableHead className="text-right" />
+            <TableHead className="w-12 text-right" />
           </TableRow>
         </TableHeader>
         <TableBody>
