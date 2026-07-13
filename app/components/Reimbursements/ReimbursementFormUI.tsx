@@ -15,7 +15,7 @@ export function ReimbursementFormUI({ defaultBankDetails, projects }: Props) {
   const hasReceipts = form.receipts.length > 0;
 
   return (
-    <div className="p-6 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-10">
+    <div className="p-6 xl:grid xl:grid-cols-[minmax(0,1fr)_400px] xl:items-start xl:gap-10">
       <div className="space-y-8 min-w-0">
         <ProjectCurrencyFields
           projects={projects}
@@ -47,7 +47,7 @@ export function ReimbursementFormUI({ defaultBankDetails, projects }: Props) {
         )}
       </div>
 
-      <div className="mt-8 lg:mt-0 lg:sticky lg:top-6">
+      <div className="mt-8 xl:mt-0 xl:sticky xl:top-6">
         <ReimbursementSummary
           receipts={form.receipts}
           currencySymbol={currencySymbol}
