@@ -22,7 +22,7 @@ export function NewReimbursementUI({ defaultBankDetails, projects }: Props) {
   return (
     <div>
       <PageHeader title="Neue Erstattung" showBackButton />
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="p-6">
         <Tabs
           value={type}
           onValueChange={(value) => setType(value as ReimbursementType)}

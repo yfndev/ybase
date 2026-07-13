@@ -102,7 +102,7 @@ export function SelectProject({
           ref={inputRef}
           role="combobox"
           className={cn(
-            "h-9 w-full bg-muted px-3 pr-8 text-sm outline-none border border-transparent focus:border-ring",
+            "w-full bg-background px-4 py-3 pr-8 text-sm outline-none border-2 border-input transition-colors hover:border-ring focus:border-foreground",
             open || !selected ? "text-muted-foreground" : "text-foreground",
           )}
           placeholder="Projekt suchen..."

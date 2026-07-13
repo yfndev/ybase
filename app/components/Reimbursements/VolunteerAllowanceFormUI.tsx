@@ -34,7 +34,7 @@ export function VolunteerAllowanceFormUI({
   } = useVolunteerAllowanceForm(defaultBankDetails);
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
+    <div className="mx-auto max-w-[760px] p-6 space-y-8">
       <div className="w-full sm:w-[260px]">
         <Label>Projekt *</Label>
         <SelectProject
@@ -72,6 +72,7 @@ export function VolunteerAllowanceFormUI({
 
       <Button
         onClick={handleSubmit}
+        variant="primary"
         className="w-full h-14 font-semibold mt-8"
         size="lg"
         disabled={isSubmitting}
