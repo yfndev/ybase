@@ -84,6 +84,7 @@ export function ReimbursementTable({
             <TableHead>Erstellt</TableHead>
             <TableHead className="text-right">Betrag</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Bearbeitet von</TableHead>
             <TableHead className="text-right" />
           </TableRow>
         </TableHeader>

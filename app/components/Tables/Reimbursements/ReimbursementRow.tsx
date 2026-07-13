@@ -49,8 +49,6 @@ export function ReimbursementRow({
 }: ReimbursementRowProps) {
   const display = STATUS_DISPLAY[item.status];
   const isPending = item.status === "pending";
-  const reviewerName =
-    item.status === "approved" ? item.reviewedByName : undefined;
 
   return (
     <TableRow
@@ -87,11 +85,6 @@ export function ReimbursementRow({
           <Badge variant={display.variant} className={display.className}>
             {display.label}
           </Badge>
-          {reviewerName ? (
-            <span className="text-xs text-muted-foreground">
-              {reviewerName}
-            </span>
-          ) : null}
           {item.rejectionNote ? (
             <span
               className="max-w-56 truncate text-xs text-red-700"
@@ -101,6 +94,9 @@ export function ReimbursementRow({
             </span>
           ) : null}
         </div>
+      </TableCell>
+      <TableCell className="max-w-48 truncate text-muted-foreground">
+        {item.reviewedByName ?? "–"}
       </TableCell>
       <TableCell onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-end gap-0.5">
