@@ -6,6 +6,7 @@ import {
   type CostType,
   COST_LABELS as LABELS,
 } from "@/lib/travel-costs";
+import { InvoiceOrganizationHint } from "../InvoiceOrganizationHint";
 import { MealAllowanceSection } from "./MealAllowanceSection";
 import { ReceiptCard } from "./ReceiptCard";
 import type { Receipt, Travel } from "./types";
@@ -20,6 +21,7 @@ interface Props {
   showMealAllowance: boolean;
   setShowMealAllowance: (value: boolean) => void;
   mealTotal: number;
+  organizationName: string;
 }
 
 export function ReceiptsSection({
@@ -32,6 +34,7 @@ export function ReceiptsSection({
   showMealAllowance,
   setShowMealAllowance,
   mealTotal,
+  organizationName,
 }: Props) {
   return (
     <div className="space-y-6">
@@ -40,6 +43,7 @@ export function ReceiptsSection({
         <p className="text-sm text-muted-foreground mb-2">
           Wähle alle Kostenarten aus, für die du Belege einreichen möchtest.
         </p>
+        <InvoiceOrganizationHint organizationName={organizationName} />
         <div className="flex flex-wrap gap-2">
           {COST_TYPES.map((type) => (
             <Button

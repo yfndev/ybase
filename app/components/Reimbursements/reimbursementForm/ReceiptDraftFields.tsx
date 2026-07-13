@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toNet } from "@/lib/bank-utils";
 import { formatAmount } from "@/lib/formatters/formatCurrency";
 import { Plus } from "lucide-react";
+import { InvoiceOrganizationHint } from "../InvoiceOrganizationHint";
 import { ReceiptUpload } from "../ReceiptUpload";
 import type { Draft } from "./types";
 
@@ -23,6 +24,7 @@ interface Props {
   setDraft: (draft: Draft) => void;
   currencySymbol: string;
   receiptCount: number;
+  organizationName: string;
   onAddReceipt: () => void;
 }
 
@@ -31,6 +33,7 @@ export function ReceiptDraftFields({
   setDraft,
   currencySymbol,
   receiptCount,
+  organizationName,
   onAddReceipt,
 }: Props) {
   const net = draft.gross ? toNet(draft.gross, draft.tax) : 0;
@@ -42,6 +45,7 @@ export function ReceiptDraftFields({
         Du kannst mehrere Belege hinzufügen, um sie in einer Erstattung
         einzureichen.
       </p>
+      <InvoiceOrganizationHint organizationName={organizationName} />
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label>Name/Firma *</Label>
@@ -101,7 +105,7 @@ export function ReceiptDraftFields({
           <Select
             value={String(draft.tax)}
             onValueChange={(value) =>
-              setDraft({ ...draft, tax: parseInt(value) })
+              setDraft({ ...draft, tax: parseInt(value, 10) })
             }
           >
             <SelectTrigger>

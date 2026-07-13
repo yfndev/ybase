@@ -103,6 +103,9 @@ test.describe.serial("reimbursement flow", () => {
       page.getByRole("tab", { name: "Reisekostenerstattung" }),
     ).toHaveAttribute("data-state", "active");
     await page.getByRole("tab", { name: "Auslagenerstattung" }).click();
+    await expect(page.getByRole("note")).toContainText(
+      "Falls möglich, gib bei Rechnungen im Feld „Unternehmen/Institution“ Test Verein an.",
+    );
 
     await page.getByRole("combobox", { name: "Projekt suchen..." }).click();
     await page.getByRole("button", { name: "Neues Projekt erstellen" }).click();

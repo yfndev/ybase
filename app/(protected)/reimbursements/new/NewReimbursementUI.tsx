@@ -14,9 +14,14 @@ type BankDetails = { iban: string; bic: string; accountHolder: string };
 interface Props {
   defaultBankDetails: BankDetails;
   projects: Project[];
+  organizationName: string;
 }
 
-export function NewReimbursementUI({ defaultBankDetails, projects }: Props) {
+export function NewReimbursementUI({
+  defaultBankDetails,
+  projects,
+  organizationName,
+}: Props) {
   const [type, setType] = useState<ReimbursementType>("travel");
 
   return (
@@ -40,12 +45,14 @@ export function NewReimbursementUI({ defaultBankDetails, projects }: Props) {
         <TravelReimbursementFormUI
           defaultBankDetails={defaultBankDetails}
           projects={projects}
+          organizationName={organizationName}
         />
       )}
       {type === "expense" && (
         <ReimbursementFormUI
           defaultBankDetails={defaultBankDetails}
           projects={projects}
+          organizationName={organizationName}
         />
       )}
       {type === "volunteerAllowance" && (

@@ -9,7 +9,11 @@ import { ReimbursementSummary } from "./reimbursementForm/ReimbursementSummary";
 import type { Props } from "./reimbursementForm/types";
 import { useReimbursementForm } from "./reimbursementForm/useReimbursementForm";
 
-export function ReimbursementFormUI({ defaultBankDetails, projects }: Props) {
+export function ReimbursementFormUI({
+  defaultBankDetails,
+  projects,
+  organizationName,
+}: Props) {
   const form = useReimbursementForm(defaultBankDetails);
   const currencySymbol = CURRENCY_SYMBOLS[form.currency] || form.currency;
   const hasReceipts = form.receipts.length > 0;
@@ -30,6 +34,7 @@ export function ReimbursementFormUI({ defaultBankDetails, projects }: Props) {
           setDraft={form.setDraft}
           currencySymbol={currencySymbol}
           receiptCount={form.receipts.length}
+          organizationName={organizationName}
           onAddReceipt={form.addReceipt}
         />
 

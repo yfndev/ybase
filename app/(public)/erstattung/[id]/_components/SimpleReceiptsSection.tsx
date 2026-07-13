@@ -1,6 +1,7 @@
 "use client";
 
 import { ReceiptUploadExternal } from "@/components/Reimbursements/ReceiptUploadExternal";
+import { InvoiceOrganizationHint } from "@/components/Reimbursements/InvoiceOrganizationHint";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,7 @@ import { AddedReceiptsList } from "./AddedReceiptsList";
 import type { Receipt } from "./types";
 
 type Props = {
+  organizationName: string;
   company: string;
   number: string;
   description: string;
@@ -47,6 +49,7 @@ export function SimpleReceiptsSection(props: Props) {
       <p className="text-sm text-muted-foreground">
         Füge alle Belege hinzu, die du einreichen möchtest.
       </p>
+      <InvoiceOrganizationHint organizationName={props.organizationName} />
       <div className="border rounded-lg p-4 space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -104,7 +107,9 @@ export function SimpleReceiptsSection(props: Props) {
             <Label>USt.-Satz</Label>
             <Select
               value={String(props.taxRate)}
-              onValueChange={(value) => props.onTaxRateChange(parseInt(value))}
+              onValueChange={(value) =>
+                props.onTaxRateChange(parseInt(value, 10))
+              }
             >
               <SelectTrigger>
                 <SelectValue />
