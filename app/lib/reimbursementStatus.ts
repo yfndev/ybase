@@ -13,18 +13,18 @@ export const STATUS_DISPLAY: Record<
     variant: "default",
     label: "Ausstehend",
     dot: "bg-yellow-500",
-    className: "",
+    className: "bg-amber-50 border-amber-200 text-amber-700",
   },
   approved: {
     variant: "default",
     label: "Genehmigt",
     dot: "bg-green-500",
-    className: "bg-green-600 text-white border-green-600",
+    className: "bg-green-50 border-green-200 text-green-800",
   },
   declined: {
-    variant: "destructive",
+    variant: "default",
     label: "Abgelehnt",
     dot: "bg-red-500",
-    className: "",
+    className: "bg-red-50 border-red-200 text-red-800",
   },
 };

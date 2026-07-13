@@ -105,7 +105,7 @@ export function ReimbursementPageUI({
             </Button>
           </>
         ) : null}
-        <Button variant="outline" onClick={onNewClick}>
+        <Button variant="primary" onClick={onNewClick}>
           <Plus className="h-4 w-4 mr-2" />
           Neue Erstattung
         </Button>
