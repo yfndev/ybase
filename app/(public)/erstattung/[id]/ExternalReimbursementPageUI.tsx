@@ -24,6 +24,15 @@ export default function ExternalReimbursementPageUI(
           </p>
         </div>
 
+        {props.changesRequested ? (
+          <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
+            <p className="text-sm font-medium text-orange-800">
+              Folgende Änderungen wurden angefordert:
+            </p>
+            <p className="mt-1 text-orange-700">{props.changesRequested}</p>
+          </div>
+        ) : null}
+
         <SubmitterSection
           name={props.name}
           email={props.email}

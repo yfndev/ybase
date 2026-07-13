@@ -5,7 +5,12 @@ import { deleteObject } from "../../s3/storage";
 
 type ReimbursementType = Reimbursement["type"];
 
-type ReimbursementActor = { _id: string; organizationId: string };
+type ReimbursementActor = {
+  _id: string;
+  organizationId: string;
+  name?: string;
+  email?: string;
+};
 
 type ReimbursementInsert = {
   projectId: string;
@@ -41,6 +46,8 @@ export async function insertReimbursement(
     currency: args.currency,
     signatureStorageId: args.signatureStorageId,
     createdBy: user._id,
+    submitterName: user.name,
+    submitterEmail: user.email,
   });
 }
 

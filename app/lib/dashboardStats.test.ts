@@ -25,11 +25,13 @@ describe("statusTotals", () => {
       entry({ status: "pending", amount: 70 }),
       entry({ status: "approved", amount: 200 }),
       entry({ status: "declined", amount: 10 }),
+      entry({ status: "changes_requested", amount: 20 }),
     ]);
 
     expect(totals.pending).toEqual({ count: 2, sum: 120 });
     expect(totals.approved).toEqual({ count: 1, sum: 200 });
     expect(totals.declined).toEqual({ count: 1, sum: 10 });
+    expect(totals.changes_requested).toEqual({ count: 1, sum: 20 });
   });
 
   it("returns zeroed totals for empty input", () => {
@@ -37,6 +39,7 @@ describe("statusTotals", () => {
     expect(totals.pending).toEqual({ count: 0, sum: 0 });
     expect(totals.approved).toEqual({ count: 0, sum: 0 });
     expect(totals.declined).toEqual({ count: 0, sum: 0 });
+    expect(totals.changes_requested).toEqual({ count: 0, sum: 0 });
   });
 });
 

@@ -1,6 +1,13 @@
 "use client";
 
-import { Check, ExternalLink, Trash2, X } from "lucide-react";
+import {
+  Check,
+  ExternalLink,
+  MessageSquareWarning,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,33 +25,40 @@ interface ReimbursementRowProps {
     _creationTime: number;
     status: Status;
     rejectionNote?: string;
+    reviewNote?: string;
     projectName: string;
     amount: number;
     reviewedByName?: string;
   };
   canManageReimbursements: boolean;
+  canEdit: boolean;
   title: string;
   detail?: string;
   applicantName: string;
   selectionCheckbox?: ReactNode;
   onClick?: () => void;
   onApprove: () => void;
+  onRequestChanges: () => void;
   onReject: () => void;
   onOpen: () => void;
+  onEdit: () => void;
   onDelete: () => void;
 }
 
 export function ReimbursementRow({
   item,
   canManageReimbursements,
+  canEdit,
   title,
   detail,
   applicantName,
   selectionCheckbox,
   onClick,
   onApprove,
+  onRequestChanges,
   onReject,
   onOpen,
+  onEdit,
   onDelete,
 }: ReimbursementRowProps) {
   const display = STATUS_DISPLAY[item.status];
@@ -93,6 +107,14 @@ export function ReimbursementRow({
               Grund: {item.rejectionNote}
             </span>
           ) : null}
+          {item.reviewNote ? (
+            <span
+              className="max-w-56 truncate text-xs text-orange-700"
+              title={`Angeforderte Änderungen: ${item.reviewNote}`}
+            >
+              Änderung: {item.reviewNote}
+            </span>
+          ) : null}
         </div>
       </TableCell>
       <TableCell className="max-w-48 truncate text-muted-foreground">
@@ -115,6 +137,16 @@ export function ReimbursementRow({
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-7 w-7 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                onClick={onRequestChanges}
+                aria-label="Änderungen anfordern"
+                title="Änderungen anfordern"
+              >
+                <MessageSquareWarning className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
                 onClick={onReject}
                 aria-label="Ablehnen"
@@ -123,6 +155,17 @@ export function ReimbursementRow({
                 <X className="h-4 w-4" />
               </Button>
             </>
+          ) : null}
+          {canEdit && item.status === "changes_requested" ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 border-orange-200 px-2 text-orange-700 hover:bg-orange-50 hover:text-orange-800"
+              onClick={onEdit}
+            >
+              <Pencil className="h-4 w-4" />
+              Bearbeiten
+            </Button>
           ) : null}
           <Button
             variant="ghost"

@@ -13,15 +13,22 @@ import type { Allowance, Reimbursement, SelectionKey } from "./types";
 
 type Props = {
   canManageReimbursements: boolean;
+  currentUserId: string;
   reimbursements: Reimbursement[];
   allowances: Allowance[];
   selected: Set<SelectionKey>;
   onRowClick: (id: string) => void;
   onApproveReimbursement: (id: string) => void;
   onApproveAllowance: (id: string) => void;
+  onOpenChangesDialog: (
+    type: "reimbursement" | "allowance",
+    id: string,
+  ) => void;
   onOpenRejectDialog: (type: "reimbursement" | "allowance", id: string) => void;
   onOpenReimbursement: (id: string) => void;
   onOpenAllowance: (allowance: Allowance) => void;
+  onEditReimbursement: (id: string) => void;
+  onEditAllowance: (id: string) => void;
   onDeleteReimbursement: (id: string) => void;
   onDeleteAllowance: (id: string) => void;
   onToggleSelect: (key: SelectionKey) => void;
@@ -30,15 +37,19 @@ type Props = {
 
 export function ReimbursementTable({
   canManageReimbursements,
+  currentUserId,
   reimbursements,
   allowances,
   selected,
   onRowClick,
   onApproveReimbursement,
   onApproveAllowance,
+  onOpenChangesDialog,
   onOpenRejectDialog,
   onOpenReimbursement,
   onOpenAllowance,
+  onEditReimbursement,
+  onEditAllowance,
   onDeleteReimbursement,
   onDeleteAllowance,
   onToggleSelect,
@@ -94,6 +105,9 @@ export function ReimbursementTable({
               key={item._id}
               item={item}
               canManageReimbursements={canManageReimbursements}
+              canEdit={
+                item.createdBy === currentUserId && !item.requestedExternally
+              }
               selectionCheckbox={
                 <Checkbox
                   checked={selected.has(`r:${item._id}`)}
@@ -115,8 +129,12 @@ export function ReimbursementTable({
               applicantName={item.submitterName || item.creatorName}
               onClick={() => onRowClick(item._id)}
               onApprove={() => onApproveReimbursement(item._id)}
+              onRequestChanges={() =>
+                onOpenChangesDialog("reimbursement", item._id)
+              }
               onReject={() => onOpenRejectDialog("reimbursement", item._id)}
               onOpen={() => onOpenReimbursement(item._id)}
+              onEdit={() => onEditReimbursement(item._id)}
               onDelete={() => onDeleteReimbursement(item._id)}
             />
           ))}
@@ -126,6 +144,9 @@ export function ReimbursementTable({
               key={item._id}
               item={item}
               canManageReimbursements={canManageReimbursements}
+              canEdit={
+                item.createdBy === currentUserId && !item.requestedExternally
+              }
               selectionCheckbox={
                 <Checkbox
                   checked={selected.has(`a:${item._id}`)}
@@ -138,8 +159,12 @@ export function ReimbursementTable({
               detail={item.activityDescription}
               applicantName={item.volunteerName || item.creatorName}
               onApprove={() => onApproveAllowance(item._id)}
+              onRequestChanges={() =>
+                onOpenChangesDialog("allowance", item._id)
+              }
               onReject={() => onOpenRejectDialog("allowance", item._id)}
               onOpen={() => onOpenAllowance(item)}
+              onEdit={() => onEditAllowance(item._id)}
               onDelete={() => onDeleteAllowance(item._id)}
             />
           ))}

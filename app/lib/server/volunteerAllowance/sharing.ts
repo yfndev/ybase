@@ -4,12 +4,15 @@ import { z } from "zod";
 import { requireRole } from "../../auth/session";
 import { volunteerAllowance } from "../../db/collections";
 import { newId } from "../../db/ids";
+import { sendSubmissionRequestedEmail } from "./email";
 
 const createLinkSchema = z.object({
   projectId: z.string(),
   activityDescription: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
+  invitedName: z.string().trim().optional(),
+  invitedEmail: z.string().email().optional(),
 });
 
 export async function createLink(
@@ -39,7 +42,13 @@ export async function createLink(
     volunteerStreet: "",
     volunteerPlz: "",
     volunteerCity: "",
+    isSharedLink: true,
+    requestedExternally: true,
+    invitedName: args.invitedName,
+    invitedEmail: args.invitedEmail,
   });
+
+  if (args.invitedEmail) await sendSubmissionRequestedEmail(id);
 
   return id;
 }

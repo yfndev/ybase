@@ -1,4 +1,8 @@
-export type ReimbursementStatus = "pending" | "approved" | "declined";
+export type ReimbursementStatus =
+  | "pending"
+  | "changes_requested"
+  | "approved"
+  | "declined";
 
 export const STATUS_DISPLAY: Record<
   ReimbursementStatus,
@@ -14,6 +18,12 @@ export const STATUS_DISPLAY: Record<
     label: "Ausstehend",
     dot: "bg-yellow-500",
     className: "bg-amber-50 border-amber-200 text-amber-700",
+  },
+  changes_requested: {
+    variant: "default",
+    label: "Änderungen angefordert",
+    dot: "bg-orange-500",
+    className: "bg-orange-50 border-orange-200 text-orange-800",
   },
   approved: {
     variant: "default",

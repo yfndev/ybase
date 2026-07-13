@@ -27,6 +27,8 @@ export const validateAllowanceForm = (
 ): ValidationResult => {
   if (!form.volunteerName)
     return { ok: false, error: "Bitte deinen Namen eingeben" };
+  if (!/^\S+@\S+\.\S+$/.test(form.submitterEmail))
+    return { ok: false, error: "Bitte eine gültige E-Mail-Adresse eingeben" };
   if (!form.volunteerStreet)
     return { ok: false, error: "Bitte deine Straße eingeben" };
   if (!form.volunteerPlz)

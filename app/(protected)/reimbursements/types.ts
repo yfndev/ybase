@@ -32,6 +32,7 @@ export type ReimbursementTypeFilter =
 
 export type RejectDialog = {
   open: boolean;
+  action: "changes" | "reject";
   type: "reimbursement" | "allowance";
   id: string | null;
   note: string;

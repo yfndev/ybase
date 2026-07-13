@@ -30,18 +30,26 @@ type SubmitParams = {
 function withFileStorageId<T extends { fileStorageId: string | null }>(
   items: T[],
 ) {
-  return items.map((item) => ({ ...item, fileStorageId: item.fileStorageId! }));
+  return items.filter(
+    (item): item is T & { fileStorageId: string } =>
+      typeof item.fileStorageId === "string",
+  );
 }
 
 export function validateReimbursement(params: SubmitParams) {
   if (
     !params.name ||
+    !params.email ||
     !params.iban ||
     !params.accountHolder ||
     !params.confirmation ||
     !params.signature
   ) {
     return "Bitte alle Pflichtfelder ausfüllen";
+  }
+
+  if (!/^\S+@\S+\.\S+$/.test(params.email)) {
+    return "Bitte eine gültige E-Mail-Adresse eingeben";
   }
 
   if (params.isTravel) {
@@ -77,6 +85,11 @@ export function validateReimbursement(params: SubmitParams) {
 }
 
 export async function submitReimbursementForm(params: SubmitParams) {
+  if (!params.signature) {
+    toast.error("Bitte unterschreiben");
+    return false;
+  }
+
   const validReceipts = withFileStorageId(
     params.receipts.filter((receipt) => receipt.fileStorageId),
   );
@@ -94,8 +107,8 @@ export async function submitReimbursementForm(params: SubmitParams) {
       bic: params.bic.toUpperCase(),
       accountHolder: params.accountHolder,
       submitterName: params.name,
-      submitterEmail: params.email || undefined,
-      signatureStorageId: params.signature!,
+      submitterEmail: params.email,
+      signatureStorageId: params.signature,
       receipts: validReceipts,
       travelReceipts: params.isTravel ? validTravelReceipts : undefined,
       travelDetails: params.isTravel

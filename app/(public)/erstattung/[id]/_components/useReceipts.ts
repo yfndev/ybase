@@ -94,7 +94,9 @@ export function useReceipts(startDate: string) {
 
   return {
     receipts,
+    setReceipts,
     travelReceipts,
+    setTravelReceipts,
     company,
     number,
     description,

@@ -23,6 +23,7 @@ import type {
 
 interface Props {
   canManageReimbursements: boolean;
+  currentUserId: string;
   reimbursements: Reimbursement[];
   allowances: Allowance[];
   typeFilter: ReimbursementTypeFilter;
@@ -34,12 +35,18 @@ interface Props {
   onRowClick: (id: string) => void;
   onApproveReimbursement: (id: string) => void;
   onApproveAllowance: (id: string) => void;
+  onOpenChangesDialog: (
+    type: "reimbursement" | "allowance",
+    id: string,
+  ) => void;
   onOpenRejectDialog: (type: "reimbursement" | "allowance", id: string) => void;
   onRejectDialogChange: (dialog: RejectDialog) => void;
   onReject: () => void;
   isRejecting: boolean;
   onOpenReimbursement: (id: string) => void;
   onOpenAllowance: (allowance: Allowance) => void;
+  onEditReimbursement: (id: string) => void;
+  onEditAllowance: (id: string) => void;
   onDeleteReimbursement: (id: string) => void;
   onDeleteAllowance: (id: string) => void;
   onToggleSelect: (key: SelectionKey) => void;
@@ -52,6 +59,7 @@ interface Props {
 
 export function ReimbursementPageUI({
   canManageReimbursements,
+  currentUserId,
   reimbursements,
   allowances,
   typeFilter,
@@ -63,12 +71,15 @@ export function ReimbursementPageUI({
   onRowClick,
   onApproveReimbursement,
   onApproveAllowance,
+  onOpenChangesDialog,
   onOpenRejectDialog,
   onRejectDialogChange,
   onReject,
   isRejecting,
   onOpenReimbursement,
   onOpenAllowance,
+  onEditReimbursement,
+  onEditAllowance,
   onDeleteReimbursement,
   onDeleteAllowance,
   onToggleSelect,
@@ -140,15 +151,19 @@ export function ReimbursementPageUI({
 
       <ReimbursementTable
         canManageReimbursements={canManageReimbursements}
+        currentUserId={currentUserId}
         reimbursements={reimbursements}
         allowances={allowances}
         selected={selected}
         onRowClick={onRowClick}
         onApproveReimbursement={onApproveReimbursement}
         onApproveAllowance={onApproveAllowance}
+        onOpenChangesDialog={onOpenChangesDialog}
         onOpenRejectDialog={onOpenRejectDialog}
         onOpenReimbursement={onOpenReimbursement}
         onOpenAllowance={onOpenAllowance}
+        onEditReimbursement={onEditReimbursement}
+        onEditAllowance={onEditAllowance}
         onDeleteReimbursement={onDeleteReimbursement}
         onDeleteAllowance={onDeleteAllowance}
         onToggleSelect={onToggleSelect}

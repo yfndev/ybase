@@ -57,13 +57,22 @@ export function useShareModal(open: boolean, onClose: () => void) {
     onClose();
   };
 
-  const generate = async (): Promise<{ id: string; linkType: LinkKind }> => {
+  const generate = async (
+    sendEmail: boolean,
+  ): Promise<{ id: string; linkType: LinkKind }> => {
+    const recipient = sendEmail
+      ? {
+          invitedName: form.invitedName || undefined,
+          invitedEmail: form.invitedEmail || undefined,
+        }
+      : {};
     if (type === "allowance") {
       const id = await createAllowanceLink({
         projectId: form.projectId ?? "",
         activityDescription: form.description,
         startDate: form.startDate,
         endDate: form.endDate,
+        ...recipient,
       });
       return { id, linkType: "allowance" };
     }
@@ -81,6 +90,7 @@ export function useShareModal(open: boolean, onClose: () => void) {
               allowFoodAllowance: form.allowFoodAllowance,
             }
           : undefined,
+      ...recipient,
     });
     return { id, linkType: "reimbursement" };
   };
@@ -89,12 +99,27 @@ export function useShareModal(open: boolean, onClose: () => void) {
     if (!form.projectId) return;
     setIsGenerating(true);
     try {
-      const { id, linkType } = await generate();
+      const { id, linkType } = await generate(false);
       await navigator.clipboard.writeText(linkUrl(linkType, id));
       toast.success("Link kopiert");
       refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Fehler");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!form.projectId || !form.invitedEmail) return;
+    setIsGenerating(true);
+    try {
+      await generate(true);
+      toast.success("Anforderung per E-Mail gesendet");
+      refresh();
+      setForm(INITIAL_FORM);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Fehler");
     } finally {
       setIsGenerating(false);
     }
@@ -132,6 +157,7 @@ export function useShareModal(open: boolean, onClose: () => void) {
     updateForm,
     handleClose,
     handleCopy,
+    handleSend,
     handleCopyExisting,
     handleDelete,
   };

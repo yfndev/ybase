@@ -8,6 +8,7 @@ import { presignUpload } from "../../s3/storage";
 import { addLog } from "../logs";
 import {
   applyApproval,
+  applyChangesRequest,
   applyDecline,
   buildReimbursementPdfData,
   deleteReimbursementById,
@@ -15,7 +16,12 @@ import {
   type ReimbursementPdfData,
 } from "./actionsHelpers";
 import { getFileInfo, getFileUrl } from "./data";
-import { sendApprovalEmail, sendRejectionEmail } from "./email";
+import {
+  sendApprovalEmail,
+  sendChangesRequestedEmail,
+  sendRejectionEmail,
+  sendSubmissionReceivedEmail,
+} from "./email";
 import {
   insertReceipts,
   insertReimbursement,
@@ -45,6 +51,8 @@ export async function createReimbursement(
     `${args.amount}€`,
   );
 
+  await sendSubmissionReceivedEmail(reimbursementId);
+
   return reimbursementId;
 }
 
@@ -68,6 +76,8 @@ export async function createTravelReimbursement(
     reimbursementId,
     `Travel ${args.amount}€`,
   );
+
+  await sendSubmissionReceivedEmail(reimbursementId);
 
   return reimbursementId;
 }
@@ -142,7 +152,10 @@ export async function decline(input: {
 }): Promise<void> {
   const user = await requireRole("finance");
   const { reimbursementId, rejectionNote } = z
-    .object({ reimbursementId: z.string(), rejectionNote: z.string() })
+    .object({
+      reimbursementId: z.string(),
+      rejectionNote: z.string().trim().min(1),
+    })
     .parse(input);
 
   await loadPendingForReview(reimbursementId, user.organizationId);
@@ -157,4 +170,28 @@ export async function decline(input: {
     rejectionNote,
   );
   await sendRejectionEmail(reimbursementId);
+}
+
+export async function requestChanges(input: {
+  reimbursementId: string;
+  reviewNote: string;
+}): Promise<void> {
+  const user = await requireRole("finance");
+  const { reimbursementId, reviewNote } = z
+    .object({
+      reimbursementId: z.string(),
+      reviewNote: z.string().trim().min(1),
+    })
+    .parse(input);
+
+  await loadPendingForReview(reimbursementId, user.organizationId);
+  await applyChangesRequest(reimbursementId, user._id, reviewNote);
+  await addLog(
+    user.organizationId,
+    user._id,
+    "reimbursement.requestChanges",
+    reimbursementId,
+    reviewNote,
+  );
+  await sendChangesRequestedEmail(reimbursementId);
 }

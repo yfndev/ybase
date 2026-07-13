@@ -1,6 +1,7 @@
 import {
   organizations,
   projects,
+  receipts,
   reimbursements,
   travelDetails,
 } from "@/lib/db/collections";
@@ -15,7 +16,8 @@ export async function GET(_request: Request, context: RouteContext) {
   if (!doc) return Response.json({ valid: false, error: "Link ungültig" });
   if (!doc.isSharedLink)
     return Response.json({ valid: false, error: "Kein geteilter Link" });
-  if (doc.amount > 0)
+  const isEditing = doc.status === "changes_requested";
+  if (doc.amount > 0 && !isEditing)
     return Response.json({ valid: false, error: "Bereits eingereicht" });
 
   const organization = await (
@@ -29,6 +31,9 @@ export async function GET(_request: Request, context: RouteContext) {
     doc.type === "travel"
       ? await (await travelDetails()).findOne({ reimbursementId: id })
       : null;
+  const receiptList = isEditing
+    ? await (await receipts()).find({ reimbursementId: id }).toArray()
+    : [];
 
   return Response.json({
     valid: true,
@@ -36,6 +41,22 @@ export async function GET(_request: Request, context: RouteContext) {
     organizationName: organization?.name || "",
     projectName: project?.name || "",
     description: doc.description,
+    invitedName: doc.invitedName,
+    invitedEmail: doc.invitedEmail,
     travelDetails: travel,
+    changesRequested: isEditing ? doc.reviewNote : undefined,
+    submission: isEditing
+      ? {
+          name: doc.submitterName ?? doc.invitedName ?? "",
+          email: doc.submitterEmail ?? doc.invitedEmail ?? "",
+          iban: doc.iban,
+          bic: doc.bic ?? "",
+          accountHolder: doc.accountHolder,
+          signatureStorageId: doc.signatureStorageId ?? null,
+          receipts: receiptList.map(
+            ({ _id, _creationTime, reimbursementId, ...receipt }) => receipt,
+          ),
+        }
+      : undefined,
   });
 }

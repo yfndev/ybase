@@ -18,6 +18,8 @@ export type FormState = {
   destination: string;
   purpose: string;
   allowFoodAllowance: boolean;
+  invitedName: string;
+  invitedEmail: string;
 };
 
 export type ShareModalUIProps = {
@@ -33,6 +35,7 @@ export type ShareModalUIProps = {
   onTypeChange: (type: LinkType) => void;
   onFormUpdate: (updates: Partial<FormState>) => void;
   onCopy: () => void;
+  onSend: () => void;
   onCopyExistingLink: (id: string, linkType: LinkKind) => void;
   onDeleteLink: (id: string, linkType: LinkKind) => void;
 };

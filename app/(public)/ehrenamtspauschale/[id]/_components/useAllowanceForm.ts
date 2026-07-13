@@ -14,6 +14,7 @@ import type { AllowanceForm } from "./types";
 
 const initialForm: AllowanceForm = {
   volunteerName: "",
+  submitterEmail: "",
   volunteerStreet: "",
   volunteerPlz: "",
   volunteerCity: "",
@@ -42,19 +43,27 @@ export function useAllowanceForm(id: string) {
   }, [id]);
 
   useEffect(() => {
-    if (
-      linkData?.valid &&
-      !form.activityDescription &&
-      linkData.activityDescription
-    ) {
-      setForm((prev) => ({
-        ...prev,
-        activityDescription: linkData.activityDescription || "",
-        startDate: linkData.startDate || "",
-        endDate: linkData.endDate || "",
-      }));
-    }
-  }, [linkData, form.activityDescription]);
+    if (!linkData?.valid) return;
+    const submission = linkData.submission;
+    setForm((prev) => ({
+      ...prev,
+      volunteerName: submission?.volunteerName ?? linkData.invitedName ?? "",
+      submitterEmail: submission?.submitterEmail ?? linkData.invitedEmail ?? "",
+      volunteerStreet: submission?.volunteerStreet ?? "",
+      volunteerPlz: submission?.volunteerPlz ?? "",
+      volunteerCity: submission?.volunteerCity ?? "",
+      activityDescription: linkData.activityDescription || "",
+      startDate: linkData.startDate || "",
+      endDate: linkData.endDate || "",
+      amount: submission ? String(submission.amount) : "",
+      iban: submission?.iban ?? "",
+      bic: submission?.bic ?? "",
+      accountHolder: submission?.accountHolder ?? "",
+      taxYear: submission?.taxYear || prev.taxYear,
+      confirmation: false,
+    }));
+    setSignatureStorageId(submission?.signatureStorageId ?? null);
+  }, [linkData]);
 
   const updateField = (field: keyof AllowanceForm, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -88,6 +97,7 @@ export function useAllowanceForm(id: string) {
         startDate: form.startDate,
         endDate: form.endDate,
         volunteerName: form.volunteerName,
+        submitterEmail: form.submitterEmail,
         volunteerStreet: form.volunteerStreet,
         volunteerPlz: form.volunteerPlz,
         volunteerCity: form.volunteerCity,

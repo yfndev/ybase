@@ -13,7 +13,10 @@ vi.mock("../../s3/storage", () => ({
 
 vi.mock("./email", () => ({
   sendApprovalEmail: vi.fn(async () => {}),
+  sendChangesRequestedEmail: vi.fn(async () => {}),
   sendRejectionEmail: vi.fn(async () => {}),
+  sendSubmissionReceivedEmail: vi.fn(async () => {}),
+  sendSubmissionRequestedEmail: vi.fn(async () => {}),
 }));
 
 import { requireRole, requireUser } from "../../auth/session";
@@ -26,9 +29,17 @@ import {
 } from "../../db/collections";
 import { newId } from "../../db/ids";
 import { deleteObject } from "../../s3/storage";
-import { approve, create, decline, remove } from "./actions";
+import { create, remove } from "./actions";
 import { getAll } from "./data";
-import { sendApprovalEmail, sendRejectionEmail } from "./email";
+import {
+  sendApprovalEmail,
+  sendChangesRequestedEmail,
+  sendRejectionEmail,
+  sendSubmissionReceivedEmail,
+  sendSubmissionRequestedEmail,
+} from "./email";
+import { createLink } from "./sharing";
+import { approve, decline, requestChanges } from "./reviewActions";
 
 let mongod: MongoMemoryServer;
 let orgA: string;
@@ -206,6 +217,21 @@ test("create persists the allowance as pending", async () => {
   const doc = await (await volunteerAllowance()).findOne({ _id: id });
   expect(doc?.status).toBe("pending");
   expect(doc?.organizationId).toBe(orgA);
+  expect(sendSubmissionReceivedEmail).toHaveBeenCalledWith(id);
+});
+
+test("creating an emailed allowance request sends the request template", async () => {
+  const projectA = newId();
+  const id = await createLink({
+    projectId: projectA,
+    invitedName: "Erika",
+    invitedEmail: "erika@example.com",
+  });
+
+  const doc = await (await volunteerAllowance()).findOne({ _id: id });
+  expect(doc?.isSharedLink).toBe(true);
+  expect(doc?.invitedEmail).toBe("erika@example.com");
+  expect(sendSubmissionRequestedEmail).toHaveBeenCalledWith(id);
 });
 
 test("approve sets status approved", async () => {
@@ -251,6 +277,29 @@ test("decline sets status and sends the review email", async () => {
   expect(doc?.status).toBe("declined");
   expect(doc?.rejectionNote).toBe("Angaben fehlen");
   expect(sendRejectionEmail).toHaveBeenCalledWith(id);
+});
+
+test("requestChanges opens the allowance for editing and sends an email", async () => {
+  const projectA = newId();
+  await (
+    await projects()
+  ).insertOne({
+    _id: projectA,
+    _creationTime: Date.now(),
+    name: "Projekt A",
+    organizationId: orgA,
+    isArchived: false,
+    createdBy: userA,
+  });
+
+  const id = await create(newAllowanceInput(projectA));
+  await requestChanges({ id, reviewNote: "Zeitraum korrigieren" });
+
+  const doc = await (await volunteerAllowance()).findOne({ _id: id });
+  expect(doc?.status).toBe("changes_requested");
+  expect(doc?.reviewNote).toBe("Zeitraum korrigieren");
+  expect(doc?.isSharedLink).toBe(true);
+  expect(sendChangesRequestedEmail).toHaveBeenCalledWith(id);
 });
 
 test("remove deletes the signature from S3 and the document", async () => {

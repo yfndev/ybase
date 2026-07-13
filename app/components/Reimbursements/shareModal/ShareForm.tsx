@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { ProjectTravelDefaults } from "@/lib/db/types";
-import { Copy, Loader2 } from "lucide-react";
+import { Copy, Loader2, Mail } from "lucide-react";
 import { TYPE_LABELS } from "./constants";
 import type { LinkType, ShareModalUIProps } from "./types";
 
@@ -20,6 +20,7 @@ type ShareFormProps = Pick<
   | "onTypeChange"
   | "onFormUpdate"
   | "onCopy"
+  | "onSend"
 >;
 
 export function ShareForm({
@@ -31,6 +32,7 @@ export function ShareForm({
   onTypeChange,
   onFormUpdate,
   onCopy,
+  onSend,
 }: ShareFormProps) {
   const handleProjectChange = (
     value: string,
@@ -144,19 +146,53 @@ export function ShareForm({
         </div>
       )}
 
-      <Button
-        variant="outline"
-        onClick={onCopy}
-        className="h-12 w-full"
-        disabled={isGenerating || !form.projectId}
-      >
-        {isGenerating ? (
-          <Loader2 className="size-4 animate-spin mr-2" />
-        ) : (
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <Label>Empfängername (optional)</Label>
+          <Input
+            value={form.invitedName}
+            onChange={(event) =>
+              onFormUpdate({ invitedName: event.target.value })
+            }
+            placeholder="Max Mustermann"
+          />
+        </div>
+        <div>
+          <Label>Empfänger-E-Mail</Label>
+          <Input
+            type="email"
+            value={form.invitedEmail}
+            onChange={(event) =>
+              onFormUpdate({ invitedEmail: event.target.value })
+            }
+            placeholder="max@beispiel.de"
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Button
+          variant="outline"
+          onClick={onCopy}
+          className="h-12 w-full"
+          disabled={isGenerating || !form.projectId}
+        >
           <Copy className="size-4 mr-2" />
-        )}
-        Link kopieren
-      </Button>
+          Link kopieren
+        </Button>
+        <Button
+          onClick={onSend}
+          className="h-12 w-full"
+          disabled={isGenerating || !form.projectId || !form.invitedEmail}
+        >
+          {isGenerating ? (
+            <Loader2 className="size-4 animate-spin mr-2" />
+          ) : (
+            <Mail className="size-4 mr-2" />
+          )}
+          Per E-Mail senden
+        </Button>
+      </div>
     </div>
   );
 }

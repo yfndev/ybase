@@ -1,6 +1,10 @@
 export type UserRole = "admin" | "finance" | "member";
 export type ReimbursementType = "expense" | "travel";
-export type ReviewStatus = "pending" | "approved" | "declined";
+export type ReviewStatus =
+  | "pending"
+  | "changes_requested"
+  | "approved"
+  | "declined";
 export type CostType =
   | "car"
   | "train"
@@ -70,6 +74,7 @@ export interface Reimbursement {
   bic?: string;
   accountHolder: string;
   rejectionNote?: string;
+  reviewNote?: string;
   createdBy: string;
   reviewedBy?: string;
   reviewedAt?: number;
@@ -78,6 +83,10 @@ export interface Reimbursement {
   isSharedLink?: boolean;
   submitterName?: string;
   submitterEmail?: string;
+  invitedName?: string;
+  invitedEmail?: string;
+  submittedExternally?: boolean;
+  requestedExternally?: boolean;
   description?: string;
   pendingUploadKeys?: string[];
 }
@@ -133,6 +142,7 @@ export interface VolunteerAllowance {
   bic?: string;
   accountHolder: string;
   rejectionNote?: string;
+  reviewNote?: string;
   createdBy: string;
   reviewedBy?: string;
   reviewedAt?: number;
@@ -146,6 +156,12 @@ export interface VolunteerAllowance {
   volunteerCity: string;
   signatureStorageId?: string;
   pendingSignatureStorageId?: string;
+  isSharedLink?: boolean;
+  submitterEmail?: string;
+  invitedName?: string;
+  invitedEmail?: string;
+  submittedExternally?: boolean;
+  requestedExternally?: boolean;
 }
 
 export interface SignatureToken {

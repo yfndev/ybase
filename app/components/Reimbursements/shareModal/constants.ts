@@ -8,6 +8,8 @@ export const INITIAL_FORM: FormState = {
   destination: "",
   purpose: "",
   allowFoodAllowance: false,
+  invitedName: "",
+  invitedEmail: "",
 };
 
 export const TYPE_LABELS: Record<LinkType, string> = {

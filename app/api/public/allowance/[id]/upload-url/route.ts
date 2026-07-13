@@ -14,7 +14,12 @@ export async function POST(request: Request, context: RouteContext) {
 
     const doc = await (await volunteerAllowance()).findOne({ _id: id });
     if (!doc) throw new Error("Invalid link");
-    if (doc.volunteerName && doc.signatureStorageId)
+    if (!doc.isSharedLink) throw new Error("Invalid link");
+    if (
+      doc.volunteerName &&
+      doc.signatureStorageId &&
+      doc.status !== "changes_requested"
+    )
       throw new Error("Already submitted");
 
     const { key, url } = await presignUpload(contentType);
@@ -22,7 +27,14 @@ export async function POST(request: Request, context: RouteContext) {
     await (
       await volunteerAllowance()
     ).updateOne(
-      { _id: id, signatureStorageId: { $exists: false } },
+      {
+        _id: id,
+        isSharedLink: true,
+        $or: [
+          { signatureStorageId: { $exists: false } },
+          { status: "changes_requested" },
+        ],
+      },
       { $set: { pendingSignatureStorageId: key } },
     );
 

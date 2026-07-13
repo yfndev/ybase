@@ -39,6 +39,14 @@ export function AllowanceFormView({
     <div className="min-h-svh py-8">
       <div className="max-w-2xl mx-auto px-6 space-y-8">
         <FormHeader linkData={linkData} />
+        {linkData.changesRequested ? (
+          <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
+            <p className="text-sm font-medium text-orange-800">
+              Folgende Änderungen wurden angefordert:
+            </p>
+            <p className="mt-1 text-orange-700">{linkData.changesRequested}</p>
+          </div>
+        ) : null}
         <PersonalDataSection form={form} updateField={updateField} />
         <ActivitySection form={form} updateField={updateField} />
         <AmountSection

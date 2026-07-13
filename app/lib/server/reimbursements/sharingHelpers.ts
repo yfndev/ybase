@@ -50,7 +50,10 @@ export async function insertReimbursementLink(
     accountHolder: "",
     createdBy: user._id,
     isSharedLink: true,
+    requestedExternally: true,
     description: args.description || "",
+    invitedName: args.invitedName,
+    invitedEmail: args.invitedEmail,
   });
 
   if (args.type !== "travel" || !args.travelDetails) return;

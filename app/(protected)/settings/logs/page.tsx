@@ -24,10 +24,15 @@ const ACTION_LABELS: Record<string, string> = {
   "reimbursement.create": "Erstattung erstellt",
   "reimbursement.approve": "Erstattung genehmigt",
   "reimbursement.decline": "Erstattung abgelehnt",
+  "reimbursement.requestChanges": "Änderungen an Erstattung angefordert",
+  "reimbursement.resubmit": "Erstattung erneut eingereicht",
   "reimbursement.delete": "Erstattung gelöscht",
   "volunteerAllowance.create": "Ehrenamtspauschale erstellt",
   "volunteerAllowance.approve": "Ehrenamtspauschale genehmigt",
   "volunteerAllowance.decline": "Ehrenamtspauschale abgelehnt",
+  "volunteerAllowance.requestChanges":
+    "Änderungen an Ehrenamtspauschale angefordert",
+  "volunteerAllowance.resubmit": "Ehrenamtspauschale erneut eingereicht",
   "volunteerAllowance.delete": "Ehrenamtspauschale gelöscht",
   "user.role_change": "Rolle geändert",
 };
