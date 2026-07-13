@@ -1,15 +1,15 @@
 import { QueryProvider } from "@/lib/query/QueryProvider";
 import { GeistMono } from "geist/font/mono";
 import type { Metadata } from "next";
-import { Lexend_Deca } from "next/font/google";
+import { Readex_Pro } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "react-hot-toast";
 
 import "./globals.css";
 
-const lexendDeca = Lexend_Deca({
+const readexPro = Readex_Pro({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-readex",
 });
 
 export const metadata: Metadata = {
@@ -23,11 +23,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="de">
-      <body
-        className={`${lexendDeca.variable} ${GeistMono.variable} antialiased`}
-        suppressHydrationWarning
-      >
+    <html lang="de" className={`${readexPro.variable} ${GeistMono.variable}`}>
+      <body className="antialiased" suppressHydrationWarning>
         <SessionProvider>
           <QueryProvider>
             {children}
