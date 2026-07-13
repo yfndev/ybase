@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("./environment", () => ({
-  isLocalCredentialsEnabled: () => true,
+  isLocalCredentialsEnabled: () => false,
 }));
 vi.mock("./provisioning", () => ({
   ensureAppUser: mocks.ensureAppUser,
@@ -18,18 +18,19 @@ describe("auth config", () => {
     mocks.ensureAppUser.mockReset();
   });
 
-  it("refreshes a persisted local session against the current database", async () => {
+  it("refreshes a persisted session against the current database", async () => {
     mocks.ensureAppUser.mockResolvedValue({
       _id: "new-user-id",
       _creationTime: 1,
       email: "local@example.com",
       organizationId: "new-organization-id",
-      role: "admin",
+      role: "finance",
     });
     const token = {
       email: "local@example.com",
       userId: "stale-user-id",
       organizationId: "stale-organization-id",
+      role: "admin",
     };
 
     // Auth.js omits user for persisted JWT sessions despite requiring it in the callback type.
@@ -47,7 +48,7 @@ describe("auth config", () => {
     expect(result).toMatchObject({
       userId: "new-user-id",
       organizationId: "new-organization-id",
-      role: "admin",
+      role: "finance",
     });
   });
 });
