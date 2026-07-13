@@ -57,6 +57,7 @@ async function addSignature(page: Page) {
   if (await failed.isVisible()) {
     throw new Error(`Unterschrift fehlgeschlagen: ${await failed.innerText()}`);
   }
+  await expect(saved.locator("..").locator(".animate-spin")).toHaveCount(0);
 }
 
 test.describe.serial("reimbursement flow", () => {
