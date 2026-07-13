@@ -21,7 +21,6 @@ interface ReimbursementRowProps {
     projectName: string;
     amount: number;
     reviewedByName?: string;
-    reviewedAt?: number;
   };
   canManageReimbursements: boolean;
   title: string;
@@ -50,12 +49,8 @@ export function ReimbursementRow({
 }: ReimbursementRowProps) {
   const display = STATUS_DISPLAY[item.status];
   const isPending = item.status === "pending";
-  const reviewDetails = [
-    item.reviewedByName ? `von ${item.reviewedByName}` : undefined,
-    item.reviewedAt ? formatDate(item.reviewedAt) : undefined,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const reviewerName =
+    item.status === "approved" ? item.reviewedByName : undefined;
 
   return (
     <TableRow
@@ -92,9 +87,9 @@ export function ReimbursementRow({
           <Badge variant={display.variant} className={display.className}>
             {display.label}
           </Badge>
-          {!isPending && reviewDetails ? (
+          {reviewerName ? (
             <span className="text-xs text-muted-foreground">
-              {reviewDetails}
+              {reviewerName}
             </span>
           ) : null}
           {item.rejectionNote ? (
