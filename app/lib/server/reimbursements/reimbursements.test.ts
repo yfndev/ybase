@@ -1,5 +1,13 @@
 import { MongoMemoryServer } from "mongodb-memory-server";
-import { afterAll, beforeAll, beforeEach, expect, test, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  expect,
+  test,
+  vi,
+} from "vitest";
 
 vi.mock("../../auth/session", () => ({
   requireUser: vi.fn(),
@@ -9,6 +17,10 @@ vi.mock("../../auth/session", () => ({
 vi.mock("../../s3/storage", () => ({
   presignUpload: vi.fn(async () => ({ key: "key", url: "url" })),
   presignDownload: vi.fn(async () => "url"),
+  getDownloadInfo: vi.fn(async () => ({
+    url: "signed-url",
+    contentType: "application/pdf",
+  })),
   deleteObject: vi.fn(async () => {}),
   getObjectBuffer: vi.fn(async () => Buffer.from("file")),
 }));
@@ -23,9 +35,9 @@ import {
   users,
 } from "../../db/collections";
 import { newId } from "../../db/ids";
-import { deleteObject } from "../../s3/storage";
+import { deleteObject, getDownloadInfo } from "../../s3/storage";
 import { approve, createReimbursement, deleteReimbursement } from "./actions";
-import { getAllReimbursements, getReimbursement } from "./data";
+import { getAllReimbursements, getFileInfo, getReimbursement } from "./data";
 
 let mongod: MongoMemoryServer;
 let orgA: string;
@@ -44,6 +56,10 @@ afterAll(async () => {
   await client.close();
   await mongod.stop();
 }, 30_000);
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 beforeEach(async () => {
   await (await getDb()).dropDatabase();
@@ -105,7 +121,7 @@ function reimbursementInput() {
   return {
     amount: 50,
     projectId: projectA,
-    iban: "DE00",
+    iban: "DE89370400440532013000",
     accountHolder: "Max",
     signatureStorageId: "sig-key",
     receipts: [
@@ -134,6 +150,26 @@ test("createReimbursement writes the reimbursement and receipts scoped to the or
     .toArray();
   expect(receiptList).toHaveLength(1);
   expect(receiptList[0]?.fileStorageId).toBe("receipt-key");
+});
+
+test("getFileInfo returns signed download metadata", async () => {
+  vi.stubEnv("IS_TEST", "false");
+
+  await expect(getFileInfo("receipt-key")).resolves.toEqual({
+    url: "signed-url",
+    contentType: "application/pdf",
+  });
+  expect(getDownloadInfo).toHaveBeenCalledWith("receipt-key");
+});
+
+test("createReimbursement rejects missing bank details", async () => {
+  await expect(
+    createReimbursement({
+      ...reimbursementInput(),
+      iban: "",
+      accountHolder: "",
+    }),
+  ).rejects.toThrow();
 });
 
 test("getAllReimbursements stays scoped to the caller's org", async () => {
@@ -171,6 +207,9 @@ test("getAllReimbursements stays scoped to the caller's org", async () => {
   expect(list).toHaveLength(2);
   expect(list.every((item) => item.organizationId === orgA)).toBe(true);
   expect(list.every((item) => item.projectName === "Projekt A")).toBe(true);
+  expect(list.find((item) => item.createdBy === userA)?.receiptSummary).toBe(
+    "Material",
+  );
 });
 
 test("members only see their own reimbursements", async () => {
@@ -251,7 +290,9 @@ test("deleteReimbursement removes receipts and deletes the stored files", async 
 
 test("finance can delete another member's reimbursement", async () => {
   const reimbursementId = newId();
-  await (await reimbursements()).insertOne({
+  await (
+    await reimbursements()
+  ).insertOne({
     _id: reimbursementId,
     _creationTime: Date.now(),
     organizationId: orgA,

@@ -1,4 +1,4 @@
-import { toNet } from "@/lib/bank-utils";
+import { getBankDetailsError, toNet } from "@/lib/bank-utils";
 import { createReimbursement } from "@/lib/server/reimbursements/actions";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -57,6 +57,8 @@ export function useReimbursementForm(defaultBankDetails: BankDetails) {
     if (!projectId) return toast.error("Bitte ein Projekt auswählen");
     if (receipts.length === 0)
       return toast.error("Bitte mindestens einen Beleg hinzufügen");
+    const bankDetailsError = getBankDetailsError(bank);
+    if (bankDetailsError) return toast.error(bankDetailsError);
     if (!signature) return toast.error("Bitte unterschreiben");
     if (isSubmitting) return;
     setIsSubmitting(true);

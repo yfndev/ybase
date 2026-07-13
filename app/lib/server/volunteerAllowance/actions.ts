@@ -8,6 +8,7 @@ import { newId } from "../../db/ids";
 import { deleteObject } from "../../s3/storage";
 import { addLog } from "../logs";
 import { getSignatureUrl } from "./data";
+import { bankDetailsFields } from "../bankDetails";
 
 const MAX_VOLUNTEER_ALLOWANCE_EUR = 960;
 export async function create(input: {
@@ -31,9 +32,7 @@ export async function create(input: {
     .object({
       projectId: z.string(),
       amount: z.number(),
-      iban: z.string(),
-      bic: z.string().optional(),
-      accountHolder: z.string(),
+      ...bankDetailsFields,
       activityDescription: z.string(),
       startDate: z.string(),
       endDate: z.string(),

@@ -2,14 +2,13 @@
 
 import { PageHeader } from "@/components/Layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import type { OrganizationSettings } from "@/lib/server/organizations/data";
 import { updateOrganization } from "@/lib/server/organizations/actions";
+import type { OrganizationSettings } from "@/lib/server/organizations/data";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { OrganizationFormFields } from "./OrganizationFormFields";
 
 interface Props {
   organization: OrganizationSettings;
@@ -43,101 +42,39 @@ export function OrganizationClient({ organization }: Props) {
     <div>
       <PageHeader title="Organisation" />
 
-      <div className="max-w-2xl space-y-6">
-        <p className="text-muted-foreground">
-          Organisationsdaten für Dokumente und PDFs
-        </p>
+      <main className="mx-auto max-w-[760px] p-6">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <OrganizationFormFields
+            form={form}
+            onChange={(field, value) =>
+              setForm((current) => ({ ...current, [field]: value }))
+            }
+          />
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name">Organisationsname *</Label>
-              <Input
-                id="name"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="z.B. Mein Verein e.V."
-              />
+          {isDirty ? (
+            <div className="flex items-center justify-end gap-2 py-4">
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                onClick={() => setForm(organization)}
+                disabled={isSubmitting}
+              >
+                Abbrechen
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                disabled={isSubmitting}
+              >
+                {isSubmitting && <Loader2 className="size-4 animate-spin" />}
+                Speichern
+              </Button>
             </div>
-
-            <div>
-              <Label htmlFor="careOf">Adresszusatz (c/o)</Label>
-              <Input
-                id="careOf"
-                value={form.careOf}
-                onChange={(e) => setForm({ ...form, careOf: e.target.value })}
-                placeholder="c/o Beispiel GmbH"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="street">Straße und Hausnummer</Label>
-              <Input
-                id="street"
-                value={form.street}
-                onChange={(e) => setForm({ ...form, street: e.target.value })}
-                placeholder="Musterstraße 123"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="plz">PLZ</Label>
-                <Input
-                  id="plz"
-                  value={form.plz}
-                  onChange={(e) =>
-                    setForm({ ...form, plz: e.target.value.replace(/\D/g, "") })
-                  }
-                  placeholder="12345"
-                  maxLength={5}
-                />
-              </div>
-              <div>
-                <Label htmlFor="city">Ort</Label>
-                <Input
-                  id="city"
-                  value={form.city}
-                  onChange={(e) => setForm({ ...form, city: e.target.value })}
-                  placeholder="Musterstadt"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="taxId">USt-ID</Label>
-              <Input
-                id="taxId"
-                value={form.taxId}
-                onChange={(e) => setForm({ ...form, taxId: e.target.value })}
-                placeholder="DE123456789"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="accountingEmail">E-Mail Buchhaltung</Label>
-              <Input
-                id="accountingEmail"
-                type="email"
-                value={form.accountingEmail}
-                onChange={(e) =>
-                  setForm({ ...form, accountingEmail: e.target.value })
-                }
-                placeholder="buchhaltung@verein.de"
-              />
-            </div>
-          </div>
-
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={isSubmitting || !isDirty}
-          >
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Speichern
-          </Button>
+          ) : null}
         </form>
-      </div>
+      </main>
     </div>
   );
 }

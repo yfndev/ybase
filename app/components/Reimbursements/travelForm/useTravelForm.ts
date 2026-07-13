@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { createTravelReimbursement } from "@/lib/server/reimbursements/actions";
+import { getBankDetailsError } from "@/lib/bank-utils";
 import { type CostType, DEFAULT_TAX_RATES } from "@/lib/travel-costs";
 import { getTravelDateRangeError } from "@/lib/travelDates";
 import type { BankDetails, Receipt } from "./types";
@@ -98,6 +99,8 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
 
   const handleSubmit = async () => {
     if (!projectId) return toast.error("Bitte ein Projekt auswählen");
+    const bankDetailsError = getBankDetailsError(bank);
+    if (bankDetailsError) return toast.error(bankDetailsError);
     if (!signature) return toast.error("Bitte unterschreiben");
     if (isSubmitting) return;
     setIsSubmitting(true);

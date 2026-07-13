@@ -33,7 +33,7 @@ function newAllowanceInput(projectId: string) {
   return {
     projectId,
     amount: 100,
-    iban: "DE00",
+    iban: "DE89370400440532013000",
     accountHolder: "Max Mustermann",
     activityDescription: "Helfen",
     startDate: "2026-01-01",
@@ -169,6 +169,18 @@ test("create + getAll stay scoped to the caller's org", async () => {
     "Other member",
   ]);
   expect(list.every((item) => item.projectName === "Projekt A")).toBe(true);
+});
+
+test("create rejects missing bank details", async () => {
+  const projectA = newId();
+
+  await expect(
+    create({
+      ...newAllowanceInput(projectA),
+      iban: "",
+      accountHolder: "",
+    }),
+  ).rejects.toThrow();
 });
 
 test("create persists the allowance as pending", async () => {

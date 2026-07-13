@@ -2,17 +2,38 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import { formatDate } from "@/lib/formatters/formatDate";
 import { CAR_ALLOWANCE_RATE_EUR_PER_KM } from "@/lib/travel-costs";
+import { ExternalLink, FileText } from "lucide-react";
 import { COST_TYPE_LABELS } from "./constants";
 import type { ReceiptWithUrl } from "./types";
 
 export function ReceiptCard({ receipt }: { receipt: ReceiptWithUrl }) {
+  const isPdf = receipt.fileContentType === "application/pdf";
+
   return (
     <div className="border rounded-lg p-4 flex gap-4">
-      <img
-        src={receipt.fileUrl}
-        alt="Beleg"
-        className="w-32 h-32 object-cover rounded border"
-      />
+      <a
+        href={receipt.fileUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="group relative flex size-32 shrink-0 items-center justify-center overflow-hidden rounded border bg-muted/30"
+        aria-label="Beleg in neuem Tab öffnen"
+      >
+        {isPdf ? (
+          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+            <FileText className="size-12" />
+            <span className="text-xs font-medium">PDF öffnen</span>
+          </div>
+        ) : (
+          <img
+            src={receipt.fileUrl}
+            alt="Beleg"
+            className="size-full object-cover"
+          />
+        )}
+        <span className="absolute right-1.5 top-1.5 rounded bg-background/90 p-1 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+          <ExternalLink className="size-3.5" />
+        </span>
+      </a>
       <div className="flex-1 space-y-2">
         <div className="flex items-start justify-between">
           <div>

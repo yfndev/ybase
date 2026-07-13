@@ -137,6 +137,16 @@ test.describe.serial("reimbursement flow", () => {
     await page.getByRole("button", { name: "Beleg speichern" }).click();
     await expect(page.getByText("Test Firma")).toBeVisible();
 
+    await expect(
+      page.getByText("Bitte vervollständige deine Bankverbindung."),
+    ).toBeVisible();
+    await page.getByPlaceholder("Vor- und Nachname").fill("Test User");
+    await page
+      .getByPlaceholder("DE12 3456 7890 0000 0000 00")
+      .fill("DE89370400440532013000");
+    await page.getByRole("button", { name: "Speichern" }).click();
+    await expect(page.getByText("Bankverbindung gespeichert")).toBeVisible();
+
     await addSignature(page);
 
     await page
@@ -230,8 +240,12 @@ test.describe.serial("reimbursement flow", () => {
     await expect(
       page.getByText("Reisekostenerstattung eingereicht"),
     ).toBeVisible();
+    const travelRow = page.locator("table tbody tr").first();
     await expect(
-      page.getByText("Reisekostenerstattung - Berlin"),
+      travelRow.getByText("Reisekostenerstattung", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      travelRow.getByText("Event · Berlin", { exact: true }),
     ).toBeVisible();
     await expect(page.getByText("Ausstehend")).toBeVisible();
   });
@@ -247,9 +261,7 @@ test.describe.serial("reimbursement flow", () => {
       .fill("Falsche Angaben");
     await page.getByRole("button", { name: "Ablehnen" }).click();
 
-    await expect(
-      page.getByText("Ablehnungsgrund: Falsche Angaben"),
-    ).toBeVisible({
+    await expect(page.getByText("Grund: Falsche Angaben")).toBeVisible({
       timeout: 10000,
     });
     await expect(

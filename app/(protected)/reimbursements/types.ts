@@ -7,6 +7,7 @@ import type {
 export type Reimbursement = ReimbursementDoc & {
   creatorName: string;
   projectName: string;
+  receiptSummary?: string;
   travelDetails?: TravelDetails;
   reviewedByName?: string;
 };

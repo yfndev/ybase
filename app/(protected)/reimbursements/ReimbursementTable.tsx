@@ -76,14 +76,14 @@ export function ReimbursementTable({
                 aria-label="Alle auswählen"
               />
             </TableHead>
-            <TableHead className="w-[30px]" />
-            <TableHead>Datum</TableHead>
+            <TableHead>Antrag</TableHead>
+            {canManageReimbursements ? (
+              <TableHead>Antragsteller</TableHead>
+            ) : null}
             <TableHead>Projekt</TableHead>
-            <TableHead>Beschreibung</TableHead>
-            {canManageReimbursements ? <TableHead>Ersteller</TableHead> : null}
+            <TableHead>Erstellt</TableHead>
             <TableHead className="text-right">Betrag</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Geprüft von</TableHead>
             <TableHead className="text-right" />
           </TableRow>
         </TableHeader>
@@ -98,27 +98,26 @@ export function ReimbursementTable({
                   checked={selected.has(`r:${item._id}`)}
                   onCheckedChange={() => onToggleSelect(`r:${item._id}`)}
                   onClick={(e) => e.stopPropagation()}
+                  aria-label="Antrag auswählen"
                 />
               }
-              description={
-                item.type === "travel" ? (
-                  <div>
-                    <span>{item.projectName}</span>
-                    <span className="block text-xs text-muted-foreground">
-                      Reisekostenerstattung
-                      {item.travelDetails?.destination &&
-                        ` - ${item.travelDetails.destination}`}
-                    </span>
-                  </div>
-                ) : (
-                  <div>
-                    <span>{item.projectName}</span>
-                    <span className="block text-xs text-muted-foreground">
-                      Auslagenerstattung
-                    </span>
-                  </div>
-                )
+              kind={item.type}
+              title={
+                item.type === "travel"
+                  ? "Reisekostenerstattung"
+                  : "Auslagenerstattung"
               }
+              detail={
+                item.type === "travel"
+                  ? [
+                      item.travelDetails?.purpose,
+                      item.travelDetails?.destination,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")
+                  : item.description?.trim() || item.receiptSummary
+              }
+              applicantName={item.submitterName || item.creatorName}
               onClick={() => onRowClick(item._id)}
               onApprove={() => onApproveReimbursement(item._id)}
               onReject={() => onOpenRejectDialog("reimbursement", item._id)}
@@ -137,16 +136,13 @@ export function ReimbursementTable({
                   checked={selected.has(`a:${item._id}`)}
                   onCheckedChange={() => onToggleSelect(`a:${item._id}`)}
                   onClick={(e) => e.stopPropagation()}
+                  aria-label="Antrag auswählen"
                 />
               }
-              description={
-                <div>
-                  <span>{item.projectName}</span>
-                  <span className="block text-xs text-muted-foreground">
-                    Ehrenamtspauschale
-                  </span>
-                </div>
-              }
+              kind="allowance"
+              title="Ehrenamtspauschale"
+              detail={item.activityDescription}
+              applicantName={item.volunteerName || item.creatorName}
               onApprove={() => onApproveAllowance(item._id)}
               onReject={() => onOpenRejectDialog("allowance", item._id)}
               onDownload={() => onDownloadAllowance(item)}

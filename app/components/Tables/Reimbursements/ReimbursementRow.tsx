@@ -1,6 +1,14 @@
 "use client";
 
-import { Check, Download, Trash2, X } from "lucide-react";
+import {
+  Check,
+  Download,
+  HandHeart,
+  ReceiptText,
+  Route,
+  Trash2,
+  X,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,12 +27,15 @@ interface ReimbursementRowProps {
     status: Status;
     rejectionNote?: string;
     projectName: string;
-    creatorName: string;
     amount: number;
     reviewedByName?: string;
+    reviewedAt?: number;
   };
   canManageReimbursements: boolean;
-  description: ReactNode;
+  kind: "expense" | "travel" | "allowance";
+  title: string;
+  detail?: string;
+  applicantName: string;
   selectionCheckbox?: ReactNode;
   onClick?: () => void;
   onApprove: () => void;
@@ -36,7 +47,10 @@ interface ReimbursementRowProps {
 export function ReimbursementRow({
   item,
   canManageReimbursements,
-  description,
+  kind,
+  title,
+  detail,
+  applicantName,
   selectionCheckbox,
   onClick,
   onApprove,
@@ -46,10 +60,18 @@ export function ReimbursementRow({
 }: ReimbursementRowProps) {
   const display = STATUS_DISPLAY[item.status];
   const isPending = item.status === "pending";
+  const KindIcon =
+    kind === "travel" ? Route : kind === "allowance" ? HandHeart : ReceiptText;
+  const reviewDetails = [
+    item.reviewedByName ? `von ${item.reviewedByName}` : undefined,
+    item.reviewedAt ? formatDate(item.reviewedAt) : undefined,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <TableRow
-      className={onClick ? "cursor-pointer" : undefined}
+      className={onClick ? "group cursor-pointer" : undefined}
       onClick={onClick}
     >
       {selectionCheckbox !== undefined && (
@@ -57,34 +79,50 @@ export function ReimbursementRow({
           {selectionCheckbox}
         </TableCell>
       )}
-      <TableCell className="px-1">
-        <div className="flex items-center justify-center">
-          <div className={`w-2 h-2 rounded-full ${display.dot}`} />
+      <TableCell className="min-w-56 py-3">
+        <div className="flex items-center gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-muted/40 text-muted-foreground transition-colors group-hover:border-primary/20 group-hover:bg-primary/5 group-hover:text-primary">
+            <KindIcon className="size-4" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <div className="font-medium text-foreground">{title}</div>
+            {detail ? (
+              <div className="max-w-72 truncate text-xs text-muted-foreground">
+                {detail}
+              </div>
+            ) : null}
+          </div>
         </div>
       </TableCell>
-      <TableCell>{formatDate(new Date(item._creationTime))}</TableCell>
-      <TableCell>{item.projectName}</TableCell>
-      <TableCell className="text-muted-foreground">
-        {description}
-        {item.rejectionNote && (
-          <span className="block text-xs text-red-600">
-            Ablehnungsgrund: {item.rejectionNote}
-          </span>
-        )}
-      </TableCell>
       {canManageReimbursements ? (
-        <TableCell>{item.creatorName}</TableCell>
+        <TableCell className="max-w-48 truncate">{applicantName}</TableCell>
       ) : null}
+      <TableCell className="max-w-48 truncate">{item.projectName}</TableCell>
+      <TableCell className="text-muted-foreground">
+        {formatDate(item._creationTime)}
+      </TableCell>
       <TableCell className="text-right font-medium">
         {formatCurrency(item.amount)}
       </TableCell>
-      <TableCell>
-        <Badge variant={display.variant} className={display.className}>
-          {display.label}
-        </Badge>
-      </TableCell>
-      <TableCell className="text-muted-foreground">
-        {!isPending && item.reviewedByName ? item.reviewedByName : "–"}
+      <TableCell className="min-w-40">
+        <div className="flex flex-col items-start gap-1">
+          <Badge variant={display.variant} className={display.className}>
+            {display.label}
+          </Badge>
+          {!isPending && reviewDetails ? (
+            <span className="text-xs text-muted-foreground">
+              {reviewDetails}
+            </span>
+          ) : null}
+          {item.rejectionNote ? (
+            <span
+              className="max-w-56 truncate text-xs text-red-700"
+              title={`Ablehnungsgrund: ${item.rejectionNote}`}
+            >
+              Grund: {item.rejectionNote}
+            </span>
+          ) : null}
+        </div>
       </TableCell>
       <TableCell onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-end gap-0.5">

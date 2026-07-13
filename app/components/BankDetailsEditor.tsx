@@ -3,7 +3,11 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BIC_REGEX, formatIban, IBAN_REGEX } from "@/lib/bank-utils";
+import {
+  formatIban,
+  getBankDetailsError,
+  normalizeIban,
+} from "@/lib/bank-utils";
 import { updateBankDetails } from "@/lib/server/users/actions";
 import { Loader2, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -17,7 +21,7 @@ interface Props {
   onChange: (value: BankDetails) => void;
 }
 export function BankDetailsEditor({ value, onChange }: Props) {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(() => !!getBankDetailsError(value));
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
 
@@ -26,14 +30,11 @@ export function BankDetailsEditor({ value, onChange }: Props) {
       setEditing(true);
       return;
     }
-    const iban = value.iban.replace(/\s/g, "").toUpperCase();
+    const iban = normalizeIban(value.iban);
     const bic = value.bic.replace(/\s/g, "").toUpperCase();
-    if (!value.accountHolder.trim())
-      return toast.error("Bitte Kontoinhaber eingeben");
-    if (!IBAN_REGEX.test(iban)) return toast.error("Ungültige IBAN");
-    if (bic && !BIC_REGEX.test(bic)) return toast.error("Ungültige BIC");
-
-    const normalized = { ...value, iban, bic };
+    const normalized = { accountHolder: value.accountHolder.trim(), iban, bic };
+    const validationError = getBankDetailsError(normalized);
+    if (validationError) return toast.error(validationError);
     setIsSaving(true);
     try {
       await updateBankDetails(normalized);
@@ -54,6 +55,12 @@ export function BankDetailsEditor({ value, onChange }: Props) {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-medium">Bankverbindung</h2>
+      {editing && !!getBankDetailsError(value) && (
+        <p className="text-sm text-amber-700" aria-live="polite">
+          Bitte vervollständige deine Bankverbindung. Ohne gültige Bankdaten
+          kannst du den Antrag nicht einreichen.
+        </p>
+      )}
       <div className="flex items-end gap-4">
         <div className="grid grid-cols-[1fr_2fr_1fr] gap-4 flex-1">
           <div>
@@ -65,6 +72,7 @@ export function BankDetailsEditor({ value, onChange }: Props) {
               onChange={(e) => update("accountHolder", e.target.value)}
               disabled={!editing}
               placeholder="Vor- und Nachname"
+              required
             />
           </div>
           <div>
@@ -80,6 +88,7 @@ export function BankDetailsEditor({ value, onChange }: Props) {
               placeholder="DE12 3456 7890 0000 0000 00"
               className="font-mono"
               maxLength={42}
+              required
             />
           </div>
           <div>
@@ -97,8 +106,9 @@ export function BankDetailsEditor({ value, onChange }: Props) {
           </div>
         </div>
         <Button
+          type="button"
           variant={editing ? "default" : "outline"}
-          size="sm"
+          className="h-[52px] min-w-[52px] border-input px-4 hover:border-ring focus-visible:border-foreground focus-visible:ring-0 md:h-12 md:min-w-12"
           onClick={toggle}
           disabled={isSaving}
           aria-label={editing ? "Speichern" : "Bearbeiten"}
