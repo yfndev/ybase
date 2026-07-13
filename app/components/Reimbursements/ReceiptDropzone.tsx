@@ -36,10 +36,19 @@ export function ReceiptDropzone({ inputRef, isUploading, onFile }: Props) {
         if (file) onFile(file);
       }}
       className={cn(
-        "flex w-full flex-col items-center justify-center gap-3 rounded-[8px] border-2 border-dashed border-border px-4 py-6 text-center transition-colors hover:border-ring",
-        isDragging && "border-ring bg-muted/60",
+        "group relative flex w-full flex-col items-center justify-center gap-3 rounded-[8px] px-4 py-6 text-center transition-colors",
+        isDragging && "bg-muted/60",
       )}
     >
+      <div
+        aria-hidden="true"
+        data-slot="receipt-dropzone-border"
+        className={cn(
+          "pointer-events-none absolute inset-0 rounded-[8px] border-2 border-dashed border-border transition-colors group-hover:border-ring",
+          isDragging && "border-ring",
+        )}
+      />
+
       {isUploading ? (
         <div className="flex flex-col items-center gap-3 py-2">
           <Loader2 className="size-8 animate-spin text-muted-foreground" />

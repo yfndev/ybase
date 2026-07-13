@@ -134,7 +134,17 @@ test.describe.serial("reimbursement flow", () => {
       name: "Beleg hochladen",
     });
     await expect(receiptDropzone).toHaveCSS("display", "flex");
-    await expect(receiptDropzone).toHaveCSS("border-style", "dashed");
+    const receiptDropzoneBorder = receiptDropzone.locator(
+      '[data-slot="receipt-dropzone-border"]',
+    );
+    await expect(receiptDropzoneBorder).toHaveCSS("position", "absolute");
+    await expect(receiptDropzoneBorder).toHaveCSS("border-style", "dashed");
+    await expect(receiptDropzoneBorder).toHaveCSS("inset", "0px");
+    await expect(receiptDropzoneBorder).toHaveCount(1);
+    await expect(receiptDropzoneBorder).toBeVisible();
+    expect(await receiptDropzoneBorder.boundingBox()).toEqual(
+      await receiptDropzone.boundingBox(),
+    );
     await expect(
       page.getByRole("button", { name: "Datei auswählen" }),
     ).toBeVisible();
