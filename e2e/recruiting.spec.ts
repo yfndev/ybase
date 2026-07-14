@@ -74,7 +74,11 @@ test.describe("Ausschreibungen", () => {
 
   test("create a draft, edit rich text and persist it", async () => {
     await page.goto("/recruiting");
-    await page.getByRole("button", { name: "Neue Ausschreibung" }).click();
+    const createButton = page.getByRole("button", {
+      name: "Neue Ausschreibung",
+    });
+    await expect(createButton).toHaveCount(1);
+    await createButton.click();
     await page.getByLabel("Titel*").fill(TITLE);
     await selectOption(page, "posting-team", TEAM);
     await page.getByRole("button", { name: "Entwurf erstellen" }).click();
