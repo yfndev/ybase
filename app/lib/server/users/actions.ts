@@ -6,7 +6,7 @@ import {
   requireRole,
   requireUser,
 } from "../../auth/session";
-import { users } from "../../db/collections";
+import { teams, users } from "../../db/collections";
 import type { User, UserRole } from "../../db/types";
 import { addLog } from "../logs";
 import { bankDetailsSchema } from "../bankDetails";
@@ -26,6 +26,14 @@ async function loadManagedMember(userId: string) {
   if (!target || target.organizationId !== currentUser.organizationId)
     throw new Error("User not found");
   return { currentUser, target };
+}
+
+async function requireActiveTeam(teamId: string, organizationId: string) {
+  const team = await (await teams()).findOne({ _id: teamId });
+  const isUsable =
+    team && team.organizationId === organizationId && !team.isArchived;
+  if (!isUsable) throw new Error("Team nicht verfügbar");
+  return team;
 }
 
 export async function addUserToOrganization(input: {
@@ -123,10 +131,13 @@ export async function updateMemberProfile(input: {
       positionTitle: z.string().trim().min(1).optional(),
     })
     .parse(input);
-  const { target } = await loadManagedMember(userId);
+  const { currentUser, target } = await loadManagedMember(userId);
 
   const patch: Pick<User, "teamId" | "positionTitle"> = {};
-  if (teamId !== undefined) patch.teamId = teamId;
+  if (teamId !== undefined) {
+    await requireActiveTeam(teamId, currentUser.organizationId);
+    patch.teamId = teamId;
+  }
   if (positionTitle !== undefined) patch.positionTitle = positionTitle;
   if (Object.keys(patch).length === 0) return;
 

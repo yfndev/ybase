@@ -13,7 +13,7 @@ import {
   requireUser,
 } from "../../auth/session";
 import { getClient, getDb } from "../../db/client";
-import { logs, organizations, users } from "../../db/collections";
+import { logs, organizations, teams, users } from "../../db/collections";
 import { newId } from "../../db/ids";
 import {
   addUserToOrganization,
@@ -202,7 +202,26 @@ test("setTeamOnboardingStatus completes team onboarding with a timestamp", async
   expect(typeof updated?.teamOnboardedAt).toBe("number");
 });
 
-test("updateMemberProfile sets team and position title", async () => {
+async function seedTeam(
+  id: string,
+  organizationId: string,
+  isArchived = false,
+) {
+  await (
+    await teams()
+  ).insertOne({
+    _id: id,
+    _creationTime: Date.now(),
+    name: id,
+    departmentId: "dept-1",
+    organizationId,
+    isArchived,
+    createdBy: adminA,
+  });
+}
+
+test("updateMemberProfile assigns an active team and position title", async () => {
+  await seedTeam("team-1", orgA);
   await updateMemberProfile({
     userId: memberA,
     teamId: "team-1",
@@ -211,6 +230,20 @@ test("updateMemberProfile sets team and position title", async () => {
   const updated = await (await users()).findOne({ _id: memberA });
   expect(updated?.teamId).toBe("team-1");
   expect(updated?.positionTitle).toBe("Treasurer");
+});
+
+test("updateMemberProfile rejects a team from another org", async () => {
+  await seedTeam("team-b", orgB);
+  await expect(
+    updateMemberProfile({ userId: memberA, teamId: "team-b" }),
+  ).rejects.toThrow("Team nicht verfügbar");
+});
+
+test("updateMemberProfile rejects an archived team", async () => {
+  await seedTeam("team-archived", orgA, true);
+  await expect(
+    updateMemberProfile({ userId: memberA, teamId: "team-archived" }),
+  ).rejects.toThrow("Team nicht verfügbar");
 });
 
 test("listMembers keeps offboarded profiles visible", async () => {
