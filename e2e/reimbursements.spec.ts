@@ -366,14 +366,23 @@ test.describe.serial("reimbursement flow", () => {
       .getByRole("checkbox", { name: "Antrag auswählen" })
       .check();
     await expect(
-      page.getByRole("button", { name: "1 herunterladen" }),
+      page.getByRole("button", { name: "Herunterladen", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Finom CSV", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "SEPA XML", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Löschen", exact: true }),
     ).toBeVisible();
 
     await page
       .getByRole("tab", { name: "Reisekostenerstattung", exact: true })
       .click();
     await expect(
-      page.getByRole("button", { name: "1 herunterladen" }),
+      page.getByRole("button", { name: "Herunterladen", exact: true }),
     ).not.toBeVisible();
     await expect(tableRows).toHaveCount(1);
     await expect(
@@ -395,6 +404,23 @@ test.describe.serial("reimbursement flow", () => {
 
     await page.getByRole("tab", { name: "Alle", exact: true }).click();
     await expect(tableRows).toHaveCount(2);
+  });
+
+  test("asks for confirmation before deleting a travel reimbursement", async () => {
+    const travelRow = page.locator("table tbody tr").first();
+    await selectRowAction(page, travelRow, "Löschen");
+
+    await expect(
+      page.getByRole("alertdialog", {
+        name: "Reisekostenerstattung löschen?",
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Diese Aktion kann nicht rückgängig gemacht werden."),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Abbrechen" }).click();
+
+    await expect(travelRow).toBeVisible();
   });
 
   test("6. Reject travel reimbursement", async () => {

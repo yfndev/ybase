@@ -90,21 +90,41 @@ export function usePdfDownloads({
 
     try {
       const zip = new JSZip();
+      const allowanceById = new Map(
+        allowances.map((allowance) => [allowance._id, allowance]),
+      );
+      const pdfs = await Promise.all(
+        [...selected].map(async (key) => {
+          if (key.startsWith("r:")) {
+            const id = key.slice(2);
+            const blob = await getPdfBlobForReimbursement(id);
+            return blob
+              ? { name: `Erstattung_${shortReferenceId(id)}.pdf`, blob }
+              : null;
+          }
 
-      for (const key of selected) {
-        if (key.startsWith("r:")) {
           const id = key.slice(2);
-          const blob = await getPdfBlobForReimbursement(id);
-          if (blob) zip.file(`Erstattung_${shortReferenceId(id)}.pdf`, blob);
-        } else if (key.startsWith("a:")) {
-          const id = key.slice(2);
-          const allowance = allowances.find((item) => item._id === id);
+          const allowance = allowanceById.get(id);
           if (allowance) {
             const blob = await getPdfBlobForAllowance(allowance);
-            if (blob)
-              zip.file(`Ehrenamtspauschale_${shortReferenceId(id)}.pdf`, blob);
+            return blob
+              ? {
+                  name: `Ehrenamtspauschale_${shortReferenceId(id)}.pdf`,
+                  blob,
+                }
+              : null;
           }
-        }
+          return null;
+        }),
+      );
+
+      for (const pdf of pdfs) {
+        if (pdf) zip.file(pdf.name, pdf.blob);
+      }
+
+      if (pdfs.every((pdf) => pdf === null)) {
+        toast.error("Für die Auswahl konnten keine PDFs erstellt werden");
+        return;
       }
 
       const zipBlob = await zip.generateAsync({ type: "blob" });
