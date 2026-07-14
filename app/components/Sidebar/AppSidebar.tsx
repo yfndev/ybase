@@ -46,6 +46,12 @@ const ADMINISTRATION_NAV_ITEMS: ProtectedNavItem[] = [
     permission: USER_PERMISSIONS.organizationSettings,
   },
   {
+    name: "Struktur",
+    url: "/settings/teams",
+    icon: Network,
+    permission: USER_PERMISSIONS.organizationStructure,
+  },
+  {
     name: "Benutzer",
     url: "/settings/users",
     icon: Users,
@@ -56,12 +62,6 @@ const ADMINISTRATION_NAV_ITEMS: ProtectedNavItem[] = [
     url: "/settings/members",
     icon: UserCog,
     permission: USER_PERMISSIONS.members,
-  },
-  {
-    name: "Teams",
-    url: "/settings/teams",
-    icon: Network,
-    permission: USER_PERMISSIONS.organizationStructure,
   },
   {
     name: "Projekte",
