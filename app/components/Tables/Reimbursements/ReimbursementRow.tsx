@@ -32,8 +32,6 @@ interface ReimbursementRowProps {
     _id: string;
     _creationTime: number;
     status: Status;
-    rejectionNote?: string;
-    reviewNote?: string;
     projectName: string;
     amount: number;
     reviewedByName?: string;
@@ -105,27 +103,9 @@ export function ReimbursementRow({
         {formatCurrency(item.amount)}
       </TableCell>
       <TableCell className="min-w-40">
-        <div className="flex flex-col items-start gap-1">
-          <Badge variant={display.variant} className={display.className}>
-            {display.label}
-          </Badge>
-          {item.rejectionNote ? (
-            <span
-              className="max-w-56 truncate text-xs text-red-700"
-              title={`Ablehnungsgrund: ${item.rejectionNote}`}
-            >
-              Grund: {item.rejectionNote}
-            </span>
-          ) : null}
-          {item.reviewNote ? (
-            <span
-              className="max-w-56 truncate text-xs text-orange-700"
-              title={`Angeforderte Änderungen: ${item.reviewNote}`}
-            >
-              Änderung: {item.reviewNote}
-            </span>
-          ) : null}
-        </div>
+        <Badge variant={display.variant} className={display.className}>
+          {display.label}
+        </Badge>
       </TableCell>
       <TableCell className="max-w-48 truncate text-muted-foreground">
         {item.reviewedByName ?? "–"}
