@@ -44,6 +44,9 @@
   --shadow-spread: 0rem;
   --shadow-opacity: 0.025;
   --shadow-color: #000000;
+  --member-menu-shadow:
+    0 0 1px rgba(66, 71, 76, 0.32), 0 4px 8px rgba(66, 71, 74, 0.06),
+    0 8px 48px #aaaaaa;
   --shadow-2xs: 0rem 0.125rem 1px 0rem hsl(0 0% 0% / 0.01);
   --shadow-xs: 0rem 0.125rem 1px 0rem hsl(0 0% 0% / 0.01);
   --shadow-sm:
@@ -112,6 +115,9 @@
   --shadow-spread: 0rem;
   --shadow-opacity: 0.025;
   --shadow-color: #ffffff;
+  --member-menu-shadow:
+    0 0 1px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(0, 0, 0, 0.4),
+    0 8px 48px rgba(0, 0, 0, 0.8);
   --shadow-2xs: 0rem 0.125rem 1px 0rem hsl(0 0% 100% / 0.01);
   --shadow-xs: 0rem 0.125rem 1px 0rem hsl(0 0% 100% / 0.01);
   --shadow-sm:
