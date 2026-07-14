@@ -13,6 +13,8 @@ export type CostType =
   | "bus"
   | "accommodation";
 
+export type { JobPosting, JobPostingStatus } from "./jobPosting";
+
 export interface Organization {
   _id: string;
   _creationTime: number;
