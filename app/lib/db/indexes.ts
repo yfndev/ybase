@@ -36,6 +36,7 @@ export async function ensureIndexes(): Promise<void> {
     { key: { organizationId: 1, _creationTime: -1 } },
     { key: { organizationId: 1, status: 1 } },
     { key: { organizationId: 1, teamId: 1 } },
+    { key: { tallyFormId: 1 }, sparse: true },
   ]);
 
   await db.collection("reimbursements").createIndexes([

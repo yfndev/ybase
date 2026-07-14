@@ -3,6 +3,7 @@ import {
   setJobPostingStatus,
   updateJobPosting,
 } from "@/lib/server/jobPostings/actions";
+import { generateTallyForm } from "@/lib/server/jobPostings/tallyForm";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export function useJobPostingMutations() {
@@ -14,5 +15,9 @@ export function useJobPostingMutations() {
     create: useMutation({ mutationFn: createJobPostingDraft, onSuccess }),
     update: useMutation({ mutationFn: updateJobPosting, onSuccess }),
     setStatus: useMutation({ mutationFn: setJobPostingStatus, onSuccess }),
+    generateForm: useMutation({
+      mutationFn: generateTallyForm,
+      onSettled: onSuccess,
+    }),
   };
 }

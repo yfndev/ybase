@@ -24,6 +24,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { JobPostingBasicFields } from "./JobPostingBasicFields";
 import { JobPostingContentFields } from "./JobPostingContentFields";
+import { JobPostingTallySection } from "./JobPostingTallySection";
 
 export function JobPostingForm({ posting }: { posting: JobPosting }) {
   const { update, setStatus } = useJobPostingMutations();
@@ -93,6 +94,7 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
         </Button>
       </div>
 
+      <JobPostingTallySection posting={posting} />
       <JobPostingBasicFields values={values} onChange={patch} />
       <JobPostingContentFields values={values} onChange={patch} />
     </div>

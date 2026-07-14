@@ -17,4 +17,7 @@ export interface JobPosting {
   deadline?: string;
   contact?: string;
   createdBy: string;
+  tallyFormId?: string;
+  tallyWebhookId?: string;
+  tallyFormError?: string;
 }
