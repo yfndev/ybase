@@ -45,6 +45,14 @@ test("ensureAppUser creates a user and auto-joins an existing org by domain", as
   expect(user.role).toBe("member");
 });
 
+test("ensureAppUser starts a new user in the onboarding lifecycle", async () => {
+  const user = await ensureAppUser({ email: "alice@youngfounders.network" });
+
+  expect(user.memberStatus).toBe("onboarding");
+  expect(user.teamOnboardingStatus).toBe("not_started");
+  expect(typeof user.registeredAt).toBe("number");
+});
+
 test("ensureAppUser is idempotent for the same email", async () => {
   const first = await ensureAppUser({ email: "alice@youngfounders.network" });
   const second = await ensureAppUser({ email: "alice@youngfounders.network" });

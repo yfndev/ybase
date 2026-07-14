@@ -1,6 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
+import type { MemberStatus } from "../db/types";
 import { isLocalCredentialsEnabled } from "./environment";
 import { ensureAppUser } from "./provisioning";
 import { normalizeOptionalUserRole } from "./roles";
@@ -77,6 +78,7 @@ export const authConfig = {
         token.organizationId = appUser.organizationId;
         token.role = appUser.role;
         token.email = appUser.email;
+        token.memberStatus = appUser.memberStatus;
       }
       return token;
     },
@@ -87,6 +89,9 @@ export const authConfig = {
           | string
           | undefined;
         session.user.role = normalizeOptionalUserRole(token.role);
+        session.user.memberStatus = token.memberStatus as
+          | MemberStatus
+          | undefined;
       }
       return session;
     },

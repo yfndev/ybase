@@ -1,4 +1,6 @@
 export type UserRole = "admin" | "finance" | "people_culture" | "member";
+export type MemberStatus = "onboarding" | "active" | "offboarded";
+export type TeamOnboardingStatus = "not_started" | "in_progress" | "completed";
 export type ReimbursementType = "expense" | "travel";
 export type ReviewStatus =
   | "pending"
@@ -44,6 +46,14 @@ export interface User {
   iban?: string;
   bic?: string;
   accountHolder?: string;
+  teamId?: string;
+  positionTitle?: string;
+  memberStatus?: MemberStatus;
+  teamOnboardingStatus?: TeamOnboardingStatus;
+  registeredAt?: number;
+  onboardedAt?: number;
+  teamOnboardedAt?: number;
+  offboardedAt?: number;
 }
 
 export interface Project {
@@ -62,24 +72,7 @@ export type ProjectTravelDefaults = Pick<
   "travelDestination" | "travelPurpose"
 >;
 
-export interface Department {
-  _id: string;
-  _creationTime: number;
-  name: string;
-  organizationId: string;
-  isArchived: boolean;
-  createdBy: string;
-}
-
-export interface Team {
-  _id: string;
-  _creationTime: number;
-  name: string;
-  departmentId: string;
-  organizationId: string;
-  isArchived: boolean;
-  createdBy: string;
-}
+export type { Department, Team } from "./orgStructureTypes";
 
 export interface Reimbursement {
   _id: string;
