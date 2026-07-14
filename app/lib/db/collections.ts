@@ -1,11 +1,13 @@
 import { getDb } from "./client";
 import type {
+  Department,
   Log,
   Organization,
   Project,
   Receipt,
   Reimbursement,
   SignatureToken,
+  Team,
   TravelDetails,
   User,
   VolunteerAllowance,
@@ -21,6 +23,14 @@ export async function users() {
 
 export async function projects() {
   return (await getDb()).collection<Project>("projects");
+}
+
+export async function departments() {
+  return (await getDb()).collection<Department>("departments");
+}
+
+export async function teams() {
+  return (await getDb()).collection<Team>("teams");
 }
 
 export async function reimbursements() {
