@@ -223,13 +223,17 @@ test.describe.serial("reimbursement flow", () => {
       .fill("Bitte Beschreibung präzisieren");
     await page.getByRole("button", { name: "Änderungen anfordern" }).click();
 
+    await expect(expenseRow.getByText("Änderungen angefordert")).toBeVisible();
     await expect(
       page.getByText("Änderung: Bitte Beschreibung präzisieren"),
-    ).toBeVisible();
-    await expect(expenseRow.getByText("Änderungen angefordert")).toBeVisible();
+    ).toHaveCount(0);
 
     await expenseRow.click();
     await expect(page).toHaveURL(/\/reimbursements\/[^/]+$/);
+    await expect(page.getByText("Angeforderte Änderungen:")).toBeVisible();
+    await expect(
+      page.getByText("Bitte Beschreibung präzisieren"),
+    ).toBeVisible();
     const reimbursementId = page.url().split("/").pop();
     await page.goto(`/erstattung/${reimbursementId}`);
 
@@ -404,12 +408,18 @@ test.describe.serial("reimbursement flow", () => {
       .fill("Falsche Angaben");
     await page.getByRole("button", { name: "Ablehnen" }).click();
 
-    await expect(page.getByText("Grund: Falsche Angaben")).toBeVisible({
-      timeout: 10000,
-    });
     await expect(
       page.locator("table tbody tr").first().getByText("Abgelehnt"),
-    ).toBeVisible();
+    ).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.getByText("Grund: Falsche Angaben")).toHaveCount(0);
+
+    await page.locator("table tbody tr").first().click();
+    await expect(page).toHaveURL(/\/reimbursements\/[^/]+$/);
+    await expect(page.getByText("Ablehnungsgrund:")).toBeVisible();
+    await expect(page.getByText("Falsche Angaben")).toBeVisible();
+    await page.goto("/reimbursements");
   });
 
   test("7. Request changes and resubmit a volunteer allowance", async () => {
