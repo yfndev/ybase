@@ -22,6 +22,7 @@ import {
 import { Loader2, Save } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { JobPostingApplications } from "./JobPostingApplications";
 import { JobPostingBasicFields } from "./JobPostingBasicFields";
 import { JobPostingContentFields } from "./JobPostingContentFields";
 import { JobPostingTallySection } from "./JobPostingTallySection";
@@ -95,6 +96,7 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
       </div>
 
       <JobPostingTallySection posting={posting} />
+      <JobPostingApplications posting={posting} />
       <JobPostingBasicFields values={values} onChange={patch} />
       <JobPostingContentFields values={values} onChange={patch} />
     </div>

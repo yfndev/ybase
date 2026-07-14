@@ -1,0 +1,86 @@
+import type { Application, JobPosting } from "../../db/types";
+import { applications, jobPostings, organizations } from "../../db/collections";
+import { sendMail } from "../../email/brevo";
+import { BREVO_TEMPLATE_IDS } from "../../email/templates";
+import { appUrl } from "../../email/urls";
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function applicationUrl(jobPostingId: string): string | null {
+  try {
+    return appUrl(`/recruiting/${jobPostingId}`);
+  } catch {
+    return null;
+  }
+}
+
+async function sendApplicantEmail(
+  application: Application,
+  posting: JobPosting,
+  organizationName: string,
+): Promise<void> {
+  try {
+    await sendMail({
+      to: [
+        { email: application.applicantEmail, name: application.applicantName },
+      ],
+      templateId: BREVO_TEMPLATE_IDS.APPLICATION_RECEIVED_APPLICANT,
+      params: {
+        applicantName: application.applicantName ?? "",
+        jobTitle: posting.title,
+        organizationName,
+      },
+      tags: ["ybase", "application", "application-received"],
+    });
+  } catch (error) {
+    console.error("application applicant email failed", error);
+  }
+}
+
+async function sendContactEmail(
+  application: Application,
+  posting: JobPosting,
+): Promise<void> {
+  const contact = posting.contact?.trim();
+  if (!contact || !EMAIL_PATTERN.test(contact)) return;
+
+  try {
+    await sendMail({
+      to: [{ email: contact }],
+      replyTo: { email: application.applicantEmail },
+      templateId: BREVO_TEMPLATE_IDS.APPLICATION_RECEIVED_PC,
+      params: {
+        jobTitle: posting.title,
+        applicantName: application.applicantName ?? application.applicantEmail,
+        applicantEmail: application.applicantEmail,
+        applicationUrl: applicationUrl(posting._id) ?? "",
+      },
+      tags: ["ybase", "application", "application-notify"],
+    });
+  } catch (error) {
+    console.error("application notification email failed", error);
+  }
+}
+
+export async function sendApplicationEmails(
+  applicationId: string,
+): Promise<void> {
+  if (!process.env.BREVO_API_KEY) return;
+
+  const application = await (
+    await applications()
+  ).findOne({ _id: applicationId });
+  if (!application) return;
+
+  const posting = await (
+    await jobPostings()
+  ).findOne({ _id: application.jobPostingId });
+  if (!posting) return;
+
+  const organization = await (
+    await organizations()
+  ).findOne({ _id: application.organizationId });
+
+  await sendApplicantEmail(application, posting, organization?.name ?? "");
+  await sendContactEmail(application, posting);
+}
