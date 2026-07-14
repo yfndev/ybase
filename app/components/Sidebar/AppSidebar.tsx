@@ -5,6 +5,7 @@ import {
   Coins,
   FolderKanban,
   LayoutDashboard,
+  Megaphone,
   Network,
   ScrollText,
   Users,
@@ -71,6 +72,12 @@ const ADMINISTRATION_NAV_ITEMS: ProtectedNavItem[] = [
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const role = useCurrentUserRole();
+  const mainItems: NavItem[] = [
+    ...NAV_ITEMS,
+    ...(hasPermission(role, USER_PERMISSIONS.recruiting)
+      ? [{ name: "Ausschreibungen", url: "/recruiting", icon: Megaphone }]
+      : []),
+  ];
   const administrationItems = ADMINISTRATION_NAV_ITEMS.filter(
     ({ permission }) => hasPermission(role, permission),
   );
@@ -92,7 +99,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <MainNav items={NAV_ITEMS} />
+        <MainNav items={mainItems} />
         {administrationItems.length > 0 && (
           <MainNav items={administrationItems} label="Verwaltung" />
         )}
