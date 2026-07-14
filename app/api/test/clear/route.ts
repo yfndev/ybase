@@ -1,11 +1,14 @@
 import { isTestMode } from "@/lib/auth/environment";
 import {
+  departments,
+  jobPostings,
   logs,
   organizations,
   projects,
   receipts,
   reimbursements,
   signatureTokens,
+  teams,
   travelDetails,
   users,
   volunteerAllowance,
@@ -36,6 +39,9 @@ export async function POST(request: Request) {
     }
     await (await reimbursements()).deleteMany({ organizationId: org._id });
     await (await volunteerAllowance()).deleteMany({ organizationId: org._id });
+    await (await jobPostings()).deleteMany({ organizationId: org._id });
+    await (await teams()).deleteMany({ organizationId: org._id });
+    await (await departments()).deleteMany({ organizationId: org._id });
     await (await projects()).deleteMany({ organizationId: org._id });
     await (await logs()).deleteMany({ organizationId: org._id });
     await (await signatureTokens()).deleteMany({ organizationId: org._id });
