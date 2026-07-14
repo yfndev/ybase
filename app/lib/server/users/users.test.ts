@@ -4,18 +4,26 @@ import { afterAll, beforeAll, beforeEach, expect, test, vi } from "vitest";
 vi.mock("../../auth/session", () => ({
   requireUser: vi.fn(),
   requireRole: vi.fn(),
+  requirePermission: vi.fn(),
 }));
 
-import { requireRole, requireUser } from "../../auth/session";
+import {
+  requirePermission,
+  requireRole,
+  requireUser,
+} from "../../auth/session";
 import { getClient, getDb } from "../../db/client";
 import { logs, organizations, users } from "../../db/collections";
 import { newId } from "../../db/ids";
 import {
   addUserToOrganization,
+  setMemberStatus,
+  setTeamOnboardingStatus,
   updateBankDetails,
+  updateMemberProfile,
   updateUserRole,
 } from "./actions";
-import { listOrganizationUsers } from "./data";
+import { listMembers, listOrganizationUsers } from "./data";
 
 let mongod: MongoMemoryServer;
 let orgA: string;
@@ -43,11 +51,27 @@ beforeEach(async () => {
   adminA = newId();
   memberA = newId();
   memberB = newId();
-  await (await organizations()).insertMany([
-    { _id: orgA, _creationTime: Date.now(), name: "A", domain: "a.org", createdBy: adminA },
-    { _id: orgB, _creationTime: Date.now(), name: "B", domain: "b.org", createdBy: memberB },
+  await (
+    await organizations()
+  ).insertMany([
+    {
+      _id: orgA,
+      _creationTime: Date.now(),
+      name: "A",
+      domain: "a.org",
+      createdBy: adminA,
+    },
+    {
+      _id: orgB,
+      _creationTime: Date.now(),
+      name: "B",
+      domain: "b.org",
+      createdBy: memberB,
+    },
   ]);
-  await (await users()).insertMany([
+  await (
+    await users()
+  ).insertMany([
     {
       _id: adminA,
       _creationTime: Date.now(),
@@ -81,6 +105,7 @@ beforeEach(async () => {
   };
   vi.mocked(requireUser).mockResolvedValue(actor);
   vi.mocked(requireRole).mockResolvedValue(actor);
+  vi.mocked(requirePermission).mockResolvedValue(actor);
 });
 
 test("listOrganizationUsers only returns users from the caller's org", async () => {
@@ -109,13 +134,15 @@ test("updateUserRole supports the People & Culture role", async () => {
 });
 
 test("updateUserRole cannot touch a user from another org", async () => {
-  await expect(updateUserRole({ userId: memberB, role: "admin" })).rejects.toThrow(
-    "Access denied",
-  );
+  await expect(
+    updateUserRole({ userId: memberB, role: "admin" }),
+  ).rejects.toThrow("Access denied");
 });
 
 test("updateUserRole blocks demoting the last admin", async () => {
-  await expect(updateUserRole({ userId: adminA, role: "member" })).rejects.toThrow(
+  await expect(
+    updateUserRole({ userId: adminA, role: "member" }),
+  ).rejects.toThrow(
     "Der letzte Admin kann nicht entfernt werden. Mindestens ein Admin ist erforderlich.",
   );
 });
@@ -144,4 +171,51 @@ test("updateBankDetails rejects missing bank details", async () => {
   await expect(
     updateBankDetails({ iban: "", bic: "", accountHolder: "" }),
   ).rejects.toThrow();
+});
+
+test("setMemberStatus activates a member and stamps the onboarding time", async () => {
+  await setMemberStatus({ userId: memberA, status: "active" });
+  const updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.memberStatus).toBe("active");
+  expect(typeof updated?.onboardedAt).toBe("number");
+  const log = await (await logs()).findOne({ action: "member.status_change" });
+  expect(log?.entityId).toBe(memberA);
+});
+
+test("setMemberStatus offboards a member and stamps the offboarding time", async () => {
+  await setMemberStatus({ userId: memberA, status: "offboarded" });
+  const updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.memberStatus).toBe("offboarded");
+  expect(typeof updated?.offboardedAt).toBe("number");
+});
+
+test("setMemberStatus cannot touch a user from another org", async () => {
+  await expect(
+    setMemberStatus({ userId: memberB, status: "offboarded" }),
+  ).rejects.toThrow("User not found");
+});
+
+test("setTeamOnboardingStatus completes team onboarding with a timestamp", async () => {
+  await setTeamOnboardingStatus({ userId: memberA, status: "completed" });
+  const updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.teamOnboardingStatus).toBe("completed");
+  expect(typeof updated?.teamOnboardedAt).toBe("number");
+});
+
+test("updateMemberProfile sets team and position title", async () => {
+  await updateMemberProfile({
+    userId: memberA,
+    teamId: "team-1",
+    positionTitle: "Treasurer",
+  });
+  const updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.teamId).toBe("team-1");
+  expect(updated?.positionTitle).toBe("Treasurer");
+});
+
+test("listMembers keeps offboarded profiles visible", async () => {
+  await setMemberStatus({ userId: memberA, status: "offboarded" });
+  const members = await listMembers();
+  const offboarded = members.find((member) => member._id === memberA);
+  expect(offboarded?.memberStatus).toBe("offboarded");
 });

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/Sidebar/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
+import { OffboardedNotice } from "./OffboardedNotice";
 import { OrgOnboarding } from "./OrgOnboarding";
 
 export default async function ProtectedLayout({
@@ -11,6 +12,7 @@ export default async function ProtectedLayout({
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  if (session.user.memberStatus === "offboarded") return <OffboardedNotice />;
   if (!session.user.organizationId) return <OrgOnboarding />;
 
   return (

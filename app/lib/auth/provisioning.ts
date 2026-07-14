@@ -15,15 +15,19 @@ export async function ensureAppUser(profile: SignInProfile): Promise<User> {
 
   let user = await usersCol.findOne({ email: profile.email });
   if (!user) {
+    const now = Date.now();
     user = {
       _id: newId(),
-      _creationTime: Date.now(),
+      _creationTime: now,
       email: profile.email,
       name: profile.name,
       image: profile.image,
       firstName: profile.firstName,
       lastName: profile.lastName,
-      emailVerificationTime: Date.now(),
+      emailVerificationTime: now,
+      memberStatus: "onboarding",
+      teamOnboardingStatus: "not_started",
+      registeredAt: now,
     };
     await usersCol.insertOne(user);
   }

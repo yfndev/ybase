@@ -22,6 +22,7 @@ export async function requireAuthenticatedUser() {
 export async function requireUser() {
   const user = await requireAuthenticatedUser();
   if (!user.organizationId) throw new Error("User has no organization");
+  if (user.memberStatus === "offboarded") throw new Error("User is offboarded");
 
   const role = normalizeUserRole(user.role);
   return { ...user, organizationId: user.organizationId, role };

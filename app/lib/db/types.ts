@@ -1,4 +1,6 @@
 export type UserRole = "admin" | "finance" | "people_culture" | "member";
+export type MemberStatus = "onboarding" | "active" | "offboarded";
+export type TeamOnboardingStatus = "not_started" | "in_progress" | "completed";
 export type ReimbursementType = "expense" | "travel";
 export type ReviewStatus =
   | "pending"
@@ -44,6 +46,14 @@ export interface User {
   iban?: string;
   bic?: string;
   accountHolder?: string;
+  teamId?: string;
+  positionTitle?: string;
+  memberStatus?: MemberStatus;
+  teamOnboardingStatus?: TeamOnboardingStatus;
+  registeredAt?: number;
+  onboardedAt?: number;
+  teamOnboardedAt?: number;
+  offboardedAt?: number;
 }
 
 export interface Project {

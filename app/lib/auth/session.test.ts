@@ -10,7 +10,7 @@ vi.mock("../db/collections", () => ({
   users: vi.fn(async () => ({ findOne: mocks.findOne })),
 }));
 
-import { requirePermission, requireRole } from "./session";
+import { requirePermission, requireRole, requireUser } from "./session";
 
 beforeEach(() => {
   mocks.auth.mockResolvedValue({ user: { id: "user-id" } });
@@ -50,6 +50,21 @@ test("admin passes People & Culture and finance permission guards", async () => 
 
   await expect(requirePermission("manage_recruiting")).resolves.toBeDefined();
   await expect(requirePermission("manage_finance")).resolves.toBeDefined();
+});
+
+test("offboarded users lose access to protected data", async () => {
+  mocks.findOne.mockResolvedValue({
+    _id: "user-id",
+    organizationId: "organization-id",
+    role: "admin",
+    memberStatus: "offboarded",
+  });
+
+  await expect(requireUser()).rejects.toThrow("User is offboarded");
+  await expect(requireRole("member")).rejects.toThrow("User is offboarded");
+  await expect(requirePermission("manage_members")).rejects.toThrow(
+    "User is offboarded",
+  );
 });
 
 test("invalid persisted roles safely receive member access", async () => {
