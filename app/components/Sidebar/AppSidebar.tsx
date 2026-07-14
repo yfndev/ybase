@@ -5,6 +5,7 @@ import {
   Coins,
   FolderKanban,
   LayoutDashboard,
+  Network,
   ScrollText,
   Users,
 } from "lucide-react";
@@ -47,6 +48,12 @@ const ADMINISTRATION_NAV_ITEMS: ProtectedNavItem[] = [
     url: "/settings/users",
     icon: Users,
     permission: USER_PERMISSIONS.roles,
+  },
+  {
+    name: "Teams",
+    url: "/settings/teams",
+    icon: Network,
+    permission: USER_PERMISSIONS.organizationStructure,
   },
   {
     name: "Projekte",

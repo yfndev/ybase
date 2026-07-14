@@ -19,6 +19,19 @@ export async function ensureIndexes(): Promise<void> {
       { key: { organizationId: 1, isArchived: 1 } },
     ]);
 
+  await db
+    .collection("departments")
+    .createIndexes([
+      { key: { organizationId: 1 } },
+      { key: { organizationId: 1, isArchived: 1 } },
+    ]);
+
+  await db.collection("teams").createIndexes([
+    { key: { organizationId: 1 } },
+    { key: { organizationId: 1, isArchived: 1 } },
+    { key: { organizationId: 1, departmentId: 1 } },
+  ]);
+
   await db.collection("reimbursements").createIndexes([
     { key: { organizationId: 1, _creationTime: -1 } },
     { key: { organizationId: 1, createdBy: 1, _creationTime: -1 } },
