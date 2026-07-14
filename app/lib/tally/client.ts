@@ -1,11 +1,19 @@
 import { z } from "zod";
 import { TALLY_API_VERSION } from "./constants";
 import type {
+  TallyBlock,
+  TallyForm,
   TallyFormSummary,
   TallyQuestion,
   TallyResources,
   TallyWorkspace,
 } from "./types";
+
+type FormPatch = {
+  blocks?: TallyBlock[];
+  settings?: Record<string, unknown>;
+  status?: string;
+};
 
 const API_URL = "https://api.tally.so";
 const MAX_PAGES = 50;
@@ -37,6 +45,22 @@ const questionSchema = z.object({
     .optional()
     .default([]),
 });
+const blockSchema = z.object({
+  uuid: z.string(),
+  type: z.string(),
+  groupUuid: z.string(),
+  groupType: z.string(),
+  payload: z.record(z.string(), z.unknown()).optional(),
+});
+const formResourceSchema = z.object({
+  id: z.string(),
+  status: z.string(),
+  workspaceId: z.string(),
+  blocks: z.array(blockSchema).optional().default([]),
+  settings: z.record(z.string(), z.unknown()).optional().default({}),
+});
+const createdFormSchema = z.object({ id: z.string(), status: z.string() });
+const webhookSchema = z.object({ id: z.string() });
 
 function isAnswerField(type: string): boolean {
   return ![
@@ -56,19 +80,26 @@ export function createTallyClient(
 ) {
   if (!apiToken) throw new Error("Tally API token is required");
 
-  async function request(path: string): Promise<unknown> {
+  async function request(
+    path: string,
+    init?: { method: string; body: unknown },
+  ): Promise<unknown> {
     const response = await fetcher(`${API_URL}${path}`, {
+      method: init?.method ?? "GET",
       headers: {
         Authorization: `Bearer ${apiToken}`,
         Accept: "application/json",
         "tally-version": TALLY_API_VERSION,
+        ...(init ? { "Content-Type": "application/json" } : {}),
       },
+      body: init ? JSON.stringify(init.body) : undefined,
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),
     });
     if (!response.ok) {
       throw new Error(`Tally API request failed (${response.status})`);
     }
+    if (response.status === 204) return {};
     return response.json();
   }
 
@@ -125,5 +156,44 @@ export function createTallyClient(
     });
   }
 
-  return { resources, questions };
+  async function getForm(formId: string): Promise<TallyForm> {
+    return formResourceSchema.parse(await request(`/forms/${formId}`));
+  }
+
+  async function createForm(input: {
+    templateId: string;
+    workspaceId: string;
+    blocks: TallyBlock[];
+  }): Promise<{ id: string }> {
+    const body = { ...input, status: "DRAFT" };
+    return createdFormSchema.parse(
+      await request("/forms", { method: "POST", body }),
+    );
+  }
+
+  async function updateForm(formId: string, patch: FormPatch): Promise<void> {
+    await request(`/forms/${formId}`, { method: "PATCH", body: patch });
+  }
+
+  async function createWebhook(input: {
+    formId: string;
+    url: string;
+    signingSecret: string;
+  }): Promise<{ id: string }> {
+    const body = { ...input, eventTypes: ["FORM_RESPONSE"] };
+    return webhookSchema.parse(
+      await request("/webhooks", { method: "POST", body }),
+    );
+  }
+
+  return {
+    resources,
+    questions,
+    getForm,
+    createForm,
+    updateForm,
+    publishForm: (formId: string) =>
+      updateForm(formId, { status: "PUBLISHED" }),
+    createWebhook,
+  };
 }
