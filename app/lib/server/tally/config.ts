@@ -21,3 +21,13 @@ export function loadTallyFormConfig(
   }
   return { workspaceId, templateFormId, webhookUrl, webhookSigningSecret };
 }
+
+export function loadTallyWebhookSecret(
+  env: TallyEnvironment = process.env,
+): string {
+  const secret = env.TALLY_WEBHOOK_SIGNING_SECRET?.trim();
+  if (!secret) {
+    throw new Error("TALLY_WEBHOOK_SIGNING_SECRET ist nicht konfiguriert");
+  }
+  return secret;
+}

@@ -1,5 +1,6 @@
 import { getDb } from "./client";
 import type {
+  Application,
   Department,
   JobPosting,
   Log,
@@ -8,6 +9,7 @@ import type {
   Receipt,
   Reimbursement,
   SignatureToken,
+  TallyWebhookEvent,
   Team,
   TravelDetails,
   User,
@@ -36,6 +38,14 @@ export async function teams() {
 
 export async function jobPostings() {
   return (await getDb()).collection<JobPosting>("jobPostings");
+}
+
+export async function applications() {
+  return (await getDb()).collection<Application>("applications");
+}
+
+export async function tallyWebhookEvents() {
+  return (await getDb()).collection<TallyWebhookEvent>("tallyWebhookEvents");
 }
 
 export async function reimbursements() {
