@@ -69,7 +69,7 @@ export function ReceiptCard({
           />
         </div>
         <div>
-          <Label>Beleg-/Rechnungsnummer</Label>
+          <Label className="break-all">Beleg-/Rechnungsnummer</Label>
           <Input
             value={receipt.receiptNumber ?? ""}
             onChange={(e) =>
