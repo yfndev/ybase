@@ -8,7 +8,7 @@ export default async function TeamsPage() {
   if (
     !hasPermission(session?.user?.role, USER_PERMISSIONS.organizationStructure)
   ) {
-    return <AccessDenied title="Departments & Teams" />;
+    return <AccessDenied title="Struktur" />;
   }
 
   return <TeamsClient />;

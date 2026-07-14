@@ -7,7 +7,7 @@ import { TeamsSection } from "./TeamsSection";
 export function TeamsClient() {
   return (
     <div className="space-y-10">
-      <PageHeader title="Departments & Teams" />
+      <PageHeader title="Struktur" />
       <DepartmentsSection />
       <TeamsSection />
     </div>
