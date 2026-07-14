@@ -1,6 +1,7 @@
 import { getDb } from "./client";
 import type {
   Department,
+  JobPosting,
   Log,
   Organization,
   Project,
@@ -31,6 +32,10 @@ export async function departments() {
 
 export async function teams() {
   return (await getDb()).collection<Team>("teams");
+}
+
+export async function jobPostings() {
+  return (await getDb()).collection<JobPosting>("jobPostings");
 }
 
 export async function reimbursements() {
