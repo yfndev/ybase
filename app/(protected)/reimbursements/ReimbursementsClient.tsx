@@ -5,6 +5,7 @@ import type { Project } from "@/lib/db/types";
 import { useCanManageReimbursements } from "@/lib/hooks/useCurrentUserRole";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { DeleteReimbursementsDialog } from "./DeleteReimbursementsDialog";
 import { ReimbursementPageUI } from "./ReimbursementPageUI";
 import type {
   Allowance,
@@ -37,6 +38,7 @@ export function ReimbursementsClient({
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [selected, setSelected] = useState<Set<SelectionKey>>(new Set());
   const [typeFilter, setTypeFilter] = useState<ReimbursementTypeFilter>("all");
+  const [deleteKeys, setDeleteKeys] = useState<SelectionKey[]>([]);
 
   const filteredReimbursements = reimbursements.filter(
     (item) => typeFilter === "all" || item.type === typeFilter,
@@ -45,10 +47,14 @@ export function ReimbursementsClient({
     typeFilter === "all" || typeFilter === "allowance" ? allowances : [];
 
   const actions = useReimbursementActions();
-  const { handleFinomCsv, handleSepaXml } = usePaymentExports(
+  const clearSelection = () => setSelected(new Set());
+  const { handleFinomCsv, handleSepaXml } = usePaymentExports({
     reimbursements,
+    allowances,
+    selected,
     organizationName,
-  );
+    clearSelection,
+  });
   const {
     isBulkDownloading,
     handleOpenReimbursement,
@@ -57,7 +63,7 @@ export function ReimbursementsClient({
   } = usePdfDownloads({
     allowances,
     selected,
-    clearSelection: () => setSelected(new Set()),
+    clearSelection,
   });
 
   const handleToggleSelect = (key: SelectionKey) => {
@@ -83,6 +89,38 @@ export function ReimbursementsClient({
     setTypeFilter(value);
     setSelected(new Set());
   };
+
+  const selectedItems = [
+    ...reimbursements.map((item) => ({ key: `r:${item._id}` as const, item })),
+    ...allowances.map((item) => ({ key: `a:${item._id}` as const, item })),
+  ].filter(({ key }) => selected.has(key));
+  const canDeleteSelected =
+    canManageReimbursements &&
+    selected.size > 0 &&
+    selectedItems.length === selected.size &&
+    selectedItems.every(({ item }) => item.status === "pending");
+
+  const handleConfirmDelete = async () => {
+    const deletedKeys = await actions.handleDelete(deleteKeys);
+    if (deletedKeys.length > 0) {
+      setSelected((current) => {
+        const next = new Set(current);
+        for (const key of deletedKeys) next.delete(key);
+        return next;
+      });
+    }
+    setDeleteKeys([]);
+  };
+
+  const singleDeleteLabel = (() => {
+    if (deleteKeys.length !== 1) return undefined;
+    const key = deleteKeys[0];
+    if (key.startsWith("a:")) return "Ehrenamtspauschale";
+    return reimbursements.find((item) => item._id === key.slice(2))?.type ===
+      "travel"
+      ? "Reisekostenerstattung"
+      : "Auslagenerstattung";
+  })();
 
   return (
     <>
@@ -113,8 +151,10 @@ export function ReimbursementsClient({
         onOpenAllowance={handleOpenAllowance}
         onEditReimbursement={(id) => router.push(`/erstattung/${id}`)}
         onEditAllowance={(id) => router.push(`/ehrenamtspauschale/${id}`)}
-        onDeleteReimbursement={actions.handleDeleteReimbursement}
-        onDeleteAllowance={actions.handleDeleteAllowance}
+        onDeleteReimbursement={(id) => setDeleteKeys([`r:${id}`])}
+        onDeleteAllowance={(id) => setDeleteKeys([`a:${id}`])}
+        canDeleteSelected={canDeleteSelected}
+        onDeleteSelected={() => setDeleteKeys([...selected])}
         onToggleSelect={handleToggleSelect}
         onToggleSelectAll={handleToggleSelectAll}
         onTypeFilterChange={handleTypeFilterChange}
@@ -129,6 +169,13 @@ export function ReimbursementsClient({
           projects={projects}
         />
       ) : null}
+      <DeleteReimbursementsDialog
+        count={deleteKeys.length}
+        singleItemLabel={singleDeleteLabel}
+        isDeleting={actions.isDeleting}
+        onCancel={() => setDeleteKeys([])}
+        onConfirm={handleConfirmDelete}
+      />
     </>
   );
 }

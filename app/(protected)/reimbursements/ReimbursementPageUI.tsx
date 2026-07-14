@@ -10,6 +10,7 @@ import {
   Plus,
   Share2,
   Table2,
+  Trash2,
 } from "lucide-react";
 import { ReimbursementTable } from "./ReimbursementTable";
 import { RejectDialogModal } from "./RejectDialogModal";
@@ -49,6 +50,8 @@ interface Props {
   onEditAllowance: (id: string) => void;
   onDeleteReimbursement: (id: string) => void;
   onDeleteAllowance: (id: string) => void;
+  canDeleteSelected: boolean;
+  onDeleteSelected: () => void;
   onToggleSelect: (key: SelectionKey) => void;
   onToggleSelectAll: () => void;
   onTypeFilterChange: (value: ReimbursementTypeFilter) => void;
@@ -82,6 +85,8 @@ export function ReimbursementPageUI({
   onEditAllowance,
   onDeleteReimbursement,
   onDeleteAllowance,
+  canDeleteSelected,
+  onDeleteSelected,
   onToggleSelect,
   onToggleSelectAll,
   onTypeFilterChange,
@@ -93,7 +98,7 @@ export function ReimbursementPageUI({
     <div className="flex flex-col w-full">
       <PageHeader title="Erstattungen" />
 
-      <div className="flex justify-end gap-2 mb-4">
+      <div className="mb-4 flex flex-wrap justify-end gap-2">
         {selected.size > 0 && (
           <Button
             variant="outline"
@@ -105,9 +110,7 @@ export function ReimbursementPageUI({
             ) : (
               <Download className="h-4 w-4 mr-2" />
             )}
-            {isBulkDownloading
-              ? "Wird erstellt..."
-              : `${selected.size} herunterladen`}
+            {isBulkDownloading ? "Wird erstellt..." : "Herunterladen"}
           </Button>
         )}
         {canManageReimbursements ? (
@@ -121,6 +124,16 @@ export function ReimbursementPageUI({
               SEPA XML
             </Button>
           </>
+        ) : null}
+        {canDeleteSelected ? (
+          <Button
+            variant="outline"
+            className="text-destructive hover:text-destructive"
+            onClick={onDeleteSelected}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Löschen
+          </Button>
         ) : null}
         <Button variant="primary" onClick={onNewClick}>
           <Plus className="h-4 w-4 mr-2" />

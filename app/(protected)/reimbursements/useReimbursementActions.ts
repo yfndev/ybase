@@ -13,7 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import type { RejectDialog } from "./types";
+import type { RejectDialog, SelectionKey } from "./types";
 
 const CLOSED_DIALOG: RejectDialog = {
   open: false,
@@ -27,6 +27,7 @@ export function useReimbursementActions() {
   const router = useRouter();
   const [rejectDialog, setRejectDialog] = useState<RejectDialog>(CLOSED_DIALOG);
   const [isRejecting, setIsRejecting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const run = async (
     action: () => Promise<unknown>,
@@ -86,11 +87,51 @@ export function useReimbursementActions() {
     }
   };
 
+  const handleDelete = async (
+    keys: SelectionKey[],
+  ): Promise<SelectionKey[]> => {
+    if (keys.length === 0 || isDeleting) return [];
+
+    setIsDeleting(true);
+    const results = await Promise.allSettled(
+      keys.map((key) =>
+        key.startsWith("r:")
+          ? deleteReimbursement({ reimbursementId: key.slice(2) })
+          : removeAllowance({ id: key.slice(2) }),
+      ),
+    );
+    const deletedKeys = keys.filter(
+      (_, index) => results[index].status === "fulfilled",
+    );
+    const failedCount = keys.length - deletedKeys.length;
+
+    if (deletedKeys.length > 0) {
+      toast.success(
+        deletedKeys.length === 1
+          ? "Erstattung gelöscht"
+          : `${deletedKeys.length} Erstattungen gelöscht`,
+      );
+      router.refresh();
+    }
+    if (failedCount > 0) {
+      toast.error(
+        failedCount === 1
+          ? "Eine Erstattung konnte nicht gelöscht werden"
+          : `${failedCount} Erstattungen konnten nicht gelöscht werden`,
+      );
+    }
+
+    setIsDeleting(false);
+    return deletedKeys;
+  };
+
   return {
     rejectDialog,
     setRejectDialog,
     isRejecting,
+    isDeleting,
     handleReview,
+    handleDelete,
     handleOpenReviewDialog: (
       action: "changes" | "reject",
       type: "reimbursement" | "allowance",
@@ -108,13 +149,5 @@ export function useReimbursementActions() {
         "Genehmigt",
         "Fehler beim Genehmigen",
       ),
-    handleDeleteReimbursement: (id: string) =>
-      run(
-        () => deleteReimbursement({ reimbursementId: id }),
-        "Gelöscht",
-        "Fehler beim Löschen",
-      ),
-    handleDeleteAllowance: (id: string) =>
-      run(() => removeAllowance({ id }), "Gelöscht", "Fehler beim Löschen"),
   };
 }
