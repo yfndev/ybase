@@ -7,9 +7,6 @@ export const JOB_POSTING_STATUS_LABELS: Record<JobPostingStatus, string> = {
   archived: "Archiviert",
 };
 
-export const JOB_POSTING_STATUSES: JobPostingStatus[] = [
-  "draft",
-  "published",
-  "closed",
-  "archived",
-];
+export function statusMeansClosed(status: JobPostingStatus): boolean {
+  return status === "closed" || status === "archived";
+}
