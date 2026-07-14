@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Network,
   ScrollText,
+  UserCog,
   Users,
 } from "lucide-react";
 import Image from "next/image";
@@ -48,6 +49,12 @@ const ADMINISTRATION_NAV_ITEMS: ProtectedNavItem[] = [
     url: "/settings/users",
     icon: Users,
     permission: USER_PERMISSIONS.roles,
+  },
+  {
+    name: "Mitglieder",
+    url: "/settings/members",
+    icon: UserCog,
+    permission: USER_PERMISSIONS.members,
   },
   {
     name: "Teams",
