@@ -190,6 +190,31 @@ test.describe.serial("reimbursement flow", () => {
     await expect(page.getByText("Ausstehend")).toBeVisible();
   });
 
+  test("row action menu matches the member platform", async () => {
+    const actionTrigger = page
+      .locator("table tbody tr")
+      .first()
+      .getByRole("button", { name: "Aktionen anzeigen" });
+
+    await expect(actionTrigger.locator("svg")).toHaveCSS("width", "24px");
+    await expect(actionTrigger).toHaveCSS("border-radius", "4px");
+    await actionTrigger.click();
+
+    const actionMenu = page.getByRole("menu");
+    const firstAction = actionMenu.getByRole("menuitem").first();
+
+    await expect(actionMenu).toHaveCSS("min-width", "220px");
+    await expect(actionMenu).toHaveCSS("padding", "0px");
+    await expect(actionMenu).toHaveCSS("border-radius", "2px");
+    await expect(firstAction).toHaveCSS("gap", "16px");
+    await expect(firstAction).toHaveCSS("padding", "12px 16px");
+    await expect(firstAction).toHaveCSS("font-weight", "500");
+
+    await firstAction.hover();
+    await expect(firstAction).toHaveCSS("background-color", "rgb(255, 237, 0)");
+    await page.keyboard.press("Escape");
+  });
+
   test("2. Request changes and resubmit an expense reimbursement", async () => {
     const expenseRow = page.locator("table tbody tr").first();
     await selectRowAction(page, expenseRow, "Änderungen anfordern");

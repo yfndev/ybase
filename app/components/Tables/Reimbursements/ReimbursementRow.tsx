@@ -16,7 +16,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TableCell, TableRow } from "@/components/ui/table";
@@ -26,6 +25,7 @@ import {
   STATUS_DISPLAY,
   type ReimbursementStatus as Status,
 } from "@/lib/reimbursementStatus";
+import styles from "./ReimbursementRow.module.css";
 
 interface ReimbursementRowProps {
   item: {
@@ -139,48 +139,57 @@ export function ReimbursementRow({
             <Button
               variant="ghost"
               size="icon-sm"
+              className={styles.menuTrigger}
               aria-label="Aktionen anzeigen"
               title="Aktionen anzeigen"
             >
-              <MoreHorizontal className="size-4" />
+              <MoreHorizontal />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuContent sideOffset={0} className={styles.menuContent}>
             {showReviewActions ? (
               <>
-                <DropdownMenuItem onSelect={onApprove}>
-                  <Check className="text-green-600" />
+                <DropdownMenuItem
+                  className={styles.menuItem}
+                  onSelect={onApprove}
+                >
+                  <Check className="text-current" />
                   Genehmigen
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={onRequestChanges}>
-                  <MessageSquareWarning className="text-orange-600" />
+                <DropdownMenuItem
+                  className={styles.menuItem}
+                  onSelect={onRequestChanges}
+                >
+                  <MessageSquareWarning className="text-current" />
                   Änderungen anfordern
                 </DropdownMenuItem>
-                <DropdownMenuItem variant="destructive" onSelect={onReject}>
-                  <X />
+                <DropdownMenuItem
+                  className={`${styles.menuItem} ${styles.destructiveMenuItem}`}
+                  onSelect={onReject}
+                >
+                  <X className="text-current" />
                   Ablehnen
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
               </>
             ) : null}
             {showEditAction ? (
-              <DropdownMenuItem onSelect={onEdit}>
-                <Pencil />
+              <DropdownMenuItem className={styles.menuItem} onSelect={onEdit}>
+                <Pencil className="text-current" />
                 Bearbeiten
               </DropdownMenuItem>
             ) : null}
-            <DropdownMenuItem onSelect={onOpen}>
-              <ExternalLink />
+            <DropdownMenuItem className={styles.menuItem} onSelect={onOpen}>
+              <ExternalLink className="text-current" />
               Öffnen
             </DropdownMenuItem>
             {showReviewActions ? (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onSelect={onDelete}>
-                  <Trash2 />
-                  Löschen
-                </DropdownMenuItem>
-              </>
+              <DropdownMenuItem
+                className={`${styles.menuItem} ${styles.destructiveMenuItem}`}
+                onSelect={onDelete}
+              >
+                <Trash2 className="text-current" />
+                Löschen
+              </DropdownMenuItem>
             ) : null}
           </DropdownMenuContent>
         </DropdownMenu>

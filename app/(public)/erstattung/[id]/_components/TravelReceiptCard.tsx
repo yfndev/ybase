@@ -43,7 +43,7 @@ export function TravelReceiptCard(props: Props) {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 @sm:grid-cols-2 @3xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 @sm:grid-cols-2 @4xl:grid-cols-4">
         <div>
           <Label>Name/Firma *</Label>
           <Input
@@ -53,7 +53,7 @@ export function TravelReceiptCard(props: Props) {
           />
         </div>
         <div>
-          <Label>Beleg-/Rechnungsnummer</Label>
+          <Label className="break-all">Beleg-/Rechnungsnummer</Label>
           <Input
             value={receipt.receiptNumber ?? ""}
             onChange={(e) =>

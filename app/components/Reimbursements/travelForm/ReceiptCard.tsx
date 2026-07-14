@@ -55,7 +55,7 @@ export function ReceiptCard({
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 @sm:grid-cols-2 @3xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 @sm:grid-cols-2 @4xl:grid-cols-4">
         <div>
           <Label>Firma/Anbieter *</Label>
           <Input
@@ -69,7 +69,7 @@ export function ReceiptCard({
           />
         </div>
         <div>
-          <Label>Beleg-/Rechnungsnummer</Label>
+          <Label className="break-all">Beleg-/Rechnungsnummer</Label>
           <Input
             value={receipt.receiptNumber ?? ""}
             onChange={(e) =>
