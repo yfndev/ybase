@@ -39,10 +39,6 @@ export function RecruitingClient() {
         <div className="text-center py-10 border rounded-lg">
           <Megaphone className="mx-auto h-10 w-10 text-muted-foreground" />
           <h3 className="mt-3 font-semibold">Keine Ausschreibungen</h3>
-          <Button className="mt-4" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Neue Ausschreibung
-          </Button>
         </div>
       ) : (
         <div className="rounded-md border overflow-hidden">
