@@ -20,4 +20,5 @@ export interface JobPosting {
   tallyFormId?: string;
   tallyWebhookId?: string;
   tallyFormError?: string;
+  tallyClosed?: boolean;
 }

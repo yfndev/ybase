@@ -36,6 +36,11 @@ const ACTION_LABELS: Record<string, string> = {
   "volunteerAllowance.resubmit": "Ehrenamtspauschale erneut eingereicht",
   "volunteerAllowance.delete": "Ehrenamtspauschale gelöscht",
   "user.role_change": "Rolle geändert",
+  "jobPosting.close": "Ausschreibung geschlossen",
+  "jobPosting.reopen": "Ausschreibung wieder geöffnet",
+  "jobPosting.archive": "Ausschreibung archiviert",
+  "jobPosting.tally.publish": "Bewerbungsformular veröffentlicht",
+  "jobPosting.tally.error": "Tally-Synchronisierung fehlgeschlagen",
 };
 
 export default async function LogsPage() {

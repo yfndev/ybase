@@ -10,11 +10,7 @@ import { requirePermission, requireUser } from "../../auth/session";
 import { getClient, getDb } from "../../db/client";
 import { departments, jobPostings, teams } from "../../db/collections";
 import { newId } from "../../db/ids";
-import {
-  createJobPostingDraft,
-  setJobPostingStatus,
-  updateJobPosting,
-} from "./actions";
+import { createJobPostingDraft, updateJobPosting } from "./actions";
 import { getJobPostingById, getJobPostings } from "./data";
 
 let mongod: MongoMemoryServer;
@@ -138,27 +134,14 @@ test("updateJobPosting sanitizes rich text before storing", async () => {
 
 test("updateJobPosting can edit content while published", async () => {
   const id = await createJobPostingDraft({ title: "Alt", teamId: teamA });
-  await setJobPostingStatus({ jobPostingId: id, status: "published" });
+  await (
+    await jobPostings()
+  ).updateOne({ _id: id }, { $set: { status: "published" } });
   await updateJobPosting({ jobPostingId: id, title: "Neu", teamId: teamA });
 
   const posting = await getJobPostingById(id);
   expect(posting.title).toBe("Neu");
   expect(posting.status).toBe("published");
-});
-
-test("setJobPostingStatus moves through the lifecycle", async () => {
-  const id = await createJobPostingDraft({ title: "T", teamId: teamA });
-  for (const status of ["published", "closed", "archived"] as const) {
-    await setJobPostingStatus({ jobPostingId: id, status });
-    expect((await getJobPostingById(id)).status).toBe(status);
-  }
-});
-
-test("setJobPostingStatus rejects an unknown status", async () => {
-  const id = await createJobPostingDraft({ title: "T", teamId: teamA });
-  await expect(
-    setJobPostingStatus({ jobPostingId: id, status: "bogus" as never }),
-  ).rejects.toThrow();
 });
 
 test("cannot touch or read a posting from another org", async () => {
@@ -178,9 +161,6 @@ test("cannot touch or read a posting from another org", async () => {
 
   await expect(
     updateJobPosting({ jobPostingId: foreign, title: "Hack", teamId: teamA }),
-  ).rejects.toThrow("Access denied");
-  await expect(
-    setJobPostingStatus({ jobPostingId: foreign, status: "closed" }),
   ).rejects.toThrow("Access denied");
   await expect(getJobPostingById(foreign)).rejects.toThrow("No access");
 });

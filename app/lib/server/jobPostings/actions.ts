@@ -5,8 +5,8 @@ import { USER_PERMISSIONS } from "../../auth/roles";
 import { requirePermission } from "../../auth/session";
 import { jobPostings, teams } from "../../db/collections";
 import { newId } from "../../db/ids";
-import type { JobPostingStatus } from "../../db/types";
 import { addLog } from "../logs";
+import { requireOwnedJobPosting } from "./access";
 import { sanitizeRichText } from "./sanitize";
 
 const optionalText = z.string().trim().optional();
@@ -24,8 +24,6 @@ const contentSchema = z.object({
   deadline: optionalText,
   contact: optionalText,
 });
-
-const statusSchema = z.enum(["draft", "published", "closed", "archived"]);
 
 type Content = z.infer<typeof contentSchema>;
 
@@ -94,38 +92,6 @@ export async function updateJobPosting(
     jobPostingId,
     content.title,
   );
-}
-
-export async function setJobPostingStatus(input: {
-  jobPostingId: string;
-  status: JobPostingStatus;
-}): Promise<void> {
-  const user = await requirePermission(USER_PERMISSIONS.recruiting);
-  const { jobPostingId, status } = z
-    .object({ jobPostingId: z.string(), status: statusSchema })
-    .parse(input);
-
-  await requireOwnedJobPosting(jobPostingId, user.organizationId);
-  await (
-    await jobPostings()
-  ).updateOne({ _id: jobPostingId }, { $set: { status } });
-  await addLog(
-    user.organizationId,
-    user._id,
-    `jobPosting.status.${status}`,
-    jobPostingId,
-  );
-}
-
-async function requireOwnedJobPosting(
-  jobPostingId: string,
-  organizationId: string,
-) {
-  const posting = await (await jobPostings()).findOne({ _id: jobPostingId });
-  if (!posting || posting.organizationId !== organizationId) {
-    throw new Error("Access denied");
-  }
-  return posting;
 }
 
 async function requireActiveTeam(teamId: string, organizationId: string) {

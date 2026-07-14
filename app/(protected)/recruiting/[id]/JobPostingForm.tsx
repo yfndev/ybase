@@ -2,32 +2,22 @@
 
 import { PageHeader } from "@/components/Layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useJobPostingMutations } from "@/lib/client/jobPostings/hooks/useJobPostingMutations";
-import type { JobPosting, JobPostingStatus } from "@/lib/db/types";
+import type { JobPosting } from "@/lib/db/types";
 import {
   type JobPostingFormValues,
   toJobPostingForm,
 } from "@/lib/jobPostings/form";
-import {
-  JOB_POSTING_STATUS_LABELS,
-  JOB_POSTING_STATUSES,
-} from "@/lib/jobPostings/status";
 import { Loader2, Save } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { JobPostingBasicFields } from "./JobPostingBasicFields";
 import { JobPostingContentFields } from "./JobPostingContentFields";
+import { JobPostingStatusActions } from "./JobPostingStatusActions";
 import { JobPostingTallySection } from "./JobPostingTallySection";
 
 export function JobPostingForm({ posting }: { posting: JobPosting }) {
-  const { update, setStatus } = useJobPostingMutations();
+  const { update } = useJobPostingMutations();
   const [values, setValues] = useState<JobPostingFormValues>(() =>
     toJobPostingForm(posting),
   );
@@ -48,15 +38,6 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
     }
   };
 
-  const handleStatus = async (status: JobPostingStatus) => {
-    try {
-      await setStatus.mutateAsync({ jobPostingId: posting._id, status });
-      toast.success("Status aktualisiert");
-    } catch {
-      toast.error("Fehler beim Aktualisieren");
-    }
-  };
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -66,24 +47,7 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Status</span>
-          <Select
-            value={posting.status}
-            onValueChange={(value) => handleStatus(value as JobPostingStatus)}
-          >
-            <SelectTrigger id="jp-status" className="w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {JOB_POSTING_STATUSES.map((status) => (
-                <SelectItem key={status} value={status}>
-                  {JOB_POSTING_STATUS_LABELS[status]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <JobPostingStatusActions posting={posting} />
         <Button onClick={handleSave} disabled={update.isPending}>
           {update.isPending ? (
             <Loader2 className="size-4 animate-spin" />
