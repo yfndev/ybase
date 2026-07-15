@@ -26,14 +26,9 @@ async function selectOption(page: Page, triggerId: string, option: string) {
 }
 
 test.describe("Ausschreibungen", () => {
-  let page: Page;
-
-  test.beforeAll(async ({ browser }) => {
+  test.beforeEach(async ({ page }) => {
     await cleanup();
-    page = await browser.newPage();
-    await page.context().clearCookies();
     await page.goto("/login");
-    await page.evaluate(() => localStorage.clear());
     await page.getByTestId("test-auth-email").fill(TEST_EMAIL);
     await page.getByTestId("test-auth-submit").click();
 
@@ -67,12 +62,11 @@ test.describe("Ausschreibungen", () => {
     await expect(page.getByText("Team erstellt")).toBeVisible();
   });
 
-  test.afterAll(async () => {
+  test.afterEach(async () => {
     await cleanup();
-    await page.close();
   });
 
-  test("create a draft, edit rich text and persist it", async () => {
+  test("create, edit and manage a job posting", async ({ page }) => {
     await page.goto("/recruiting");
     const createButton = page.getByRole("button", {
       name: "Neue Ausschreibung",
@@ -98,9 +92,7 @@ test.describe("Ausschreibungen", () => {
       DESCRIPTION,
     );
     await expect(page.getByLabel("Ort")).toHaveValue("Berlin");
-  });
 
-  test("publish, close and reopen with the status actions", async () => {
     await page.getByRole("button", { name: "Veröffentlichen" }).click();
     await expect(page.getByText("Ausschreibung veröffentlicht")).toBeVisible();
     await expect(

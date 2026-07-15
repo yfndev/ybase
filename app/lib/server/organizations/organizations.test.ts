@@ -1,5 +1,4 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
-import { afterAll, beforeAll, beforeEach, expect, test, vi } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({
   requireAuthenticatedUser: vi.fn(),
@@ -12,39 +11,45 @@ import {
   requireRole,
   requireUser,
 } from "../../auth/session";
-import { getClient, getDb } from "../../db/client";
+import { getDb } from "../../db/client";
 import { organizations, projects, users } from "../../db/collections";
 import { newId } from "../../db/ids";
+import { createTestActor } from "../../test/fixtures";
+import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { initializeOrganization, updateOrganization } from "./actions";
 import { getOrganization, getOrganizationByDomain } from "./data";
 
-let mongod: MongoMemoryServer;
 let orgA: string;
 let orgB: string;
 let userA: string;
 
-beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  process.env.MONGODB_URI = mongod.getUri();
-  process.env.MONGODB_DB = "ybase_test";
-}, 120_000);
-
-afterAll(async () => {
-  const client = await getClient();
-  await client.close();
-  await mongod.stop();
-}, 30_000);
+setupTestDatabase();
 
 beforeEach(async () => {
-  await (await getDb()).dropDatabase();
   orgA = newId();
   orgB = newId();
   userA = newId();
-  await (await organizations()).insertMany([
-    { _id: orgA, _creationTime: Date.now(), name: "A", domain: "a.org", createdBy: userA },
-    { _id: orgB, _creationTime: Date.now(), name: "B", domain: "b.org", createdBy: newId() },
+  await (
+    await organizations()
+  ).insertMany([
+    {
+      _id: orgA,
+      _creationTime: Date.now(),
+      name: "A",
+      domain: "a.org",
+      createdBy: userA,
+    },
+    {
+      _id: orgB,
+      _creationTime: Date.now(),
+      name: "B",
+      domain: "b.org",
+      createdBy: newId(),
+    },
   ]);
-  await (await users()).insertOne({
+  await (
+    await users()
+  ).insertOne({
     _id: userA,
     _creationTime: Date.now(),
     email: "boss@a.org",
@@ -53,15 +58,11 @@ beforeEach(async () => {
     memberStatus: "active",
     teamOnboardingStatus: "completed",
   });
-  const actor = {
+  const actor = createTestActor({
     _id: userA,
-    _creationTime: Date.now(),
     email: "boss@a.org",
     organizationId: orgA,
-    role: "admin" as const,
-    memberStatus: "active" as const,
-    teamOnboardingStatus: "completed" as const,
-  };
+  });
   vi.mocked(requireAuthenticatedUser).mockResolvedValue(actor);
   vi.mocked(requireUser).mockResolvedValue(actor);
   vi.mocked(requireRole).mockResolvedValue(actor);
@@ -124,7 +125,9 @@ test("initializeOrganization returns the existing org when the caller already ha
 
 test("initializeOrganization joins an existing org by email domain", async () => {
   const newUser = newId();
-  await (await users()).insertOne({
+  await (
+    await users()
+  ).insertOne({
     _id: newUser,
     _creationTime: Date.now(),
     email: "member@b.org",
@@ -149,7 +152,9 @@ test("initializeOrganization joins an existing org by email domain", async () =>
 
 test("initializeOrganization creates a new org with an Allgemein project", async () => {
   const founder = newId();
-  await (await users()).insertOne({
+  await (
+    await users()
+  ).insertOne({
     _id: founder,
     _creationTime: Date.now(),
     email: "founder@fresh.org",
@@ -164,16 +169,22 @@ test("initializeOrganization creates a new org with an Allgemein project", async
     teamOnboardingStatus: "not_started",
   });
 
-  const result = await initializeOrganization({ organizationName: "Fresh e.V." });
+  const result = await initializeOrganization({
+    organizationName: "Fresh e.V.",
+  });
   expect(result.isNew).toBe(true);
 
-  const created = await (await organizations()).findOne({
+  const created = await (
+    await organizations()
+  ).findOne({
     _id: result.organizationId,
   });
   expect(created?.name).toBe("Fresh e.V.");
   expect(created?.domain).toBe("fresh.org");
 
-  const project = await (await projects()).findOne({
+  const project = await (
+    await projects()
+  ).findOne({
     organizationId: result.organizationId,
   });
   expect(project?.name).toBe("Allgemein");

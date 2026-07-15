@@ -1,13 +1,4 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  expect,
-  test,
-  vi,
-} from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({
   requireUser: vi.fn(),
@@ -34,16 +25,15 @@ vi.mock("./email", () => ({
 }));
 
 import { requireRole, requireUser } from "../../auth/session";
-import { getClient, getDb } from "../../db/client";
-import {
-  organizations,
-  projects,
-  receipts,
-  reimbursements,
-  users,
-} from "../../db/collections";
+import { receipts, reimbursements, users } from "../../db/collections";
 import { newId } from "../../db/ids";
+import {
+  createTestActor,
+  insertTestOrganization,
+  insertTestProject,
+} from "../../test/fixtures";
 import { deleteObject, getDownloadInfo } from "../../s3/storage";
+import { setupTestDatabase } from "../../test/setupTestDatabase";
 import {
   approve,
   createReimbursement,
@@ -61,62 +51,39 @@ import {
 } from "./email";
 import { createReimbursementLink } from "./sharing";
 
-let mongod: MongoMemoryServer;
 let orgA: string;
 let orgB: string;
 let userA: string;
 let projectA: string;
 
-beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  process.env.MONGODB_URI = mongod.getUri();
-  process.env.MONGODB_DB = "ybase_test";
-}, 120_000);
-
-afterAll(async () => {
-  const client = await getClient();
-  await client.close();
-  await mongod.stop();
-}, 30_000);
+setupTestDatabase();
 
 afterEach(() => {
   vi.unstubAllEnvs();
 });
 
 beforeEach(async () => {
-  await (await getDb()).dropDatabase();
   vi.clearAllMocks();
   orgA = newId();
   orgB = newId();
   userA = newId();
   projectA = newId();
-  await (
-    await organizations()
-  ).insertMany([
-    {
-      _id: orgA,
-      _creationTime: Date.now(),
-      name: "A",
-      domain: "a.org",
-      createdBy: userA,
-      accountingEmail: "accounting@a.org",
-    },
-    {
-      _id: orgB,
-      _creationTime: Date.now(),
-      name: "B",
-      domain: "b.org",
-      createdBy: newId(),
-    },
-  ]);
-  await (
-    await projects()
-  ).insertOne({
+  await insertTestOrganization({
+    _id: orgA,
+    name: "A",
+    domain: "a.org",
+    createdBy: userA,
+    accountingEmail: "accounting@a.org",
+  });
+  await insertTestOrganization({
+    _id: orgB,
+    name: "B",
+    domain: "b.org",
+  });
+  await insertTestProject({
     _id: projectA,
-    _creationTime: Date.now(),
     name: "Projekt A",
     organizationId: orgA,
-    isArchived: false,
     createdBy: userA,
   });
   await (
@@ -131,14 +98,11 @@ beforeEach(async () => {
     memberStatus: "active",
     teamOnboardingStatus: "completed",
   });
-  const actor = {
+  const actor = createTestActor({
     _id: userA,
-    _creationTime: Date.now(),
     organizationId: orgA,
-    role: "finance" as const,
-    memberStatus: "active" as const,
-    teamOnboardingStatus: "completed" as const,
-  };
+    role: "finance",
+  });
   vi.mocked(requireUser).mockResolvedValue(actor);
   vi.mocked(requireRole).mockResolvedValue(actor);
 });

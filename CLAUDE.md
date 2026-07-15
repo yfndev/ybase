@@ -14,10 +14,10 @@ pnpm build                   # Production build
 pnpm lint                    # Biome linting
 pnpm lint:fix                # Biome linting with auto-fix
 pnpm format                  # Prettier formatting
-pnpm test                    # Run all tests (Vitest + Playwright)
-pnpm vitest run              # Unit/integration tests only
+pnpm test                    # Unit/integration tests (Vitest)
+pnpm test:e2e                # E2E tests (Playwright)
+pnpm test:all                # Run Vitest and Playwright
 pnpm coverage                # Tests with coverage report
-pnpm exec playwright test    # E2E tests only
 ```
 
 **Run a single test file:**
@@ -66,7 +66,13 @@ pnpm exec playwright test e2e/reimbursements.spec.ts
 - **Vitest** for unit/integration tests (`app/**/*.test.ts`)
 - **Playwright** for E2E tests (`e2e/*.spec.ts`)
 - MongoDB integration tests use `mongodb-memory-server`
-- Shared test setup lives in `vitest.setup.ts`
+- Test observable behavior, risk boundaries, and concrete regressions—not implementation details
+- Require targeted tests for money, permissions, tenant isolation, destructive actions, and external integrations
+- Do not add tests for styling, copy, trivial wiring, or refactors without behavior changes
+- Test each behavior at the lowest stable layer; avoid duplicating it across helpers, actions, routes, and UI
+- Prefer state and user-visible outcomes over exact mock call sequences
+- Run the narrowest relevant test locally; CI owns the complete Vitest and Playwright suites
+- Do not introduce a blanket coverage target
 
 ## Documentation
 
