@@ -1,10 +1,10 @@
 import {
   archiveTeam,
-  createTeam,
   unarchiveTeam,
   updateTeam,
 } from "@/lib/server/teams/actions";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createTeam } from "../requests/createTeam";
 
 export function useTeamMutations() {
   const queryClient = useQueryClient();
