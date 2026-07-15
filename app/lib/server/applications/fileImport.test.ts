@@ -1,5 +1,8 @@
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { afterAll, beforeAll, beforeEach, expect, test, vi } from "vitest";
+
+vi.mock("../../auth/session", () => ({ requirePermission: vi.fn() }));
+
 import type { Application, ApplicationFile } from "../../db/application";
 import { applications } from "../../db/collections";
 import { getClient, getDb } from "../../db/client";
