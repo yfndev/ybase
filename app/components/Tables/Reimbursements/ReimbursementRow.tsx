@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Check,
   ExternalLink,
@@ -21,11 +19,10 @@ import {
 import { TableCell, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import { formatDate } from "@/lib/formatters/formatDate";
-import {
-  STATUS_DISPLAY,
-  type ReimbursementStatus as Status,
-} from "@/lib/reimbursementStatus";
+import { STATUS_DISPLAY } from "@/lib/reimbursementStatus";
+import type { ReimbursementStatus as Status } from "@/lib/reimbursementStatus";
 import styles from "./ReimbursementRow.module.css";
+import { ReimbursementRowMetadata } from "./ReimbursementRowMetadata";
 
 interface ReimbursementRowProps {
   item: {
@@ -68,10 +65,9 @@ export function ReimbursementRow({
   onDelete,
 }: ReimbursementRowProps) {
   const display = STATUS_DISPLAY[item.status];
-  const isPending = item.status === "pending";
-  const showReviewActions = canManageReimbursements && isPending;
+  const showReviewActions =
+    canManageReimbursements && item.status === "pending";
   const showEditAction = canEdit && item.status === "changes_requested";
-  const showDeleteAction = canManageReimbursements;
 
   return (
     <TableRow
@@ -83,7 +79,7 @@ export function ReimbursementRow({
           {selectionCheckbox}
         </TableCell>
       )}
-      <TableCell className="min-w-56 py-3">
+      <TableCell className="py-3" data-reimbursement-column="request">
         <div className="min-w-0">
           <div className="font-medium text-foreground">{title}</div>
           {detail ? (
@@ -91,24 +87,46 @@ export function ReimbursementRow({
               {detail}
             </div>
           ) : null}
+          <ReimbursementRowMetadata
+            canManageReimbursements={canManageReimbursements}
+            applicantName={applicantName}
+            projectName={item.projectName}
+            creationTime={item._creationTime}
+          />
         </div>
       </TableCell>
       {canManageReimbursements ? (
-        <TableCell className="max-w-48 truncate">{applicantName}</TableCell>
+        <TableCell
+          className="max-w-48 truncate"
+          data-reimbursement-column="applicant"
+        >
+          {applicantName}
+        </TableCell>
       ) : null}
-      <TableCell className="max-w-48 truncate">{item.projectName}</TableCell>
-      <TableCell className="text-muted-foreground">
+      <TableCell
+        className="max-w-48 truncate"
+        data-reimbursement-column="project"
+      >
+        {item.projectName}
+      </TableCell>
+      <TableCell
+        className="text-muted-foreground"
+        data-reimbursement-column="created"
+      >
         {formatDate(item._creationTime)}
       </TableCell>
       <TableCell className="text-right font-medium">
         {formatCurrency(item.amount)}
       </TableCell>
-      <TableCell className="min-w-40">
+      <TableCell data-reimbursement-column="status">
         <Badge variant={display.variant} className={display.className}>
           {display.label}
         </Badge>
       </TableCell>
-      <TableCell className="max-w-48 truncate text-muted-foreground">
+      <TableCell
+        className="max-w-48 truncate text-muted-foreground"
+        data-reimbursement-column="reviewed-by"
+      >
         {item.reviewedByName ?? "–"}
       </TableCell>
       <TableCell
@@ -163,7 +181,7 @@ export function ReimbursementRow({
               <ExternalLink className="text-current" />
               Öffnen
             </DropdownMenuItem>
-            {showDeleteAction ? (
+            {canManageReimbursements ? (
               <DropdownMenuItem
                 className={`${styles.menuItem} ${styles.destructiveMenuItem}`}
                 onSelect={onDelete}

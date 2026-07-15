@@ -1,5 +1,6 @@
 "use client";
 
+import { MoveHorizontal } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
@@ -9,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ReimbursementRow } from "../../components/Tables/Reimbursements/ReimbursementRow";
+import styles from "./ReimbursementTable.module.css";
 import type { Allowance, Reimbursement, SelectionKey } from "./types";
 
 type Props = {
@@ -70,8 +72,15 @@ export function ReimbursementTable({
   }
 
   return (
-    <div className="rounded-lg border bg-card">
-      <Table>
+    <div className={`${styles.tableShell} rounded-lg border bg-card`}>
+      <span id="reimbursement-table-scroll-description" className="sr-only">
+        Die Tabelle kann bei sehr schmalen Bildschirmen horizontal gescrollt
+        werden.
+      </span>
+      <Table
+        aria-label="Erstattungen"
+        aria-describedby="reimbursement-table-scroll-description"
+      >
         <TableHeader>
           <TableRow>
             <TableHead className="w-[40px] px-2">
@@ -89,13 +98,17 @@ export function ReimbursementTable({
             </TableHead>
             <TableHead>Antrag</TableHead>
             {canManageReimbursements ? (
-              <TableHead>Antragsteller</TableHead>
+              <TableHead data-reimbursement-column="applicant">
+                Antragsteller
+              </TableHead>
             ) : null}
-            <TableHead>Projekt</TableHead>
-            <TableHead>Erstellt</TableHead>
+            <TableHead data-reimbursement-column="project">Projekt</TableHead>
+            <TableHead data-reimbursement-column="created">Erstellt</TableHead>
             <TableHead className="text-right">Betrag</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Bearbeitet von</TableHead>
+            <TableHead data-reimbursement-column="reviewed-by">
+              Bearbeitet von
+            </TableHead>
             <TableHead className="w-12 text-right" />
           </TableRow>
         </TableHeader>
@@ -121,9 +134,7 @@ export function ReimbursementTable({
                   ? "Reisekostenerstattung"
                   : "Auslagenerstattung"
               }
-              detail={
-                item.type === "expense" ? item.receiptSummary : undefined
-              }
+              detail={item.type === "expense" ? item.receiptSummary : undefined}
               applicantName={item.submitterName || item.creatorName}
               onClick={() => onRowClick(item._id)}
               onApprove={() => onApproveReimbursement(item._id)}
@@ -168,6 +179,10 @@ export function ReimbursementTable({
           ))}
         </TableBody>
       </Table>
+      <div className={styles.scrollHint} aria-hidden="true">
+        <MoveHorizontal />
+        Seitlich scrollen für weitere Spalten
+      </div>
     </div>
   );
 }
