@@ -8,7 +8,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 
 type Props = {
   canManageReimbursements: boolean;
@@ -38,15 +37,17 @@ export function ReimbursementToolbar({
   return (
     <div className="mb-4 flex flex-wrap items-start gap-2">
       {selectedCount > 0 ? (
-        <ButtonGroup
+        <fieldset
           aria-label={`Aktionen für ${selectedCount} ausgewählte ${
             selectedCount === 1 ? "Erstattung" : "Erstattungen"
           }`}
+          className="flex w-fit flex-wrap items-center gap-2"
         >
-          <ButtonGroupText className="h-10 border-2 bg-muted px-3">
+          <div className="flex h-10 items-center rounded-md border-2 bg-muted px-3 text-sm font-medium">
             {selectedCount} ausgewählt
-          </ButtonGroupText>
+          </div>
           <Button
+            type="button"
             variant="outline"
             onClick={onBulkDownload}
             disabled={isBulkDownloading}
@@ -60,6 +61,7 @@ export function ReimbursementToolbar({
           </Button>
           {canDeleteSelected ? (
             <Button
+              type="button"
               variant="outline"
               className="text-destructive hover:text-destructive"
               onClick={onDeleteSelected}
@@ -68,7 +70,7 @@ export function ReimbursementToolbar({
               Löschen
             </Button>
           ) : null}
-        </ButtonGroup>
+        </fieldset>
       ) : null}
 
       <div className="ml-auto flex flex-wrap justify-end gap-2">
