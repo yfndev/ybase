@@ -1,7 +1,7 @@
 "use client";
 
-import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { signOutWithPostHog } from "@/lib/posthog-client";
 
 export function OffboardedNotice() {
   return (
@@ -12,10 +12,7 @@ export function OffboardedNotice() {
           Dein Zugang wurde beendet. Bitte wende dich an People &amp; Culture,
           wenn das ein Fehler ist.
         </p>
-        <Button
-          className="w-full"
-          onClick={() => signOut({ callbackUrl: "/login" })}
-        >
+        <Button className="w-full" onClick={() => void signOutWithPostHog()}>
           Abmelden
         </Button>
       </div>
