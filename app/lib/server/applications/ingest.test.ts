@@ -7,6 +7,7 @@ import {
   tallyWebhookEvents,
 } from "../../db/collections";
 import { newId } from "../../db/ids";
+import type { JobPosting } from "../../db/types";
 import { ensureIndexes } from "../../db/indexes";
 import { ingestTallySubmission } from "./ingest";
 import { tallyWebhookSchema } from "./tallyPayload";
@@ -61,7 +62,10 @@ function buildPayload(input: {
   });
 }
 
-async function insertPosting(organizationId: string): Promise<string> {
+async function insertPosting(
+  organizationId: string,
+  overrides: Partial<JobPosting> = {},
+): Promise<string> {
   const _id = newId();
   await (
     await jobPostings()
@@ -74,6 +78,7 @@ async function insertPosting(organizationId: string): Promise<string> {
     title: "Vorstand",
     createdBy: newId(),
     tallyFormId: "form-1",
+    ...overrides,
   });
   return _id;
 }
@@ -167,6 +172,45 @@ test("ignores a submission without an email", async () => {
     buildPayload({ eventId: "e1", submissionId: "s1", jobPostingId: postingA }),
   );
   expect(outcome).toEqual({ status: "ignored", reason: "missing-email" });
+  expect(await (await applications()).countDocuments()).toBe(0);
+});
+
+test.each(["draft", "closed", "archived"] as const)(
+  "ignores a submission for a %s posting",
+  async (status) => {
+    const posting = await insertPosting(orgA, { status });
+    const outcome = await ingestTallySubmission(
+      buildPayload({
+        eventId: `event-${status}`,
+        submissionId: `submission-${status}`,
+        jobPostingId: posting,
+        email: "a@b.de",
+      }),
+    );
+
+    expect(outcome).toEqual({
+      status: "ignored",
+      reason: "job-posting-not-open",
+    });
+    expect(await (await applications()).countDocuments()).toBe(0);
+  },
+);
+
+test("ignores a submission when the deadline has already passed", async () => {
+  const posting = await insertPosting(orgA, { deadline: "2000-01-01" });
+  const outcome = await ingestTallySubmission(
+    buildPayload({
+      eventId: "event-expired",
+      submissionId: "submission-expired",
+      jobPostingId: posting,
+      email: "a@b.de",
+    }),
+  );
+
+  expect(outcome).toEqual({
+    status: "ignored",
+    reason: "job-posting-expired",
+  });
   expect(await (await applications()).countDocuments()).toBe(0);
 });
 
