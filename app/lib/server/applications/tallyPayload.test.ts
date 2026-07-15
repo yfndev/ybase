@@ -38,6 +38,20 @@ function payload() {
           value: "+491234",
         },
         { key: "q5", label: "Skills", type: "CHECKBOXES", value: ["a", "b"] },
+        {
+          key: "q6",
+          label: "Lebenslauf",
+          type: "FILE_UPLOAD",
+          value: [
+            {
+              id: "file-1",
+              name: "cv.pdf",
+              url: "https://storage.tally.so/private/cv.pdf?token=secret",
+              mimeType: "application/pdf",
+              size: 1234,
+            },
+          ],
+        },
       ],
     },
   });
@@ -61,12 +75,30 @@ test("derives name from first and last name fields and reads phone", () => {
 
 test("snapshot keeps typed answers but drops the hidden field", () => {
   const parsed = parseTallySubmission(payload());
-  expect(parsed.fields).toHaveLength(5);
+  expect(parsed.fields).toHaveLength(6);
   expect(parsed.fields.some((field) => field.label === "jobPostingId")).toBe(
     false,
   );
   const skills = parsed.fields.find((field) => field.key === "q5");
   expect(skills?.value).toEqual(["a", "b"]);
+  expect(parsed.fields.find((field) => field.key === "q6")?.value).toEqual([
+    "cv.pdf",
+  ]);
+  expect(JSON.stringify(parsed.fields)).not.toContain("token=secret");
+});
+
+test("extracts file metadata separately from the answer snapshot", () => {
+  expect(parseTallySubmission(payload()).files).toEqual([
+    {
+      fieldKey: "q6",
+      fieldLabel: "Lebenslauf",
+      sourceId: "file-1",
+      sourceUrl: "https://storage.tally.so/private/cv.pdf?token=secret",
+      fileName: "cv.pdf",
+      mimeType: "application/pdf",
+      size: 1234,
+    },
+  ]);
 });
 
 test("returns null identity when the hidden field or email is absent", () => {

@@ -1,4 +1,8 @@
-import type { Application, TallyWebhookEvent } from "../../db/application";
+import type {
+  Application,
+  ApplicationFile,
+  TallyWebhookEvent,
+} from "../../db/application";
 import {
   applications,
   jobPostings,
@@ -25,6 +29,26 @@ function toTimestamp(value?: string): number {
   if (!value) return Date.now();
   const parsed = Date.parse(value);
   return Number.isNaN(parsed) ? Date.now() : parsed;
+}
+
+function applicationFile(
+  file: ReturnType<typeof parseTallySubmission>["files"][number],
+): ApplicationFile {
+  const now = Date.now();
+  return {
+    _id: newId(),
+    fieldKey: file.fieldKey,
+    fieldLabel: file.fieldLabel,
+    sourceId: file.sourceId,
+    sourceUrl: file.sourceUrl,
+    fileName: file.fileName,
+    mimeType: file.mimeType,
+    size: file.size,
+    status: file.validationError ? "rejected" : "pending",
+    attempts: 0,
+    error: file.validationError,
+    updatedAt: now,
+  };
 }
 
 function outcomeFromEvent(event: TallyWebhookEvent): IngestOutcome {
@@ -117,6 +141,7 @@ export async function ingestTallySubmission(
     applicantEmailNormalized: parsed.emailNormalized,
     applicantPhone: parsed.phone,
     fields: parsed.fields,
+    files: parsed.files.map(applicationFile),
     tallyEventId: payload.eventId,
     tallySubmissionId: payload.data.submissionId,
     tallyResponseId: payload.data.responseId,

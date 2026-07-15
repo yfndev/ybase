@@ -17,11 +17,7 @@ export type CostType =
 
 export type { JobPosting, JobPostingStatus } from "./jobPosting";
 
-export type {
-  Application,
-  ApplicationStatus,
-  TallyWebhookEvent,
-} from "./application";
+export type * from "./application";
 
 export interface Organization {
   _id: string;

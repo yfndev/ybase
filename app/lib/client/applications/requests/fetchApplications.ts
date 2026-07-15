@@ -1,8 +1,8 @@
-import type { Application } from "@/lib/db/types";
+import type { ApplicationWithFiles } from "@/lib/db/types";
 
 export async function fetchApplications(
   jobPostingId: string,
-): Promise<Application[]> {
+): Promise<ApplicationWithFiles[]> {
   const response = await fetch(
     `/api/job-postings/${jobPostingId}/applications`,
   );
@@ -14,5 +14,5 @@ export async function fetchApplications(
   }
 
   const json = await response.json();
-  return json.data as Application[];
+  return json.data as ApplicationWithFiles[];
 }
