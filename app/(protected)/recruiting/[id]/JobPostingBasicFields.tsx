@@ -50,7 +50,7 @@ export function JobPostingBasicFields({ values, onChange }: Props) {
         </div>
         <div className="flex flex-col gap-2">
           <Label>Department</Label>
-          <div className="flex h-10 items-center border-2 border-input bg-muted px-3 text-sm text-muted-foreground">
+          <div className="flex h-12 items-center border-2 border-input bg-muted px-4 text-sm text-muted-foreground">
             {departmentName}
           </div>
         </div>
