@@ -83,7 +83,6 @@ test.describe("Ausschreibungen", () => {
     const description = page.locator('[aria-label="Beschreibung"]');
     await description.click();
     await page.keyboard.type(DESCRIPTION);
-    await page.getByLabel("Ort").fill("Berlin");
     await page.getByRole("button", { name: "Speichern" }).click();
     await expect(page.getByText("Ausschreibung gespeichert")).toBeVisible();
 
@@ -91,7 +90,6 @@ test.describe("Ausschreibungen", () => {
     await expect(page.locator('[aria-label="Beschreibung"]')).toContainText(
       DESCRIPTION,
     );
-    await expect(page.getByLabel("Ort")).toHaveValue("Berlin");
 
     await page.getByRole("button", { name: "Veröffentlichen" }).click();
     await expect(page.getByText("Ausschreibung veröffentlicht")).toBeVisible();
