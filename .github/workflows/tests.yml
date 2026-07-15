@@ -33,6 +33,13 @@ jobs:
 
   playwright:
     runs-on: ubuntu-latest
+    env:
+      OBJECT_STORAGE_ENDPOINT: http://127.0.0.1:9000
+      OBJECT_STORAGE_REGION: us-east-1
+      OBJECT_STORAGE_BUCKET: ybase-e2e
+      OBJECT_STORAGE_ACCESS_KEY_ID: minioadmin
+      OBJECT_STORAGE_SECRET_ACCESS_KEY: minioadmin
+      OBJECT_STORAGE_FORCE_PATH_STYLE: "true"
     services:
       mongodb:
         image: mongo:8
@@ -46,6 +53,30 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+
+      - name: Start test object storage
+        run: |
+          docker run --detach \
+            --name ybase-minio \
+            --publish 9000:9000 \
+            --env MINIO_ROOT_USER="$OBJECT_STORAGE_ACCESS_KEY_ID" \
+            --env MINIO_ROOT_PASSWORD="$OBJECT_STORAGE_SECRET_ACCESS_KEY" \
+            quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z server /data
+          for attempt in {1..30}; do
+            if curl --fail --silent "$OBJECT_STORAGE_ENDPOINT/minio/health/live"; then
+              break
+            fi
+            if [[ "$attempt" == 30 ]]; then
+              docker logs ybase-minio
+              exit 1
+            fi
+            sleep 1
+          done
+          docker exec ybase-minio mc alias set test \
+            http://127.0.0.1:9000 \
+            "$OBJECT_STORAGE_ACCESS_KEY_ID" \
+            "$OBJECT_STORAGE_SECRET_ACCESS_KEY"
+          docker exec ybase-minio mc mb "test/$OBJECT_STORAGE_BUCKET"
 
       - name: Get Playwright version
         id: playwright-version
