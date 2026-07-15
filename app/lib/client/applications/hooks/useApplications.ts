@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 
 import { fetchApplications } from "../requests/fetchApplications";
 
-export function useApplications(jobPostingId: string, enabled = true) {
+export function useApplications(jobPostingId?: string, enabled = true) {
   const result = useQuery<ApplicationWithFiles[]>({
-    queryKey: ["applications", jobPostingId],
+    queryKey: ["applications", jobPostingId ?? "all"],
     queryFn: () => fetchApplications(jobPostingId),
     enabled,
     refetchInterval: (query) =>

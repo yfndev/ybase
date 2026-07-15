@@ -58,6 +58,8 @@ export async function ensureIndexes(): Promise<void> {
     .createIndexes([
       { key: { organizationId: 1, _creationTime: -1 } },
       { key: { organizationId: 1, jobPostingId: 1, _creationTime: -1 } },
+      { key: { organizationId: 1, status: 1, _creationTime: -1 } },
+      { key: { organizationId: 1, ownerId: 1, _creationTime: -1 } },
       { key: { organizationId: 1, "files._id": 1 } },
       { key: { tallyEventId: 1 }, unique: true },
       { key: { tallySubmissionId: 1 }, unique: true },

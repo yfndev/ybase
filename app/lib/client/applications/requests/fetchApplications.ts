@@ -1,11 +1,12 @@
 import type { ApplicationWithFiles } from "@/lib/db/types";
 
 export async function fetchApplications(
-  jobPostingId: string,
+  jobPostingId?: string,
 ): Promise<ApplicationWithFiles[]> {
-  const response = await fetch(
-    `/api/job-postings/${jobPostingId}/applications`,
-  );
+  const url = jobPostingId
+    ? `/api/job-postings/${jobPostingId}/applications`
+    : "/api/applications";
+  const response = await fetch(url);
 
   if (!response.ok) {
     throw new Error(

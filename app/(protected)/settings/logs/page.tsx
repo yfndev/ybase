@@ -42,6 +42,9 @@ const ACTION_LABELS: Record<string, string> = {
   "jobPosting.tally.publish": "Bewerbungsformular veröffentlicht",
   "jobPosting.tally.error": "Tally-Synchronisierung fehlgeschlagen",
   "jobFeedToken.rotate": "Job-Feed-Token rotiert",
+  "application.received": "Bewerbung eingegangen",
+  "application.management_update": "Bewerbung aktualisiert",
+  "application.status_change": "Bewerbungsstatus geändert",
 };
 
 export default async function LogsPage() {
