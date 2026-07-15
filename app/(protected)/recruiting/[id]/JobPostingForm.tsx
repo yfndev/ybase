@@ -110,7 +110,7 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
               )}
               {posting.tallyFormError
                 ? "Speichern & erneut veröffentlichen"
-                : "Speichern & veröffentlichen"}
+                : "Veröffentlichen"}
             </Button>
           ) : null}
         </div>
