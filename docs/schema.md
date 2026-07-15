@@ -14,6 +14,7 @@ erDiagram
     organizations ||--o{ applications : has
     jobPostings ||--o{ applications : receives
     organizations ||--o| jobFeedTokens : authenticates
+    organizations ||--o{ reimbursementInvites : grants
     reimbursements ||--o{ receipts : has
     reimbursements ||--o| travelDetails : has
 
@@ -31,6 +32,12 @@ erDiagram
         string tokenHash
         number rotatedAt
         string rotatedBy
+    }
+
+    reimbursementInvites {
+        string _id
+        string organizationId
+        string tokenHash
     }
 
     users {

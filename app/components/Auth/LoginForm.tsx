@@ -7,12 +7,16 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
-export function LoginForm() {
+export function LoginForm({
+  callbackUrl = "/dashboard",
+}: {
+  callbackUrl?: string;
+}) {
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   function handleSignIn() {
     setIsSigningIn(true);
-    void signIn("google", { callbackUrl: "/dashboard" });
+    void signIn("google", { callbackUrl });
   }
 
   return (
