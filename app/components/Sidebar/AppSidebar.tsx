@@ -8,6 +8,7 @@ import {
   Megaphone,
   Network,
   ScrollText,
+  UserRoundSearch,
   UserCog,
 } from "lucide-react";
 import Image from "next/image";
@@ -75,7 +76,14 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const mainItems: NavItem[] = [
     ...NAV_ITEMS,
     ...(hasPermission(role, USER_PERMISSIONS.recruiting)
-      ? [{ name: "Ausschreibungen", url: "/recruiting", icon: Megaphone }]
+      ? [
+          { name: "Ausschreibungen", url: "/recruiting", icon: Megaphone },
+          {
+            name: "Bewerbungen",
+            url: "/applications",
+            icon: UserRoundSearch,
+          },
+        ]
       : []),
   ];
   const administrationItems = ADMINISTRATION_NAV_ITEMS.filter(
