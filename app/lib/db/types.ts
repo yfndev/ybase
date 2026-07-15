@@ -21,4 +21,5 @@ export type {
   User,
   UserRole,
 } from "./user";
+export type { ReimbursementInvite } from "./reimbursementInvite";
 export type { VolunteerAllowance } from "./volunteerAllowance";

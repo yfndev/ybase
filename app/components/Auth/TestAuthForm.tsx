@@ -7,7 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function TestAuthForm() {
+export function TestAuthForm({
+  callbackUrl = "/dashboard",
+}: {
+  callbackUrl?: string;
+}) {
   const router = useRouter();
   const [email, setEmail] = useState("user@test.com");
   const [name, setName] = useState("Test User");
@@ -24,7 +28,7 @@ export function TestAuthForm() {
       setStatus(`Error: ${result.error}`);
       return;
     }
-    router.push("/dashboard");
+    router.push(callbackUrl);
   }
 
   return (

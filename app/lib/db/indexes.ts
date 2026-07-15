@@ -81,6 +81,10 @@ export async function ensureIndexes(): Promise<void> {
     ]);
 
   await db
+    .collection("reimbursementInvites")
+    .createIndex({ tokenHash: 1 }, { unique: true });
+
+  await db
     .collection("travelDetails")
     .createIndexes([{ key: { reimbursementId: 1 } }]);
 

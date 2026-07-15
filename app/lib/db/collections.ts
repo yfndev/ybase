@@ -9,6 +9,7 @@ import type {
   Project,
   Receipt,
   Reimbursement,
+  ReimbursementInvite,
   SignatureToken,
   TallyWebhookEvent,
   Team,
@@ -56,6 +57,12 @@ export async function tallyWebhookEvents() {
 
 export async function reimbursements() {
   return (await getDb()).collection<Reimbursement>("reimbursements");
+}
+
+export async function reimbursementInvites() {
+  return (await getDb()).collection<ReimbursementInvite>(
+    "reimbursementInvites",
+  );
 }
 
 export async function travelDetails() {
