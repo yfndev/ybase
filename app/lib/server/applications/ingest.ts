@@ -5,6 +5,7 @@ import {
   tallyWebhookEvents,
 } from "../../db/collections";
 import { newId } from "../../db/ids";
+import { berlinToday, isDeadlinePassed } from "../../jobPostings/deadline";
 import { addLog } from "../logs";
 import { parseTallySubmission, type TallyWebhookPayload } from "./tallyPayload";
 
@@ -95,6 +96,21 @@ export async function ingestTallySubmission(
       organizationId: posting.organizationId,
     });
     return { status: "ignored", reason: "form-job-posting-mismatch" };
+  }
+
+  const unavailableReason =
+    posting.status !== "published"
+      ? "job-posting-not-open"
+      : isDeadlinePassed(posting.deadline, berlinToday())
+        ? "job-posting-expired"
+        : undefined;
+  if (unavailableReason) {
+    await recordEvent(payload, "ignored", {
+      reason: unavailableReason,
+      jobPostingId: posting._id,
+      organizationId: posting.organizationId,
+    });
+    return { status: "ignored", reason: unavailableReason };
   }
 
   if (!parsed.email || !parsed.emailNormalized) {

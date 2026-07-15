@@ -15,7 +15,7 @@ type FormPatch = {
   status?: string;
 };
 
-const API_URL = "https://api.tally.so";
+const TALLY_API_URL = "https://api.tally.so";
 const MAX_PAGES = 50;
 const itemSchema = z.object({ id: z.string(), name: z.string() });
 const formSchema = itemSchema.extend({
@@ -61,7 +61,6 @@ const formResourceSchema = z.object({
 });
 const createdFormSchema = z.object({ id: z.string(), status: z.string() });
 const webhookSchema = z.object({ id: z.string() });
-
 function isAnswerField(type: string): boolean {
   return ![
     "FORM_TITLE",
@@ -77,6 +76,7 @@ function isAnswerField(type: string): boolean {
 export function createTallyClient(
   apiToken: string,
   fetcher: typeof fetch = fetch,
+  apiUrl = TALLY_API_URL,
 ) {
   if (!apiToken) throw new Error("Tally API token is required");
 
@@ -84,7 +84,7 @@ export function createTallyClient(
     path: string,
     init?: { method: string; body: unknown },
   ): Promise<unknown> {
-    const response = await fetcher(`${API_URL}${path}`, {
+    const response = await fetcher(`${apiUrl}${path}`, {
       method: init?.method ?? "GET",
       headers: {
         Authorization: `Bearer ${apiToken}`,
