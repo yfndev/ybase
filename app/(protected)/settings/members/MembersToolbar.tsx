@@ -61,7 +61,7 @@ export function MembersToolbar({
         <Input
           value={filters.search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Nach Name, E-Mail oder Position suchen"
+          placeholder="Suchen..."
           className="sm:max-w-xs"
         />
         <Select value={filters.departmentId} onValueChange={onDepartmentChange}>
