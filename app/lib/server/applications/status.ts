@@ -30,8 +30,12 @@ export async function setApplicationStatus(input: {
     .object({ applicationId: z.string().min(1), status: statusSchema })
     .parse(input);
   const { user, application } = await loadOwnedApplication(applicationId);
+  if (status === "accepted" || status === "rejected") {
+    throw new Error("Entscheidungen müssen per E-Mail versendet werden");
+  }
   if (
     status === "received" ||
+    status === "withdrawn" ||
     !isApplicationStatusTransitionAllowed(application.status, status)
   ) {
     throw new Error("Dieser Statuswechsel ist nicht zulässig");
@@ -73,7 +77,7 @@ export async function setApplicationFileStatus(
   fileId: string,
   status: ApplicationFileStatus,
   details: { error?: string; storageKey?: string; importedAt?: number } = {},
-): Promise<void> {
+): Promise<boolean> {
   const set: Record<string, unknown> = {
     "files.$[file].status": status,
     "files.$[file].updatedAt": Date.now(),
@@ -87,11 +91,12 @@ export async function setApplicationFileStatus(
   };
   const update: Record<string, unknown> = { $set: set };
   if (!details.error) update.$unset = { "files.$[file].error": "" };
-  await (
+  const result = await (
     await applications()
-  ).updateOne({ _id: applicationId }, update, {
+  ).updateOne({ _id: applicationId, status: { $ne: "withdrawn" } }, update, {
     arrayFilters: [{ "file._id": fileId }],
   });
+  return result.modifiedCount === 1;
 }
 
 export async function claimApplicationFile(
@@ -101,6 +106,7 @@ export async function claimApplicationFile(
   const collection = await applications();
   const application = await collection.findOne({
     _id: applicationId,
+    status: { $ne: "withdrawn" },
     files: {
       $elemMatch: { _id: fileId, status: { $in: ["pending", "failed"] } },
     },

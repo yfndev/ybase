@@ -127,6 +127,7 @@ test("creates a received application scoped to the posting org with a snapshot",
   expect(outcome).toEqual({
     status: "created",
     applicationId: expect.any(String),
+    withdrawalToken: expect.any(String),
   });
   const stored = await (
     await applications()
@@ -135,6 +136,10 @@ test("creates a received application scoped to the posting org with a snapshot",
   expect(stored?.organizationId).toBe(orgA);
   expect(stored?.applicantEmailNormalized).toBe("max@example.com");
   expect(stored?.applicantName).toBe("Max Mustermann");
+  expect(stored?.withdrawalTokenHash).toMatch(/^[a-f0-9]{64}$/);
+  expect(stored?.withdrawalTokenHash).not.toBe(
+    outcome.status === "created" ? outcome.withdrawalToken : undefined,
+  );
   expect(stored?.fields).toHaveLength(5);
   expect(stored?.files).toEqual([
     expect.objectContaining({

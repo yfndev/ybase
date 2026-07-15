@@ -10,9 +10,10 @@ import { addLog } from "../logs";
 import { createApplicationFile } from "./fileRecord";
 import { isDuplicateKeyError, recordWebhookEvent } from "./history";
 import { parseTallySubmission, type TallyWebhookPayload } from "./tallyPayload";
+import { createApplicationWithdrawalToken } from "./withdrawalToken";
 
 export type IngestOutcome =
-  | { status: "created"; applicationId: string }
+  | { status: "created"; applicationId: string; withdrawalToken: string }
   | { status: "duplicate" }
   | { status: "ignored"; reason: string };
 
@@ -93,6 +94,8 @@ export async function ingestTallySubmission(
     return { status: "ignored", reason: "missing-email" };
   }
 
+  const withdrawal = createApplicationWithdrawalToken();
+
   const application: Application = {
     _id: newId(),
     _creationTime: Date.now(),
@@ -108,6 +111,7 @@ export async function ingestTallySubmission(
     tallySubmissionId: payload.data.submissionId,
     tallyResponseId: payload.data.responseId,
     tallyFormId: payload.data.formId,
+    withdrawalTokenHash: withdrawal.tokenHash,
     submittedAt: toTimestamp(payload.data.createdAt),
   };
 
@@ -154,5 +158,9 @@ export async function ingestTallySubmission(
     console.error("application audit log failed", error);
   }
 
-  return { status: "created", applicationId: application._id };
+  return {
+    status: "created",
+    applicationId: application._id,
+    withdrawalToken: withdrawal.token,
+  };
 }

@@ -127,3 +127,26 @@ test("retries a failed download idempotently", async () => {
     attempts: 2,
   });
 });
+
+test("deletes an uploaded object when the application was withdrawn meanwhile", async () => {
+  const { application, applicationFile } = await insertApplication();
+  const deleter = vi.fn(async () => undefined);
+  const uploader = vi.fn(async () => {
+    await (
+      await applications()
+    ).updateOne(
+      { _id: application._id },
+      { $set: { status: "withdrawn", files: [] } },
+    );
+  });
+
+  await importApplicationFile(application._id, applicationFile._id, {
+    fetcher: mockFetch(pdfResponse()),
+    uploader,
+    deleter,
+  });
+
+  expect(deleter).toHaveBeenCalledWith(
+    `applications/${application._id}/${applicationFile._id}/Lebenslauf.pdf`,
+  );
+});

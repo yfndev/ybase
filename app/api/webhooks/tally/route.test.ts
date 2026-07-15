@@ -114,6 +114,7 @@ test("processes a valid signed webhook and schedules follow-up work", async () =
   vi.mocked(ingestTallySubmission).mockResolvedValue({
     status: "created",
     applicationId: "application-1",
+    withdrawalToken: "withdrawal-token",
   });
 
   const response = await POST(request(rawBody, sign(rawBody)));
@@ -125,7 +126,10 @@ test("processes a valid signed webhook and schedules follow-up work", async () =
   });
   expect(ingestTallySubmission).toHaveBeenCalledWith(payload());
   expect(after).toHaveBeenCalledOnce();
-  expect(sendApplicationEmails).toHaveBeenCalledWith("application-1");
+  expect(sendApplicationEmails).toHaveBeenCalledWith(
+    "application-1",
+    "withdrawal-token",
+  );
   expect(importApplicationFiles).toHaveBeenCalledWith("application-1");
 });
 

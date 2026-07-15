@@ -19,6 +19,7 @@ type MailMessage = {
   cc?: EmailRecipient[];
   replyTo?: EmailRecipient;
   templateId: number;
+  subject?: string;
   params?: Record<string, unknown>;
   tags?: string[];
 };
