@@ -44,7 +44,7 @@ const MEMBER_STATUS_VARIANT: Record<MemberStatus, BadgeVariant> = {
 const TEAM_ONBOARDING_VARIANT: Record<TeamOnboardingStatus, BadgeVariant> = {
   not_started: "outline",
   in_progress: "default",
-  completed: "secondary",
+  completed: "primary",
 };
 
 function labelOf<T extends string>(options: Option<T>[], value: T): string {
