@@ -26,7 +26,10 @@ export function useJobPostingMutations() {
       onSuccess: invalidate,
     }),
     generateForm: useMutation({
-      mutationFn: generateTallyForm,
+      mutationFn: async (input: { jobPostingId: string }) => {
+        const result = await generateTallyForm(input);
+        if (!result.ok) throw new Error(result.error);
+      },
       onSettled: invalidate,
     }),
     close: useMutation({ mutationFn: closeJobPosting, onSettled: invalidate }),

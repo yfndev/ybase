@@ -20,6 +20,10 @@ type TallyFields = Partial<
   Pick<JobPosting, "tallyFormId" | "tallyWebhookId" | "tallyFormError">
 >;
 
+export type GenerateTallyFormResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
 function assertPublishable(posting: JobPosting): void {
   if (!posting.title.trim() || !posting.teamId.trim()) {
     throw new Error(
@@ -33,7 +37,7 @@ function assertPublishable(posting: JobPosting): void {
 
 export async function generateTallyForm(input: {
   jobPostingId: string;
-}): Promise<void> {
+}): Promise<GenerateTallyFormResult> {
   const user = await requirePermission(USER_PERMISSIONS.recruiting);
   const { jobPostingId } = z.object({ jobPostingId: z.string() }).parse(input);
 
@@ -43,16 +47,18 @@ export async function generateTallyForm(input: {
     throw new Error("Access denied");
   }
   if (posting.status !== "draft") {
-    throw new Error("Nur Entwürfe können ein Tally-Formular erhalten");
+    return {
+      ok: false,
+      error: "Nur Entwürfe können ein Tally-Formular erhalten",
+    };
   }
-  assertPublishable(posting);
-
-  const config = loadTallyFormConfig();
-  const client = createConfiguredTallyClient();
   const save = (fields: TallyFields) =>
     collection.updateOne({ _id: jobPostingId }, { $set: fields });
 
   try {
+    assertPublishable(posting);
+    const config = loadTallyFormConfig();
+    const client = createConfiguredTallyClient();
     const template = await client.getForm(config.templateFormId);
     const emailFieldUuid = resolveEmailFieldUuid(template.blocks);
     const blocks = normalizeTemplateBlocks(template.blocks);
@@ -97,6 +103,7 @@ export async function generateTallyForm(input: {
       jobPostingId,
       "Manuell",
     );
+    return { ok: true };
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unbekannter Fehler";
@@ -108,6 +115,6 @@ export async function generateTallyForm(input: {
       jobPostingId,
       message,
     );
-    throw new Error(message);
+    return { ok: false, error: message };
   }
 }

@@ -108,6 +108,20 @@ test("requires a Tally API token", () => {
   expect(() => createTallyClient("")).toThrow("Tally API token is required");
 });
 
+test("includes the Tally response message in API errors", async () => {
+  const fetcher = vi.fn(async () =>
+    Response.json(
+      { error: { message: "Invalid block payload" } },
+      { status: 400 },
+    ),
+  );
+  const client = createTallyClient("token", fetcher as unknown as typeof fetch);
+
+  await expect(client.getForm("form-1")).rejects.toThrow(
+    "Tally API request failed (400): Invalid block payload",
+  );
+});
+
 function recordingFetch(response: unknown) {
   return vi.fn(async (_input: string | URL | Request, _init?: RequestInit) =>
     json(response),
