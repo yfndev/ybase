@@ -43,8 +43,15 @@ export function JobPostingStatusActions({ posting }: { posting: JobPosting }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-sm text-muted-foreground">Status</span>
-      <JobPostingStatusBadge status={posting.status} />
+      <div className="flex h-8 items-stretch border-2 border-border bg-background">
+        <span className="flex items-center bg-muted px-2.5 text-xs font-medium text-muted-foreground">
+          Status
+        </span>
+        <JobPostingStatusBadge
+          status={posting.status}
+          className="h-full border-y-0 border-r-0 px-2.5"
+        />
+      </div>
       {posting.status === "draft" ? (
         <Button
           size="sm"
