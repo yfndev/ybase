@@ -1,6 +1,11 @@
+import {
+  applications,
+  jobPostings,
+  organizations,
+  users,
+} from "../../db/collections";
 import type { Application, JobPosting } from "../../db/types";
-import { applications, jobPostings, organizations } from "../../db/collections";
-import { sendMail } from "../../email/brevo";
+import { type EmailRecipient, sendMail } from "../../email/brevo";
 import { BREVO_TEMPLATE_IDS } from "../../email/templates";
 import { appUrl } from "../../email/urls";
 
@@ -41,12 +46,29 @@ async function sendContactEmail(
   application: Application,
   posting: JobPosting,
 ): Promise<void> {
-  const contact = posting.contact?.trim();
-  if (!contact || !EMAIL_PATTERN.test(contact)) return;
+  const selectedContacts = posting.contactUserIds?.length
+    ? await (
+        await users()
+      )
+        .find({
+          _id: { $in: posting.contactUserIds },
+          organizationId: posting.organizationId,
+          memberStatus: { $ne: "offboarded" },
+        })
+        .project({ name: 1, email: 1 })
+        .toArray()
+    : [];
+  const recipients: EmailRecipient[] = selectedContacts.flatMap((contact) => {
+    const email = contact.email?.trim();
+    return email && EMAIL_PATTERN.test(email)
+      ? [{ email, name: contact.name }]
+      : [];
+  });
+  if (recipients.length === 0) return;
 
   try {
     await sendMail({
-      to: [{ email: contact }],
+      to: recipients,
       replyTo: { email: application.applicantEmail },
       templateId: BREVO_TEMPLATE_IDS.APPLICATION_RECEIVED_PC,
       params: {
