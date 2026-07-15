@@ -14,6 +14,7 @@ interface Props {
   value: string | undefined;
   onValueChange: (value: string) => void;
   id?: string;
+  autoFocus?: boolean;
 }
 
 export function SelectDepartment({
@@ -21,12 +22,13 @@ export function SelectDepartment({
   value,
   onValueChange,
   id,
+  autoFocus,
 }: Props) {
   const active = departments.filter((department) => !department.isArchived);
 
   return (
     <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger id={id} className="w-full">
+      <SelectTrigger id={id} className="w-full" autoFocus={autoFocus}>
         <SelectValue placeholder="Department wählen" />
       </SelectTrigger>
       <SelectContent>
