@@ -137,6 +137,12 @@ test("reopenJobPosting reopens and reopens the Tally form", async () => {
   expect(client.updateForm).toHaveBeenCalledWith("form-1", {
     settings: { isClosed: false },
   });
+  const log = (await logsFor(id)).find((l) => l.action === "jobPosting.reopen");
+  expect(log).toMatchObject({
+    details: "Manuell",
+    userId: userA,
+    _creationTime: expect.any(Number),
+  });
 });
 
 test("reopenJobPosting refuses an expired posting until the deadline is renewed", async () => {
@@ -156,6 +162,14 @@ test("archiveJobPosting archives and closes the form", async () => {
   expect((await read(id)).status).toBe("archived");
   expect(client.updateForm).toHaveBeenCalledWith("form-1", {
     settings: { isClosed: true },
+  });
+  const log = (await logsFor(id)).find(
+    (entry) => entry.action === "jobPosting.archive",
+  );
+  expect(log).toMatchObject({
+    details: "Manuell",
+    userId: userA,
+    _creationTime: expect.any(Number),
   });
 });
 

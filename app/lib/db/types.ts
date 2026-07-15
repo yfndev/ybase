@@ -16,6 +16,7 @@ export type CostType =
   | "accommodation";
 
 export type { JobPosting, JobPostingStatus } from "./jobPosting";
+export type { JobFeedToken } from "./jobFeedToken";
 
 export type {
   Application,

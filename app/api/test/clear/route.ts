@@ -1,6 +1,7 @@
 import { isTestMode } from "@/lib/auth/environment";
 import {
   departments,
+  jobFeedTokens,
   jobPostings,
   logs,
   organizations,
@@ -39,6 +40,7 @@ export async function POST(request: Request) {
     }
     await (await reimbursements()).deleteMany({ organizationId: org._id });
     await (await volunteerAllowance()).deleteMany({ organizationId: org._id });
+    await (await jobFeedTokens()).deleteMany({ organizationId: org._id });
     await (await jobPostings()).deleteMany({ organizationId: org._id });
     await (await teams()).deleteMany({ organizationId: org._id });
     await (await departments()).deleteMany({ organizationId: org._id });

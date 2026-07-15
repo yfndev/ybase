@@ -100,9 +100,22 @@ test.describe("Ausschreibungen", () => {
     await expect(page.getByLabel("Ort")).toHaveValue("Berlin");
   });
 
-  test("publish and show the status in the list", async () => {
-    await selectOption(page, "jp-status", "Veröffentlicht");
-    await expect(page.getByText("Status aktualisiert")).toBeVisible();
+  test("publish, close and reopen with the status actions", async () => {
+    await page.getByRole("button", { name: "Veröffentlichen" }).click();
+    await expect(page.getByText("Ausschreibung veröffentlicht")).toBeVisible();
+    await expect(
+      page.getByText("Veröffentlicht", { exact: true }),
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Schließen" }).click();
+    await expect(page.getByText("Ausschreibung geschlossen")).toBeVisible();
+    await expect(page.getByText("Geschlossen", { exact: true })).toBeVisible();
+
+    await page.getByRole("button", { name: "Wieder öffnen" }).click();
+    await expect(page.getByText("Ausschreibung wieder geöffnet")).toBeVisible();
+    await expect(
+      page.getByText("Veröffentlicht", { exact: true }),
+    ).toBeVisible();
 
     await page.goto("/recruiting");
     const row = page.getByRole("row", { name: new RegExp(TITLE) });
