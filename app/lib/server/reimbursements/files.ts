@@ -4,15 +4,19 @@ import { isTestMode } from "../../auth/environment";
 import { requireUser } from "../../auth/session";
 import { presignUpload } from "../../s3/storage";
 import { getOrganization } from "../organizations/data";
+import { getProjectById } from "../projects/data";
 import { registerPendingUpload } from "../uploads/ownership";
 import { getFileInfo, getFileUrl, getReceipts, getReimbursement } from "./data";
 
 export type ReimbursementPdfData = {
   reimbursement: Awaited<ReturnType<typeof getReimbursement>>;
   organization: Awaited<ReturnType<typeof getOrganization>>;
+  projectName: string;
   signatureUrl: string | null;
   receiptsWithUrls: Array<
-    Awaited<ReturnType<typeof getReceipts>>[number] & { fileUrl: string }
+    Awaited<ReturnType<typeof getReceipts>>[number] & {
+      fileUrl: string | null;
+    }
   >;
 };
 
@@ -48,16 +52,27 @@ export async function getReimbursementPdfData(
   const reimbursement = await getReimbursement(reimbursementId);
   if (!reimbursement) return null;
 
-  const organization = await getOrganization();
-  const signatureUrl = reimbursement.signatureStorageId
-    ? await getFileUrl(reimbursement.signatureStorageId)
-    : null;
-  const receipts = await getReceipts(reimbursementId);
+  const [organization, project, signatureUrl, receipts] = await Promise.all([
+    getOrganization(),
+    getProjectById(reimbursement.projectId),
+    reimbursement.signatureStorageId
+      ? getFileUrl(reimbursement.signatureStorageId)
+      : Promise.resolve(null),
+    getReceipts(reimbursementId),
+  ]);
   const receiptsWithUrls = await Promise.all(
     receipts.map(async (receipt) => ({
       ...receipt,
-      fileUrl: await getFileUrl(receipt.fileStorageId),
+      fileUrl: receipt.fileStorageId
+        ? await getFileUrl(receipt.fileStorageId)
+        : null,
     })),
   );
-  return { reimbursement, organization, signatureUrl, receiptsWithUrls };
+  return {
+    reimbursement,
+    organization,
+    projectName: project.name,
+    signatureUrl,
+    receiptsWithUrls,
+  };
 }

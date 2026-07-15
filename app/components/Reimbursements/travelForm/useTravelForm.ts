@@ -5,7 +5,13 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { getBankDetailsError } from "@/lib/bank-utils";
 import { createTravelReimbursement } from "@/lib/server/reimbursements/creation";
-import { type CostType, DEFAULT_TAX_RATES } from "@/lib/travel-costs";
+import {
+  type CostType,
+  createMealAllowance,
+  DEFAULT_TAX_RATES,
+  getMealAllowanceTotal,
+  OVERNIGHT_ALLOWANCE_EUR,
+} from "@/lib/travel-costs";
 import { getTravelDateRangeError } from "@/lib/travelDates";
 import type { BankDetails, Receipt } from "./types";
 
@@ -16,16 +22,20 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
   const [bank, setBank] = useState(defaultBankDetails);
   const [signature, setSignature] = useState<string | null>(null);
   const [showMealAllowance, setShowMealAllowance] = useState(false);
+  const [showOvernightAllowance, setShowOvernightAllowance] = useState(false);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [travel, setTravel] = useState({
     destination: "",
     purpose: "",
     startDate: "",
+    startTime: "",
     endDate: "",
+    endTime: "",
     isInternational: false,
-    mealDays: 0,
-    mealRate: 0,
+    mealAllowance: createMealAllowance(),
+    overnightAllowanceNights: 0,
+    overnightAllowanceRate: OVERNIGHT_ALLOWANCE_EUR,
   });
 
   const update = (field: Partial<typeof travel>) =>
@@ -46,7 +56,7 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
         costType: type,
         receiptNumber: undefined,
         receiptDate: travel.startDate,
-        companyName: "",
+        companyName: type === "car" ? "Privater PKW" : "",
         description: "",
         netAmount: 0,
         taxRate: DEFAULT_TAX_RATES[type],
@@ -68,9 +78,18 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
     travel.destination &&
     travel.purpose &&
     travel.startDate &&
+    travel.startTime &&
     travel.endDate &&
-    !getTravelDateRangeError(travel.startDate, travel.endDate);
-  const mealTotal = travel.mealDays * travel.mealRate;
+    travel.endTime &&
+    !getTravelDateRangeError(
+      travel.startDate,
+      travel.endDate,
+      travel.startTime,
+      travel.endTime,
+    );
+  const mealTotal = getMealAllowanceTotal(travel.mealAllowance);
+  const overnightTotal =
+    travel.overnightAllowanceNights * travel.overnightAllowanceRate;
   const totalNet = receipts.reduce(
     (sum, receipt) => sum + receipt.netAmount,
     0,
@@ -79,7 +98,7 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
     (sum, receipt) => sum + receipt.grossAmount,
     0,
   );
-  const total = totalGross + mealTotal;
+  const total = totalGross + mealTotal + overnightTotal;
   const taxByRate = (rate: number) =>
     receipts
       .filter((receipt) => receipt.taxRate === rate)
@@ -89,11 +108,14 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
       );
   const allComplete = receipts.every(
     (receipt) =>
-      receipt.grossAmount > 0 && receipt.fileStorageId && receipt.companyName,
+      receipt.grossAmount > 0 &&
+      (receipt.costType === "car"
+        ? Boolean(receipt.kilometers)
+        : Boolean(receipt.fileStorageId && receipt.companyName)),
   );
   const canSubmit =
     hasBasicInfo &&
-    (receipts.length > 0 || mealTotal > 0) &&
+    (receipts.length > 0 || mealTotal > 0 || overnightTotal > 0) &&
     (receipts.length === 0 || allComplete) &&
     projectId;
 
@@ -111,12 +133,18 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
         ...bank,
         signatureStorageId: signature,
         startDate: travel.startDate,
+        startTime: travel.startTime,
         endDate: travel.endDate,
+        endTime: travel.endTime,
         destination: travel.destination,
         purpose: travel.purpose,
         isInternational: travel.isInternational,
-        mealAllowanceDays: travel.mealDays || undefined,
-        mealAllowanceDailyBudget: travel.mealRate || undefined,
+        mealAllowance: mealTotal > 0 ? travel.mealAllowance : undefined,
+        overnightAllowanceNights: travel.overnightAllowanceNights || undefined,
+        overnightAllowanceRate:
+          travel.overnightAllowanceNights > 0
+            ? travel.overnightAllowanceRate
+            : undefined,
         receipts,
       });
       toast.success("Reisekostenerstattung eingereicht");
@@ -136,6 +164,8 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
     setSignature,
     showMealAllowance,
     setShowMealAllowance,
+    showOvernightAllowance,
+    setShowOvernightAllowance,
     receipts,
     travel,
     update,
@@ -144,6 +174,7 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
     updateReceipt,
     hasBasicInfo,
     mealTotal,
+    overnightTotal,
     totalNet,
     total,
     taxByRate,

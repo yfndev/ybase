@@ -31,7 +31,9 @@ export async function submitPublicReimbursement(
   const allReceipts = [...args.receipts, ...(args.travelReceipts ?? [])];
   const usedKeys = [
     args.signatureStorageId,
-    ...allReceipts.map((receipt) => receipt.fileStorageId),
+    ...allReceipts.flatMap((receipt) =>
+      receipt.fileStorageId ? [receipt.fileStorageId] : [],
+    ),
   ];
   if (usedKeys.some((key) => !attachedKeys.has(key) && !pendingKeys.has(key))) {
     throw new Error("Invalid key");
@@ -65,6 +67,7 @@ export async function submitPublicReimbursement(
         signatureStorageId: args.signatureStorageId,
         status: "pending",
         submittedExternally: true,
+        submittedAt: Date.now(),
       },
       $unset: {
         reviewNote: "",
@@ -90,6 +93,7 @@ export async function submitPublicReimbursement(
       _creationTime: Date.now(),
       reimbursementId: id,
       ...receipt,
+      fileStorageId: receipt.fileStorageId ?? "",
     });
   }
   if (existing.type === "travel" && args.travelDetails) {

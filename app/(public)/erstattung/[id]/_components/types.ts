@@ -1,3 +1,4 @@
+import type { MealAllowance } from "@/lib/db/types";
 import type { CostType } from "@/lib/travel-costs";
 
 export type { CostType };
@@ -10,7 +11,7 @@ export type Receipt = {
   netAmount: number;
   taxRate: number;
   grossAmount: number;
-  fileStorageId: string | null;
+  fileStorageId?: string | null;
 };
 
 export type TravelReceipt = Receipt & {
@@ -35,18 +36,27 @@ export type ExternalReimbursementPageUIProps = {
   destination: string;
   purpose: string;
   startDate: string;
+  startTime: string;
   endDate: string;
+  endTime: string;
   isInternational: boolean;
-  mealDays: number;
-  mealRate: number;
+  mealAllowance: MealAllowance;
   mealTotal: number;
+  showOvernightAllowance: boolean;
+  overnightAllowanceNights: number;
+  overnightAllowanceRate: number;
+  overnightTotal: number;
   onDestinationChange: (value: string) => void;
   onPurposeChange: (value: string) => void;
   onStartDateChange: (value: string) => void;
+  onStartTimeChange: (value: string) => void;
   onEndDateChange: (value: string) => void;
+  onEndTimeChange: (value: string) => void;
   onIsInternationalChange: (value: boolean) => void;
-  onMealDaysChange: (value: number) => void;
-  onMealRateChange: (value: number) => void;
+  onMealAllowanceChange: (value: MealAllowance) => void;
+  onShowOvernightAllowanceChange: (value: boolean) => void;
+  onOvernightAllowanceNightsChange: (value: number) => void;
+  onOvernightAllowanceRateChange: (value: number) => void;
 
   company: string;
   number: string;

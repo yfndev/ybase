@@ -6,13 +6,13 @@ export type { Organization } from "./organization";
 export type { Department, Team } from "./orgStructureTypes";
 export type { Project, ProjectTravelDefaults } from "./project";
 export type {
-  CostType,
   Receipt,
   Reimbursement,
   ReimbursementType,
   ReviewStatus,
   TravelDetails,
 } from "./reimbursement";
+export type { CostType, MealAllowance, MealAllowanceLine } from "./travelTypes";
 export type { SignatureToken } from "./signature";
 export type { UploadContextType, UploadOwnership } from "./upload";
 export type {

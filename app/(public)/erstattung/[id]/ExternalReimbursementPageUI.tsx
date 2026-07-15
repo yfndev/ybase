@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { OvernightAllowanceSection } from "@/components/Reimbursements/OvernightAllowanceSection";
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import { Loader2 } from "lucide-react";
 import { BankAndConfirmation } from "./_components/BankAndConfirmation";
@@ -46,12 +47,16 @@ export default function ExternalReimbursementPageUI(
               destination={props.destination}
               purpose={props.purpose}
               startDate={props.startDate}
+              startTime={props.startTime}
               endDate={props.endDate}
+              endTime={props.endTime}
               isInternational={props.isInternational}
               onDestinationChange={props.onDestinationChange}
               onPurposeChange={props.onPurposeChange}
               onStartDateChange={props.onStartDateChange}
+              onStartTimeChange={props.onStartTimeChange}
               onEndDateChange={props.onEndDateChange}
+              onEndTimeChange={props.onEndTimeChange}
               onIsInternationalChange={props.onIsInternationalChange}
             />
 
@@ -70,13 +75,23 @@ export default function ExternalReimbursementPageUI(
               <FoodAllowanceSection
                 showFoodAllowance={props.showFoodAllowance}
                 onShowFoodAllowanceChange={props.onShowFoodAllowanceChange}
-                mealDays={props.mealDays}
-                mealRate={props.mealRate}
+                allowance={props.mealAllowance}
+                isInternational={props.isInternational}
                 mealTotal={props.mealTotal}
-                onMealDaysChange={props.onMealDaysChange}
-                onMealRateChange={props.onMealRateChange}
+                onAllowanceChange={props.onMealAllowanceChange}
               />
             )}
+
+            <OvernightAllowanceSection
+              enabled={props.showOvernightAllowance}
+              isInternational={props.isInternational}
+              nights={props.overnightAllowanceNights}
+              rate={props.overnightAllowanceRate}
+              total={props.overnightTotal}
+              onEnabledChange={props.onShowOvernightAllowanceChange}
+              onNightsChange={props.onOvernightAllowanceNightsChange}
+              onRateChange={props.onOvernightAllowanceRateChange}
+            />
           </>
         ) : (
           <SimpleReceiptsSection

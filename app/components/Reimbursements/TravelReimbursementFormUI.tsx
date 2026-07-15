@@ -63,6 +63,9 @@ export function TravelReimbursementFormUI({
             showMealAllowance={form.showMealAllowance}
             setShowMealAllowance={form.setShowMealAllowance}
             mealTotal={form.mealTotal}
+            showOvernightAllowance={form.showOvernightAllowance}
+            setShowOvernightAllowance={form.setShowOvernightAllowance}
+            overnightTotal={form.overnightTotal}
             organizationName={organizationName}
           />
         )}
@@ -87,6 +90,7 @@ export function TravelReimbursementFormUI({
           totalNet={form.totalNet}
           taxByRate={form.taxByRate}
           mealTotal={form.mealTotal}
+          overnightTotal={form.overnightTotal}
           total={form.total}
           isSubmitting={form.isSubmitting}
           canSubmit={!!form.canSubmit}

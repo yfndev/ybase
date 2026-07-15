@@ -1,4 +1,10 @@
-import { COST_LABELS, type CostType } from "@/lib/travel-costs";
+import {
+  COST_LABELS,
+  getMealAllowanceTotal,
+  getMealAllowanceWithLegacyFallback,
+  type CostType,
+} from "@/lib/travel-costs";
+import type { MealAllowance } from "@/lib/db/types";
 import { dateFmt } from "./primitives";
 
 export type Organization = {
@@ -19,11 +25,23 @@ export type ReimbursementInput = {
   iban?: string;
   bic?: string;
   _creationTime?: number;
+  submittedAt?: number;
   signatureUrl?: string | null;
+  projectName?: string;
   organization?: Partial<Organization>;
   travelDetails?: {
+    startDate?: string;
+    startTime?: string;
+    endDate?: string;
+    endTime?: string;
+    destination?: string;
+    purpose?: string;
+    isInternational?: boolean;
     mealAllowanceDays?: number;
     mealAllowanceDailyBudget?: number;
+    mealAllowance?: MealAllowance;
+    overnightAllowanceNights?: number;
+    overnightAllowanceRate?: number;
   } | null;
 };
 
@@ -110,19 +128,40 @@ export function buildLineItems(
   });
 
   const travel = reimbursement.travelDetails;
-  if (reimbursement.type === "travel" && travel?.mealAllowanceDays) {
-    const mealTotal =
-      travel.mealAllowanceDays * (travel.mealAllowanceDailyBudget || 0);
-    items.push({
-      nr: "",
-      date: "",
-      company: "Verpflegungspauschale",
-      description: `${travel.mealAllowanceDays} Tage`,
-      net: mealTotal,
-      tax7: 0,
-      tax19: 0,
-      gross: mealTotal,
-    });
+  if (reimbursement.type === "travel" && travel) {
+    const allowance = getMealAllowanceWithLegacyFallback(travel);
+    const mealTotal = getMealAllowanceTotal(allowance);
+    const mealDays = Object.values(allowance).reduce(
+      (sum, line) => sum + line.days,
+      0,
+    );
+    if (mealTotal > 0) {
+      items.push({
+        nr: "",
+        date: "",
+        company: "Verpflegungspauschale",
+        description: `${mealDays} Tage`,
+        net: mealTotal,
+        tax7: 0,
+        tax19: 0,
+        gross: mealTotal,
+      });
+    }
+    const overnightTotal =
+      (travel.overnightAllowanceNights ?? 0) *
+      (travel.overnightAllowanceRate ?? 0);
+    if (overnightTotal > 0) {
+      items.push({
+        nr: "",
+        date: "",
+        company: "Übernachtungspauschale",
+        description: `${travel.overnightAllowanceNights} Nächte`,
+        net: overnightTotal,
+        tax7: 0,
+        tax19: 0,
+        gross: overnightTotal,
+      });
+    }
   }
   return items;
 }

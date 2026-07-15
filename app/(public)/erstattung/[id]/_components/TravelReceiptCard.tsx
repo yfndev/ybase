@@ -13,6 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Trash2 } from "lucide-react";
+import { CAR_ALLOWANCE_RATE_EUR_PER_KM } from "@/lib/travel-costs";
+import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import type { CostType, TravelReceipt } from "./types";
 
 type Props = {
@@ -36,7 +38,9 @@ export function TravelReceiptCard(props: Props) {
     <div className="@container border rounded-lg p-4 space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="font-medium">
-          {isCar ? "PKW (0,30€/km)" : props.costLabels[receipt.costType]}
+          {isCar
+            ? `PKW (${formatCurrency(CAR_ALLOWANCE_RATE_EUR_PER_KM)}/km)`
+            : props.costLabels[receipt.costType]}
         </h3>
         <Button variant="ghost" size="icon" onClick={props.onRemove}>
           <Trash2 className="size-4" />
@@ -44,24 +48,32 @@ export function TravelReceiptCard(props: Props) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 @sm:grid-cols-2 @4xl:grid-cols-4">
-        <div>
-          <Label>Name/Firma *</Label>
-          <Input
-            value={receipt.companyName}
-            onChange={(e) => props.onUpdate({ companyName: e.target.value })}
-            placeholder="z.B. Deutsche Bahn"
-          />
-        </div>
-        <div>
-          <Label className="break-all">Beleg-/Rechnungsnummer</Label>
-          <Input
-            value={receipt.receiptNumber ?? ""}
-            onChange={(e) =>
-              props.onUpdate({ receiptNumber: e.target.value || undefined })
-            }
-            placeholder="z.B. RE-2026-001 (optional)"
-          />
-        </div>
+        {!isCar ? (
+          <>
+            <div>
+              <Label>Name/Firma *</Label>
+              <Input
+                value={receipt.companyName}
+                onChange={(e) =>
+                  props.onUpdate({ companyName: e.target.value })
+                }
+                placeholder="z.B. Deutsche Bahn"
+              />
+            </div>
+            <div>
+              <Label className="break-all">Beleg-/Rechnungsnummer</Label>
+              <Input
+                value={receipt.receiptNumber ?? ""}
+                onChange={(e) =>
+                  props.onUpdate({
+                    receiptNumber: e.target.value || undefined,
+                  })
+                }
+                placeholder="z.B. RE-2026-001 (optional)"
+              />
+            </div>
+          </>
+        ) : null}
 
         {isCar ? (
           <>
@@ -76,7 +88,10 @@ export function TravelReceiptCard(props: Props) {
                     0,
                     Math.floor(parseFloat(e.target.value) || 0),
                   );
-                  const amount = Math.round(kilometers * 0.3 * 100) / 100;
+                  const amount =
+                    Math.round(
+                      kilometers * CAR_ALLOWANCE_RATE_EUR_PER_KM * 100,
+                    ) / 100;
                   props.onUpdate({
                     kilometers,
                     grossAmount: amount,
@@ -89,7 +104,7 @@ export function TravelReceiptCard(props: Props) {
             <div>
               <Label className="text-muted-foreground">Betrag</Label>
               <Input
-                value={`${receipt.grossAmount.toFixed(2)} €`}
+                value={formatCurrency(receipt.grossAmount)}
                 disabled
                 className="bg-muted/50 font-mono"
               />
@@ -140,7 +155,7 @@ export function TravelReceiptCard(props: Props) {
         )}
       </div>
 
-      {receipt.grossAmount > 0 && (
+      {!isCar && receipt.grossAmount > 0 && (
         <div className="space-y-3">
           <Label>Beleg *</Label>
           <InvoiceOrganizationHint organizationName={props.organizationName} />

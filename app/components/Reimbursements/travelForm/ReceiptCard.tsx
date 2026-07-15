@@ -56,30 +56,34 @@ export function ReceiptCard({
       </div>
 
       <div className="grid grid-cols-1 gap-4 @sm:grid-cols-2 @4xl:grid-cols-4">
-        <div>
-          <Label>Firma/Anbieter *</Label>
-          <Input
-            value={receipt.companyName}
-            onChange={(e) =>
-              updateReceipt(receipt.costType, {
-                companyName: e.target.value,
-              })
-            }
-            placeholder={PLACEHOLDERS[receipt.costType]}
-          />
-        </div>
-        <div>
-          <Label className="break-all">Beleg-/Rechnungsnummer</Label>
-          <Input
-            value={receipt.receiptNumber ?? ""}
-            onChange={(e) =>
-              updateReceipt(receipt.costType, {
-                receiptNumber: e.target.value || undefined,
-              })
-            }
-            placeholder="z.B. RE-2026-001 (optional)"
-          />
-        </div>
+        {receipt.costType !== "car" ? (
+          <>
+            <div>
+              <Label>Firma/Anbieter *</Label>
+              <Input
+                value={receipt.companyName}
+                onChange={(e) =>
+                  updateReceipt(receipt.costType, {
+                    companyName: e.target.value,
+                  })
+                }
+                placeholder={PLACEHOLDERS[receipt.costType]}
+              />
+            </div>
+            <div>
+              <Label className="break-all">Beleg-/Rechnungsnummer</Label>
+              <Input
+                value={receipt.receiptNumber ?? ""}
+                onChange={(e) =>
+                  updateReceipt(receipt.costType, {
+                    receiptNumber: e.target.value || undefined,
+                  })
+                }
+                placeholder="z.B. RE-2026-001 (optional)"
+              />
+            </div>
+          </>
+        ) : null}
         {receipt.costType === "car" ? (
           <>
             <div>
@@ -158,18 +162,19 @@ export function ReceiptCard({
         )}
       </div>
 
-      {(receipt.grossAmount > 0 || receipt.fileStorageId) && (
-        <div className="space-y-3">
-          <Label>Beleg *</Label>
-          <InvoiceOrganizationHint organizationName={organizationName} />
-          <ReceiptUpload
-            onUploadComplete={(id) =>
-              updateReceipt(receipt.costType, { fileStorageId: id })
-            }
-            storageId={receipt.fileStorageId || undefined}
-          />
-        </div>
-      )}
+      {receipt.costType !== "car" &&
+        (receipt.grossAmount > 0 || receipt.fileStorageId) && (
+          <div className="space-y-3">
+            <Label>Beleg *</Label>
+            <InvoiceOrganizationHint organizationName={organizationName} />
+            <ReceiptUpload
+              onUploadComplete={(id) =>
+                updateReceipt(receipt.costType, { fileStorageId: id })
+              }
+              storageId={receipt.fileStorageId || undefined}
+            />
+          </div>
+        )}
     </div>
   );
 }

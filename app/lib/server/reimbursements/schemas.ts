@@ -18,11 +18,96 @@ const baseReceiptFields = {
 
 export const receiptSchema = z.object(baseReceiptFields);
 
-export const travelReceiptSchema = z.object({
-  ...baseReceiptFields,
-  costType: z.enum(["car", "train", "flight", "taxi", "bus", "accommodation"]),
-  kilometers: z.number().optional(),
+export const travelReceiptSchema = z
+  .object({
+    ...baseReceiptFields,
+    fileStorageId: z.string().optional(),
+    costType: z.enum([
+      "car",
+      "train",
+      "flight",
+      "taxi",
+      "bus",
+      "accommodation",
+      "incidental",
+    ]),
+    kilometers: z.number().optional(),
+  })
+  .superRefine((receipt, context) => {
+    if (receipt.costType === "car") {
+      const kilometers = receipt.kilometers ?? 0;
+      if (kilometers <= 0) {
+        context.addIssue({
+          code: "custom",
+          path: ["kilometers"],
+          message: "Kilometer erforderlich",
+        });
+      }
+      const expected = Math.round(kilometers * 30) / 100;
+      if (receipt.grossAmount !== expected || receipt.netAmount !== expected) {
+        context.addIssue({
+          code: "custom",
+          path: ["grossAmount"],
+          message: "Ungültige Kilometerpauschale",
+        });
+      }
+      return;
+    }
+    if (!receipt.companyName.trim()) {
+      context.addIssue({
+        code: "custom",
+        path: ["companyName"],
+        message: "Anbieter erforderlich",
+      });
+    }
+    if (!receipt.fileStorageId) {
+      context.addIssue({
+        code: "custom",
+        path: ["fileStorageId"],
+        message: "Beleg erforderlich",
+      });
+    }
+  });
+
+const mealAllowanceLineSchema = z.object({
+  days: z.number().int().min(0),
+  rate: z.number().min(0),
 });
+
+const mealAllowanceSchema = z.object({
+  singleDay: mealAllowanceLineSchema,
+  arrivalDay: mealAllowanceLineSchema,
+  fullDay: mealAllowanceLineSchema,
+  departureDay: mealAllowanceLineSchema,
+});
+
+const travelDetailsFields = {
+  startDate: z.string(),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/),
+  endDate: z.string(),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/),
+  destination: z.string(),
+  purpose: z.string(),
+  isInternational: z.boolean(),
+  mealAllowanceDays: z.number().optional(),
+  mealAllowanceDailyBudget: z.number().optional(),
+  mealAllowance: mealAllowanceSchema.optional(),
+  overnightAllowanceNights: z.number().int().min(0).optional(),
+  overnightAllowanceRate: z.number().min(0).optional(),
+};
+
+const publicTravelDetailsSchema = z
+  .object(travelDetailsFields)
+  .refine(
+    (data) =>
+      !getTravelDateRangeError(
+        data.startDate,
+        data.endDate,
+        data.startTime,
+        data.endTime,
+      ),
+    { message: TRAVEL_DATE_RANGE_ERROR, path: ["endDate"] },
+  );
 
 export const createReimbursementSchema = z.object({
   amount: z.number(),
@@ -40,19 +125,22 @@ export const createTravelReimbursementSchema = z
     ...bankDetailsFields,
     currency: z.string().optional(),
     signatureStorageId: z.string(),
-    startDate: z.string(),
-    endDate: z.string(),
-    destination: z.string(),
-    purpose: z.string(),
-    isInternational: z.boolean(),
-    mealAllowanceDays: z.number().optional(),
-    mealAllowanceDailyBudget: z.number().optional(),
+    ...travelDetailsFields,
     receipts: z.array(travelReceiptSchema),
   })
-  .refine((data) => !getTravelDateRangeError(data.startDate, data.endDate), {
-    message: TRAVEL_DATE_RANGE_ERROR,
-    path: ["endDate"],
-  });
+  .refine(
+    (data) =>
+      !getTravelDateRangeError(
+        data.startDate,
+        data.endDate,
+        data.startTime,
+        data.endTime,
+      ),
+    {
+      message: TRAVEL_DATE_RANGE_ERROR,
+      path: ["endDate"],
+    },
+  );
 
 export const createLinkSchema = z.object({
   projectId: z.string(),
@@ -78,19 +166,5 @@ export const publicReimbursementSubmissionSchema = z.object({
   signatureStorageId: z.string(),
   receipts: z.array(receiptSchema),
   travelReceipts: z.array(travelReceiptSchema).optional(),
-  travelDetails: z
-    .object({
-      startDate: z.string(),
-      endDate: z.string(),
-      destination: z.string(),
-      purpose: z.string(),
-      isInternational: z.boolean(),
-      mealAllowanceDays: z.number().optional(),
-      mealAllowanceDailyBudget: z.number().optional(),
-    })
-    .refine((data) => !getTravelDateRangeError(data.startDate, data.endDate), {
-      message: TRAVEL_DATE_RANGE_ERROR,
-      path: ["endDate"],
-    })
-    .optional(),
+  travelDetails: publicTravelDetailsSchema.optional(),
 });

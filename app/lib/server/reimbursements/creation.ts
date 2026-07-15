@@ -31,7 +31,10 @@ type ReimbursementInsert = {
   signatureStorageId: string;
 };
 
-type ReceiptInsert = Omit<Receipt, "_id" | "_creationTime" | "reimbursementId">;
+type ReceiptInsert = Omit<
+  Receipt,
+  "_id" | "_creationTime" | "reimbursementId" | "fileStorageId"
+> & { fileStorageId?: string };
 
 async function insertReimbursement(
   reimbursementId: string,
@@ -44,6 +47,7 @@ async function insertReimbursement(
   ).insertOne({
     _id: reimbursementId,
     _creationTime: Date.now(),
+    submittedAt: Date.now(),
     organizationId: user.organizationId,
     projectId: args.projectId,
     amount: args.amount,
@@ -72,6 +76,7 @@ async function insertReceipts(
       _creationTime: Date.now(),
       reimbursementId,
       ...receipt,
+      fileStorageId: receipt.fileStorageId ?? "",
     });
   }
 }
@@ -87,12 +92,17 @@ async function insertTravelDetails(
     _creationTime: Date.now(),
     reimbursementId,
     startDate: args.startDate,
+    startTime: args.startTime,
     endDate: args.endDate,
+    endTime: args.endTime,
     destination: args.destination,
     purpose: args.purpose,
     isInternational: args.isInternational,
     mealAllowanceDays: args.mealAllowanceDays,
     mealAllowanceDailyBudget: args.mealAllowanceDailyBudget,
+    mealAllowance: args.mealAllowance,
+    overnightAllowanceNights: args.overnightAllowanceNights,
+    overnightAllowanceRate: args.overnightAllowanceRate,
   });
 }
 
@@ -105,7 +115,9 @@ async function claimSubmissionUploads(
   await claimPendingUploads(
     [
       signatureStorageId,
-      ...receiptList.map((receipt) => receipt.fileStorageId),
+      ...receiptList.flatMap((receipt) =>
+        receipt.fileStorageId ? [receipt.fileStorageId] : [],
+      ),
     ],
     { organizationId: user.organizationId, userId: user._id },
     ["user", "signatureToken"],

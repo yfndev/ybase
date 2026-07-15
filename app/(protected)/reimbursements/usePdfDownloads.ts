@@ -3,20 +3,23 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { downloadBlob } from "@/lib/fileHandlers/downloadBlob";
 import { generateReimbursementPDF } from "@/lib/fileHandlers/generateReimbursementPDF";
+import { generateTravelReimbursementPDF } from "@/lib/fileHandlers/generateTravelReimbursementPDF";
 import { generateVolunteerAllowancePDF } from "@/lib/fileHandlers/generateVolunteerAllowancePDF";
 import { shortReferenceId } from "@/lib/fileHandlers/referenceId";
 import { getReimbursementPdfData } from "@/lib/server/reimbursements/files";
 import { getSignatureUrlAction } from "@/lib/server/volunteerAllowance/actions";
-import type { Allowance, SelectionKey } from "./types";
+import type { Allowance, Reimbursement, SelectionKey } from "./types";
 
 type Params = {
   allowances: Allowance[];
+  reimbursements: Reimbursement[];
   selected: Set<SelectionKey>;
   clearSelection: () => void;
 };
 
 export function usePdfDownloads({
   allowances,
+  reimbursements,
   selected,
   clearSelection,
 }: Params) {
@@ -28,14 +31,15 @@ export function usePdfDownloads({
     const data = await getReimbursementPdfData(id);
     if (!data || !data.reimbursement) return null;
 
-    return generateReimbursementPDF(
-      {
-        ...data.reimbursement,
-        organization: data.organization,
-        signatureUrl: data.signatureUrl,
-      },
-      data.receiptsWithUrls,
-    );
+    const input = {
+      ...data.reimbursement,
+      organization: data.organization,
+      projectName: data.projectName,
+      signatureUrl: data.signatureUrl,
+    };
+    return data.reimbursement.type === "travel"
+      ? generateTravelReimbursementPDF(input, data.receiptsWithUrls)
+      : generateReimbursementPDF(input, data.receiptsWithUrls);
   };
 
   const getPdfBlobForAllowance = async (
@@ -93,13 +97,24 @@ export function usePdfDownloads({
       const allowanceById = new Map(
         allowances.map((allowance) => [allowance._id, allowance]),
       );
+      const reimbursementById = new Map(
+        reimbursements.map((reimbursement) => [
+          reimbursement._id,
+          reimbursement,
+        ]),
+      );
       const pdfs = await Promise.all(
         [...selected].map(async (key) => {
           if (key.startsWith("r:")) {
             const id = key.slice(2);
             const blob = await getPdfBlobForReimbursement(id);
+            const reimbursement = reimbursementById.get(id);
+            const prefix =
+              reimbursement?.type === "travel"
+                ? "Reisekostenerstattung"
+                : "Auslagenerstattung";
             return blob
-              ? { name: `Erstattung_${shortReferenceId(id)}.pdf`, blob }
+              ? { name: `${prefix}_${shortReferenceId(id)}.pdf`, blob }
               : null;
           }
 

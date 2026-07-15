@@ -22,11 +22,13 @@ export default async function ReimbursementDetailPage({
   const rawReceipts = reimbursement ? await getReceipts(id) : [];
   const receipts = await Promise.all(
     rawReceipts.map(async (receipt) => {
-      const file = await getFileInfo(receipt.fileStorageId);
+      const file = receipt.fileStorageId
+        ? await getFileInfo(receipt.fileStorageId)
+        : null;
       return {
         ...receipt,
-        fileUrl: file.url,
-        fileContentType: file.contentType,
+        fileUrl: file?.url ?? null,
+        fileContentType: file?.contentType ?? null,
       };
     }),
   );
@@ -40,7 +42,9 @@ export default async function ReimbursementDetailPage({
     );
   }
 
-  const totalGross = sumGross(receipts);
+  const receiptTotal = sumGross(receipts);
+  const totalGross =
+    reimbursement.type === "travel" ? reimbursement.amount : receiptTotal;
 
   return (
     <div className="flex flex-col w-full h-screen">
@@ -68,7 +72,10 @@ export default async function ReimbursementDetailPage({
 
         <ReceiptList receipts={receipts} />
 
-        <TotalsSummary receipts={receipts} />
+        <TotalsSummary
+          receipts={receipts}
+          reimbursementTotal={reimbursement.amount}
+        />
       </div>
     </div>
   );
