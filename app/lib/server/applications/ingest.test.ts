@@ -33,6 +33,12 @@ function buildPayload(input: {
       type: "TEXTAREA",
       value: "Ich will helfen",
     },
+    {
+      key: "q-phone",
+      label: "Telefon",
+      type: "INPUT_PHONE_NUMBER",
+      value: "+49123456789",
+    },
   ];
   if (input.jobPostingId !== undefined) {
     fields.unshift({
@@ -125,6 +131,11 @@ test("creates a received application scoped to the posting org with a snapshot",
   expect(stored?.applicantEmailNormalized).toBe("max@example.com");
   expect(stored?.applicantName).toBe("Max Mustermann");
   expect(stored?.fields).toHaveLength(4);
+  expect(stored).not.toHaveProperty("applicantPhone");
+  expect(stored?.fields.some((field) => field.type.includes("PHONE"))).toBe(
+    false,
+  );
+  expect(JSON.stringify(stored)).not.toContain("+49123456789");
 });
 
 test("ignores a submission without the hidden job posting id", async () => {
@@ -228,6 +239,29 @@ test("de-duplicates a repeated delivery of the same event", async () => {
   expect(await (await applications()).countDocuments()).toBe(1);
 });
 
+test("de-duplicates concurrent deliveries and keeps the event processed", async () => {
+  const payload = buildPayload({
+    eventId: "e1",
+    submissionId: "s1",
+    jobPostingId: postingA,
+    email: "a@b.de",
+  });
+
+  const outcomes = await Promise.all([
+    ingestTallySubmission(payload),
+    ingestTallySubmission(payload),
+  ]);
+
+  expect(outcomes.map((outcome) => outcome.status).sort()).toEqual([
+    "created",
+    "duplicate",
+  ]);
+  expect(await (await applications()).countDocuments()).toBe(1);
+  const event = await (await tallyWebhookEvents()).findOne({ _id: "e1" });
+  expect(event?.status).toBe("processed");
+  expect(event?.applicationId).toBeTruthy();
+});
+
 test("de-duplicates the same submission arriving under a different event", async () => {
   await ingestTallySubmission(
     buildPayload({
@@ -247,6 +281,32 @@ test("de-duplicates the same submission arriving under a different event", async
   );
 
   expect(second).toEqual({ status: "duplicate" });
+  expect(await (await applications()).countDocuments()).toBe(1);
+  const event = await (await tallyWebhookEvents()).findOne({ _id: "e2" });
+  expect(event?.status).toBe("duplicate");
+  expect(event?.applicationId).toBeTruthy();
+});
+
+test("de-duplicates the same response arriving as another submission", async () => {
+  const first = buildPayload({
+    eventId: "e1",
+    submissionId: "s1",
+    jobPostingId: postingA,
+    email: "first@b.de",
+  });
+  await ingestTallySubmission(first);
+
+  const second = buildPayload({
+    eventId: "e2",
+    submissionId: "s2",
+    jobPostingId: postingA,
+    email: "second@b.de",
+  });
+  second.data.responseId = first.data.responseId;
+
+  await expect(ingestTallySubmission(second)).resolves.toEqual({
+    status: "duplicate",
+  });
   expect(await (await applications()).countDocuments()).toBe(1);
 });
 
