@@ -9,7 +9,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,8 +87,8 @@ export function ReimbursementToolbar({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button type="button" variant="outline">
-              <Table2 />
-              Export
+              <Download />
+              Exportieren
               <ChevronDown />
             </Button>
           </DropdownMenuTrigger>
@@ -107,31 +106,16 @@ export function ReimbursementToolbar({
       ) : null}
 
       {canManageReimbursements ? (
-        <ButtonGroup>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button type="button" variant="outline" onClick={onShareClick}>
+            <Share2 />
+            Erstattung anfordern
+          </Button>
           <Button type="button" variant="primary" onClick={onNewClick}>
             <Plus />
             Neue Erstattung
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="primary"
-                size="icon"
-                aria-label="Weitere Erstattungsaktionen"
-                title="Weitere Erstattungsaktionen"
-              >
-                <ChevronDown />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={onShareClick}>
-                <Share2 />
-                Erstattung anfordern
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </ButtonGroup>
+        </div>
       ) : (
         <Button type="button" variant="primary" onClick={onNewClick}>
           <Plus />
