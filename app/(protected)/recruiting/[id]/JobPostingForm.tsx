@@ -8,7 +8,7 @@ import {
   type JobPostingFormValues,
   toJobPostingForm,
 } from "@/lib/jobPostings/form";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Send } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { JobPostingApplications } from "./JobPostingApplications";
@@ -17,26 +17,58 @@ import { JobPostingContentFields } from "./JobPostingContentFields";
 import { JobPostingStatusActions } from "./JobPostingStatusActions";
 
 export function JobPostingForm({ posting }: { posting: JobPosting }) {
-  const { update } = useJobPostingMutations();
+  const { update, generateForm } = useJobPostingMutations();
   const [values, setValues] = useState<JobPostingFormValues>(() =>
     toJobPostingForm(posting),
+  );
+  const [activeAction, setActiveAction] = useState<"save" | "publish" | null>(
+    null,
   );
 
   const patch = (part: Partial<JobPostingFormValues>) =>
     setValues((current) => ({ ...current, ...part }));
 
-  const handleSave = async () => {
+  const hasRequiredFields = () => {
     if (!values.title.trim() || !values.teamId) {
       toast.error("Titel und Team sind erforderlich");
-      return;
+      return false;
     }
+
+    return true;
+  };
+
+  const handleSave = async () => {
+    if (!hasRequiredFields()) return;
+
+    setActiveAction("save");
     try {
       await update.mutateAsync({ jobPostingId: posting._id, ...values });
       toast.success("Ausschreibung gespeichert");
     } catch {
       toast.error("Fehler beim Speichern");
+    } finally {
+      setActiveAction(null);
     }
   };
+
+  const handlePublish = async () => {
+    if (!hasRequiredFields()) return;
+
+    setActiveAction("publish");
+    try {
+      await update.mutateAsync({ jobPostingId: posting._id, ...values });
+      await generateForm.mutateAsync({ jobPostingId: posting._id });
+      toast.success("Ausschreibung veröffentlicht");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Fehler beim Veröffentlichen",
+      );
+    } finally {
+      setActiveAction(null);
+    }
+  };
+
+  const isBusy = activeAction !== null;
 
   return (
     <div className="space-y-6">
@@ -47,15 +79,41 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <JobPostingStatusActions posting={posting} />
-        <Button onClick={handleSave} disabled={update.isPending}>
-          {update.isPending ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Save className="size-4" />
-          )}
-          Speichern
-        </Button>
+        {posting.status === "draft" ? null : (
+          <JobPostingStatusActions posting={posting} />
+        )}
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          <Button
+            variant={posting.status === "draft" ? "outline" : "primary"}
+            onClick={handleSave}
+            disabled={isBusy}
+            aria-busy={activeAction === "save"}
+          >
+            {activeAction === "save" ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Save className="size-4" />
+            )}
+            {posting.status === "draft" ? "Entwurf speichern" : "Speichern"}
+          </Button>
+          {posting.status === "draft" ? (
+            <Button
+              variant="primary"
+              onClick={handlePublish}
+              disabled={isBusy}
+              aria-busy={activeAction === "publish"}
+            >
+              {activeAction === "publish" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Send className="size-4" />
+              )}
+              {posting.tallyFormError
+                ? "Speichern & erneut veröffentlichen"
+                : "Speichern & veröffentlichen"}
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       {posting.status === "draft" ? null : (

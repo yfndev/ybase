@@ -114,7 +114,7 @@ test.describe("Ausschreibungen", () => {
     const description = page.locator('[aria-label="Beschreibung"]');
     await description.click();
     await page.keyboard.type(DESCRIPTION);
-    await page.getByRole("button", { name: "Speichern" }).click();
+    await page.getByRole("button", { name: "Entwurf speichern" }).click();
     await expect(page.getByText("Ausschreibung gespeichert")).toBeVisible();
 
     await page.reload();
@@ -122,7 +122,11 @@ test.describe("Ausschreibungen", () => {
       DESCRIPTION,
     );
 
-    await page.getByRole("button", { name: "Veröffentlichen" }).click();
+    await description.click();
+    await page.keyboard.type(" Aktualisiert.");
+    await page
+      .getByRole("button", { name: "Speichern & veröffentlichen" })
+      .click();
     await expect(page.getByText("Ausschreibung veröffentlicht")).toBeVisible();
     await expect(
       page.getByText("Veröffentlicht", { exact: true }),
@@ -130,6 +134,11 @@ test.describe("Ausschreibungen", () => {
     await expect(
       page.getByRole("heading", { name: "Bewerbungen", exact: true }),
     ).toBeVisible();
+
+    await page.reload();
+    await expect(page.locator('[aria-label="Beschreibung"]')).toContainText(
+      `${DESCRIPTION} Aktualisiert.`,
+    );
 
     await page.getByRole("button", { name: "Schließen" }).click();
     await expect(page.getByText("Ausschreibung geschlossen")).toBeVisible();
