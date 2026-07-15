@@ -15,15 +15,11 @@ import { logs, organizations, teams, users } from "../../db/collections";
 import { newId } from "../../db/ids";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
-import {
-  addUserToOrganization,
-  setMemberStatus,
-  setTeamOnboardingStatus,
-  updateBankDetails,
-  updateMemberProfile,
-  updateUserRole,
-} from "./actions";
 import { listMembers } from "./data";
+import { setMemberStatus, setTeamOnboardingStatus } from "./lifecycleActions";
+import { addUserToOrganization } from "./membership";
+import { updateBankDetails, updateMemberProfile } from "./profile";
+import { updateUserRole } from "./roles";
 
 let orgA: string;
 let orgB: string;

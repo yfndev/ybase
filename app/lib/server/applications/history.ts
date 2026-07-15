@@ -44,7 +44,6 @@ export async function recordWebhookEvent(
     { $set: event },
   );
   if (result.matchedCount > 0) return;
-
   try {
     await collection.insertOne({
       _id: payload.eventId,
