@@ -41,7 +41,7 @@ export function MembersClient() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Teammitglieder" />
+      <PageHeader title="Team" />
 
       <MembersToolbar
         filters={filters}
