@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("./environment", () => ({
-  isLocalCredentialsEnabled: () => false,
+  isTestMode: () => false,
 }));
 vi.mock("./provisioning", () => ({
   ensureAppUser: mocks.ensureAppUser,

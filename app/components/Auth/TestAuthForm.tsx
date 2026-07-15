@@ -15,7 +15,7 @@ export function TestAuthForm() {
 
   async function handleSubmit() {
     setStatus("Authenticating...");
-    const result = await signIn("development", {
+    const result = await signIn("testing", {
       email,
       name,
       redirect: false,
