@@ -1,14 +1,14 @@
 "use client";
 
-import { Check, ChevronsUpDown, Search } from "lucide-react";
+import { Check, ChevronDown, Search } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, inputClassName } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 export interface MultiSelectOption {
   value: string;
@@ -90,13 +90,17 @@ export function MultiSelect<TOption extends MultiSelectOption>({
       }}
     >
       <PopoverTrigger asChild>
-        <Button
+        <button
           id={id}
           type="button"
-          variant="outline"
           aria-haspopup="listbox"
           aria-expanded={open}
-          className="min-h-12 h-auto w-full justify-between px-3 py-2 font-normal"
+          data-placeholder={value.length === 0}
+          className={cn(
+            inputClassName,
+            "flex min-h-12 items-center justify-between gap-2 text-left data-[placeholder=true]:text-muted-foreground",
+            open && "border-foreground",
+          )}
         >
           <span className="flex min-w-0 items-center gap-2 truncate">
             {value.length > 0
@@ -104,8 +108,13 @@ export function MultiSelect<TOption extends MultiSelectOption>({
                 `${value.length} ausgewählt`)
               : placeholder}
           </span>
-          <ChevronsUpDown className="size-4 text-muted-foreground" />
-        </Button>
+          <ChevronDown
+            className={cn(
+              "size-4 shrink-0 text-muted-foreground transition-transform",
+              open && "rotate-180",
+            )}
+          />
+        </button>
       </PopoverTrigger>
       <PopoverContent
         align="start"
@@ -150,7 +159,7 @@ export function MultiSelect<TOption extends MultiSelectOption>({
                   aria-selected={selected}
                   disabled={disabled}
                   onClick={() => toggleOption(option)}
-                  className="flex w-full items-center gap-3 px-2 py-2 text-left outline-none transition-colors hover:bg-accent focus-visible:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left outline-none transition-colors hover:bg-accent focus-visible:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <span className="min-w-0 flex-1">
                     {renderOption?.(option) ?? (
