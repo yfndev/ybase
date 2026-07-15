@@ -9,6 +9,8 @@ const BASE_URL =
 
 const DEPARTMENT = "Vorstand";
 const TEAM = "Öffentlichkeitsarbeit";
+const OTHER_DEPARTMENT = "Finanzen";
+const OTHER_TEAM = "Buchhaltung";
 const TITLE = "Social Media Manager:in";
 const DESCRIPTION = "Wir suchen Unterstützung für unsere Kanäle.";
 
@@ -60,6 +62,23 @@ test.describe("Ausschreibungen", () => {
       .getByRole("button", { name: "Team erstellen" })
       .click();
     await expect(page.getByText("Team erstellt")).toBeVisible();
+
+    await page.getByRole("button", { name: "Department erstellen" }).click();
+    await page.getByLabel("Department-Name*").fill(OTHER_DEPARTMENT);
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Department erstellen" })
+      .click();
+    await expect(page.getByText("Department erstellt")).toBeVisible();
+
+    await page.getByRole("button", { name: "Team erstellen" }).click();
+    await page.getByLabel("Team-Name*").fill(OTHER_TEAM);
+    await selectOption(page, "team-department", OTHER_DEPARTMENT);
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Team erstellen" })
+      .click();
+    await expect(page.getByText("Team erstellt")).toBeVisible();
   });
 
   test.afterEach(async () => {
@@ -73,8 +92,14 @@ test.describe("Ausschreibungen", () => {
     });
     await expect(createButton).toHaveCount(1);
     await createButton.click();
+    await expect(page.locator("#posting-team")).toHaveCount(0);
+    await selectOption(page, "posting-department", DEPARTMENT);
+    await expect(page.locator("#posting-team")).toBeVisible();
     await page.getByLabel("Titel*").fill(TITLE);
-    await selectOption(page, "posting-team", TEAM);
+    await page.locator("#posting-team").click();
+    await expect(page.getByRole("option", { name: TEAM })).toBeVisible();
+    await expect(page.getByRole("option", { name: OTHER_TEAM })).toHaveCount(0);
+    await page.getByRole("option", { name: TEAM }).click();
     await page.getByRole("button", { name: "Entwurf erstellen" }).click();
 
     await expect(page).toHaveURL(/\/recruiting\/[^/]+$/);

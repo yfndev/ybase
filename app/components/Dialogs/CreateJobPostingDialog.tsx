@@ -1,5 +1,6 @@
 "use client";
 
+import { SelectDepartment } from "@/components/Selectors/SelectDepartment";
 import { SelectTeam } from "@/components/Selectors/SelectTeam";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useDepartments } from "@/lib/client/departments/hooks/useDepartments";
 import { useJobPostingMutations } from "@/lib/client/jobPostings/hooks/useJobPostingMutations";
 import { useTeams } from "@/lib/client/teams/hooks/useTeams";
 import { Loader2 } from "lucide-react";
@@ -25,13 +27,25 @@ interface Props {
 
 export function CreateJobPostingDialog({ open, onOpenChange }: Props) {
   const router = useRouter();
+  const { departments } = useDepartments();
   const { teams } = useTeams();
   const { create } = useJobPostingMutations();
   const [title, setTitle] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
   const [teamId, setTeamId] = useState("");
+  const departmentTeams = teams.filter(
+    (team) => team.departmentId === departmentId,
+  );
+  const hasDepartmentTeams = departmentTeams.length > 0;
 
   const reset = () => {
     setTitle("");
+    setDepartmentId("");
+    setTeamId("");
+  };
+
+  const handleDepartmentChange = (value: string) => {
+    setDepartmentId(value);
     setTeamId("");
   };
 
@@ -62,12 +76,42 @@ export function CreateJobPostingDialog({ open, onOpenChange }: Props) {
           <DialogTitle>Neue Ausschreibung</DialogTitle>
         </DialogHeader>
 
-        {teams.length === 0 ? (
+        {departments.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Bitte lege zuerst ein aktives Department an.
+          </p>
+        ) : teams.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Bitte lege zuerst ein aktives Team an.
           </p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="posting-department">Department*</Label>
+              <SelectDepartment
+                id="posting-department"
+                departments={departments}
+                value={departmentId || undefined}
+                onValueChange={handleDepartmentChange}
+                autoFocus
+              />
+            </div>
+            {departmentId && hasDepartmentTeams ? (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="posting-team">Team*</Label>
+                <SelectTeam
+                  id="posting-team"
+                  teams={departmentTeams}
+                  value={teamId || undefined}
+                  onValueChange={setTeamId}
+                />
+              </div>
+            ) : null}
+            {departmentId && !hasDepartmentTeams ? (
+              <p className="text-sm text-muted-foreground">
+                In diesem Department gibt es kein aktives Team.
+              </p>
+            ) : null}
             <div className="flex flex-col gap-2">
               <Label htmlFor="posting-title">Titel*</Label>
               <Input
@@ -75,16 +119,6 @@ export function CreateJobPostingDialog({ open, onOpenChange }: Props) {
                 placeholder="Wonach suchst du?"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                autoFocus
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="posting-team">Team*</Label>
-              <SelectTeam
-                id="posting-team"
-                teams={teams}
-                value={teamId || undefined}
-                onValueChange={setTeamId}
               />
             </div>
             <DialogFooter>
