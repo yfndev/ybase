@@ -2,6 +2,7 @@
 
 import { PageHeader } from "@/components/Layout/PageHeader";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Download,
@@ -98,53 +99,65 @@ export function ReimbursementPageUI({
     <div className="flex flex-col w-full">
       <PageHeader title="Erstattungen" />
 
-      <div className="mb-4 flex flex-wrap justify-end gap-2">
+      <div className="mb-4 flex flex-wrap items-start gap-2">
         {selected.size > 0 && (
-          <Button
-            variant="outline"
-            onClick={onBulkDownload}
-            disabled={isBulkDownloading}
+          <ButtonGroup
+            aria-label={`Aktionen für ${selected.size} ausgewählte ${
+              selected.size === 1 ? "Erstattung" : "Erstattungen"
+            }`}
           >
-            {isBulkDownloading ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4 mr-2" />
-            )}
-            {isBulkDownloading ? "Wird erstellt..." : "Herunterladen"}
-          </Button>
+            <ButtonGroupText className="h-10 border-2 bg-muted px-3">
+              {selected.size} ausgewählt
+            </ButtonGroupText>
+            <Button
+              variant="outline"
+              onClick={onBulkDownload}
+              disabled={isBulkDownloading}
+            >
+              {isBulkDownloading ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <Download />
+              )}
+              {isBulkDownloading ? "Wird erstellt..." : "Herunterladen"}
+            </Button>
+            {canDeleteSelected ? (
+              <Button
+                variant="outline"
+                className="text-destructive hover:text-destructive"
+                onClick={onDeleteSelected}
+              >
+                <Trash2 />
+                Löschen
+              </Button>
+            ) : null}
+          </ButtonGroup>
         )}
-        {canManageReimbursements ? (
-          <>
-            <Button variant="outline" onClick={onFinomCsv}>
-              <Table2 className="h-4 w-4 mr-2" />
-              Finom CSV
-            </Button>
-            <Button variant="outline" onClick={onSepaXml}>
-              <FileCode2 className="h-4 w-4 mr-2" />
-              SEPA XML
-            </Button>
-          </>
-        ) : null}
-        {canDeleteSelected ? (
-          <Button
-            variant="outline"
-            className="text-destructive hover:text-destructive"
-            onClick={onDeleteSelected}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Löschen
+
+        <div className="ml-auto flex flex-wrap justify-end gap-2">
+          {canManageReimbursements ? (
+            <>
+              <Button variant="outline" onClick={onFinomCsv}>
+                <Table2 />
+                Finom CSV
+              </Button>
+              <Button variant="outline" onClick={onSepaXml}>
+                <FileCode2 />
+                SEPA XML
+              </Button>
+            </>
+          ) : null}
+          <Button variant="primary" onClick={onNewClick}>
+            <Plus />
+            Neue Erstattung
           </Button>
-        ) : null}
-        <Button variant="primary" onClick={onNewClick}>
-          <Plus className="h-4 w-4 mr-2" />
-          Neue Erstattung
-        </Button>
-        {canManageReimbursements ? (
-          <Button variant="outline" onClick={onShareClick}>
-            <Share2 className="h-4 w-4 mr-2" />
-            Erstattung anfordern
-          </Button>
-        ) : null}
+          {canManageReimbursements ? (
+            <Button variant="outline" onClick={onShareClick}>
+              <Share2 />
+              Erstattung anfordern
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <Tabs
