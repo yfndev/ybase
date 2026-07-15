@@ -1,10 +1,10 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   setMemberStatus,
   setTeamOnboardingStatus,
-  updateMemberProfile,
-  updateUserRole,
-} from "@/lib/server/users/actions";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+} from "@/lib/server/users/lifecycleActions";
+import { updateMemberProfile } from "@/lib/server/users/profile";
+import { updateUserRole } from "@/lib/server/users/roles";
 
 export function useMemberMutations() {
   const queryClient = useQueryClient();

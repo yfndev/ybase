@@ -1,24 +1,15 @@
 "use client";
 
 import { PageHeader } from "@/components/Layout/PageHeader";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Download,
-  FileCode2,
-  Loader2,
-  Plus,
-  Share2,
-  Table2,
-  Trash2,
-} from "lucide-react";
+import { ReimbursementFilters } from "./ReimbursementFilters";
 import { ReimbursementTable } from "./ReimbursementTable";
-import { RejectDialogModal } from "./RejectDialogModal";
+import { ReimbursementToolbar } from "./ReimbursementToolbar";
+import { ReviewDialog } from "./ReviewDialog";
 import type {
   Allowance,
-  RejectDialog,
   Reimbursement,
   ReimbursementTypeFilter,
+  RejectDialog,
   SelectionKey,
 } from "./types";
 
@@ -60,149 +51,51 @@ interface Props {
   onSepaXml: () => void;
 }
 
-export function ReimbursementPageUI({
-  canManageReimbursements,
-  currentUserId,
-  reimbursements,
-  allowances,
-  typeFilter,
-  rejectDialog,
-  selected,
-  isBulkDownloading,
-  onNewClick,
-  onShareClick,
-  onRowClick,
-  onApproveReimbursement,
-  onApproveAllowance,
-  onOpenChangesDialog,
-  onOpenRejectDialog,
-  onRejectDialogChange,
-  onReject,
-  isRejecting,
-  onOpenReimbursement,
-  onOpenAllowance,
-  onEditReimbursement,
-  onEditAllowance,
-  onDeleteReimbursement,
-  onDeleteAllowance,
-  canDeleteSelected,
-  onDeleteSelected,
-  onToggleSelect,
-  onToggleSelectAll,
-  onTypeFilterChange,
-  onBulkDownload,
-  onFinomCsv,
-  onSepaXml,
-}: Props) {
+export function ReimbursementPageUI(props: Props) {
   return (
-    <div className="flex flex-col w-full">
+    <div className="flex w-full flex-col">
       <PageHeader title="Erstattungen" />
-
-      <div className="mb-4 flex flex-wrap items-start gap-2">
-        {selected.size > 0 && (
-          <fieldset
-            aria-label={`Aktionen für ${selected.size} ausgewählte ${
-              selected.size === 1 ? "Erstattung" : "Erstattungen"
-            }`}
-            className="flex w-fit flex-wrap items-center gap-2"
-          >
-            <div className="flex h-10 items-center rounded-md border-2 bg-muted px-3 text-sm font-medium">
-              {selected.size} ausgewählt
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onBulkDownload}
-              disabled={isBulkDownloading}
-            >
-              {isBulkDownloading ? (
-                <Loader2 className="animate-spin" />
-              ) : (
-                <Download />
-              )}
-              {isBulkDownloading ? "Wird erstellt..." : "Herunterladen"}
-            </Button>
-            {canDeleteSelected ? (
-              <Button
-                type="button"
-                variant="outline"
-                className="text-destructive hover:text-destructive"
-                onClick={onDeleteSelected}
-              >
-                <Trash2 />
-                Löschen
-              </Button>
-            ) : null}
-          </fieldset>
-        )}
-
-        <div className="ml-auto flex flex-wrap justify-end gap-2">
-          {canManageReimbursements ? (
-            <>
-              <Button variant="outline" onClick={onFinomCsv}>
-                <Table2 />
-                Finom CSV
-              </Button>
-              <Button variant="outline" onClick={onSepaXml}>
-                <FileCode2 />
-                SEPA XML
-              </Button>
-            </>
-          ) : null}
-          <Button variant="primary" onClick={onNewClick}>
-            <Plus />
-            Neue Erstattung
-          </Button>
-          {canManageReimbursements ? (
-            <Button variant="outline" onClick={onShareClick}>
-              <Share2 />
-              Erstattung anfordern
-            </Button>
-          ) : null}
-        </div>
-      </div>
-
-      <Tabs
-        value={typeFilter}
-        onValueChange={(value) =>
-          onTypeFilterChange(value as ReimbursementTypeFilter)
-        }
-        className="mb-4"
-      >
-        <TabsList aria-label="Erstattungsart filtern">
-          <TabsTrigger value="all">Alle</TabsTrigger>
-          <TabsTrigger value="travel">Reisekostenerstattung</TabsTrigger>
-          <TabsTrigger value="expense">Auslagenerstattung</TabsTrigger>
-          <TabsTrigger value="allowance">Ehrenamtspauschale</TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      <ReimbursementTable
-        canManageReimbursements={canManageReimbursements}
-        currentUserId={currentUserId}
-        reimbursements={reimbursements}
-        allowances={allowances}
-        selected={selected}
-        onRowClick={onRowClick}
-        onApproveReimbursement={onApproveReimbursement}
-        onApproveAllowance={onApproveAllowance}
-        onOpenChangesDialog={onOpenChangesDialog}
-        onOpenRejectDialog={onOpenRejectDialog}
-        onOpenReimbursement={onOpenReimbursement}
-        onOpenAllowance={onOpenAllowance}
-        onEditReimbursement={onEditReimbursement}
-        onEditAllowance={onEditAllowance}
-        onDeleteReimbursement={onDeleteReimbursement}
-        onDeleteAllowance={onDeleteAllowance}
-        onToggleSelect={onToggleSelect}
-        onToggleSelectAll={onToggleSelectAll}
+      <ReimbursementToolbar
+        canManageReimbursements={props.canManageReimbursements}
+        selectedCount={props.selected.size}
+        canDeleteSelected={props.canDeleteSelected}
+        isBulkDownloading={props.isBulkDownloading}
+        onNewClick={props.onNewClick}
+        onShareClick={props.onShareClick}
+        onDeleteSelected={props.onDeleteSelected}
+        onBulkDownload={props.onBulkDownload}
+        onFinomCsv={props.onFinomCsv}
+        onSepaXml={props.onSepaXml}
       />
-
-      <RejectDialogModal
-        rejectDialog={rejectDialog}
-        onRejectDialogChange={onRejectDialogChange}
-        onReject={onReject}
-        isRejecting={isRejecting}
+      <ReimbursementFilters
+        value={props.typeFilter}
+        onChange={props.onTypeFilterChange}
+      />
+      <ReimbursementTable
+        canManageReimbursements={props.canManageReimbursements}
+        currentUserId={props.currentUserId}
+        reimbursements={props.reimbursements}
+        allowances={props.allowances}
+        selected={props.selected}
+        onRowClick={props.onRowClick}
+        onApproveReimbursement={props.onApproveReimbursement}
+        onApproveAllowance={props.onApproveAllowance}
+        onOpenChangesDialog={props.onOpenChangesDialog}
+        onOpenRejectDialog={props.onOpenRejectDialog}
+        onOpenReimbursement={props.onOpenReimbursement}
+        onOpenAllowance={props.onOpenAllowance}
+        onEditReimbursement={props.onEditReimbursement}
+        onEditAllowance={props.onEditAllowance}
+        onDeleteReimbursement={props.onDeleteReimbursement}
+        onDeleteAllowance={props.onDeleteAllowance}
+        onToggleSelect={props.onToggleSelect}
+        onToggleSelectAll={props.onToggleSelectAll}
+      />
+      <ReviewDialog
+        dialog={props.rejectDialog}
+        onChange={props.onRejectDialogChange}
+        onSubmit={props.onReject}
+        isSubmitting={props.isRejecting}
       />
     </div>
   );

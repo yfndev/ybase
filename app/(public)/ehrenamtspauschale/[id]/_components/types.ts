@@ -1,4 +1,4 @@
-import type { AllowanceLink } from "@/(public)/_lib/publicApi";
+import type { AllowanceLink } from "@/(public)/_lib/allowances";
 
 export type AllowanceForm = {
   volunteerName: string;

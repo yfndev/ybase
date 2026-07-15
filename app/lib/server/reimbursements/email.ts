@@ -51,8 +51,14 @@ async function getMailData(
 
   const [organization, creator, project] = await Promise.all([
     (await organizations()).findOne({ _id: reimbursement.organizationId }),
-    (await users()).findOne({ _id: reimbursement.createdBy }),
-    (await projects()).findOne({ _id: reimbursement.projectId }),
+    (await users()).findOne({
+      _id: reimbursement.createdBy,
+      organizationId: reimbursement.organizationId,
+    }),
+    (await projects()).findOne({
+      _id: reimbursement.projectId,
+      organizationId: reimbursement.organizationId,
+    }),
   ]);
 
   if (!organization || !creator || !project) return null;

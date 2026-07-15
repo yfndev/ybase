@@ -1,5 +1,9 @@
 "use client";
 
+import { Loader2, Pencil } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,11 +12,7 @@ import {
   getBankDetailsError,
   normalizeIban,
 } from "@/lib/bank-utils";
-import { updateBankDetails } from "@/lib/server/users/actions";
-import { Loader2, Pencil } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import toast from "react-hot-toast";
+import { updateBankDetails } from "@/lib/server/users/profile";
 
 type BankDetails = { iban: string; bic: string; accountHolder: string };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReimbursementLink } from "@/(public)/_lib/publicApi";
+import type { ReimbursementLink } from "@/(public)/_lib/reimbursements";
 import {
   changeMealAllowanceCountry,
   createMealAllowance,
@@ -54,8 +54,7 @@ export function usePublicTravelFields() {
     setOvernightAllowanceRate(OVERNIGHT_ALLOWANCE_EUR);
   };
   const mealTotal = getMealAllowanceTotal(mealAllowance);
-  const overnightTotal =
-    overnightAllowanceNights * overnightAllowanceRate;
+  const overnightTotal = overnightAllowanceNights * overnightAllowanceRate;
 
   return {
     destination,

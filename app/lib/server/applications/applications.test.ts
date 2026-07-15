@@ -8,8 +8,7 @@ import { newId } from "../../db/ids";
 import type { Application } from "../../db/types";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
-import { getApplications } from "./data";
-import { updateApplicationManagement } from "./management";
+import { getApplications, updateApplicationManagement } from "./management";
 import { setApplicationStatus } from "./status";
 
 let organizationId: string;

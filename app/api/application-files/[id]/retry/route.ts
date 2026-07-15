@@ -1,6 +1,6 @@
 import { after } from "next/server";
 import { importApplicationFile } from "@/lib/server/applications/fileImport";
-import { queueApplicationFileRetry } from "@/lib/server/applications/files";
+import { queueApplicationFileRetry } from "@/lib/server/applications/management";
 
 type RouteContext = { params: Promise<{ id: string }> };
 

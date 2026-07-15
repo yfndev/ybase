@@ -8,6 +8,7 @@ import {
   Megaphone,
   Network,
   ScrollText,
+  UserRoundSearch,
   UserCog,
 } from "lucide-react";
 import Image from "next/image";
@@ -39,12 +40,6 @@ type ProtectedNavItem = NavItem & { permission: UserPermission };
 
 const ADMINISTRATION_NAV_ITEMS: ProtectedNavItem[] = [
   {
-    name: "Organisation",
-    url: "/settings/organization",
-    icon: Building2,
-    permission: USER_PERMISSIONS.organizationSettings,
-  },
-  {
     name: "Struktur",
     url: "/settings/teams",
     icon: Network,
@@ -63,6 +58,12 @@ const ADMINISTRATION_NAV_ITEMS: ProtectedNavItem[] = [
     permission: USER_PERMISSIONS.projects,
   },
   {
+    name: "Organisation",
+    url: "/settings/organization",
+    icon: Building2,
+    permission: USER_PERMISSIONS.organizationSettings,
+  },
+  {
     name: "Logs",
     url: "/settings/logs",
     icon: ScrollText,
@@ -75,7 +76,14 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const mainItems: NavItem[] = [
     ...NAV_ITEMS,
     ...(hasPermission(role, USER_PERMISSIONS.recruiting)
-      ? [{ name: "Ausschreibungen", url: "/recruiting", icon: Megaphone }]
+      ? [
+          { name: "Ausschreibungen", url: "/recruiting", icon: Megaphone },
+          {
+            name: "Bewerbungen",
+            url: "/applications",
+            icon: UserRoundSearch,
+          },
+        ]
       : []),
   ];
   const administrationItems = ADMINISTRATION_NAV_ITEMS.filter(

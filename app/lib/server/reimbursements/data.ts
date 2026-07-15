@@ -1,5 +1,5 @@
-import { hasPermission, USER_PERMISSIONS } from "../../auth/roles";
 import { isTestMode } from "../../auth/environment";
+import { hasPermission, USER_PERMISSIONS } from "../../auth/roles";
 import { requireUser } from "../../auth/session";
 import {
   projects,
@@ -10,6 +10,8 @@ import {
 } from "../../db/collections";
 import type { Receipt, Reimbursement, TravelDetails } from "../../db/types";
 import { getDownloadInfo, presignDownload } from "../../s3/storage";
+import { requireFileAccess } from "../uploads/access";
+import { findAccessibleReimbursement } from "./access";
 
 export async function getUserBankDetails(): Promise<{
   iban: string;
@@ -32,21 +34,19 @@ export async function getReimbursement(reimbursementId: string): Promise<
   | null
 > {
   const user = await requireUser();
-  const canManageReimbursements = hasPermission(
-    user.role,
-    USER_PERMISSIONS.finance,
+  const reimbursement = await findAccessibleReimbursement(
+    reimbursementId,
+    user,
   );
-  const reimbursement = await (
-    await reimbursements()
-  ).findOne({
-    _id: reimbursementId,
-    organizationId: user.organizationId,
-    ...(canManageReimbursements ? {} : { createdBy: user._id }),
-  });
   if (!reimbursement) return null;
 
   const reviewer = reimbursement.reviewedBy
-    ? await (await users()).findOne({ _id: reimbursement.reviewedBy })
+    ? await (
+        await users()
+      ).findOne({
+        _id: reimbursement.reviewedBy,
+        organizationId: user.organizationId,
+      })
     : null;
   const reviewedByName = reviewer?.name;
 
@@ -60,31 +60,29 @@ export async function getReimbursement(reimbursementId: string): Promise<
 
 export async function getReceipts(reimbursementId: string): Promise<Receipt[]> {
   const user = await requireUser();
-  const canManageReimbursements = hasPermission(
-    user.role,
-    USER_PERMISSIONS.finance,
+  const reimbursement = await findAccessibleReimbursement(
+    reimbursementId,
+    user,
   );
-  const reimbursement = await (
-    await reimbursements()
-  ).findOne({
-    _id: reimbursementId,
-    organizationId: user.organizationId,
-    ...(canManageReimbursements ? {} : { createdBy: user._id }),
-  });
   if (!reimbursement) return [];
 
   return (await receipts()).find({ reimbursementId }).toArray();
 }
 
 export async function getFileUrl(storageId: string): Promise<string> {
-  await requireUser();
+  const user = await requireUser();
+  await requireFileAccess(storageId, user);
+  if (isTestMode()) {
+    return "data:image/gif;base64,R0lGODlhAQABAAAAACw=";
+  }
   return presignDownload(storageId);
 }
 
 export async function getFileInfo(
   storageId: string,
 ): Promise<{ url: string; contentType: string }> {
-  await requireUser();
+  const user = await requireUser();
+  await requireFileAccess(storageId, user);
   if (isTestMode()) {
     return {
       url: "data:image/gif;base64,R0lGODlhAQABAAAAACw=",
@@ -131,9 +129,24 @@ export async function getAllReimbursements(): Promise<
 
   const [creators, projectList, reviewers, travelList, receiptList] =
     await Promise.all([
-      (await users()).find({ _id: { $in: creatorIds } }).toArray(),
-      (await projects()).find({ _id: { $in: projectIds } }).toArray(),
-      (await users()).find({ _id: { $in: reviewerIds } }).toArray(),
+      (await users())
+        .find({
+          _id: { $in: creatorIds },
+          organizationId: user.organizationId,
+        })
+        .toArray(),
+      (await projects())
+        .find({
+          _id: { $in: projectIds },
+          organizationId: user.organizationId,
+        })
+        .toArray(),
+      (await users())
+        .find({
+          _id: { $in: reviewerIds },
+          organizationId: user.organizationId,
+        })
+        .toArray(),
       (await travelDetails())
         .find({ reimbursementId: { $in: travelIds } })
         .toArray(),

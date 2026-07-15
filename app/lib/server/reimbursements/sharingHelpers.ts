@@ -1,3 +1,4 @@
+import type { z } from "zod";
 import {
   projects,
   reimbursements,
@@ -6,8 +7,7 @@ import {
   volunteerAllowance,
 } from "../../db/collections";
 import { newId } from "../../db/ids";
-import type { z } from "zod";
-import type { createLinkSchema } from "./validators";
+import type { createLinkSchema } from "./schemas";
 
 export type PendingReimbursementLink = {
   _id: string;
@@ -94,7 +94,7 @@ export async function loadPendingSharedLinks(organizationId: string): Promise<{
     ]),
   ];
   const projectList = await (await projects())
-    .find({ _id: { $in: projectIds } })
+    .find({ _id: { $in: projectIds }, organizationId })
     .toArray();
   const projectMap = new Map(
     projectList.map((project) => [project._id, project.name]),
@@ -107,7 +107,7 @@ export async function loadPendingSharedLinks(organizationId: string): Promise<{
     ]),
   ];
   const creators = await (await users())
-    .find({ _id: { $in: creatorIds } })
+    .find({ _id: { $in: creatorIds }, organizationId })
     .toArray();
   const creatorMap = new Map(
     creators.map((creator) => [creator._id, creator.name]),

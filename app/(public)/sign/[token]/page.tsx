@@ -1,17 +1,17 @@
 "use client";
 
-import {
-  type SignValidation,
-  submitSign,
-  uploadViaPresign,
-  validateSignToken,
-} from "@/(public)/_lib/publicApi";
-import { Button } from "@/components/ui/button";
 import { AlertCircle, CheckCircle2, Loader2, RotateCcw } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import SignaturePad from "react-signature-canvas";
+import { uploadViaPresign } from "@/(public)/_lib/http";
+import {
+  type SignValidation,
+  submitSign,
+  validateSignToken,
+} from "@/(public)/_lib/signatures";
+import { Button } from "@/components/ui/button";
 
 export default function SignaturePage() {
   const { token } = useParams<{ token: string }>();
@@ -37,12 +37,12 @@ export default function SignaturePage() {
         .toDataURL("image/png");
       const blob = await (await fetch(dataUrl)).blob();
 
-      const key = await uploadViaPresign(
+      await uploadViaPresign(
         `/api/public/sign/${token}/upload-url`,
         { contentType: "image/png" },
         blob,
       );
-      await submitSign(token, key);
+      await submitSign(token);
       setSubmitted(true);
     } catch (error) {
       toast.error(

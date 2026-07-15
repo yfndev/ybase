@@ -155,7 +155,13 @@ test.describe("critical reimbursement journeys", () => {
       .click();
     await expectSubmission(page, "Erstattung eingereicht");
     await expect(
-      page.getByRole("cell", { name: "Test Projekt", exact: true }),
+      page
+        .locator("table tbody tr")
+        .first()
+        .locator(
+          '[data-mobile-metadata="project"]:visible, [data-reimbursement-column="project"]:visible',
+        )
+        .filter({ hasText: /^Test Projekt$/ }),
     ).toBeVisible();
     await expect(
       page.getByRole("cell", { name: "Auslagenerstattung" }),
@@ -216,6 +222,27 @@ test.describe("critical reimbursement journeys", () => {
       name: "Aktionen für 1 ausgewählte Erstattung",
     });
     await expect(bulkActions).toBeVisible();
+    expect(
+      await bulkActions
+        .locator(":scope > *")
+        .evaluateAll(
+          (elements) =>
+            new Set(
+              elements.map((element) =>
+                Math.round(element.getBoundingClientRect().top),
+              ),
+            ).size,
+        ),
+    ).toBe(1);
+    await expect
+      .poll(() =>
+        page
+          .locator('[data-slot="table-container"]')
+          .evaluate(
+            (element) => element.scrollWidth <= element.clientWidth + 1,
+          ),
+      )
+      .toBe(true);
 
     const download = page.waitForEvent("download");
     await bulkActions.getByRole("button", { name: "Herunterladen" }).click();
@@ -289,7 +316,11 @@ test.describe("critical reimbursement journeys", () => {
       travelRow.getByText("Reisekostenerstattung", { exact: true }),
     ).toBeVisible();
     await expect(
-      travelRow.getByText("Allgemein", { exact: true }),
+      travelRow
+        .locator(
+          '[data-mobile-metadata="project"]:visible, [data-reimbursement-column="project"]:visible',
+        )
+        .filter({ hasText: /^Allgemein$/ }),
     ).toBeVisible();
     await expect(page.getByText("Ausstehend")).toBeVisible();
 

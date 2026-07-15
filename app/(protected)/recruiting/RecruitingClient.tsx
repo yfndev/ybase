@@ -1,7 +1,6 @@
 "use client";
 
 import { CreateJobPostingDialog } from "@/components/Dialogs/CreateJobPostingDialog";
-import { ApplicationsPanel } from "@/components/Applications/ApplicationsPanel";
 import { JobPostingStatusBadge } from "@/components/JobPostings/JobPostingStatusBadge";
 import { PageHeader } from "@/components/Layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -35,18 +34,6 @@ export function RecruitingClient() {
       </div>
 
       <section className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold">Bewerbungen</h2>
-          <p className="text-sm text-muted-foreground">
-            Alle eingegangenen Bewerbungen ausschreibungsübergreifend.
-          </p>
-        </div>
-        <ApplicationsPanel />
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Ausschreibungen</h2>
-
         {isLoading ? (
           <p className="text-muted-foreground py-8 text-center">Lädt…</p>
         ) : jobPostings.length === 0 ? (
@@ -72,7 +59,12 @@ export function RecruitingClient() {
                   return (
                     <TableRow key={posting._id}>
                       <TableCell className="font-medium">
-                        {posting.title}
+                        <Link
+                          href={`/recruiting/${posting._id}`}
+                          className="outline-none hover:underline focus-visible:underline"
+                        >
+                          {posting.title}
+                        </Link>
                       </TableCell>
                       <TableCell>{info?.teamName ?? "–"}</TableCell>
                       <TableCell>{info?.departmentName ?? "–"}</TableCell>

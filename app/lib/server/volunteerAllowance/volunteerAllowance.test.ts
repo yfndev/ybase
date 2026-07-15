@@ -21,15 +21,16 @@ vi.mock("./email", () => ({
 import { requireRole, requireUser } from "../../auth/session";
 import { users, volunteerAllowance } from "../../db/collections";
 import { newId } from "../../db/ids";
+import { deleteObject } from "../../s3/storage";
 import {
   createTestActor,
   insertTestOrganization,
   insertTestProject,
 } from "../../test/fixtures";
-import { deleteObject } from "../../s3/storage";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
+import { registerPendingUpload } from "../uploads/ownership";
 import { create, remove } from "./actions";
-import { getAll } from "./data";
+import { getAll, getSignatureUrl } from "./data";
 import {
   sendApprovalEmail,
   sendChangesRequestedEmail,
@@ -37,8 +38,9 @@ import {
   sendSubmissionReceivedEmail,
   sendSubmissionRequestedEmail,
 } from "./email";
-import { createLink } from "./sharing";
+import { submitPublicAllowance } from "./public";
 import { approve, decline, requestChanges } from "./reviewActions";
+import { createLink } from "./sharing";
 
 let orgA: string;
 let orgB: string;
@@ -103,6 +105,12 @@ beforeEach(async () => {
   });
   vi.mocked(requireUser).mockResolvedValue(actor);
   vi.mocked(requireRole).mockResolvedValue(actor);
+  await registerPendingUpload("sig-key", {
+    organizationId: orgA,
+    userId: userA,
+    contextType: "user",
+    contextId: userA,
+  });
 });
 
 test("create + getAll stay scoped to the caller's org", async () => {
@@ -174,6 +182,26 @@ test("create rejects missing bank details", async () => {
   ).rejects.toThrow();
 });
 
+test("creation rejects a signature upload owned by another user", async () => {
+  const projectA = await insertProject();
+  await registerPendingUpload("other-user-signature", {
+    organizationId: orgA,
+    userId: newId(),
+    contextType: "user",
+    contextId: newId(),
+  });
+
+  await expect(
+    create({
+      ...newAllowanceInput(projectA),
+      signatureStorageId: "other-user-signature",
+    }),
+  ).rejects.toThrow("Upload does not belong to the current user");
+  expect(
+    await (await volunteerAllowance()).findOne({ amount: 100 }),
+  ).toBeNull();
+});
+
 test("create persists the allowance as pending", async () => {
   const projectA = await insertProject();
 
@@ -185,7 +213,7 @@ test("create persists the allowance as pending", async () => {
 });
 
 test("creating an emailed allowance request sends the request template", async () => {
-  const projectA = newId();
+  const projectA = await insertProject();
   const id = await createLink({
     projectId: projectA,
     invitedName: "Erika",
@@ -196,6 +224,116 @@ test("creating an emailed allowance request sends the request template", async (
   expect(doc?.isSharedLink).toBe(true);
   expect(doc?.invitedEmail).toBe("erika@example.com");
   expect(sendSubmissionRequestedEmail).toHaveBeenCalledWith(id);
+});
+
+test("public allowance cannot claim another link's signature", async () => {
+  const projectA = await insertProject();
+  const id = await createLink({ projectId: projectA });
+  await (
+    await volunteerAllowance()
+  ).updateOne(
+    { _id: id },
+    { $set: { pendingSignatureStorageId: "foreign-public-signature" } },
+  );
+  await registerPendingUpload("foreign-public-signature", {
+    organizationId: orgA,
+    userId: userA,
+    contextType: "allowance",
+    contextId: newId(),
+  });
+
+  await expect(
+    submitPublicAllowance(id, {
+      amount: 100,
+      iban: "DE89370400440532013000",
+      accountHolder: "External",
+      activityDescription: "External",
+      startDate: "2026-01-01",
+      endDate: "2026-01-31",
+      volunteerName: "External",
+      submitterEmail: "external@example.com",
+      volunteerStreet: "Street 1",
+      volunteerPlz: "10115",
+      volunteerCity: "Berlin",
+      signatureStorageId: "foreign-public-signature",
+    }),
+  ).rejects.toThrow("Upload does not belong to the current user");
+  expect(
+    (await (await volunteerAllowance()).findOne({ _id: id }))?.amount,
+  ).toBe(0);
+});
+
+test("signature downloads reject another organization's allowance", async () => {
+  const foreign = newId();
+  await (
+    await volunteerAllowance()
+  ).insertOne({
+    _id: foreign,
+    _creationTime: Date.now(),
+    organizationId: orgB,
+    projectId: newId(),
+    amount: 50,
+    status: "pending",
+    iban: "DE00",
+    accountHolder: "Foreign",
+    createdBy: newId(),
+    activityDescription: "Foreign",
+    startDate: "2026-01-01",
+    endDate: "2026-01-31",
+    volunteerName: "Foreign",
+    volunteerStreet: "x",
+    volunteerPlz: "x",
+    volunteerCity: "x",
+    signatureStorageId: "foreign-signature-key",
+  });
+
+  await expect(getSignatureUrl("foreign-signature-key")).rejects.toThrow(
+    "File not found",
+  );
+});
+
+test.each([
+  [
+    "foreign",
+    () => insertTestProject({ organizationId: orgB, createdBy: newId() }),
+  ],
+  [
+    "archived",
+    () =>
+      insertTestProject({
+        organizationId: orgA,
+        createdBy: userA,
+        isArchived: true,
+      }),
+  ],
+  ["unknown", async () => ({ _id: newId() })],
+])("creation rejects a %s project", async (_label, createProject) => {
+  const project = await createProject();
+  await expect(create(newAllowanceInput(project._id))).rejects.toThrow(
+    "Active project not found",
+  );
+});
+
+test.each([
+  [
+    "foreign",
+    () => insertTestProject({ organizationId: orgB, createdBy: newId() }),
+  ],
+  [
+    "archived",
+    () =>
+      insertTestProject({
+        organizationId: orgA,
+        createdBy: userA,
+        isArchived: true,
+      }),
+  ],
+  ["unknown", async () => ({ _id: newId() })],
+])("sharing rejects a %s project", async (_label, createProject) => {
+  const project = await createProject();
+  await expect(createLink({ projectId: project._id })).rejects.toThrow(
+    "Active project not found",
+  );
 });
 
 test("approve sets status approved", async () => {

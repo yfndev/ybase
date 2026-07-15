@@ -118,9 +118,7 @@ export async function generateTravelReimbursementPDF(
   await drawSignature(pdfDoc, pages, reimbursement.signatureUrl);
   await appendReceiptPages(pdfDoc, fonts, receipts);
 
-  pdfDoc.setTitle(
-    `Reisekostenerstattung ${data.fields.employeeName || ""}`,
-  );
+  pdfDoc.setTitle(`Reisekostenerstattung ${data.fields.employeeName || ""}`);
 
   const pdfBytes = await pdfDoc.save();
   return new Blob([pdfBytes.buffer as ArrayBuffer], {

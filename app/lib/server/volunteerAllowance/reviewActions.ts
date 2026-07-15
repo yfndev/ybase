@@ -3,14 +3,13 @@
 import { z } from "zod";
 import { requireRole } from "../../auth/session";
 import { volunteerAllowance } from "../../db/collections";
+import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "../../volunteerAllowance/constants";
 import { addLog } from "../logs";
 import {
   sendApprovalEmail,
   sendChangesRequestedEmail,
   sendRejectionEmail,
 } from "./email";
-
-const MAX_VOLUNTEER_ALLOWANCE_EUR = 960;
 
 async function loadPending(id: string, organizationId: string) {
   const doc = await (await volunteerAllowance()).findOne({ _id: id });

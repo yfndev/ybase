@@ -16,9 +16,9 @@ const baseReceiptFields = {
   fileStorageId: z.string(),
 };
 
-const receiptValidator = z.object(baseReceiptFields);
+export const receiptSchema = z.object(baseReceiptFields);
 
-const travelReceiptValidator = z
+export const travelReceiptSchema = z
   .object({
     ...baseReceiptFields,
     fileStorageId: z.string().optional(),
@@ -69,17 +69,45 @@ const travelReceiptValidator = z
     }
   });
 
-const mealAllowanceLineValidator = z.object({
+const mealAllowanceLineSchema = z.object({
   days: z.number().int().min(0),
   rate: z.number().min(0),
 });
 
-const mealAllowanceValidator = z.object({
-  singleDay: mealAllowanceLineValidator,
-  arrivalDay: mealAllowanceLineValidator,
-  fullDay: mealAllowanceLineValidator,
-  departureDay: mealAllowanceLineValidator,
+const mealAllowanceSchema = z.object({
+  singleDay: mealAllowanceLineSchema,
+  arrivalDay: mealAllowanceLineSchema,
+  fullDay: mealAllowanceLineSchema,
+  departureDay: mealAllowanceLineSchema,
 });
+
+const travelDetailsFields = {
+  startDate: z.string(),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/),
+  endDate: z.string(),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/),
+  destination: z.string(),
+  purpose: z.string(),
+  isInternational: z.boolean(),
+  mealAllowanceDays: z.number().optional(),
+  mealAllowanceDailyBudget: z.number().optional(),
+  mealAllowance: mealAllowanceSchema.optional(),
+  overnightAllowanceNights: z.number().int().min(0).optional(),
+  overnightAllowanceRate: z.number().min(0).optional(),
+};
+
+const publicTravelDetailsSchema = z
+  .object(travelDetailsFields)
+  .refine(
+    (data) =>
+      !getTravelDateRangeError(
+        data.startDate,
+        data.endDate,
+        data.startTime,
+        data.endTime,
+      ),
+    { message: TRAVEL_DATE_RANGE_ERROR, path: ["endDate"] },
+  );
 
 export const createReimbursementSchema = z.object({
   amount: z.number(),
@@ -87,7 +115,7 @@ export const createReimbursementSchema = z.object({
   ...bankDetailsFields,
   currency: z.string().optional(),
   signatureStorageId: z.string(),
-  receipts: z.array(receiptValidator),
+  receipts: z.array(receiptSchema),
 });
 
 export const createTravelReimbursementSchema = z
@@ -97,19 +125,8 @@ export const createTravelReimbursementSchema = z
     ...bankDetailsFields,
     currency: z.string().optional(),
     signatureStorageId: z.string(),
-    startDate: z.string(),
-    startTime: z.string().regex(/^\d{2}:\d{2}$/),
-    endDate: z.string(),
-    endTime: z.string().regex(/^\d{2}:\d{2}$/),
-    destination: z.string(),
-    purpose: z.string(),
-    isInternational: z.boolean(),
-    mealAllowanceDays: z.number().optional(),
-    mealAllowanceDailyBudget: z.number().optional(),
-    mealAllowance: mealAllowanceValidator.optional(),
-    overnightAllowanceNights: z.number().int().min(0).optional(),
-    overnightAllowanceRate: z.number().min(0).optional(),
-    receipts: z.array(travelReceiptValidator),
+    ...travelDetailsFields,
+    receipts: z.array(travelReceiptSchema),
   })
   .refine(
     (data) =>
@@ -137,4 +154,17 @@ export const createLinkSchema = z.object({
       allowFoodAllowance: z.boolean().optional(),
     })
     .optional(),
+});
+
+export const publicReimbursementSubmissionSchema = z.object({
+  amount: z.number(),
+  iban: z.string(),
+  bic: z.string(),
+  accountHolder: z.string(),
+  submitterName: z.string(),
+  submitterEmail: z.string().email(),
+  signatureStorageId: z.string(),
+  receipts: z.array(receiptSchema),
+  travelReceipts: z.array(travelReceiptSchema).optional(),
+  travelDetails: publicTravelDetailsSchema.optional(),
 });

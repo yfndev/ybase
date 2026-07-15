@@ -8,8 +8,8 @@ import { newId } from "../../db/ids";
 import { berlinToday, isDeadlinePassed } from "../../jobPostings/deadline";
 import { addLog } from "../logs";
 import { createApplicationFile } from "./fileRecord";
+import { isDuplicateKeyError, recordWebhookEvent } from "./history";
 import { parseTallySubmission, type TallyWebhookPayload } from "./tallyPayload";
-import { isDuplicateKeyError, recordWebhookEvent } from "./webhookEvent";
 
 export type IngestOutcome =
   | { status: "created"; applicationId: string }
@@ -34,7 +34,9 @@ export async function ingestTallySubmission(
 ): Promise<IngestOutcome> {
   const seen = await (
     await tallyWebhookEvents()
-  ).findOne({ _id: payload.eventId });
+  ).findOne({
+    _id: payload.eventId,
+  });
   if (seen) return outcomeFromEvent(seen);
 
   const parsed = parseTallySubmission(payload);
@@ -47,7 +49,9 @@ export async function ingestTallySubmission(
 
   const posting = await (
     await jobPostings()
-  ).findOne({ _id: parsed.jobPostingId });
+  ).findOne({
+    _id: parsed.jobPostingId,
+  });
   if (!posting) {
     await recordWebhookEvent(payload, "ignored", {
       reason: "unknown-job-posting",
