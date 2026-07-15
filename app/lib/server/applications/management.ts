@@ -1,11 +1,91 @@
 "use server";
 
 import { z } from "zod";
-import { applications, users } from "../../db/collections";
-import type { Application } from "../../db/types";
+import { USER_PERMISSIONS } from "../../auth/roles";
+import { requirePermission } from "../../auth/session";
+import { applications, jobPostings, users } from "../../db/collections";
+import type { Application, ApplicationWithFiles } from "../../db/types";
 import { addLog } from "../logs";
-import { loadOwnedApplication } from "./access";
+import {
+  loadOwnedApplication,
+  requireRecruitingApplicationFile,
+  requireRecruitingJobPosting,
+} from "./access";
 import { createApplicationHistoryEntry } from "./history";
+
+function toApplicationView(
+  application: Application,
+  jobPostingTitle: string,
+): ApplicationWithFiles {
+  return {
+    ...application,
+    jobPostingTitle,
+    files: (application.files ?? []).map(
+      ({ sourceUrl: _sourceUrl, storageKey: _storageKey, ...file }) => file,
+    ),
+  };
+}
+
+export async function getApplications(): Promise<ApplicationWithFiles[]> {
+  const user = await requirePermission(USER_PERMISSIONS.recruiting);
+  const [records, postings] = await Promise.all([
+    (await applications())
+      .find({ organizationId: user.organizationId })
+      .sort({ _creationTime: -1 })
+      .toArray(),
+    (await jobPostings())
+      .find({ organizationId: user.organizationId })
+      .project({ _id: 1, title: 1 })
+      .toArray(),
+  ]);
+  const titles = new Map(
+    postings.map((posting) => [posting._id, posting.title]),
+  );
+  return records.map((application) =>
+    toApplicationView(
+      application,
+      titles.get(application.jobPostingId) ?? "Unbekannte Ausschreibung",
+    ),
+  );
+}
+
+export async function getApplicationsForJobPosting(
+  jobPostingId: string,
+): Promise<ApplicationWithFiles[]> {
+  const { user, posting } = await requireRecruitingJobPosting(jobPostingId);
+  const records = await (await applications())
+    .find({ organizationId: user.organizationId, jobPostingId })
+    .sort({ _creationTime: -1 })
+    .toArray();
+  return records.map((application) =>
+    toApplicationView(application, posting.title),
+  );
+}
+
+export async function queueApplicationFileRetry(
+  fileId: string,
+): Promise<string> {
+  const { application, file } = await requireRecruitingApplicationFile(fileId);
+  if (file.status === "rejected") {
+    throw new Error("Abgelehnte Dateien können nicht erneut importiert werden");
+  }
+  if (file.status === "failed") {
+    await (
+      await applications()
+    ).updateOne(
+      { _id: application._id },
+      {
+        $set: {
+          "files.$[file].status": "pending",
+          "files.$[file].updatedAt": Date.now(),
+        },
+        $unset: { "files.$[file].error": "" },
+      },
+      { arrayFilters: [{ "file._id": fileId, "file.status": "failed" }] },
+    );
+  }
+  return application._id;
+}
 
 export async function updateApplicationManagement(input: {
   applicationId: string;
@@ -38,16 +118,19 @@ export async function updateApplicationManagement(input: {
 
   const nextNotes = parsed.internalNotes.trim();
   const details: string[] = [];
-  if ((application.ownerId ?? null) !== parsed.ownerId)
+  if ((application.ownerId ?? null) !== parsed.ownerId) {
     details.push("Verantwortung geändert");
-  if ((application.internalNotes ?? "") !== nextNotes)
+  }
+  if ((application.internalNotes ?? "") !== nextNotes) {
     details.push("Interne Notizen aktualisiert");
-  if ((application.interviewAt ?? null) !== parsed.interviewAt)
+  }
+  if ((application.interviewAt ?? null) !== parsed.interviewAt) {
     details.push(
       parsed.interviewAt
         ? "Interviewtermin aktualisiert"
         : "Interviewtermin entfernt",
     );
+  }
   if (details.length === 0) return;
 
   const entry = createApplicationHistoryEntry(

@@ -1,7 +1,7 @@
 import { AmountInput } from "@/components/Selectors/AmountInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "./constants";
+import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "@/lib/volunteerAllowance/constants";
 import type { AllowanceForm, UpdateField } from "./types";
 
 type Props = {

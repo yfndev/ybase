@@ -1,4 +1,4 @@
-import { getApplications } from "@/lib/server/applications/data";
+import { getApplications } from "@/lib/server/applications/management";
 
 export async function GET() {
   try {

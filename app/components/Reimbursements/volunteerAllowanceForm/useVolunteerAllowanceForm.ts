@@ -1,12 +1,13 @@
 "use client";
 
-import { create } from "@/lib/server/volunteerAllowance/actions";
-import { getBankDetailsError } from "@/lib/bank-utils";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { CURRENT_YEAR, MAX_VOLUNTEER_ALLOWANCE_EUR } from "./constants";
+import { getBankDetailsError } from "@/lib/bank-utils";
+import { create } from "@/lib/server/volunteerAllowance/actions";
+import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "@/lib/volunteerAllowance/constants";
+import { CURRENT_YEAR } from "./constants";
 import type { BankDetails, VolunteerAllowanceForm } from "./types";
 
 const parseAmount = (value: string) => parseFloat(value.replace(",", "."));

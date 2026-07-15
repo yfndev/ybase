@@ -1,8 +1,5 @@
-import {
-  BIC_REGEX,
-  IBAN_REGEX,
-  MAX_VOLUNTEER_ALLOWANCE_EUR,
-} from "./constants";
+import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "@/lib/volunteerAllowance/constants";
+import { BIC_REGEX, IBAN_REGEX } from "./constants";
 import type { AllowanceForm } from "./types";
 
 export const formatIban = (iban: string) =>

@@ -16,9 +16,9 @@ const baseReceiptFields = {
   fileStorageId: z.string(),
 };
 
-const receiptValidator = z.object(baseReceiptFields);
+export const receiptSchema = z.object(baseReceiptFields);
 
-const travelReceiptValidator = z.object({
+export const travelReceiptSchema = z.object({
   ...baseReceiptFields,
   costType: z.enum(["car", "train", "flight", "taxi", "bus", "accommodation"]),
   kilometers: z.number().optional(),
@@ -30,7 +30,7 @@ export const createReimbursementSchema = z.object({
   ...bankDetailsFields,
   currency: z.string().optional(),
   signatureStorageId: z.string(),
-  receipts: z.array(receiptValidator),
+  receipts: z.array(receiptSchema),
 });
 
 export const createTravelReimbursementSchema = z
@@ -47,7 +47,7 @@ export const createTravelReimbursementSchema = z
     isInternational: z.boolean(),
     mealAllowanceDays: z.number().optional(),
     mealAllowanceDailyBudget: z.number().optional(),
-    receipts: z.array(travelReceiptValidator),
+    receipts: z.array(travelReceiptSchema),
   })
   .refine((data) => !getTravelDateRangeError(data.startDate, data.endDate), {
     message: TRAVEL_DATE_RANGE_ERROR,
@@ -64,6 +64,33 @@ export const createLinkSchema = z.object({
       destination: z.string().optional(),
       purpose: z.string().optional(),
       allowFoodAllowance: z.boolean().optional(),
+    })
+    .optional(),
+});
+
+export const publicReimbursementSubmissionSchema = z.object({
+  amount: z.number(),
+  iban: z.string(),
+  bic: z.string(),
+  accountHolder: z.string(),
+  submitterName: z.string(),
+  submitterEmail: z.string().email(),
+  signatureStorageId: z.string(),
+  receipts: z.array(receiptSchema),
+  travelReceipts: z.array(travelReceiptSchema).optional(),
+  travelDetails: z
+    .object({
+      startDate: z.string(),
+      endDate: z.string(),
+      destination: z.string(),
+      purpose: z.string(),
+      isInternational: z.boolean(),
+      mealAllowanceDays: z.number().optional(),
+      mealAllowanceDailyBudget: z.number().optional(),
+    })
+    .refine((data) => !getTravelDateRangeError(data.startDate, data.endDate), {
+      message: TRAVEL_DATE_RANGE_ERROR,
+      path: ["endDate"],
     })
     .optional(),
 });

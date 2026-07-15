@@ -1,10 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import { ShareModal } from "@/components/Reimbursements/ShareModal";
 import type { Project } from "@/lib/db/types";
 import { useCanManageReimbursements } from "@/lib/hooks/useCurrentUserRole";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { DeleteReimbursementsDialog } from "./DeleteReimbursementsDialog";
 import { ReimbursementPageUI } from "./ReimbursementPageUI";
 import type {
@@ -16,6 +16,7 @@ import type {
 import { usePaymentExports } from "./usePaymentExports";
 import { usePdfDownloads } from "./usePdfDownloads";
 import { useReimbursementActions } from "./useReimbursementActions";
+import { useReimbursementSelection } from "./useReimbursementSelection";
 
 interface Props {
   reimbursements: Reimbursement[];
@@ -36,24 +37,34 @@ export function ReimbursementsClient({
   const router = useRouter();
 
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [selected, setSelected] = useState<Set<SelectionKey>>(new Set());
   const [typeFilter, setTypeFilter] = useState<ReimbursementTypeFilter>("all");
   const [deleteKeys, setDeleteKeys] = useState<SelectionKey[]>([]);
 
-  const filteredReimbursements = reimbursements.filter(
-    (item) => typeFilter === "all" || item.type === typeFilter,
+  const filteredReimbursements = useMemo(
+    () =>
+      reimbursements.filter(
+        (item) => typeFilter === "all" || item.type === typeFilter,
+      ),
+    [reimbursements, typeFilter],
   );
-  const filteredAllowances =
-    typeFilter === "all" || typeFilter === "allowance" ? allowances : [];
+  const filteredAllowances = useMemo(
+    () =>
+      typeFilter === "all" || typeFilter === "allowance" ? allowances : [],
+    [allowances, typeFilter],
+  );
+  const selection = useReimbursementSelection(
+    filteredReimbursements,
+    filteredAllowances,
+  );
+  const { selected } = selection;
 
   const actions = useReimbursementActions();
-  const clearSelection = () => setSelected(new Set());
   const { handleFinomCsv, handleSepaXml } = usePaymentExports({
     reimbursements,
     allowances,
     selected,
     organizationName,
-    clearSelection,
+    clearSelection: selection.clearSelection,
   });
   const {
     isBulkDownloading,
@@ -63,44 +74,19 @@ export function ReimbursementsClient({
   } = usePdfDownloads({
     allowances,
     selected,
-    clearSelection,
+    clearSelection: selection.clearSelection,
   });
-
-  const handleToggleSelect = (key: SelectionKey) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
-
-  const handleToggleSelectAll = () => {
-    const allKeys: SelectionKey[] = [
-      ...filteredReimbursements.map((item): SelectionKey => `r:${item._id}`),
-      ...filteredAllowances.map((item): SelectionKey => `a:${item._id}`),
-    ];
-    setSelected((prev) =>
-      prev.size === allKeys.length ? new Set() : new Set(allKeys),
-    );
-  };
 
   const handleTypeFilterChange = (value: ReimbursementTypeFilter) => {
     setTypeFilter(value);
-    setSelected(new Set());
+    selection.clearSelection();
   };
 
   const canDeleteSelected = canManageReimbursements && selected.size > 0;
 
   const handleConfirmDelete = async () => {
     const deletedKeys = await actions.handleDelete(deleteKeys);
-    if (deletedKeys.length > 0) {
-      setSelected((current) => {
-        const next = new Set(current);
-        for (const key of deletedKeys) next.delete(key);
-        return next;
-      });
-    }
+    if (deletedKeys.length > 0) selection.removeSelection(deletedKeys);
     setDeleteKeys([]);
   };
 
@@ -147,8 +133,8 @@ export function ReimbursementsClient({
         onDeleteAllowance={(id) => setDeleteKeys([`a:${id}`])}
         canDeleteSelected={canDeleteSelected}
         onDeleteSelected={() => setDeleteKeys([...selected])}
-        onToggleSelect={handleToggleSelect}
-        onToggleSelectAll={handleToggleSelectAll}
+        onToggleSelect={selection.toggleSelection}
+        onToggleSelectAll={selection.toggleAll}
         onTypeFilterChange={handleTypeFilterChange}
         onBulkDownload={handleBulkDownload}
         onFinomCsv={handleFinomCsv}

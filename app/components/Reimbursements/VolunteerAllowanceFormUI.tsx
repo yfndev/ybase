@@ -1,10 +1,10 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { BankDetailsEditor } from "@/components/BankDetailsEditor";
 import { SignatureField } from "@/components/Reimbursements/SignatureField";
 import { ActivitySection } from "@/components/Reimbursements/volunteerAllowanceForm/ActivitySection";
 import { ConfirmationSection } from "@/components/Reimbursements/volunteerAllowanceForm/ConfirmationSection";
-import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "@/components/Reimbursements/volunteerAllowanceForm/constants";
 import { PersonalDataSection } from "@/components/Reimbursements/volunteerAllowanceForm/PersonalDataSection";
 import type { Props } from "@/components/Reimbursements/volunteerAllowanceForm/types";
 import { useVolunteerAllowanceForm } from "@/components/Reimbursements/volunteerAllowanceForm/useVolunteerAllowanceForm";
@@ -13,7 +13,7 @@ import { SelectProject } from "@/components/Selectors/SelectProject";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Loader2 } from "lucide-react";
+import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "@/lib/volunteerAllowance/constants";
 
 export function VolunteerAllowanceFormUI({
   defaultBankDetails,

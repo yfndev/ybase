@@ -1,15 +1,15 @@
 "use client";
 
+import { Loader2, RotateCcw } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
+import SignaturePad from "react-signature-canvas";
 import { Button } from "@/components/ui/button";
 import { useSignatureResize } from "@/lib/hooks/useSignatureResize";
 import {
   generateUploadUrl,
   getFileUrlAction,
-} from "@/lib/server/reimbursements/actions";
-import { Loader2, RotateCcw } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import toast from "react-hot-toast";
-import SignaturePad from "react-signature-canvas";
+} from "@/lib/server/reimbursements/files";
 
 type Props = {
   onUploadComplete: (key: string) => void;
@@ -85,6 +85,7 @@ export function SignatureCanvas({
   if (previewUrl) {
     return (
       <div className="border rounded-lg p-4">
+        {/* biome-ignore lint/performance/noImgElement: Signature previews use data URLs. */}
         <img src={previewUrl} alt="Unterschrift" className="max-h-24 mx-auto" />
         <p className="text-sm text-muted-foreground text-center mt-2">
           Unterschrift gespeichert

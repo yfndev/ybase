@@ -1,14 +1,14 @@
 "use client";
 
-import {
-  submitAllowance,
-  uploadViaPresign,
-  validateAllowanceLink,
-  type AllowanceLink,
-} from "@/(public)/_lib/publicApi";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "./constants";
+import {
+  type AllowanceLink,
+  submitAllowance,
+  validateAllowanceLink,
+} from "@/(public)/_lib/allowances";
+import { uploadViaPresign } from "@/(public)/_lib/http";
+import { MAX_VOLUNTEER_ALLOWANCE_EUR } from "@/lib/volunteerAllowance/constants";
 import { validateAllowanceForm } from "./helpers";
 import type { AllowanceForm } from "./types";
 

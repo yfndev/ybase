@@ -1,4 +1,4 @@
-import { getApplicationsForJobPosting } from "@/lib/server/applications/data";
+import { getApplicationsForJobPosting } from "@/lib/server/applications/management";
 
 type RouteContext = { params: Promise<{ id: string }> };
 

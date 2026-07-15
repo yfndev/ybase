@@ -13,6 +13,7 @@ import type {
   VolunteerAllowance,
 } from "../../db/types";
 import { presignDownload } from "../../s3/storage";
+import { requireFileAccess } from "../uploads/access";
 
 export type VolunteerAllowanceWithNames = VolunteerAllowance & {
   creatorName: string;
@@ -52,22 +53,45 @@ export async function getAll(): Promise<VolunteerAllowanceWithNames[]> {
     ),
   ];
 
-  const organization = await (await organizations()).findOne({
+  const organization = await (
+    await organizations()
+  ).findOne({
     _id: user.organizationId,
   });
-  const creators = await (await users())
-    .find({ _id: { $in: creatorIds } })
+  const creators = await (
+    await users()
+  )
+    .find({
+      _id: { $in: creatorIds },
+      organizationId: user.organizationId,
+    })
     .toArray();
-  const projectDocs = await (await projects())
-    .find({ _id: { $in: projectIds } })
+  const projectDocs = await (
+    await projects()
+  )
+    .find({
+      _id: { $in: projectIds },
+      organizationId: user.organizationId,
+    })
     .toArray();
-  const reviewers = await (await users())
-    .find({ _id: { $in: reviewerIds } })
+  const reviewers = await (
+    await users()
+  )
+    .find({
+      _id: { $in: reviewerIds },
+      organizationId: user.organizationId,
+    })
     .toArray();
 
-  const creatorMap = new Map(creators.map((creator) => [creator._id, creator.name]));
-  const projectMap = new Map(projectDocs.map((project) => [project._id, project.name]));
-  const reviewerMap = new Map(reviewers.map((reviewer) => [reviewer._id, reviewer.name]));
+  const creatorMap = new Map(
+    creators.map((creator) => [creator._id, creator.name]),
+  );
+  const projectMap = new Map(
+    projectDocs.map((project) => [project._id, project.name]),
+  );
+  const reviewerMap = new Map(
+    reviewers.map((reviewer) => [reviewer._id, reviewer.name]),
+  );
 
   return completed.map((item) => ({
     ...item,
@@ -77,7 +101,9 @@ export async function getAll(): Promise<VolunteerAllowanceWithNames[]> {
     organizationStreet: organization?.street || "",
     organizationPlz: organization?.plz || "",
     organizationCity: organization?.city || "",
-    reviewedByName: item.reviewedBy ? reviewerMap.get(item.reviewedBy) : undefined,
+    reviewedByName: item.reviewedBy
+      ? reviewerMap.get(item.reviewedBy)
+      : undefined,
   }));
 }
 
@@ -89,7 +115,8 @@ export async function get(id: string): Promise<VolunteerAllowance | null> {
 }
 
 export async function getSignatureUrl(storageId: string): Promise<string> {
-  await requireUser();
+  const user = await requireUser();
+  await requireFileAccess(storageId, user);
   return presignDownload(storageId);
 }
 
@@ -105,11 +132,17 @@ export async function getWithDetails(
   const doc = await (await volunteerAllowance()).findOne({ _id: id });
   if (!doc) return null;
 
-  const organization = await (await organizations()).findOne({
+  const organization = await (
+    await organizations()
+  ).findOne({
     _id: doc.organizationId,
   });
-  const creator = await (await users()).findOne({ _id: doc.createdBy });
-  const project = await (await projects()).findOne({ _id: doc.projectId });
+  const creator = await (
+    await users()
+  ).findOne({ _id: doc.createdBy, organizationId: doc.organizationId });
+  const project = await (
+    await projects()
+  ).findOne({ _id: doc.projectId, organizationId: doc.organizationId });
 
   if (!organization || !creator || !project) return null;
 

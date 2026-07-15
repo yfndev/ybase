@@ -11,7 +11,7 @@ import {
 import {
   generateUploadUrl,
   getFileInfoAction,
-} from "@/lib/server/reimbursements/actions";
+} from "@/lib/server/reimbursements/files";
 import { ReceiptDropzone } from "./ReceiptDropzone";
 
 interface Props {
@@ -107,6 +107,7 @@ export function ReceiptUpload({ onUploadComplete, storageId }: Props) {
               <p className="text-sm text-muted-foreground">PDF hochgeladen</p>
             </div>
           ) : (
+            // biome-ignore lint/performance/noImgElement: Receipt previews use local object URLs.
             <img
               src={previewUrl ?? ""}
               alt="Beleg"
