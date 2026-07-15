@@ -38,6 +38,12 @@ function payload() {
           value: "+491234",
         },
         { key: "q5", label: "Skills", type: "CHECKBOXES", value: ["a", "b"] },
+        {
+          key: "q6",
+          label: "Verfügbarkeit",
+          type: "MATRIX",
+          value: { monday: ["morning", "evening"] },
+        },
       ],
     },
   });
@@ -53,20 +59,26 @@ test("normalizes the applicant email", () => {
   expect(parsed.emailNormalized).toBe("max@example.com");
 });
 
-test("derives name from first and last name fields and reads phone", () => {
+test("derives name from first and last name fields", () => {
   const parsed = parseTallySubmission(payload());
   expect(parsed.name).toBe("Max Mustermann");
-  expect(parsed.phone).toBe("+491234");
 });
 
-test("snapshot keeps typed answers but drops the hidden field", () => {
+test("snapshot keeps typed answers but drops hidden and phone fields", () => {
   const parsed = parseTallySubmission(payload());
   expect(parsed.fields).toHaveLength(5);
   expect(parsed.fields.some((field) => field.label === "jobPostingId")).toBe(
     false,
   );
+  expect(parsed.fields.some((field) => field.type.includes("PHONE"))).toBe(
+    false,
+  );
   const skills = parsed.fields.find((field) => field.key === "q5");
   expect(skills?.value).toEqual(["a", "b"]);
+  const availability = parsed.fields.find((field) => field.key === "q6");
+  expect(availability?.value).toEqual({
+    monday: ["morning", "evening"],
+  });
 });
 
 test("returns null identity when the hidden field or email is absent", () => {

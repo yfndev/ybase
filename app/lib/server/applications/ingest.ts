@@ -46,21 +46,38 @@ async function recordEvent(
   status: TallyWebhookEvent["status"],
   details: EventDetails,
 ): Promise<void> {
-  await (
-    await tallyWebhookEvents()
-  ).updateOne(
-    { _id: payload.eventId },
-    {
-      $set: {
-        eventType: payload.eventType,
-        submissionId: payload.data.submissionId,
-        status,
-        ...details,
-      },
-      $setOnInsert: { _creationTime: Date.now() },
-    },
-    { upsert: true },
+  const collection = await tallyWebhookEvents();
+  const event = {
+    eventType: payload.eventType,
+    submissionId: payload.data.submissionId,
+    status,
+    ...details,
+  };
+
+  if (status === "processed") {
+    await collection.updateOne(
+      { _id: payload.eventId },
+      { $set: event, $setOnInsert: { _creationTime: Date.now() } },
+      { upsert: true },
+    );
+    return;
+  }
+
+  const result = await collection.updateOne(
+    { _id: payload.eventId, status: { $ne: "processed" } },
+    { $set: event },
   );
+  if (result.matchedCount > 0) return;
+
+  try {
+    await collection.insertOne({
+      _id: payload.eventId,
+      _creationTime: Date.now(),
+      ...event,
+    });
+  } catch (error) {
+    if (!isDuplicateKeyError(error)) throw error;
+  }
 }
 
 export async function ingestTallySubmission(
@@ -115,7 +132,6 @@ export async function ingestTallySubmission(
     applicantName: parsed.name,
     applicantEmail: parsed.email,
     applicantEmailNormalized: parsed.emailNormalized,
-    applicantPhone: parsed.phone,
     fields: parsed.fields,
     tallyEventId: payload.eventId,
     tallySubmissionId: payload.data.submissionId,
@@ -124,13 +140,28 @@ export async function ingestTallySubmission(
     submittedAt: toTimestamp(payload.data.createdAt),
   };
 
+  const applicationCollection = await applications();
   try {
-    await (await applications()).insertOne(application);
+    await applicationCollection.insertOne(application);
   } catch (error) {
     if (!isDuplicateKeyError(error)) throw error;
-    await recordEvent(payload, "duplicate", {
+
+    const existing = await applicationCollection.findOne({
+      $or: [
+        { tallyEventId: payload.eventId },
+        { tallySubmissionId: payload.data.submissionId },
+        { tallyResponseId: payload.data.responseId },
+        {
+          jobPostingId: posting._id,
+          applicantEmailNormalized: parsed.emailNormalized,
+        },
+      ],
+    });
+    const isSameEvent = existing?.tallyEventId === payload.eventId;
+    await recordEvent(payload, isSameEvent ? "processed" : "duplicate", {
       jobPostingId: posting._id,
       organizationId: posting.organizationId,
+      applicationId: existing?._id,
     });
     return { status: "duplicate" };
   }
@@ -140,13 +171,17 @@ export async function ingestTallySubmission(
     organizationId: posting.organizationId,
     applicationId: application._id,
   });
-  await addLog(
-    posting.organizationId,
-    "tally-webhook",
-    "application.received",
-    application._id,
-    posting.title,
-  );
+  try {
+    await addLog(
+      posting.organizationId,
+      "tally-webhook",
+      "application.received",
+      application._id,
+      posting.title,
+    );
+  } catch (error) {
+    console.error("application audit log failed", error);
+  }
 
   return { status: "created", applicationId: application._id };
 }
