@@ -122,9 +122,7 @@ export function ReimbursementTable({
                   : "Auslagenerstattung"
               }
               detail={
-                item.type === "expense"
-                  ? item.description?.trim() || item.receiptSummary
-                  : undefined
+                item.type === "expense" ? item.receiptSummary : undefined
               }
               applicantName={item.submitterName || item.creatorName}
               onClick={() => onRowClick(item._id)}

@@ -63,16 +63,10 @@ pnpm exec playwright test e2e/reimbursements.spec.ts
 
 ## Testing
 
-- **Vitest** for unit/integration tests (`app/**/*.test.ts`)
-- **Playwright** for E2E tests (`e2e/*.spec.ts`)
-- MongoDB integration tests use `mongodb-memory-server`
-- Test observable behavior, risk boundaries, and concrete regressions—not implementation details
-- Require targeted tests for money, permissions, tenant isolation, destructive actions, and external integrations
-- Do not add tests for styling, copy, trivial wiring, or refactors without behavior changes
-- Test each behavior at the lowest stable layer; avoid duplicating it across helpers, actions, routes, and UI
-- Prefer state and user-visible outcomes over exact mock call sequences
-- Run the narrowest relevant test locally; CI owns the complete Vitest and Playwright suites
-- Do not introduce a blanket coverage target
+- Use Vitest for unit/integration tests and Playwright for E2E flows; MongoDB integration tests use `mongodb-memory-server`
+- Add tests for meaningful observable behavior, concrete regressions, and high-risk boundaries such as money, permissions, tenant isolation, destructive actions, and external integrations
+- Do not add tests merely because code changed; skip styling, copy, trivial wiring, implementation details, and refactors without behavior changes
+- Test at the lowest stable layer without duplicating coverage, and run the narrowest relevant test locally
 
 ## Documentation
 

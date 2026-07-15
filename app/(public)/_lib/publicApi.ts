@@ -34,7 +34,6 @@ export type ReimbursementLink =
       type: "expense" | "travel";
       organizationName: string;
       projectName: string;
-      description?: string;
       invitedName?: string;
       invitedEmail?: string;
       changesRequested?: string;
