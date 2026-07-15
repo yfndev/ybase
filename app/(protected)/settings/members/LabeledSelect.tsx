@@ -14,7 +14,7 @@ interface Props {
   label: string;
   value: string;
   onValueChange: (value: string) => void;
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; disabled?: boolean }[];
   placeholder?: string;
   hint?: string;
   disabled?: boolean;
@@ -39,7 +39,11 @@ export function LabeledSelect({
         </SelectTrigger>
         <SelectContent>
           {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
+            <SelectItem
+              key={option.value}
+              value={option.value}
+              disabled={option.disabled}
+            >
               {option.label}
             </SelectItem>
           ))}

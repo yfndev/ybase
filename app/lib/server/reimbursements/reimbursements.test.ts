@@ -128,12 +128,16 @@ beforeEach(async () => {
     email: "max@a.org",
     organizationId: orgA,
     role: "finance",
+    memberStatus: "active",
+    teamOnboardingStatus: "completed",
   });
   const actor = {
     _id: userA,
     _creationTime: Date.now(),
     organizationId: orgA,
     role: "finance" as const,
+    memberStatus: "active" as const,
+    teamOnboardingStatus: "completed" as const,
   };
   vi.mocked(requireUser).mockResolvedValue(actor);
   vi.mocked(requireRole).mockResolvedValue(actor);
@@ -269,6 +273,8 @@ test("members only see their own reimbursements", async () => {
     _creationTime: Date.now(),
     organizationId: orgA,
     role: "member",
+    memberStatus: "active",
+    teamOnboardingStatus: "completed",
   });
 
   const list = await getAllReimbursements();
@@ -297,6 +303,8 @@ test("members cannot open another member's reimbursement", async () => {
     _creationTime: Date.now(),
     organizationId: orgA,
     role: "member",
+    memberStatus: "active",
+    teamOnboardingStatus: "completed",
   });
 
   await expect(getReimbursement(reimbursementId)).resolves.toBeNull();

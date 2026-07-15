@@ -1,9 +1,15 @@
 import { expect, test } from "vitest";
 import type { Team, User } from "@/lib/db/types";
-import { ALL, filterMembers, memberStatusOf } from "./filterMembers";
+import { ALL, filterMembers } from "./filterMembers";
 
 function member(overrides: Partial<User>): User {
-  return { _id: "id", _creationTime: 0, ...overrides };
+  return {
+    _id: "id",
+    _creationTime: 0,
+    memberStatus: "active",
+    teamOnboardingStatus: "completed",
+    ...overrides,
+  };
 }
 
 function team(id: string, departmentId: string): Team {
@@ -43,9 +49,7 @@ const cara = member({
   name: "Cara Care",
   memberStatus: "offboarded",
 });
-const legacy = member({ _id: "legacy", name: "No Status" });
-
-const everyone = [anna, ben, cara, legacy];
+const everyone = [anna, ben, cara];
 
 const baseFilters = {
   status: "active" as const,
@@ -53,10 +57,6 @@ const baseFilters = {
   teamId: ALL,
   search: "",
 };
-
-test("memberStatusOf defaults a missing status to onboarding", () => {
-  expect(memberStatusOf(legacy)).toBe("onboarding");
-});
 
 test("filters by membership status tab", () => {
   const active = filterMembers(everyone, baseFilters, teamsById);
@@ -67,10 +67,7 @@ test("filters by membership status tab", () => {
     { ...baseFilters, status: "onboarding" },
     teamsById,
   );
-  expect(onboarding.map((entry) => entry._id).sort()).toEqual([
-    "ben",
-    "legacy",
-  ]);
+  expect(onboarding.map((entry) => entry._id)).toEqual(["ben"]);
 });
 
 test("filters by department derived from the member's team", () => {

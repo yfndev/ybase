@@ -55,7 +55,16 @@ export async function initializeOrganization(input?: {
 
   await (await users()).updateOne(
     { _id: user._id },
-    { $set: { organizationId, role: "admin" } },
+    {
+      $set: {
+        organizationId,
+        role: "admin",
+        memberStatus: "active",
+        teamOnboardingStatus: "completed",
+        onboardedAt: Date.now(),
+        teamOnboardedAt: Date.now(),
+      },
+    },
   );
 
   return { organizationId, isNew: true };

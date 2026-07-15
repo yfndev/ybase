@@ -9,7 +9,6 @@ import {
   Network,
   ScrollText,
   UserCog,
-  Users,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -52,13 +51,7 @@ const ADMINISTRATION_NAV_ITEMS: ProtectedNavItem[] = [
     permission: USER_PERMISSIONS.organizationStructure,
   },
   {
-    name: "Benutzer",
-    url: "/settings/users",
-    icon: Users,
-    permission: USER_PERMISSIONS.roles,
-  },
-  {
-    name: "Mitglieder",
+    name: "Teammitglieder",
     url: "/settings/members",
     icon: UserCog,
     permission: USER_PERMISSIONS.members,

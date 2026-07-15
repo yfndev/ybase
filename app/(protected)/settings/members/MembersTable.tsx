@@ -31,10 +31,10 @@ export function MembersTable({
       <div className="rounded-md border py-12 text-center">
         <UserRound className="mx-auto h-12 w-12 text-muted-foreground" />
         <h3 className="mt-4 text-lg font-semibold">
-          Keine Mitglieder gefunden
+          Keine Teammitglieder gefunden
         </h3>
         <p className="mt-2 text-muted-foreground">
-          Passe Suche oder Filter an, um Mitglieder anzuzeigen.
+          Passe Suche oder Filter an, um Teammitglieder anzuzeigen.
         </p>
       </div>
     );
@@ -51,7 +51,7 @@ export function MembersTable({
             <TableHead>Team</TableHead>
             <TableHead>Position</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="pr-6">Team-Onboarding</TableHead>
+            <TableHead className="pr-6">Onboarding-Aufgaben</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
