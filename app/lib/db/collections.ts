@@ -13,6 +13,7 @@ import type {
   TallyWebhookEvent,
   Team,
   TravelDetails,
+  UploadOwnership,
   User,
   VolunteerAllowance,
 } from "./types";
@@ -75,4 +76,8 @@ export async function volunteerAllowance() {
 
 export async function signatureTokens() {
   return (await getDb()).collection<SignatureToken>("signatureTokens");
+}
+
+export async function uploadOwnerships() {
+  return (await getDb()).collection<UploadOwnership>("uploadOwnerships");
 }

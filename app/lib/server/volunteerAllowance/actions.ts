@@ -6,12 +6,13 @@ import { requireUser } from "../../auth/session";
 import { volunteerAllowance } from "../../db/collections";
 import { newId } from "../../db/ids";
 import { deleteObject } from "../../s3/storage";
-import { bankDetailsFields } from "../bankDetails";
+import { volunteerAllowanceFields } from "../../volunteerAllowance/schemas";
 import { addLog } from "../logs";
+import { requireActiveOrganizationProject } from "../projects/access";
+import { claimPendingUploads } from "../uploads/ownership";
 import { getSignatureUrl } from "./data";
 import { sendSubmissionReceivedEmail } from "./email";
 
-const MAX_VOLUNTEER_ALLOWANCE_EUR = 960;
 export async function create(input: {
   projectId: string;
   amount: number;
@@ -32,27 +33,19 @@ export async function create(input: {
   const args = z
     .object({
       projectId: z.string(),
-      amount: z.number(),
-      ...bankDetailsFields,
-      activityDescription: z.string(),
-      startDate: z.string(),
-      endDate: z.string(),
-      taxYear: z.string().optional(),
-      volunteerName: z.string(),
-      volunteerStreet: z.string(),
-      volunteerPlz: z.string(),
-      volunteerCity: z.string(),
-      signatureStorageId: z.string(),
+      ...volunteerAllowanceFields,
     })
     .parse(input);
 
-  if (args.amount > MAX_VOLUNTEER_ALLOWANCE_EUR) {
-    throw new Error(
-      `Volunteer allowance cannot exceed ${MAX_VOLUNTEER_ALLOWANCE_EUR}€`,
-    );
-  }
+  await requireActiveOrganizationProject(args.projectId, user.organizationId);
 
   const _id = newId();
+  await claimPendingUploads(
+    [args.signatureStorageId],
+    { organizationId: user.organizationId, userId: user._id },
+    ["user", "signatureToken"],
+    { type: "allowance", id: _id },
+  );
   await (
     await volunteerAllowance()
   ).insertOne({

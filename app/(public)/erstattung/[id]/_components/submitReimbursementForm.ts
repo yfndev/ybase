@@ -1,7 +1,7 @@
-import { submitReimbursement } from "@/(public)/_lib/publicApi";
+import toast from "react-hot-toast";
+import { submitReimbursement } from "@/(public)/_lib/reimbursements";
 import { BIC_REGEX, IBAN_REGEX, normalizeIban } from "@/lib/bank-utils";
 import { getTravelDateRangeError } from "@/lib/travelDates";
-import toast from "react-hot-toast";
 import type { Receipt, TravelReceipt } from "./types";
 
 type SubmitParams = {

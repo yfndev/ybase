@@ -25,23 +25,29 @@ vi.mock("./email", () => ({
 }));
 
 import { requireRole, requireUser } from "../../auth/session";
-import { receipts, reimbursements, users } from "../../db/collections";
+import {
+  receipts,
+  reimbursements,
+  signatureTokens,
+  users,
+} from "../../db/collections";
 import { newId } from "../../db/ids";
+import {
+  deleteObject,
+  getDownloadInfo,
+  presignDownload,
+} from "../../s3/storage";
 import {
   createTestActor,
   insertTestOrganization,
   insertTestProject,
 } from "../../test/fixtures";
-import { deleteObject, getDownloadInfo } from "../../s3/storage";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
-import {
-  approve,
-  createReimbursement,
-  decline,
-  deleteReimbursement,
-  requestChanges,
-} from "./actions";
+import { submitPublicSignature } from "../signatures/public";
+import { registerPendingUpload } from "../uploads/ownership";
+import { createReimbursement } from "./creation";
 import { getAllReimbursements, getFileInfo, getReimbursement } from "./data";
+import { deleteReimbursement } from "./deletion";
 import {
   sendApprovalEmail,
   sendChangesRequestedEmail,
@@ -49,6 +55,9 @@ import {
   sendSubmissionReceivedEmail,
   sendSubmissionRequestedEmail,
 } from "./email";
+import { getPublicReimbursementFileUrl } from "./public";
+import { submitPublicReimbursement } from "./publicSubmission";
+import { approve, decline, requestChanges } from "./review";
 import { createReimbursementLink } from "./sharing";
 
 let orgA: string;
@@ -105,6 +114,18 @@ beforeEach(async () => {
   });
   vi.mocked(requireUser).mockResolvedValue(actor);
   vi.mocked(requireRole).mockResolvedValue(actor);
+  await registerPendingUpload("sig-key", {
+    organizationId: orgA,
+    userId: userA,
+    contextType: "user",
+    contextId: userA,
+  });
+  await registerPendingUpload("receipt-key", {
+    organizationId: orgA,
+    userId: userA,
+    contextType: "user",
+    contextId: userA,
+  });
 });
 
 function reimbursementInput() {
@@ -166,6 +187,132 @@ test("getFileInfo returns signed download metadata", async () => {
   expect(getDownloadInfo).toHaveBeenCalledWith("receipt-key");
 });
 
+test("file downloads reject a receipt from another organization", async () => {
+  vi.stubEnv("IS_TEST", "false");
+  const foreignReimbursementId = newId();
+  await (
+    await reimbursements()
+  ).insertOne({
+    _id: foreignReimbursementId,
+    _creationTime: Date.now(),
+    organizationId: orgB,
+    projectId: newId(),
+    amount: 10,
+    type: "expense",
+    status: "pending",
+    iban: "DE00",
+    accountHolder: "Foreign",
+    createdBy: newId(),
+  });
+  await (
+    await receipts()
+  ).insertOne({
+    _id: newId(),
+    _creationTime: Date.now(),
+    reimbursementId: foreignReimbursementId,
+    receiptDate: "2026-01-01",
+    companyName: "Foreign",
+    description: "Foreign receipt",
+    netAmount: 10,
+    taxRate: 0,
+    grossAmount: 10,
+    fileStorageId: "foreign-receipt-key",
+  });
+
+  await expect(getFileInfo("foreign-receipt-key")).rejects.toThrow(
+    "File not found",
+  );
+  expect(getDownloadInfo).not.toHaveBeenCalled();
+});
+
+test("members cannot download another member's receipt", async () => {
+  vi.stubEnv("IS_TEST", "false");
+  const reimbursementId = newId();
+  await (
+    await reimbursements()
+  ).insertOne({
+    _id: reimbursementId,
+    _creationTime: Date.now(),
+    organizationId: orgA,
+    projectId: projectA,
+    amount: 10,
+    type: "expense",
+    status: "pending",
+    iban: "DE00",
+    accountHolder: "Other member",
+    createdBy: newId(),
+  });
+  await (
+    await receipts()
+  ).insertOne({
+    _id: newId(),
+    _creationTime: Date.now(),
+    reimbursementId,
+    receiptDate: "2026-01-01",
+    companyName: "Other",
+    description: "Other receipt",
+    netAmount: 10,
+    taxRate: 0,
+    grossAmount: 10,
+    fileStorageId: "other-member-receipt-key",
+  });
+  vi.mocked(requireUser).mockResolvedValue(
+    createTestActor({
+      _id: userA,
+      organizationId: orgA,
+      role: "member",
+    }),
+  );
+
+  await expect(getFileInfo("other-member-receipt-key")).rejects.toThrow(
+    "File not found",
+  );
+});
+
+test.each([
+  [
+    "foreign",
+    () => insertTestProject({ organizationId: orgB, createdBy: newId() }),
+  ],
+  [
+    "archived",
+    () =>
+      insertTestProject({
+        organizationId: orgA,
+        createdBy: userA,
+        isArchived: true,
+      }),
+  ],
+  ["unknown", async () => ({ _id: newId() })],
+])("creation rejects a %s project", async (_label, createProject) => {
+  const project = await createProject();
+  await expect(
+    createReimbursement({ ...reimbursementInput(), projectId: project._id }),
+  ).rejects.toThrow("Active project not found");
+});
+
+test.each([
+  [
+    "foreign",
+    () => insertTestProject({ organizationId: orgB, createdBy: newId() }),
+  ],
+  [
+    "archived",
+    () =>
+      insertTestProject({
+        organizationId: orgA,
+        createdBy: userA,
+        isArchived: true,
+      }),
+  ],
+  ["unknown", async () => ({ _id: newId() })],
+])("sharing rejects a %s project", async (_label, createProject) => {
+  const project = await createProject();
+  await expect(
+    createReimbursementLink({ projectId: project._id, type: "expense" }),
+  ).rejects.toThrow("Active project not found");
+});
+
 test("createReimbursement rejects missing bank details", async () => {
   await expect(
     createReimbursement({
@@ -174,6 +321,120 @@ test("createReimbursement rejects missing bank details", async () => {
       accountHolder: "",
     }),
   ).rejects.toThrow();
+});
+
+test("creation rejects a signature upload owned by another user", async () => {
+  await registerPendingUpload("other-user-signature", {
+    organizationId: orgA,
+    userId: newId(),
+    contextType: "user",
+    contextId: newId(),
+  });
+
+  await expect(
+    createReimbursement({
+      ...reimbursementInput(),
+      signatureStorageId: "other-user-signature",
+    }),
+  ).rejects.toThrow("Upload does not belong to the current user");
+  expect(await (await reimbursements()).findOne({ amount: 50 })).toBeNull();
+});
+
+test("public links reject raw keys owned by another link", async () => {
+  vi.stubEnv("IS_TEST", "false");
+  const id = await createReimbursementLink({
+    projectId: projectA,
+    type: "expense",
+  });
+  await (
+    await reimbursements()
+  ).updateOne(
+    { _id: id },
+    { $set: { pendingUploadKeys: ["foreign-public-key"] } },
+  );
+  await registerPendingUpload("foreign-public-key", {
+    organizationId: orgA,
+    userId: userA,
+    contextType: "reimbursement",
+    contextId: newId(),
+  });
+
+  await expect(
+    getPublicReimbursementFileUrl(id, "foreign-public-key"),
+  ).rejects.toThrow("Invalid key");
+  expect(presignDownload).not.toHaveBeenCalledWith("foreign-public-key");
+});
+
+test("public submission cannot claim uploads from another link", async () => {
+  const id = await createReimbursementLink({
+    projectId: projectA,
+    type: "expense",
+  });
+  const keys = ["foreign-public-signature", "foreign-public-receipt"];
+  await (
+    await reimbursements()
+  ).updateOne({ _id: id }, { $set: { pendingUploadKeys: keys } });
+  for (const key of keys) {
+    await registerPendingUpload(key, {
+      organizationId: orgA,
+      userId: userA,
+      contextType: "reimbursement",
+      contextId: newId(),
+    });
+  }
+
+  await expect(
+    submitPublicReimbursement(id, {
+      amount: 50,
+      iban: "DE89370400440532013000",
+      bic: "",
+      accountHolder: "External",
+      submitterName: "External",
+      submitterEmail: "external@example.com",
+      signatureStorageId: keys[0],
+      receipts: [
+        {
+          receiptDate: "2026-01-01",
+          companyName: "External",
+          description: "External receipt",
+          netAmount: 50,
+          taxRate: 0,
+          grossAmount: 50,
+          fileStorageId: keys[1],
+        },
+      ],
+    }),
+  ).rejects.toThrow("Upload does not belong to the current user");
+  expect((await (await reimbursements()).findOne({ _id: id }))?.amount).toBe(0);
+});
+
+test("signature tokens cannot claim another token's upload", async () => {
+  const tokenId = newId();
+  const token = crypto.randomUUID();
+  await (
+    await signatureTokens()
+  ).insertOne({
+    _id: tokenId,
+    _creationTime: Date.now(),
+    token,
+    organizationId: orgA,
+    createdBy: userA,
+    expiresAt: Date.now() + 60_000,
+    pendingSignatureStorageId: "foreign-token-signature",
+  });
+  await registerPendingUpload("foreign-token-signature", {
+    organizationId: orgA,
+    userId: userA,
+    contextType: "signatureToken",
+    contextId: newId(),
+  });
+
+  await expect(submitPublicSignature(token)).rejects.toThrow(
+    "Upload does not belong to the current user",
+  );
+  expect(
+    (await (await signatureTokens()).findOne({ _id: tokenId }))?.usedAt,
+  ).toBe(undefined);
 });
 
 test("getAllReimbursements stays scoped to the caller's org", async () => {

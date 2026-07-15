@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireRole } from "../../auth/session";
 import { volunteerAllowance } from "../../db/collections";
 import { newId } from "../../db/ids";
+import { requireActiveOrganizationProject } from "../projects/access";
 import { sendSubmissionRequestedEmail } from "./email";
 
 const createLinkSchema = z.object({
@@ -20,6 +21,7 @@ export async function createLink(
 ): Promise<string> {
   const user = await requireRole("finance");
   const args = createLinkSchema.parse(input);
+  await requireActiveOrganizationProject(args.projectId, user.organizationId);
 
   const id = newId();
   await (

@@ -1,12 +1,12 @@
 "use client";
 
-import { signStatus } from "@/(public)/_lib/publicApi";
-import { Button } from "@/components/ui/button";
-import { createToken } from "@/lib/server/signatures/actions";
 import { Check, Copy, Loader2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { signStatus } from "@/(public)/_lib/signatures";
+import { Button } from "@/components/ui/button";
+import { createToken } from "@/lib/server/signatures/actions";
 
 const POLL_INTERVAL_MS = 2000;
 

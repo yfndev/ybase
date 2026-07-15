@@ -103,4 +103,12 @@ export async function ensureIndexes(): Promise<void> {
       { key: { token: 1 }, unique: true },
       { key: { createdBy: 1 } },
     ]);
+
+  await db
+    .collection("uploadOwnerships")
+    .createIndexes([
+      { key: { organizationId: 1, userId: 1, _creationTime: -1 } },
+      { key: { contextType: 1, contextId: 1 } },
+      { key: { claimedByType: 1, claimedById: 1 }, sparse: true },
+    ]);
 }

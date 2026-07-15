@@ -1,16 +1,8 @@
-import { signatureTokens } from "@/lib/db/collections";
+import { getPublicSignStatus } from "@/lib/server/signatures/public";
 
 type RouteContext = { params: Promise<{ token: string }> };
 
 export async function GET(_request: Request, context: RouteContext) {
   const { token } = await context.params;
-
-  const doc = await (await signatureTokens()).findOne({ token });
-
-  if (!doc) return Response.json(null);
-
-  return Response.json({
-    signatureStorageId: doc.signatureStorageId ?? null,
-    usedAt: doc.usedAt ?? null,
-  });
+  return Response.json(await getPublicSignStatus(token));
 }

@@ -8,20 +8,22 @@ import {
   volunteerAllowance,
 } from "../../db/collections";
 import { newId } from "../../db/ids";
+import { requireActiveOrganizationProject } from "../projects/access";
+import { sendSubmissionRequestedEmail } from "./email";
+import { createLinkSchema } from "./schemas";
 import {
   insertReimbursementLink,
   loadPendingSharedLinks,
   type PendingAllowanceLink,
   type PendingReimbursementLink,
 } from "./sharingHelpers";
-import { createLinkSchema } from "./validators";
-import { sendSubmissionRequestedEmail } from "./email";
 
 export async function createReimbursementLink(
   input: z.input<typeof createLinkSchema>,
 ): Promise<string> {
   const user = await requireRole("finance");
   const args = createLinkSchema.parse(input);
+  await requireActiveOrganizationProject(args.projectId, user.organizationId);
 
   const reimbursementId = newId();
   await insertReimbursementLink(reimbursementId, user, args);

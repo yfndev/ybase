@@ -3,7 +3,7 @@
 import { CheckCircle2, Monitor, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { getFileUrlAction } from "@/lib/server/reimbursements/actions";
+import { getFileUrlAction } from "@/lib/server/reimbursements/files";
 import { SignatureCanvas } from "./SignatureCanvas";
 import { SignatureQRPanel } from "./SignatureQRPanel";
 
@@ -80,6 +80,7 @@ function SignaturePreview({ storageId }: { storageId: string }) {
   return (
     <div className="border rounded-lg p-4">
       {previewUrl ? (
+        // biome-ignore lint/performance/noImgElement: Signature previews use local signed URLs.
         <img src={previewUrl} alt="Unterschrift" className="max-h-24 mx-auto" />
       ) : (
         <div className="h-24 flex items-center justify-center">
