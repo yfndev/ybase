@@ -79,6 +79,9 @@ test.describe("Ausschreibungen", () => {
 
     await expect(page).toHaveURL(/\/recruiting\/[^/]+$/);
     await expect(page.getByText(DEPARTMENT)).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Bewerbungen", exact: true }),
+    ).toBeVisible();
 
     const description = page.locator('[aria-label="Beschreibung"]');
     await description.click();
@@ -108,9 +111,23 @@ test.describe("Ausschreibungen", () => {
     ).toBeVisible();
 
     await page.goto("/recruiting");
+    await expect(
+      page.getByRole("heading", { name: "Bewerbungen" }),
+    ).toHaveCount(0);
+    await expect(page.getByLabel("Bewerbungen durchsuchen")).toHaveCount(0);
     const row = page.getByRole("row", { name: new RegExp(TITLE) });
     await expect(row).toContainText("Veröffentlicht");
     await expect(row).toContainText(TEAM);
     await expect(row).toContainText(DEPARTMENT);
+    await row.getByRole("link", { name: TITLE }).click();
+    await expect(
+      page.getByRole("heading", { name: "Bewerbungen", exact: true }),
+    ).toBeVisible();
+
+    await page.goto("/applications");
+    await expect(
+      page.getByRole("heading", { name: "Bewerbungen", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByLabel("Bewerbungen durchsuchen")).toBeVisible();
   });
 });
