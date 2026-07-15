@@ -1,7 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
-import { isLocalCredentialsEnabled } from "./environment";
+import { isTestMode } from "./environment";
 import { ensureAppUser } from "./provisioning";
 import { normalizeOptionalUserRole } from "./roles";
 
@@ -11,7 +11,7 @@ function isAllowedEmail(email: string | null | undefined): boolean {
   return Boolean(email?.toLowerCase().endsWith(`@${ALLOWED_EMAIL_DOMAIN}`));
 }
 
-const isLocalLoginEnabled = isLocalCredentialsEnabled();
+const isTestLoginEnabled = isTestMode();
 
 const google = Google({
   authorization: {
@@ -35,12 +35,12 @@ const google = Google({
   },
 });
 
-const developmentProvider = Credentials({
-  id: "development",
-  name: "Local development",
+const testProvider = Credentials({
+  id: "testing",
+  name: "Testing",
   credentials: { email: {}, name: {} },
   authorize(credentials) {
-    if (!isLocalLoginEnabled) return null;
+    if (!isTestLoginEnabled) return null;
     const email = (credentials?.email as string | undefined)
       ?.trim()
       .toLowerCase();
@@ -49,7 +49,7 @@ const developmentProvider = Credentials({
       id: email,
       email,
       name:
-        (credentials?.name as string | undefined)?.trim() || "Local Developer",
+        (credentials?.name as string | undefined)?.trim() || "Test User",
     };
   },
 });
@@ -57,10 +57,10 @@ const developmentProvider = Credentials({
 export const authConfig = {
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
-  providers: isLocalLoginEnabled ? [developmentProvider] : [google],
+  providers: isTestLoginEnabled ? [testProvider] : [google],
   callbacks: {
     signIn({ user }) {
-      if (isLocalLoginEnabled) return true;
+      if (isTestLoginEnabled) return true;
       return isAllowedEmail(user.email);
     },
     async jwt({ token, user }) {

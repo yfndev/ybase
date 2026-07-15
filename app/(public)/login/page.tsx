@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/Auth/LoginForm";
 import { TestAuthForm } from "@/components/Auth/TestAuthForm";
 import { auth } from "@/lib/auth";
-import { isDevelopmentLoginEnabled, isTestMode } from "@/lib/auth/environment";
+import { isTestMode } from "@/lib/auth/environment";
 
 export default async function LoginPage() {
   const session = await auth();
@@ -11,7 +11,7 @@ export default async function LoginPage() {
   const loginForm = isTestMode() ? (
     <TestAuthForm />
   ) : (
-    <LoginForm isDevelopmentLoginEnabled={isDevelopmentLoginEnabled()} />
+    <LoginForm />
   );
 
   return (
