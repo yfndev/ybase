@@ -31,7 +31,10 @@ export default async function ProtectedLayout({
     content = (
       <SidebarProvider className="bg-sidebar">
         <AppSidebar />
-        <div className="flex flex-col flex-1 min-w-0 p-2 sm:p-3 lg:p-4">
+        <div
+          data-app-content
+          className="flex flex-col flex-1 min-w-0 p-2 sm:p-3 lg:p-4"
+        >
           <div className="flex-1 rounded-[0.25rem] border bg-background p-4 sm:p-6 lg:p-8">
             {children}
           </div>
