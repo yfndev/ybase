@@ -16,6 +16,7 @@ import { useTeams } from "@/lib/client/teams/hooks/useTeams";
 import { Archive, Plus, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
+import { sortTeamsByDepartment } from "./sortTeamsByDepartment";
 import { TeamRow } from "./TeamRow";
 
 export function TeamsSection() {
@@ -37,6 +38,11 @@ export function TeamsSection() {
     }
     return map;
   }, [departments, archivedDepartments]);
+
+  const sortedTeams = useMemo(
+    () => sortTeamsByDepartment(teams, departments),
+    [teams, departments],
+  );
 
   const handleUpdate = async (teamId: string) => {
     const name = editValues.name.trim();
@@ -106,7 +112,7 @@ export function TeamsSection() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {teams.map((team) => (
+              {sortedTeams.map((team) => (
                 <TeamRow
                   key={team._id}
                   team={team}
