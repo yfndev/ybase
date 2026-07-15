@@ -9,12 +9,16 @@ type Props = {
   destination: string;
   purpose: string;
   startDate: string;
+  startTime: string;
   endDate: string;
+  endTime: string;
   isInternational: boolean;
   onDestinationChange: (value: string) => void;
   onPurposeChange: (value: string) => void;
   onStartDateChange: (value: string) => void;
+  onStartTimeChange: (value: string) => void;
   onEndDateChange: (value: string) => void;
+  onEndTimeChange: (value: string) => void;
   onIsInternationalChange: (value: boolean) => void;
 };
 
@@ -22,6 +26,8 @@ export function TravelDetailsSection(props: Props) {
   const dateRangeError = getTravelDateRangeError(
     props.startDate,
     props.endDate,
+    props.startTime,
+    props.endTime,
   );
 
   return (
@@ -45,7 +51,7 @@ export function TravelDetailsSection(props: Props) {
           />
         </div>
         <div>
-          <Label>Von *</Label>
+          <Label>Von (Datum) *</Label>
           <Input
             type="date"
             value={props.startDate}
@@ -53,12 +59,32 @@ export function TravelDetailsSection(props: Props) {
           />
         </div>
         <div>
-          <Label>Bis *</Label>
+          <Label>Von (Uhrzeit) *</Label>
+          <Input
+            type="time"
+            value={props.startTime}
+            onChange={(e) => props.onStartTimeChange(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label>Bis (Datum) *</Label>
           <Input
             type="date"
             value={props.endDate}
             onChange={(e) => props.onEndDateChange(e.target.value)}
             min={props.startDate || undefined}
+            aria-invalid={Boolean(dateRangeError) || undefined}
+            aria-describedby={
+              dateRangeError ? "travel-date-range-error" : undefined
+            }
+          />
+        </div>
+        <div>
+          <Label>Bis (Uhrzeit) *</Label>
+          <Input
+            type="time"
+            value={props.endTime}
+            onChange={(e) => props.onEndTimeChange(e.target.value)}
             aria-invalid={Boolean(dateRangeError) || undefined}
             aria-describedby={
               dateRangeError ? "travel-date-range-error" : undefined

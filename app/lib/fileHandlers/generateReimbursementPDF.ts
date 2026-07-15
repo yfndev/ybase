@@ -10,7 +10,6 @@ import {
 } from "./reimbursementPdf/data";
 import { drawAddressBlock, drawHeader } from "./reimbursementPdf/formPage";
 import {
-  embedFile,
   type Fonts,
   fetchBytes,
   HEIGHT,
@@ -19,6 +18,7 @@ import {
   WIDTH,
 } from "./reimbursementPdf/primitives";
 import { drawTableHeader, drawTableRow, ROW_H } from "./reimbursementPdf/table";
+import { appendReceiptPages } from "./reimbursementPdf/receiptAppendix";
 
 const TABLE_MIN_Y = 60;
 const BOTTOM_H = 200;
@@ -47,37 +47,6 @@ async function loadLogo(pdfDoc: PDFDocument): Promise<PDFImage | null> {
     return await pdfDoc.embedPng(bytes);
   } catch {
     return null;
-  }
-}
-
-async function drawReceiptPage(
-  pdfDoc: PDFDocument,
-  fonts: Fonts,
-  receipt: ReceiptInput,
-  index: number,
-) {
-  const bytes = receipt.fileUrl ? await fetchBytes(receipt.fileUrl) : null;
-  if (!bytes) return;
-  const embedded = await embedFile(pdfDoc, bytes);
-  if (!embedded) return;
-
-  const page = pdfDoc.addPage([WIDTH, HEIGHT]);
-  const label = `Beleg ${receipt.receiptNumber || index + 1}: ${receipt.companyName || ""}`;
-  text(page, label, M, HEIGHT - 40, 11, fonts.bold);
-
-  const scale = Math.min(
-    (WIDTH - 2 * M) / embedded.width,
-    (HEIGHT - 90) / embedded.height,
-    1,
-  );
-  const w = embedded.width * scale;
-  const h = embedded.height * scale;
-  const x = (WIDTH - w) / 2;
-  const y = HEIGHT - 60 - h;
-  if (embedded.kind === "pdf") {
-    page.drawPage(embedded.draw, { x, y, xScale: scale, yScale: scale });
-  } else {
-    page.drawImage(embedded.image, { x, y, width: w, height: h });
   }
 }
 
@@ -127,9 +96,7 @@ export async function generateReimbursementPDF(
   }
   await drawBottomSection(pdfDoc, page, fonts, bottomTop, data, totals);
 
-  for (let i = 0; i < receipts.length; i++) {
-    await drawReceiptPage(pdfDoc, fonts, receipts[i], i);
-  }
+  await appendReceiptPages(pdfDoc, fonts, receipts);
 
   const pdfBytes = await pdfDoc.save();
   return new Blob([pdfBytes.buffer as ArrayBuffer], {

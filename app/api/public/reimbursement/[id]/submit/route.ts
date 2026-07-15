@@ -1,60 +1,10 @@
-import { z } from "zod";
 import { receipts, reimbursements, travelDetails } from "@/lib/db/collections";
 import { newId } from "@/lib/db/ids";
 import { addLog } from "@/lib/server/logs";
 import { sendSubmissionReceivedEmail } from "@/lib/server/reimbursements/email";
-import {
-  getTravelDateRangeError,
-  TRAVEL_DATE_RANGE_ERROR,
-} from "@/lib/travelDates";
+import { bodySchema } from "./submissionSchema";
 
 type RouteContext = { params: Promise<{ id: string }> };
-
-const baseReceiptFields = {
-  receiptNumber: z.string().optional(),
-  receiptDate: z.string(),
-  companyName: z.string(),
-  description: z.string(),
-  netAmount: z.number(),
-  taxRate: z.number(),
-  grossAmount: z.number(),
-  fileStorageId: z.string(),
-};
-
-const receiptSchema = z.object(baseReceiptFields);
-
-const travelReceiptSchema = z.object({
-  ...baseReceiptFields,
-  costType: z.enum(["car", "train", "flight", "taxi", "bus", "accommodation"]),
-  kilometers: z.number().optional(),
-});
-
-const bodySchema = z.object({
-  amount: z.number(),
-  iban: z.string(),
-  bic: z.string(),
-  accountHolder: z.string(),
-  submitterName: z.string(),
-  submitterEmail: z.string().email(),
-  signatureStorageId: z.string(),
-  receipts: z.array(receiptSchema),
-  travelReceipts: z.array(travelReceiptSchema).optional(),
-  travelDetails: z
-    .object({
-      startDate: z.string(),
-      endDate: z.string(),
-      destination: z.string(),
-      purpose: z.string(),
-      isInternational: z.boolean(),
-      mealAllowanceDays: z.number().optional(),
-      mealAllowanceDailyBudget: z.number().optional(),
-    })
-    .refine((data) => !getTravelDateRangeError(data.startDate, data.endDate), {
-      message: TRAVEL_DATE_RANGE_ERROR,
-      path: ["endDate"],
-    })
-    .optional(),
-});
 
 export async function POST(request: Request, context: RouteContext) {
   const { id } = await context.params;
@@ -83,7 +33,9 @@ export async function POST(request: Request, context: RouteContext) {
     const allReceipts = [...args.receipts, ...(args.travelReceipts ?? [])];
     const usedKeys = [
       args.signatureStorageId,
-      ...allReceipts.map((receipt) => receipt.fileStorageId),
+      ...allReceipts.flatMap((receipt) =>
+        receipt.fileStorageId ? [receipt.fileStorageId] : [],
+      ),
     ];
     if (usedKeys.some((key) => !allowed.has(key)))
       return Response.json({ error: "Invalid key" }, { status: 400 });
@@ -108,6 +60,7 @@ export async function POST(request: Request, context: RouteContext) {
           signatureStorageId: args.signatureStorageId,
           status: "pending",
           submittedExternally: true,
+          submittedAt: Date.now(),
         },
         $unset: {
           reviewNote: "",
@@ -137,6 +90,7 @@ export async function POST(request: Request, context: RouteContext) {
         _creationTime: Date.now(),
         reimbursementId: id,
         ...receipt,
+        fileStorageId: receipt.fileStorageId ?? "",
       });
     }
 

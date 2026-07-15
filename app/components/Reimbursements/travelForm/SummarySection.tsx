@@ -15,6 +15,7 @@ interface Props {
   totalNet: number;
   taxByRate: (rate: number) => number;
   mealTotal: number;
+  overnightTotal: number;
   total: number;
   isSubmitting: boolean;
   canSubmit: boolean;
@@ -26,13 +27,14 @@ export function SummarySection({
   totalNet,
   taxByRate,
   mealTotal,
+  overnightTotal,
   total,
   isSubmitting,
   canSubmit,
   handleSubmit,
 }: Props) {
   const items = receipts.filter((receipt) => receipt.grossAmount > 0);
-  const isEmpty = items.length === 0 && mealTotal === 0;
+  const isEmpty = items.length === 0 && mealTotal === 0 && overnightTotal === 0;
 
   return (
     <div className="space-y-6 border-2 p-6">
@@ -89,6 +91,14 @@ export function SummarySection({
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Verpflegung</span>
                 <span>{formatCurrency(mealTotal)}</span>
+              </div>
+            )}
+            {overnightTotal > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  Übernachtungspauschale
+                </span>
+                <span>{formatCurrency(overnightTotal)}</span>
               </div>
             )}
             <Separator className="my-2" />

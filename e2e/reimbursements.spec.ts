@@ -3,7 +3,6 @@ import { expect, type Locator, type Page, test } from "@playwright/test";
 
 const TEST_EMAIL = "reimbursement@test.com";
 const IMAGE_FILE = path.join(__dirname, "files/test-invoice.jpg");
-const PDF_FILE = path.join(__dirname, "files/test-invoice.pdf");
 const E2E_PORT = process.env.CI
   ? 3000
   : Number(process.env.CONDUCTOR_PORT ?? 2999) + 1;
@@ -260,32 +259,23 @@ test.describe("critical reimbursement journeys", () => {
       .getByRole("textbox", { name: "TT.MM.JJJJ" })
       .nth(1)
       .fill("20.05.2026");
+    await page.locator('input[type="time"]').first().fill("08:00");
+    await page.locator('input[type="time"]').nth(1).fill("18:00");
     await page.getByRole("textbox", { name: "TT.MM.JJJJ" }).nth(1).blur();
 
     await page.getByRole("button", { name: "PKW" }).click();
 
-    await page.getByPlaceholder("Eigenfahrt, Miles, Sixt, etc.").fill("Miles");
-    await page
-      .getByPlaceholder("z.B. RE-2026-001 (optional)")
-      .fill("RK-2026-001");
     await page.getByRole("spinbutton").first().fill("500");
-
-    await page.locator('input[type="file"]').setInputFiles(PDF_FILE);
-    await expect(page.getByText("Beleg hochgeladen")).toBeVisible({
-      timeout: 10000,
-    });
 
     await page
       .getByRole("checkbox", {
         name: "Verpflegungsmehraufwand geltend machen",
       })
       .check();
-    await page.getByPlaceholder("z.B. 2.5").fill("1.5");
-    await page.getByRole("combobox").filter({ hasText: "Auswählen" }).click();
-    await page.getByRole("option", { name: "28 € (24h+)" }).click();
+    await page.locator("#fullDay-days").fill("1");
 
     await expect(page.getByText("PKW500 km × 0,30 €")).toBeVisible();
-    await expect(page.getByText("Brutto gesamt192,00 €")).toBeVisible();
+    await expect(page.getByText("Brutto gesamt178,00 €")).toBeVisible();
 
     await saveBankDetails(page);
     await addSignature(page);

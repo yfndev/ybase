@@ -1,4 +1,4 @@
-import type { Receipt as ReceiptDoc } from "@/lib/db/types";
+import type { MealAllowance, Receipt as ReceiptDoc } from "@/lib/db/types";
 import type { CostType } from "@/lib/travel-costs";
 
 export type BankDetails = { iban: string; bic: string; accountHolder: string };
@@ -12,8 +12,11 @@ export type Travel = {
   destination: string;
   purpose: string;
   startDate: string;
+  startTime: string;
   endDate: string;
+  endTime: string;
   isInternational: boolean;
-  mealDays: number;
-  mealRate: number;
+  mealAllowance: MealAllowance;
+  overnightAllowanceNights: number;
+  overnightAllowanceRate: number;
 };

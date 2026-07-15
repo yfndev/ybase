@@ -1,37 +1,47 @@
 "use client";
 
+import type { MealAllowance } from "@/lib/db/types";
+import { formatCurrency } from "@/lib/formatters/formatCurrency";
+import { createMealAllowance } from "@/lib/travel-costs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { formatCurrency } from "@/lib/formatters/formatCurrency";
-import {
-  MEAL_ALLOWANCE_FULL_DAY_EUR,
-  MEAL_ALLOWANCE_PARTIAL_DAY_EUR,
-} from "@/lib/travel-costs";
-import type { Travel } from "./types";
 
-interface Props {
-  travel: Travel;
-  update: (field: Partial<Travel>) => void;
+type Props = {
+  allowance: MealAllowance;
+  isInternational: boolean;
+  onAllowanceChange: (allowance: MealAllowance) => void;
   showMealAllowance: boolean;
   setShowMealAllowance: (value: boolean) => void;
   mealTotal: number;
-}
+};
+
+const LINES: Array<{ key: keyof MealAllowance; label: string }> = [
+  { key: "singleDay", label: "Eintägige Reise (mehr als 8 Stunden)" },
+  { key: "arrivalDay", label: "Anreisetag" },
+  { key: "fullDay", label: "Zwischentag (24 Stunden)" },
+  { key: "departureDay", label: "Abreisetag" },
+];
 
 export function MealAllowanceSection({
-  travel,
-  update,
+  allowance,
+  isInternational,
+  onAllowanceChange,
   showMealAllowance,
   setShowMealAllowance,
   mealTotal,
 }: Props) {
+  const updateLine = (
+    key: keyof MealAllowance,
+    field: "days" | "rate",
+    value: number,
+  ) => {
+    onAllowanceChange({
+      ...allowance,
+      [key]: { ...allowance[key], [field]: value },
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center space-x-2">
@@ -39,8 +49,11 @@ export function MealAllowanceSection({
           id="mealAllowance"
           checked={showMealAllowance}
           onCheckedChange={(checked) => {
-            setShowMealAllowance(checked === true);
-            if (!checked) update({ mealDays: 0, mealRate: 0 });
+            const enabled = checked === true;
+            setShowMealAllowance(enabled);
+            if (!enabled) {
+              onAllowanceChange(createMealAllowance(isInternational));
+            }
           }}
         />
         <Label htmlFor="mealAllowance" className="font-normal cursor-pointer">
@@ -48,58 +61,75 @@ export function MealAllowanceSection({
         </Label>
       </div>
 
-      {showMealAllowance && (
+      {showMealAllowance ? (
         <div className="border rounded-lg p-4 space-y-4">
           <p className="text-sm text-muted-foreground">
             Bitte nur ausfüllen, wenn dies vorab mit deinem Lead abgesprochen
-            wurde! Ansonsten werden die Reisekosten nicht erstattet.
+            wurde. Bei Auslandsreisen müssen die geltenden Sätze eingetragen
+            werden.
           </p>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label>Tage</Label>
-              <Input
-                type="number"
-                step="0.5"
-                min={0}
-                value={travel.mealDays || ""}
-                onChange={(e) =>
-                  update({ mealDays: parseFloat(e.target.value) || 0 })
-                }
-                placeholder="z.B. 2.5"
-              />
-            </div>
-            <div>
-              <Label>Tagessatz (€)</Label>
-              <Select
-                value={travel.mealRate ? String(travel.mealRate) : ""}
-                onValueChange={(value) =>
-                  update({ mealRate: parseFloat(value) || 0 })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Auswählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={String(MEAL_ALLOWANCE_PARTIAL_DAY_EUR)}>
-                    {MEAL_ALLOWANCE_PARTIAL_DAY_EUR} € (8-24h)
-                  </SelectItem>
-                  <SelectItem value={String(MEAL_ALLOWANCE_FULL_DAY_EUR)}>
-                    {MEAL_ALLOWANCE_FULL_DAY_EUR} € (24h+)
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-muted-foreground">Betrag</Label>
-              <Input
-                value={formatCurrency(mealTotal)}
-                disabled
-                className="bg-muted/50 font-mono"
-              />
-            </div>
+          <div className="space-y-3">
+            {LINES.map(({ key, label }) => {
+              const line = allowance[key];
+              return (
+                <div
+                  key={key}
+                  className="grid grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_100px_120px_120px]"
+                >
+                  <div className="text-sm font-medium">{label}</div>
+                  <div>
+                    <Label htmlFor={`${key}-days`}>Tage</Label>
+                    <Input
+                      id={`${key}-days`}
+                      type="number"
+                      step="1"
+                      min={0}
+                      value={line.days || ""}
+                      onChange={(event) =>
+                        updateLine(
+                          key,
+                          "days",
+                          Math.max(0, Math.floor(Number(event.target.value))),
+                        )
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={`${key}-rate`}>Satz (€)</Label>
+                    <Input
+                      id={`${key}-rate`}
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      disabled={!isInternational}
+                      value={line.rate || ""}
+                      onChange={(event) =>
+                        updateLine(
+                          key,
+                          "rate",
+                          Math.max(0, Number(event.target.value)),
+                        )
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Betrag</Label>
+                    <Input
+                      value={formatCurrency(line.days * line.rate)}
+                      disabled
+                      className="bg-muted/50 font-mono"
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex justify-between border-t pt-3 font-medium">
+            <span>Verpflegung gesamt</span>
+            <span>{formatCurrency(mealTotal)}</span>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

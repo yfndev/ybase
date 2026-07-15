@@ -41,11 +41,21 @@ export type ReimbursementLink =
         destination: string;
         purpose: string;
         startDate: string;
+        startTime?: string;
         endDate: string;
+        endTime?: string;
         allowFoodAllowance?: boolean;
         isInternational?: boolean;
         mealAllowanceDays?: number;
         mealAllowanceDailyBudget?: number;
+        mealAllowance?: {
+          singleDay: { days: number; rate: number };
+          arrivalDay: { days: number; rate: number };
+          fullDay: { days: number; rate: number };
+          departureDay: { days: number; rate: number };
+        };
+        overnightAllowanceNights?: number;
+        overnightAllowanceRate?: number;
       } | null;
       submission?: {
         name: string;
@@ -62,14 +72,15 @@ export type ReimbursementLink =
           netAmount: number;
           taxRate: number;
           grossAmount: number;
-          fileStorageId: string;
+          fileStorageId?: string;
           costType?:
             | "car"
             | "train"
             | "flight"
             | "taxi"
             | "bus"
-            | "accommodation";
+            | "accommodation"
+            | "incidental";
           kilometers?: number;
         }>;
       };

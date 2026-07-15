@@ -7,4 +7,5 @@ export const PLACEHOLDERS: Record<CostType, string> = {
   taxi: "Uber, Bolt, etc.",
   bus: "Flixbus, etc.",
   accommodation: "Hotel, Airbnb, etc.",
+  incidental: "Parkgebühren, Maut, Gepäck, etc.",
 };

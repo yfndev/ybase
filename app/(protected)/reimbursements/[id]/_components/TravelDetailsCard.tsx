@@ -1,5 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/formatters/formatDate";
+import { formatCurrency } from "@/lib/formatters/formatCurrency";
+import {
+  getMealAllowanceTotal,
+  getMealAllowanceWithLegacyFallback,
+} from "@/lib/travel-costs";
 import type { Reimbursement } from "./types";
 
 export function TravelDetailsCard({
@@ -7,6 +12,12 @@ export function TravelDetailsCard({
 }: {
   travelDetails: NonNullable<Reimbursement["travelDetails"]>;
 }) {
+  const allowance = getMealAllowanceWithLegacyFallback(travelDetails);
+  const mealTotal = getMealAllowanceTotal(allowance);
+  const overnightTotal =
+    (travelDetails.overnightAllowanceNights ?? 0) *
+    (travelDetails.overnightAllowanceRate ?? 0);
+
   return (
     <div className="bg-muted/50 rounded-lg p-4 space-y-2">
       <h3 className="font-medium">Reisedetails</h3>
@@ -24,9 +35,28 @@ export function TravelDetailsCard({
           {formatDate(travelDetails.startDate)} –{" "}
           {formatDate(travelDetails.endDate)}
         </div>
+        {(travelDetails.startTime || travelDetails.endTime) && (
+          <div>
+            <span className="text-muted-foreground">Uhrzeit: </span>
+            {travelDetails.startTime || "–"} – {travelDetails.endTime || "–"}
+          </div>
+        )}
         {travelDetails.isInternational && (
           <div>
             <Badge variant="outline">Auslandsreise</Badge>
+          </div>
+        )}
+        {mealTotal > 0 && (
+          <div>
+            <span className="text-muted-foreground">Verpflegung: </span>
+            {formatCurrency(mealTotal)}
+          </div>
+        )}
+        {overnightTotal > 0 && (
+          <div>
+            <span className="text-muted-foreground">Übernachtungen: </span>
+            {travelDetails.overnightAllowanceNights} ×{" "}
+            {formatCurrency(travelDetails.overnightAllowanceRate ?? 0)}
           </div>
         )}
       </div>

@@ -4,6 +4,7 @@ import { reimbursements, travelDetails } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { UserRole } from "../../db/types";
 import { getOrganization } from "../organizations/data";
+import { getProjectById } from "../projects/data";
 import { addLog } from "../logs";
 import { getFileUrl, getReceipts, getReimbursement } from "./data";
 import { cleanupReimbursement } from "./helpers";
@@ -14,9 +15,12 @@ type ReviewActor = { _id: string; organizationId: string; role: UserRole };
 export type ReimbursementPdfData = {
   reimbursement: Awaited<ReturnType<typeof getReimbursement>>;
   organization: Awaited<ReturnType<typeof getOrganization>>;
+  projectName: string;
   signatureUrl: string | null;
   receiptsWithUrls: Array<
-    Awaited<ReturnType<typeof getReceipts>>[number] & { fileUrl: string }
+    Awaited<ReturnType<typeof getReceipts>>[number] & {
+      fileUrl: string | null;
+    }
   >;
 };
 
@@ -31,12 +35,17 @@ export async function insertTravelDetails(
     _creationTime: Date.now(),
     reimbursementId,
     startDate: args.startDate,
+    startTime: args.startTime,
     endDate: args.endDate,
+    endTime: args.endTime,
     destination: args.destination,
     purpose: args.purpose,
     isInternational: args.isInternational,
     mealAllowanceDays: args.mealAllowanceDays,
     mealAllowanceDailyBudget: args.mealAllowanceDailyBudget,
+    mealAllowance: args.mealAllowance,
+    overnightAllowanceNights: args.overnightAllowanceNights,
+    overnightAllowanceRate: args.overnightAllowanceRate,
   });
 }
 
@@ -46,20 +55,34 @@ export async function buildReimbursementPdfData(
   const reimbursement = await getReimbursement(reimbursementId);
   if (!reimbursement) return null;
 
-  const organization = await getOrganization();
-  const signatureUrl = reimbursement.signatureStorageId
-    ? await getFileUrl(reimbursement.signatureStorageId)
-    : null;
-
-  const receipts = await getReceipts(reimbursementId);
+  const projectPromise =
+    reimbursement.type === "travel"
+      ? getProjectById(reimbursement.projectId)
+      : Promise.resolve(null);
+  const [organization, project, signatureUrl, receipts] = await Promise.all([
+    getOrganization(),
+    projectPromise,
+    reimbursement.signatureStorageId
+      ? getFileUrl(reimbursement.signatureStorageId)
+      : Promise.resolve(null),
+    getReceipts(reimbursementId),
+  ]);
   const receiptsWithUrls = await Promise.all(
     receipts.map(async (receipt) => ({
       ...receipt,
-      fileUrl: await getFileUrl(receipt.fileStorageId),
+      fileUrl: receipt.fileStorageId
+        ? await getFileUrl(receipt.fileStorageId)
+        : null,
     })),
   );
 
-  return { reimbursement, organization, signatureUrl, receiptsWithUrls };
+  return {
+    reimbursement,
+    organization,
+    projectName: project?.name ?? "",
+    signatureUrl,
+    receiptsWithUrls,
+  };
 }
 
 export async function deleteReimbursementById(

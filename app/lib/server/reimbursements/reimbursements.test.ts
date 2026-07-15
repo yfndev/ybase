@@ -25,7 +25,12 @@ vi.mock("./email", () => ({
 }));
 
 import { requireRole, requireUser } from "../../auth/session";
-import { receipts, reimbursements, users } from "../../db/collections";
+import {
+  receipts,
+  reimbursements,
+  travelDetails,
+  users,
+} from "../../db/collections";
 import { newId } from "../../db/ids";
 import {
   createTestActor,
@@ -37,8 +42,10 @@ import { setupTestDatabase } from "../../test/setupTestDatabase";
 import {
   approve,
   createReimbursement,
+  createTravelReimbursement,
   decline,
   deleteReimbursement,
+  getReimbursementPdfData,
   requestChanges,
 } from "./actions";
 import { getAllReimbursements, getFileInfo, getReimbursement } from "./data";
@@ -141,6 +148,71 @@ test("createReimbursement writes the reimbursement and receipts scoped to the or
   expect(receiptList).toHaveLength(1);
   expect(receiptList[0]?.fileStorageId).toBe("receipt-key");
   expect(sendSubmissionReceivedEmail).toHaveBeenCalledWith(id);
+});
+
+test("travel PDF data includes travel details and the project name", async () => {
+  const id = await createTravelReimbursement({
+    ...reimbursementInput(),
+    startDate: "2026-05-15",
+    startTime: "08:00",
+    endDate: "2026-05-20",
+    endTime: "18:00",
+    destination: "Berlin",
+    purpose: "Event",
+    isInternational: false,
+    receipts: [
+      {
+        ...reimbursementInput().receipts[0],
+        costType: "train",
+      },
+    ],
+  });
+
+  expect(
+    await (await travelDetails()).findOne({ reimbursementId: id }),
+  ).toMatchObject({ destination: "Berlin", purpose: "Event" });
+  await expect(getReimbursementPdfData(id)).resolves.toMatchObject({
+    projectName: "Projekt A",
+    reimbursement: {
+      type: "travel",
+      travelDetails: { destination: "Berlin", purpose: "Event" },
+    },
+  });
+});
+
+test("creates a kilometer allowance without requiring a receipt file", async () => {
+  const input = reimbursementInput();
+  const id = await createTravelReimbursement({
+    ...input,
+    amount: 30,
+    startDate: "2026-05-15",
+    startTime: "08:00",
+    endDate: "2026-05-15",
+    endTime: "18:00",
+    destination: "Berlin",
+    purpose: "Workshop",
+    isInternational: false,
+    receipts: [
+      {
+        costType: "car",
+        receiptDate: "2026-05-15",
+        companyName: "Privater PKW",
+        description: "",
+        netAmount: 30,
+        taxRate: 0,
+        grossAmount: 30,
+        kilometers: 100,
+      },
+    ],
+  });
+
+  const receipt = await (await receipts()).findOne({ reimbursementId: id });
+  expect(receipt).toMatchObject({
+    costType: "car",
+    kilometers: 100,
+    grossAmount: 30,
+    fileStorageId: "",
+  });
 });
 
 test("creating an emailed submission request sends the request template", async () => {

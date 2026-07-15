@@ -22,7 +22,10 @@ type ReimbursementInsert = {
   signatureStorageId: string;
 };
 
-type ReceiptInsert = Omit<Receipt, "_id" | "_creationTime" | "reimbursementId">;
+type ReceiptInsert = Omit<
+  Receipt,
+  "_id" | "_creationTime" | "reimbursementId" | "fileStorageId"
+> & { fileStorageId?: string };
 
 export async function insertReimbursement(
   reimbursementId: string,
@@ -35,6 +38,7 @@ export async function insertReimbursement(
   ).insertOne({
     _id: reimbursementId,
     _creationTime: Date.now(),
+    submittedAt: Date.now(),
     organizationId: user.organizationId,
     projectId: args.projectId,
     amount: args.amount,
@@ -63,6 +67,7 @@ export async function insertReceipts(
       _creationTime: Date.now(),
       reimbursementId,
       ...receipt,
+      fileStorageId: receipt.fileStorageId ?? "",
     });
   }
 }
@@ -98,7 +103,7 @@ export async function cleanupReimbursement(
     .toArray();
 
   for (const receipt of receiptList) {
-    await deleteObject(receipt.fileStorageId);
+    if (receipt.fileStorageId) await deleteObject(receipt.fileStorageId);
     await (await receipts()).deleteOne({ _id: receipt._id });
   }
 

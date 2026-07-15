@@ -62,6 +62,7 @@ export function ReimbursementsClient({
     handleBulkDownload,
   } = usePdfDownloads({
     allowances,
+    reimbursements,
     selected,
     clearSelection,
   });

@@ -3,6 +3,7 @@ import { BIC_REGEX, IBAN_REGEX, normalizeIban } from "@/lib/bank-utils";
 import { getTravelDateRangeError } from "@/lib/travelDates";
 import toast from "react-hot-toast";
 import type { Receipt, TravelReceipt } from "./types";
+import type { MealAllowance } from "@/lib/db/types";
 
 type SubmitParams = {
   id: string;
@@ -19,15 +20,18 @@ type SubmitParams = {
   destination: string;
   purpose: string;
   startDate: string;
+  startTime: string;
   endDate: string;
+  endTime: string;
   isInternational: boolean;
-  mealDays: number;
-  mealRate: number;
+  mealAllowance: MealAllowance;
+  overnightAllowanceNights: number;
+  overnightAllowanceRate: number;
   receipts: Receipt[];
   travelReceipts: TravelReceipt[];
 };
 
-function withFileStorageId<T extends { fileStorageId: string | null }>(
+function withFileStorageId<T extends { fileStorageId?: string | null }>(
   items: T[],
 ) {
   return items.filter(
@@ -57,17 +61,41 @@ export function validateReimbursement(params: SubmitParams) {
       !params.destination ||
       !params.purpose ||
       !params.startDate ||
-      !params.endDate
+      !params.startTime ||
+      !params.endDate ||
+      !params.endTime
     ) {
       return "Bitte alle Reiseangaben ausfüllen";
     }
     const dateRangeError = getTravelDateRangeError(
       params.startDate,
       params.endDate,
+      params.startTime,
+      params.endTime,
     );
     if (dateRangeError) return dateRangeError;
-    if (params.travelReceipts.length === 0 && params.mealTotal === 0) {
-      return "Bitte mindestens eine Kostenart oder Verpflegung hinzufügen";
+    if (
+      params.overnightAllowanceNights > 0 &&
+      params.overnightAllowanceRate <= 0
+    ) {
+      return "Bitte einen gültigen Übernachtungssatz eingeben";
+    }
+    if (
+      params.travelReceipts.length === 0 &&
+      params.mealTotal === 0 &&
+      params.overnightAllowanceNights * params.overnightAllowanceRate === 0
+    ) {
+      return "Bitte mindestens eine Kostenart oder Pauschale hinzufügen";
+    }
+    const invalidTravelReceipt = params.travelReceipts.some((receipt) =>
+      receipt.costType === "car"
+        ? !receipt.kilometers || receipt.grossAmount <= 0
+        : !receipt.companyName ||
+          !receipt.fileStorageId ||
+          receipt.grossAmount <= 0,
+    );
+    if (invalidTravelReceipt) {
+      return "Bitte alle Pflichtfelder der Reisekosten ausfüllen";
     }
   } else if (params.receipts.length === 0) {
     return "Bitte mindestens einen Beleg hinzufügen";
@@ -94,10 +122,8 @@ export async function submitReimbursementForm(params: SubmitParams) {
     params.receipts.filter((receipt) => receipt.fileStorageId),
   );
 
-  const validTravelReceipts = withFileStorageId(
-    params.travelReceipts.filter(
-      (receipt) => receipt.fileStorageId && receipt.grossAmount > 0,
-    ),
+  const validTravelReceipts = params.travelReceipts.filter(
+    (receipt) => receipt.grossAmount > 0,
   );
 
   try {
@@ -114,12 +140,20 @@ export async function submitReimbursementForm(params: SubmitParams) {
       travelDetails: params.isTravel
         ? {
             startDate: params.startDate,
+            startTime: params.startTime,
             endDate: params.endDate,
+            endTime: params.endTime,
             destination: params.destination,
             purpose: params.purpose,
             isInternational: params.isInternational,
-            mealAllowanceDays: params.mealDays || undefined,
-            mealAllowanceDailyBudget: params.mealRate || undefined,
+            mealAllowance:
+              params.mealTotal > 0 ? params.mealAllowance : undefined,
+            overnightAllowanceNights:
+              params.overnightAllowanceNights || undefined,
+            overnightAllowanceRate:
+              params.overnightAllowanceNights > 0
+                ? params.overnightAllowanceRate
+                : undefined,
           }
         : undefined,
     });

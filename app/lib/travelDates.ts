@@ -1,10 +1,16 @@
 export const TRAVEL_DATE_RANGE_ERROR =
-  "Das Reiseende muss am oder nach dem Reisebeginn liegen. Korrigiere das Datum, um die Kostenarten anzuzeigen.";
+  "Das Reiseende muss nach dem Reisebeginn liegen. Korrigiere Datum oder Uhrzeit, um die Kostenarten anzuzeigen.";
 
 export function getTravelDateRangeError(
   startDate: string,
   endDate: string,
+  startTime?: string,
+  endTime?: string,
 ): string | null {
-  if (!startDate || !endDate || endDate >= startDate) return null;
-  return TRAVEL_DATE_RANGE_ERROR;
+  if (!startDate || !endDate) return null;
+  if (endDate < startDate) return TRAVEL_DATE_RANGE_ERROR;
+  if (endDate === startDate && startTime && endTime && endTime < startTime) {
+    return TRAVEL_DATE_RANGE_ERROR;
+  }
+  return null;
 }

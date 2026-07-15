@@ -5,4 +5,5 @@ export const COST_TYPE_LABELS: Record<string, string> = {
   taxi: "Taxi",
   bus: "Bus",
   accommodation: "Hotel",
+  incidental: "Reise-Nebenkosten",
 };

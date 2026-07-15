@@ -14,6 +14,7 @@ import {
   validateReimbursement,
 } from "./submitReimbursementForm";
 import { useReceipts } from "./useReceipts";
+import { usePublicTravelFields } from "./usePublicTravelFields";
 
 export function useReimbursementForm(id: string) {
   const [link, setLink] = useState<ReimbursementLink | null>(null);
@@ -28,16 +29,8 @@ export function useReimbursementForm(id: string) {
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [destination, setDestination] = useState("");
-  const [purpose, setPurpose] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [isInternational, setIsInternational] = useState(false);
-  const [mealDays, setMealDays] = useState(0);
-  const [mealRate, setMealRate] = useState(0);
-  const [showFoodAllowance, setShowFoodAllowance] = useState(false);
-
-  const receiptState = useReceipts(startDate);
+  const travel = usePublicTravelFields();
+  const receiptState = useReceipts(travel.startDate);
   const { setReceipts, setTravelReceipts } = receiptState;
 
   useEffect(() => {
@@ -72,30 +65,23 @@ export function useReimbursementForm(id: string) {
       }
 
       if (result.type === "travel" && result.travelDetails) {
-        setDestination(result.travelDetails.destination);
-        setPurpose(result.travelDetails.purpose);
-        setStartDate(result.travelDetails.startDate);
-        setEndDate(result.travelDetails.endDate);
-        setIsInternational(result.travelDetails.isInternational ?? false);
-        setMealDays(result.travelDetails.mealAllowanceDays ?? 0);
-        setMealRate(result.travelDetails.mealAllowanceDailyBudget ?? 0);
-        setShowFoodAllowance((result.travelDetails.mealAllowanceDays ?? 0) > 0);
+        travel.hydrate(result.travelDetails);
       }
     });
 
     return () => {
       ignoreResult = true;
     };
-  }, [id, setReceipts, setTravelReceipts]);
+  }, [id, setReceipts, setTravelReceipts, travel.hydrate]);
 
   const isTravel = link?.valid === true && link.type === "travel";
-  const mealTotal = mealDays * mealRate;
-
   const totalGross = isTravel
     ? receiptState.travelReceipts.reduce(
         (sum, receipt) => sum + receipt.grossAmount,
         0,
-      ) + mealTotal
+      ) +
+      travel.mealTotal +
+      travel.overnightTotal
     : receiptState.receipts.reduce(
         (sum, receipt) => sum + receipt.grossAmount,
         0,
@@ -116,7 +102,7 @@ export function useReimbursementForm(id: string) {
       id,
       isTravel,
       totalGross,
-      mealTotal,
+      mealTotal: travel.mealTotal,
       name,
       email,
       iban,
@@ -124,13 +110,16 @@ export function useReimbursementForm(id: string) {
       accountHolder,
       confirmation,
       signature,
-      destination,
-      purpose,
-      startDate,
-      endDate,
-      isInternational,
-      mealDays,
-      mealRate,
+      destination: travel.destination,
+      purpose: travel.purpose,
+      startDate: travel.startDate,
+      startTime: travel.startTime,
+      endDate: travel.endDate,
+      endTime: travel.endTime,
+      isInternational: travel.isInternational,
+      mealAllowance: travel.mealAllowance,
+      overnightAllowanceNights: travel.overnightAllowanceNights,
+      overnightAllowanceRate: travel.overnightAllowanceRate,
       receipts: receiptState.receipts,
       travelReceipts: receiptState.travelReceipts,
     };
@@ -155,7 +144,7 @@ export function useReimbursementForm(id: string) {
     isTravel,
     submitted,
     isSubmitting,
-    mealTotal,
+    ...travel,
     totalGross,
     name,
     email,
@@ -164,14 +153,6 @@ export function useReimbursementForm(id: string) {
     accountHolder,
     confirmation,
     signature,
-    destination,
-    purpose,
-    startDate,
-    endDate,
-    isInternational,
-    mealDays,
-    mealRate,
-    showFoodAllowance,
     setName,
     setEmail,
     setIban,
@@ -179,14 +160,6 @@ export function useReimbursementForm(id: string) {
     setAccountHolder,
     setConfirmation,
     setSignature,
-    setDestination,
-    setPurpose,
-    setStartDate,
-    setEndDate,
-    setIsInternational,
-    setMealDays,
-    setMealRate,
-    setShowFoodAllowance,
     handleSubmit,
     generateUploadUrl,
     getFileUrl,

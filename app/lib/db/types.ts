@@ -1,3 +1,5 @@
+import type { CostType, MealAllowance } from "./travelTypes";
+
 export type UserRole = "admin" | "finance" | "people_culture" | "member";
 export type MemberStatus = "onboarding" | "active" | "offboarded";
 export type TeamOnboardingStatus = "not_started" | "in_progress" | "completed";
@@ -7,13 +9,7 @@ export type ReviewStatus =
   | "changes_requested"
   | "approved"
   | "declined";
-export type CostType =
-  | "car"
-  | "train"
-  | "flight"
-  | "taxi"
-  | "bus"
-  | "accommodation";
+export type { CostType, MealAllowance, MealAllowanceLine } from "./travelTypes";
 
 export type { JobPosting, JobPostingStatus } from "./jobPosting";
 export type { JobFeedToken } from "./jobFeedToken";
@@ -104,6 +100,7 @@ export interface Reimbursement {
   invitedEmail?: string;
   submittedExternally?: boolean;
   requestedExternally?: boolean;
+  submittedAt?: number;
   pendingUploadKeys?: string[];
 }
 
@@ -112,12 +109,17 @@ export interface TravelDetails {
   _creationTime: number;
   reimbursementId: string;
   startDate: string;
+  startTime?: string;
   endDate: string;
+  endTime?: string;
   destination: string;
   purpose: string;
   isInternational: boolean;
   mealAllowanceDays?: number;
   mealAllowanceDailyBudget?: number;
+  mealAllowance?: MealAllowance;
+  overnightAllowanceNights?: number;
+  overnightAllowanceRate?: number;
   allowFoodAllowance?: boolean;
 }
 

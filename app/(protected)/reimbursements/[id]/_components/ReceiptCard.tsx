@@ -11,37 +11,50 @@ export function ReceiptCard({ receipt }: { receipt: ReceiptWithUrl }) {
 
   return (
     <div className="border rounded-lg p-4 flex gap-4">
-      <a
-        href={receipt.fileUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="group relative flex size-32 shrink-0 items-center justify-center overflow-hidden rounded border bg-muted/30"
-        aria-label="Beleg in neuem Tab öffnen"
-      >
-        {isPdf ? (
-          <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <FileText className="size-12" />
-            <span className="text-xs font-medium">PDF öffnen</span>
-          </div>
-        ) : (
-          <img
-            src={receipt.fileUrl}
-            alt="Beleg"
-            className="size-full object-cover"
-          />
-        )}
-        <span className="absolute right-1.5 top-1.5 rounded bg-background/90 p-1 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-          <ExternalLink className="size-3.5" />
-        </span>
-      </a>
+      {receipt.fileUrl ? (
+        <a
+          href={receipt.fileUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="group relative flex size-32 shrink-0 items-center justify-center overflow-hidden rounded border bg-muted/30"
+          aria-label="Beleg in neuem Tab öffnen"
+        >
+          {isPdf ? (
+            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+              <FileText className="size-12" />
+              <span className="text-xs font-medium">PDF öffnen</span>
+            </div>
+          ) : (
+            <img
+              src={receipt.fileUrl}
+              alt="Beleg"
+              className="size-full object-cover"
+            />
+          )}
+          <span className="absolute right-1.5 top-1.5 rounded bg-background/90 p-1 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+            <ExternalLink className="size-3.5" />
+          </span>
+        </a>
+      ) : (
+        <div className="flex size-32 shrink-0 flex-col items-center justify-center gap-2 rounded border bg-muted/30 text-muted-foreground">
+          <FileText className="size-10" />
+          <span className="text-xs">Kein Beleg nötig</span>
+        </div>
+      )}
       <div className="flex-1 space-y-2">
         <div className="flex items-start justify-between">
           <div>
             <p className="font-semibold">{receipt.companyName}</p>
-            <p className="text-sm text-muted-foreground">
-              Beleg-/Rechnungsnummer {receipt.receiptNumber} •{" "}
-              {formatDate(receipt.receiptDate)}
-            </p>
+            {receipt.costType === "car" ? (
+              <p className="text-sm text-muted-foreground">
+                Kilometerpauschale • {formatDate(receipt.receiptDate)}
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Beleg-/Rechnungsnummer {receipt.receiptNumber || "–"} •{" "}
+                {formatDate(receipt.receiptDate)}
+              </p>
+            )}
           </div>
           <div className="text-right">
             <p className="font-semibold">

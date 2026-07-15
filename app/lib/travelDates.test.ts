@@ -15,4 +15,13 @@ describe("getTravelDateRangeError", () => {
       TRAVEL_DATE_RANGE_ERROR,
     );
   });
+
+  test("rejects an end time before the start time on the same day", () => {
+    expect(
+      getTravelDateRangeError("2026-05-15", "2026-05-15", "18:00", "08:00"),
+    ).toBe(TRAVEL_DATE_RANGE_ERROR);
+    expect(
+      getTravelDateRangeError("2026-05-15", "2026-05-16", "18:00", "08:00"),
+    ).toBeNull();
+  });
 });

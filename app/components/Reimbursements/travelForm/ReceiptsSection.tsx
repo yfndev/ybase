@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { OvernightAllowanceSection } from "../OvernightAllowanceSection";
 import {
   COST_TYPES,
   type CostType,
@@ -20,6 +21,9 @@ interface Props {
   showMealAllowance: boolean;
   setShowMealAllowance: (value: boolean) => void;
   mealTotal: number;
+  showOvernightAllowance: boolean;
+  setShowOvernightAllowance: (value: boolean) => void;
+  overnightTotal: number;
   organizationName: string;
 }
 
@@ -33,6 +37,9 @@ export function ReceiptsSection({
   showMealAllowance,
   setShowMealAllowance,
   mealTotal,
+  showOvernightAllowance,
+  setShowOvernightAllowance,
+  overnightTotal,
   organizationName,
 }: Props) {
   return (
@@ -40,7 +47,7 @@ export function ReceiptsSection({
       <div>
         <h2 className="text-lg font-medium mb-3">Kostenarten auswählen</h2>
         <p className="text-sm text-muted-foreground mb-2">
-          Wähle alle Kostenarten aus, für die du Belege einreichen möchtest.
+          Wähle alle Kostenarten aus, die du geltend machen möchtest.
         </p>
         <div className="flex flex-wrap gap-2">
           {COST_TYPES.map((type) => (
@@ -68,11 +75,27 @@ export function ReceiptsSection({
       ))}
 
       <MealAllowanceSection
-        travel={travel}
-        update={update}
+        allowance={travel.mealAllowance}
+        isInternational={travel.isInternational}
+        onAllowanceChange={(mealAllowance) => update({ mealAllowance })}
         showMealAllowance={showMealAllowance}
         setShowMealAllowance={setShowMealAllowance}
         mealTotal={mealTotal}
+      />
+
+      <OvernightAllowanceSection
+        enabled={showOvernightAllowance}
+        isInternational={travel.isInternational}
+        nights={travel.overnightAllowanceNights}
+        rate={travel.overnightAllowanceRate}
+        total={overnightTotal}
+        onEnabledChange={setShowOvernightAllowance}
+        onNightsChange={(overnightAllowanceNights) =>
+          update({ overnightAllowanceNights })
+        }
+        onRateChange={(overnightAllowanceRate) =>
+          update({ overnightAllowanceRate })
+        }
       />
     </div>
   );

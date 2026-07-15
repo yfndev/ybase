@@ -25,7 +25,7 @@ export function TravelCostsSection(props: Props) {
     <div className="space-y-4">
       <h2 className="text-lg font-medium">Kostenarten</h2>
       <p className="text-sm text-muted-foreground">
-        Wähle alle Kostenarten aus, für die du Belege einreichen möchtest.
+        Wähle alle Kostenarten aus, die du geltend machen möchtest.
       </p>
       <div className="flex flex-wrap gap-2">
         {(Object.keys(props.costLabels) as CostType[]).map((costType) => (
