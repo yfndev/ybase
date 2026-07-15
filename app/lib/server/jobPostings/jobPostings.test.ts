@@ -6,8 +6,9 @@ vi.mock("../../auth/session", () => ({
 }));
 
 import { requirePermission, requireUser } from "../../auth/session";
-import { departments, jobPostings, teams } from "../../db/collections";
+import { departments, jobPostings, teams, users } from "../../db/collections";
 import { newId } from "../../db/ids";
+import type { User } from "../../db/types";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { createJobPostingDraft, updateJobPosting } from "./actions";
@@ -44,6 +45,25 @@ async function insertTeam(
     organizationId,
     isArchived,
     createdBy: userA,
+  });
+  return _id;
+}
+
+async function insertMember(
+  organizationId: string,
+  overrides: Partial<User> = {},
+): Promise<string> {
+  const _id = overrides._id ?? newId();
+  await (
+    await users()
+  ).insertOne({
+    _id,
+    _creationTime: Date.now(),
+    organizationId,
+    email: `${_id}@example.org`,
+    memberStatus: "active",
+    teamOnboardingStatus: "completed",
+    ...overrides,
   });
   return _id;
 }
@@ -129,6 +149,46 @@ test("updateJobPosting can edit content while published", async () => {
   const posting = await getJobPostingById(id);
   expect(posting.title).toBe("Neu");
   expect(posting.status).toBe("published");
+});
+
+test("updateJobPosting stores unique organization members as contacts", async () => {
+  const firstContact = await insertMember(orgA, { name: "Erster Kontakt" });
+  const secondContact = await insertMember(orgA, { name: "Zweiter Kontakt" });
+  const id = await createJobPostingDraft({ title: "Alt", teamId: teamA });
+
+  await updateJobPosting({
+    jobPostingId: id,
+    title: "Neu",
+    teamId: teamA,
+    contactUserIds: [firstContact, firstContact, secondContact],
+  });
+
+  const posting = await getJobPostingById(id);
+  expect(posting.contactUserIds).toEqual([firstContact, secondContact]);
+});
+
+test("updateJobPosting rejects unavailable contacts", async () => {
+  const foreignContact = await insertMember(orgB);
+  const offboardedContact = await insertMember(orgA, {
+    memberStatus: "offboarded",
+  });
+  const contactWithoutEmail = await insertMember(orgA, { email: undefined });
+  const id = await createJobPostingDraft({ title: "T", teamId: teamA });
+
+  for (const contactUserId of [
+    foreignContact,
+    offboardedContact,
+    contactWithoutEmail,
+  ]) {
+    await expect(
+      updateJobPosting({
+        jobPostingId: id,
+        title: "T",
+        teamId: teamA,
+        contactUserIds: [contactUserId],
+      }),
+    ).rejects.toThrow("Ansprechpartner nicht verfügbar");
+  }
 });
 
 test("cannot touch or read a posting from another org", async () => {

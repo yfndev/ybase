@@ -11,7 +11,7 @@ export interface JobPostingFormValues {
   location: string;
   isRemote: boolean;
   deadline: string;
-  contact: string;
+  contactUserIds: string[];
 }
 
 export function toJobPostingForm(posting: JobPosting): JobPostingFormValues {
@@ -26,6 +26,6 @@ export function toJobPostingForm(posting: JobPosting): JobPostingFormValues {
     location: posting.location ?? "",
     isRemote: posting.isRemote ?? false,
     deadline: posting.deadline ?? "",
-    contact: posting.contact ?? "",
+    contactUserIds: posting.contactUserIds ?? [],
   };
 }

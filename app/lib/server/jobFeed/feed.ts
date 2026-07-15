@@ -4,8 +4,9 @@ import {
   jobPostings,
   organizations,
   teams,
+  users,
 } from "../../db/collections";
-import type { JobPosting } from "../../db/types";
+import type { JobPosting, User } from "../../db/types";
 
 export const JOB_FEED_TAG = "YFN_TEAM" as const;
 
@@ -71,7 +72,7 @@ export async function getJobFeedV1(
           timeCommitment: 1,
           location: 1,
           deadline: 1,
-          contact: 1,
+          contactUserIds: 1,
           tallyFormId: 1,
         },
       },
@@ -80,9 +81,24 @@ export async function getJobFeedV1(
     .toArray();
 
   const teamIds = [...new Set(postings.map((posting) => posting.teamId))];
-  const ownedTeams = await (await teams())
-    .find({ _id: { $in: teamIds }, organizationId })
-    .toArray();
+  const contactUserIds = [
+    ...new Set(postings.flatMap((posting) => posting.contactUserIds ?? [])),
+  ];
+  const [ownedTeams, contactUsers] = await Promise.all([
+    (await teams()).find({ _id: { $in: teamIds }, organizationId }).toArray(),
+    (await users())
+      .find({
+        _id: { $in: contactUserIds },
+        organizationId,
+        memberStatus: { $ne: "offboarded" },
+      })
+      .project<Pick<User, "_id" | "name" | "email">>({
+        _id: 1,
+        name: 1,
+        email: 1,
+      })
+      .toArray(),
+  ]);
   const departmentIds = [
     ...new Set(ownedTeams.map((team) => team.departmentId)),
   ];
@@ -93,6 +109,9 @@ export async function getJobFeedV1(
   const departmentsById = new Map(
     ownedDepartments.map((department) => [department._id, department]),
   );
+  const contactsById = new Map(
+    contactUsers.map((contact) => [contact._id, contact]),
+  );
 
   return postings.map((posting) =>
     toFeedItem(
@@ -101,6 +120,7 @@ export async function getJobFeedV1(
       organization.name,
       teamsById,
       departmentsById,
+      contactsById,
     ),
   );
 }
@@ -111,6 +131,7 @@ function toFeedItem(
   organizationName: string,
   teamsById: Map<string, { name: string; departmentId: string }>,
   departmentsById: Map<string, { name: string }>,
+  contactsById: Map<string, Pick<User, "_id" | "name" | "email">>,
 ): JobFeedItemV1 {
   const team = teamsById.get(posting.teamId);
   const department = team ? departmentsById.get(team.departmentId) : undefined;
@@ -130,8 +151,22 @@ function toFeedItem(
     timeCommitment: posting.timeCommitment ?? "",
     location: posting.location ?? "",
     deadline: posting.deadline || null,
-    contact: posting.contact ?? "",
+    contact: formatContacts(posting, contactsById),
     tallyUrl: tallyUrl(posting.tallyFormId),
     tags: [JOB_FEED_TAG],
   };
+}
+
+function formatContacts(
+  posting: JobPosting,
+  contactsById: Map<string, Pick<User, "_id" | "name" | "email">>,
+): string {
+  const contacts = (posting.contactUserIds ?? []).flatMap((contactUserId) => {
+    const contact = contactsById.get(contactUserId);
+    return contact ? [contact] : [];
+  });
+  return contacts
+    .map((contact) => contact.name?.trim() || contact.email?.trim())
+    .filter(Boolean)
+    .join(", ");
 }
