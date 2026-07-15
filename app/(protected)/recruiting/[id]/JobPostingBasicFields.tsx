@@ -1,7 +1,6 @@
 "use client";
 
 import { SelectTeam } from "@/components/Selectors/SelectTeam";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -77,38 +76,14 @@ export function JobPostingBasicFields({ values, onChange }: Props) {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="jp-location">Ort</Label>
-          <Input
-            id="jp-location"
-            value={values.location}
-            onChange={(e) => onChange({ location: e.target.value })}
-            placeholder="z. B. Berlin"
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="jp-contact">Kontakt</Label>
-          <Input
-            id="jp-contact"
-            value={values.contact}
-            onChange={(e) => onChange({ contact: e.target.value })}
-            placeholder="E-Mail oder Ansprechperson"
-          />
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id="jp-remote"
-          checked={values.isRemote}
-          onCheckedChange={(checked) =>
-            onChange({ isRemote: checked === true })
-          }
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="jp-contact">Kontakt</Label>
+        <Input
+          id="jp-contact"
+          value={values.contact}
+          onChange={(e) => onChange({ contact: e.target.value })}
+          placeholder="E-Mail oder Ansprechperson"
         />
-        <Label htmlFor="jp-remote" className="font-normal">
-          Remote möglich
-        </Label>
       </div>
     </div>
   );
