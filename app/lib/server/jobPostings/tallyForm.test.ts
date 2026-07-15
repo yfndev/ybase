@@ -113,7 +113,9 @@ test("creates, configures, publishes and stores the tally ids", async () => {
   const client = useClient(fakeClient());
   const id = await insertDraft(orgA);
 
-  await generateTallyForm({ jobPostingId: id });
+  await expect(generateTallyForm({ jobPostingId: id })).resolves.toEqual({
+    ok: true,
+  });
 
   const posting = await find(id);
   expect(posting?.tallyFormId).toBe("form-1");
@@ -130,18 +132,21 @@ test("creates, configures, publishes and stores the tally ids", async () => {
   );
 });
 
-test("rejects when the tally configuration is incomplete", async () => {
+test("returns an error when the tally configuration is incomplete", async () => {
   const client = useClient(fakeClient());
   vi.mocked(loadTallyFormConfig).mockImplementation(() => {
     throw new Error("Tally-Formularkonfiguration ist unvollständig");
   });
   const id = await insertDraft(orgA);
 
-  await expect(generateTallyForm({ jobPostingId: id })).rejects.toThrow(
-    "unvollständig",
-  );
+  await expect(generateTallyForm({ jobPostingId: id })).resolves.toEqual({
+    ok: false,
+    error: "Tally-Formularkonfiguration ist unvollständig",
+  });
   expect(client.createForm).not.toHaveBeenCalled();
-  expect((await find(id))?.tallyFormId).toBeUndefined();
+  const posting = await find(id);
+  expect(posting?.tallyFormId).toBeUndefined();
+  expect(posting?.tallyFormError).toContain("unvollständig");
 });
 
 test("keeps a repairable draft when the template has no email field", async () => {
@@ -165,9 +170,10 @@ test("keeps a repairable draft when the template has no email field", async () =
   );
   const id = await insertDraft(orgA);
 
-  await expect(generateTallyForm({ jobPostingId: id })).rejects.toThrow(
-    "E-Mail-Feld",
-  );
+  await expect(generateTallyForm({ jobPostingId: id })).resolves.toEqual({
+    ok: false,
+    error: "Die Vorlage enthält kein E-Mail-Feld",
+  });
   const posting = await find(id);
   expect(client.createForm).not.toHaveBeenCalled();
   expect(posting?.status).toBe("draft");
@@ -185,14 +191,19 @@ test("retry after a webhook failure reuses the existing form", async () => {
   );
   const id = await insertDraft(orgA);
 
-  await expect(generateTallyForm({ jobPostingId: id })).rejects.toThrow("500");
+  await expect(generateTallyForm({ jobPostingId: id })).resolves.toEqual({
+    ok: false,
+    error: "Tally API request failed (500)",
+  });
   let posting = await find(id);
   expect(posting?.tallyFormId).toBe("form-1");
   expect(posting?.tallyWebhookId).toBeUndefined();
   expect(posting?.status).toBe("draft");
   expect(posting?.tallyFormError).toContain("500");
 
-  await generateTallyForm({ jobPostingId: id });
+  await expect(generateTallyForm({ jobPostingId: id })).resolves.toEqual({
+    ok: true,
+  });
   posting = await find(id);
   expect(client.createForm).toHaveBeenCalledTimes(1);
   expect(posting?.tallyWebhookId).toBe("wh-1");
@@ -211,11 +222,16 @@ test("retry after a publish failure reuses form and webhook", async () => {
   );
   const id = await insertDraft(orgA);
 
-  await expect(generateTallyForm({ jobPostingId: id })).rejects.toThrow();
+  await expect(generateTallyForm({ jobPostingId: id })).resolves.toEqual({
+    ok: false,
+    error: "Tally API request failed (500)",
+  });
   expect((await find(id))?.tallyWebhookId).toBe("wh-1");
   expect((await find(id))?.status).toBe("draft");
 
-  await generateTallyForm({ jobPostingId: id });
+  await expect(generateTallyForm({ jobPostingId: id })).resolves.toEqual({
+    ok: true,
+  });
   expect(client.createForm).toHaveBeenCalledTimes(1);
   expect(client.createWebhook).toHaveBeenCalledTimes(1);
   expect((await find(id))?.status).toBe("published");
@@ -225,10 +241,13 @@ test("does not create a second form on repeated calls", async () => {
   const client = useClient(fakeClient());
   const id = await insertDraft(orgA);
 
-  await generateTallyForm({ jobPostingId: id });
-  await expect(generateTallyForm({ jobPostingId: id })).rejects.toThrow(
-    "Entwürfe",
-  );
+  await expect(generateTallyForm({ jobPostingId: id })).resolves.toEqual({
+    ok: true,
+  });
+  await expect(generateTallyForm({ jobPostingId: id })).resolves.toEqual({
+    ok: false,
+    error: "Nur Entwürfe können ein Tally-Formular erhalten",
+  });
   expect(client.createForm).toHaveBeenCalledTimes(1);
 });
 
@@ -242,7 +261,10 @@ test("records a repairable draft when the tally api fails", async () => {
   );
   const id = await insertDraft(orgA);
 
-  await expect(generateTallyForm({ jobPostingId: id })).rejects.toThrow("500");
+  await expect(generateTallyForm({ jobPostingId: id })).resolves.toEqual({
+    ok: false,
+    error: "Tally API request failed (500)",
+  });
   const posting = await find(id);
   expect(posting?.status).toBe("draft");
   expect(posting?.tallyFormId).toBeUndefined();
@@ -254,7 +276,9 @@ test("clears a previous error after a successful run", async () => {
   useClient(fakeClient());
   const id = await insertDraft(orgA, { tallyFormError: "vorheriger Fehler" });
 
-  await generateTallyForm({ jobPostingId: id });
+  await expect(generateTallyForm({ jobPostingId: id })).resolves.toEqual({
+    ok: true,
+  });
   const posting = await find(id);
   expect(posting?.tallyFormError).toBeUndefined();
   expect(posting?.status).toBe("published");

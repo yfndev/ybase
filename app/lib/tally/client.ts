@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { tallyApiError } from "./apiError";
 import { TALLY_API_VERSION } from "./constants";
 import type {
   TallyBlock,
@@ -9,11 +10,7 @@ import type {
   TallyWorkspace,
 } from "./types";
 
-type FormPatch = {
-  blocks?: TallyBlock[];
-  settings?: Record<string, unknown>;
-  status?: string;
-};
+type FormPatch = Partial<Pick<TallyForm, "blocks" | "settings" | "status">>;
 
 const API_URL = "https://api.tally.so";
 const MAX_PAGES = 50;
@@ -97,7 +94,7 @@ export function createTallyClient(
       signal: AbortSignal.timeout(10_000),
     });
     if (!response.ok) {
-      throw new Error(`Tally API request failed (${response.status})`);
+      throw await tallyApiError(response);
     }
     if (response.status === 204) return {};
     return response.json();
