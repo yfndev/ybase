@@ -124,9 +124,7 @@ test.describe("Ausschreibungen", () => {
 
     await description.click();
     await page.keyboard.type(" Aktualisiert.");
-    await page
-      .getByRole("button", { name: "Speichern & veröffentlichen" })
-      .click();
+    await page.getByRole("button", { name: "Veröffentlichen" }).click();
     await expect(page.getByText("Ausschreibung veröffentlicht")).toBeVisible();
     await expect(
       page.getByText("Veröffentlicht", { exact: true }),
