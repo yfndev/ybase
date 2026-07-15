@@ -11,6 +11,7 @@ erDiagram
     organizations ||--o{ reimbursements : has
     organizations ||--o{ volunteerAllowance : has
     organizations ||--o{ logs : has
+    organizations ||--o| jobFeedTokens : authenticates
     reimbursements ||--o{ receipts : has
     reimbursements ||--o| travelDetails : has
 
@@ -20,6 +21,14 @@ erDiagram
         string domain
         string accountingEmail
         string createdBy
+    }
+
+    jobFeedTokens {
+        string _id
+        string organizationId
+        string tokenHash
+        number rotatedAt
+        string rotatedBy
     }
 
     users {
