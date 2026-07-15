@@ -206,6 +206,33 @@ test.describe("critical reimbursement journeys", () => {
     await expect(
       page.getByRole("table").getByText("Genehmigt", { exact: true }),
     ).toBeVisible();
+
+    await page.setViewportSize({ width: 730, height: 628 });
+    const selectedRow = page.locator("table tbody tr").first();
+    await selectedRow
+      .getByRole("checkbox", { name: "Antrag auswählen" })
+      .check();
+
+    const bulkActions = page.getByRole("group", {
+      name: "Aktionen für 1 ausgewählte Erstattung",
+    });
+    await expect(bulkActions).toBeVisible();
+
+    const download = page.waitForEvent("download");
+    await bulkActions.getByRole("button", { name: "Herunterladen" }).click();
+    expect((await download).suggestedFilename()).toMatch(
+      /^Erstattungen_.*\.zip$/,
+    );
+
+    await selectedRow
+      .getByRole("checkbox", { name: "Antrag auswählen" })
+      .check();
+    await bulkActions.getByRole("button", { name: "Löschen" }).click();
+    await page
+      .getByRole("alertdialog")
+      .getByRole("button", { name: "Löschen" })
+      .click();
+    await expect(page.locator("table tbody tr")).toHaveCount(0);
   });
 
   test("travel reimbursement can be submitted and declined", async ({
