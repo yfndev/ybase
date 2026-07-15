@@ -40,7 +40,6 @@ export async function GET(_request: Request, context: RouteContext) {
     type: doc.type,
     organizationName: organization?.name || "",
     projectName: project?.name || "",
-    description: doc.description,
     invitedName: doc.invitedName,
     invitedEmail: doc.invitedEmail,
     travelDetails: travel,

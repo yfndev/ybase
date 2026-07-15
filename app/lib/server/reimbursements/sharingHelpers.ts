@@ -14,7 +14,6 @@ export type PendingReimbursementLink = {
   _creationTime: number;
   type: "expense" | "travel";
   projectName: string;
-  description?: string;
   creatorName: string;
   linkType: "reimbursement";
 };
@@ -51,7 +50,6 @@ export async function insertReimbursementLink(
     createdBy: user._id,
     isSharedLink: true,
     requestedExternally: true,
-    description: args.description || "",
     invitedName: args.invitedName,
     invitedEmail: args.invitedEmail,
   });
@@ -64,8 +62,8 @@ export async function insertReimbursementLink(
     _id: newId(),
     _creationTime: Date.now(),
     reimbursementId,
-    startDate: args.travelDetails.startDate || "",
-    endDate: args.travelDetails.endDate || "",
+    startDate: "",
+    endDate: "",
     destination: args.travelDetails.destination || "",
     purpose: args.travelDetails.purpose || "",
     isInternational: false,
@@ -121,7 +119,6 @@ export async function loadPendingSharedLinks(organizationId: string): Promise<{
       _creationTime: reimbursement._creationTime,
       type: reimbursement.type,
       projectName: projectMap.get(reimbursement.projectId) || "Unknown",
-      description: reimbursement.description,
       creatorName: creatorMap.get(reimbursement.createdBy) || "Unknown",
       linkType: "reimbursement",
     })),

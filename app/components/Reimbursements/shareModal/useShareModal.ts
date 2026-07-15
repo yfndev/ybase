@@ -20,7 +20,7 @@ export function useShareModal(open: boolean, onClose: () => void) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [allLinks, setAllLinks] = useState<PendingLink[]>([]);
-  const needsDates = type === "travel" || type === "allowance";
+  const needsDates = type === "allowance";
 
   useEffect(() => {
     if (!open) return;
@@ -84,8 +84,6 @@ export function useShareModal(open: boolean, onClose: () => void) {
           ? {
               destination: form.destination,
               purpose: form.purpose,
-              startDate: form.startDate,
-              endDate: form.endDate,
               allowFoodAllowance: form.allowFoodAllowance,
             }
           : undefined,
