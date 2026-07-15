@@ -104,6 +104,11 @@ export async function updateApplicationManagement(input: {
   const { user, application } = await loadOwnedApplication(
     parsed.applicationId,
   );
+  if (application.status === "withdrawn") {
+    throw new Error(
+      "Zurückgezogene Bewerbungen können nicht bearbeitet werden",
+    );
+  }
 
   if (parsed.ownerId) {
     const owner = await (
@@ -151,7 +156,11 @@ export async function updateApplicationManagement(input: {
   const result = await (
     await applications()
   ).updateOne(
-    { _id: application._id, organizationId: user.organizationId },
+    {
+      _id: application._id,
+      organizationId: user.organizationId,
+      status: { $ne: "withdrawn" },
+    },
     { $set: set, $unset: unset, $push: { history: entry } },
   );
   if (result.matchedCount !== 1) throw new Error("Bewerbung nicht gefunden");

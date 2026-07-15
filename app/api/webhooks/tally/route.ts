@@ -47,10 +47,10 @@ export async function POST(request: Request) {
   }
 
   if (outcome.status === "created") {
-    const { applicationId } = outcome;
+    const { applicationId, withdrawalToken } = outcome;
     after(async () => {
       await Promise.all([
-        sendApplicationEmails(applicationId),
+        sendApplicationEmails(applicationId, withdrawalToken),
         importApplicationFiles(applicationId),
       ]);
     });

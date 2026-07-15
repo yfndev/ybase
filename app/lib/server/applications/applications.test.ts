@@ -170,16 +170,46 @@ test("rejects an owner from another organization", async () => {
   ).rejects.toThrow("Verantwortliche Person nicht verfügbar");
 });
 
-test("enforces allowed status transitions and records the decision", async () => {
+test("enforces allowed non-decision transitions and records them", async () => {
   await setApplicationStatus({ applicationId, status: "review" });
-  await setApplicationStatus({ applicationId, status: "accepted" });
+  await setApplicationStatus({ applicationId, status: "interview" });
 
   const stored = await (await applications()).findOne({ _id: applicationId });
-  expect(stored?.status).toBe("accepted");
+  expect(stored?.status).toBe("interview");
   expect(stored?.history).toHaveLength(2);
   await expect(
     setApplicationStatus({ applicationId, status: "review" }),
   ).rejects.toThrow("nicht zulässig");
+});
+
+test("requires acceptance and rejection to use the email action", async () => {
+  await expect(
+    setApplicationStatus({ applicationId, status: "rejected" }),
+  ).rejects.toThrow("per E-Mail");
+  expect(
+    await (await applications()).findOne({ _id: applicationId }),
+  ).toMatchObject({ status: "received" });
+});
+
+test("reserves the withdrawn status for the secure public flow", async () => {
+  await expect(
+    setApplicationStatus({ applicationId, status: "withdrawn" }),
+  ).rejects.toThrow("nicht zulässig");
+});
+
+test("blocks management changes after a withdrawal", async () => {
+  await (
+    await applications()
+  ).updateOne({ _id: applicationId }, { $set: { status: "withdrawn" } });
+
+  await expect(
+    updateApplicationManagement({
+      applicationId,
+      ownerId: null,
+      internalNotes: "Neue Notiz",
+      interviewAt: null,
+    }),
+  ).rejects.toThrow("nicht bearbeitet");
 });
 
 test("cannot read or update an application from another organization", async () => {

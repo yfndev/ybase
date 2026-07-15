@@ -19,10 +19,15 @@ function applicationUrl(jobPostingId: string): string | null {
   }
 }
 
+function withdrawalUrl(token: string): string {
+  return appUrl(`/withdraw-application/${encodeURIComponent(token)}`);
+}
+
 async function sendApplicantEmail(
   application: Application,
   posting: JobPosting,
   organizationName: string,
+  withdrawalToken: string,
 ): Promise<void> {
   try {
     await sendMail({
@@ -34,6 +39,7 @@ async function sendApplicantEmail(
         applicantName: application.applicantName ?? "",
         jobTitle: posting.title,
         organizationName,
+        withdrawalUrl: withdrawalUrl(withdrawalToken),
       },
       tags: ["ybase", "application", "application-received"],
     });
@@ -69,8 +75,7 @@ async function sendContactEmail(
   try {
     await sendMail({
       to: recipients,
-      replyTo: { email: application.applicantEmail },
-      templateId: BREVO_TEMPLATE_IDS.APPLICATION_RECEIVED_PC,
+      templateId: BREVO_TEMPLATE_IDS.APPLICATION_RECEIVED_RECRUITING_TEAM,
       params: {
         jobTitle: posting.title,
         applicantName: application.applicantName ?? application.applicantEmail,
@@ -86,6 +91,7 @@ async function sendContactEmail(
 
 export async function sendApplicationEmails(
   applicationId: string,
+  withdrawalToken: string,
 ): Promise<void> {
   if (!process.env.BREVO_API_KEY) return;
 
@@ -103,6 +109,11 @@ export async function sendApplicationEmails(
     await organizations()
   ).findOne({ _id: application.organizationId });
 
-  await sendApplicantEmail(application, posting, organization?.name ?? "");
+  await sendApplicantEmail(
+    application,
+    posting,
+    organization?.name ?? "",
+    withdrawalToken,
+  );
   await sendContactEmail(application, posting);
 }

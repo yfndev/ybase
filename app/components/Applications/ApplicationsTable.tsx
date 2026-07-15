@@ -68,6 +68,10 @@ export function ApplicationsTable({
         </TableHeader>
         <TableBody>
           {applications.map((application) => {
+            const identity =
+              application.status === "withdrawn"
+                ? "Anonymisierte Bewerbung"
+                : application.applicantName || application.applicantEmail;
             const owner = application.ownerId
               ? ownersById.get(application.ownerId)
               : undefined;
@@ -86,11 +90,13 @@ export function ApplicationsTable({
                       onSelect(application);
                     }}
                   >
-                    {application.applicantName || application.applicantEmail}
+                    {identity}
                   </button>
-                  <p className="text-xs text-muted-foreground">
-                    {application.applicantEmail}
-                  </p>
+                  {application.applicantEmail ? (
+                    <p className="text-xs text-muted-foreground">
+                      {application.applicantEmail}
+                    </p>
+                  ) : null}
                 </TableCell>
                 {showJobPosting ? (
                   <TableCell>{application.jobPostingTitle}</TableCell>

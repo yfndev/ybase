@@ -77,7 +77,9 @@ export interface Application {
   tallySubmissionId: string;
   tallyResponseId: string;
   tallyFormId: string;
+  withdrawalTokenHash?: string;
   submittedAt: number;
+  withdrawnAt?: number;
   ownerId?: string;
   internalNotes?: string;
   interviewAt?: number;

@@ -64,6 +64,7 @@ export async function ensureIndexes(): Promise<void> {
       { key: { tallyEventId: 1 }, unique: true },
       { key: { tallySubmissionId: 1 }, unique: true },
       { key: { tallyResponseId: 1 }, unique: true },
+      { key: { withdrawalTokenHash: 1 }, unique: true, sparse: true },
       { key: { jobPostingId: 1, applicantEmailNormalized: 1 }, unique: true },
     ]);
 

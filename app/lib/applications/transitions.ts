@@ -1,14 +1,17 @@
 import type { ApplicationStatus } from "../db/types";
 
-export type ApplicationNextStatus = Exclude<ApplicationStatus, "received">;
+export type ApplicationNextStatus = Exclude<
+  ApplicationStatus,
+  "received" | "withdrawn"
+>;
 
 export const APPLICATION_STATUS_TRANSITIONS: Record<
   ApplicationStatus,
   readonly ApplicationNextStatus[]
 > = {
-  received: ["review", "rejected", "withdrawn"],
-  review: ["interview", "accepted", "rejected", "withdrawn"],
-  interview: ["accepted", "rejected", "withdrawn"],
+  received: ["review", "rejected"],
+  review: ["interview", "accepted", "rejected"],
+  interview: ["accepted", "rejected"],
   accepted: [],
   rejected: [],
   withdrawn: [],

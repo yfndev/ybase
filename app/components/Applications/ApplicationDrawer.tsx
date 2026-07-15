@@ -36,6 +36,7 @@ export function ApplicationDrawer({
   const individualFields = application.fields.filter(
     (field) => !isStandardField(field),
   );
+  const withdrawn = application.status === "withdrawn";
 
   return (
     <Sheet open onOpenChange={(open) => !open && onClose()}>
@@ -45,7 +46,11 @@ export function ApplicationDrawer({
       >
         <SheetHeader className="border-b pr-12">
           <div className="flex flex-wrap items-center gap-2">
-            <SheetTitle>{application.applicantName || "Bewerbung"}</SheetTitle>
+            <SheetTitle>
+              {withdrawn
+                ? "Anonymisierte Bewerbung"
+                : application.applicantName || "Bewerbung"}
+            </SheetTitle>
             <ApplicationStatusBadge status={application.status} />
           </div>
           <SheetDescription>{application.jobPostingTitle}</SheetDescription>
@@ -58,22 +63,26 @@ export function ApplicationDrawer({
               <div>
                 <p className="text-xs text-muted-foreground">Identität</p>
                 <p className="text-sm font-medium">
-                  {application.applicantName || "Nicht angegeben"}
+                  {withdrawn
+                    ? "Anonymisiert"
+                    : application.applicantName || "Nicht angegeben"}
                 </p>
               </div>
             </div>
-            <div className="flex items-start gap-2">
-              <Mail className="mt-0.5 size-4 text-muted-foreground" />
-              <div>
-                <p className="text-xs text-muted-foreground">E-Mail</p>
-                <a
-                  className="text-sm font-medium underline-offset-4 hover:underline"
-                  href={`mailto:${application.applicantEmail}`}
-                >
-                  {application.applicantEmail}
-                </a>
+            {!withdrawn ? (
+              <div className="flex items-start gap-2">
+                <Mail className="mt-0.5 size-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">E-Mail</p>
+                  <a
+                    className="text-sm font-medium underline-offset-4 hover:underline"
+                    href={`mailto:${application.applicantEmail}`}
+                  >
+                    {application.applicantEmail}
+                  </a>
+                </div>
               </div>
-            </div>
+            ) : null}
             <div className="flex items-start gap-2 sm:col-span-2">
               <CalendarDays className="mt-0.5 size-4 text-muted-foreground" />
               <div>
@@ -85,7 +94,9 @@ export function ApplicationDrawer({
             </div>
           </section>
 
-          <ApplicationManagement application={application} owners={owners} />
+          {!withdrawn ? (
+            <ApplicationManagement application={application} owners={owners} />
+          ) : null}
           <ApplicationAnswers
             title="Standardantworten"
             fields={standardFields}
@@ -107,6 +118,8 @@ export function ApplicationDrawer({
         <ApplicationActionFooter
           applicationId={application._id}
           status={application.status}
+          applicantName={application.applicantName}
+          jobPostingTitle={application.jobPostingTitle}
         />
       </SheetContent>
     </Sheet>
