@@ -13,8 +13,8 @@ export const INITIAL_FORM: FormState = {
 };
 
 export const TYPE_LABELS: Record<LinkType, string> = {
-  expense: "Auslagenerstattung",
   travel: "Reisekostenerstattung",
+  expense: "Auslagenerstattung",
   allowance: "Ehrenamtspauschale",
 };
 

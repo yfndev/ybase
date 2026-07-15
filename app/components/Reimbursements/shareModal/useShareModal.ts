@@ -79,7 +79,6 @@ export function useShareModal(open: boolean, onClose: () => void) {
     const id = await createReimbursementLink({
       projectId: form.projectId ?? "",
       type,
-      description: form.description,
       travelDetails:
         type === "travel"
           ? {
