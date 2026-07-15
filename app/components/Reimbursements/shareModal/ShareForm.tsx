@@ -54,9 +54,10 @@ export function ShareForm({
           <Button
             key={linkType}
             type="button"
-            variant={type === linkType ? "default" : "outline"}
+            variant={type === linkType ? "primary" : "outline"}
             onClick={() => onTypeChange(linkType)}
             className="h-12 flex-1"
+            aria-pressed={type === linkType}
           >
             {TYPE_LABELS[linkType]}
           </Button>
@@ -72,22 +73,18 @@ export function ShareForm({
         />
       </div>
 
-      <div>
-        <Label>
-          {type === "allowance" ? "Tätigkeitsbeschreibung" : "Beschreibung"}
-        </Label>
-        <Textarea
-          value={form.description}
-          onChange={(e) => onFormUpdate({ description: e.target.value })}
-          placeholder={
-            type === "allowance"
-              ? "z.B. Jugendarbeit, Vorstandstätigkeit"
-              : "z.B. Einkäufe für Workshop"
-          }
-          rows={2}
-          className="resize-none"
-        />
-      </div>
+      {type === "allowance" && (
+        <div>
+          <Label>Tätigkeitsbeschreibung</Label>
+          <Textarea
+            value={form.description}
+            onChange={(e) => onFormUpdate({ description: e.target.value })}
+            placeholder="z.B. Jugendarbeit, Vorstandstätigkeit"
+            rows={2}
+            className="resize-none"
+          />
+        </div>
+      )}
 
       {type === "travel" && (
         <>
