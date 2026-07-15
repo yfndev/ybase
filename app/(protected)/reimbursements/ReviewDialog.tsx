@@ -1,5 +1,6 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,28 +11,26 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
 import type { RejectDialog } from "./types";
 
 type Props = {
-  rejectDialog: RejectDialog;
-  onRejectDialogChange: (dialog: RejectDialog) => void;
-  onReject: () => void;
-  isRejecting: boolean;
+  dialog: RejectDialog;
+  onChange: (dialog: RejectDialog) => void;
+  onSubmit: () => void;
+  isSubmitting: boolean;
 };
 
-export function RejectDialogModal({
-  rejectDialog,
-  onRejectDialogChange,
-  onReject,
-  isRejecting,
+export function ReviewDialog({
+  dialog,
+  onChange,
+  onSubmit,
+  isSubmitting,
 }: Props) {
-  const requestsChanges = rejectDialog.action === "changes";
-
+  const requestsChanges = dialog.action === "changes";
   return (
     <Dialog
-      open={rejectDialog.open}
-      onOpenChange={(open) => onRejectDialogChange({ ...rejectDialog, open })}
+      open={dialog.open}
+      onOpenChange={(open) => onChange({ ...dialog, open })}
     >
       <DialogContent>
         <DialogHeader>
@@ -45,9 +44,9 @@ export function RejectDialogModal({
           </DialogDescription>
         </DialogHeader>
         <Textarea
-          value={rejectDialog.note}
-          onChange={(e) =>
-            onRejectDialogChange({ ...rejectDialog, note: e.target.value })
+          value={dialog.note}
+          onChange={(event) =>
+            onChange({ ...dialog, note: event.target.value })
           }
           placeholder={
             requestsChanges
@@ -59,18 +58,16 @@ export function RejectDialogModal({
         <DialogFooter>
           <Button
             variant="outline"
-            disabled={isRejecting}
-            onClick={() =>
-              onRejectDialogChange({ ...rejectDialog, open: false })
-            }
+            disabled={isSubmitting}
+            onClick={() => onChange({ ...dialog, open: false })}
           >
             Abbrechen
           </Button>
           <Button
-            onClick={onReject}
-            disabled={isRejecting || !rejectDialog.note.trim()}
+            onClick={onSubmit}
+            disabled={isSubmitting || !dialog.note.trim()}
           >
-            {isRejecting && <Loader2 className="size-4 animate-spin" />}
+            {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : null}
             {requestsChanges ? "Änderungen anfordern" : "Ablehnen"}
           </Button>
         </DialogFooter>
