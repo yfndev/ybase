@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronsUpDown, LogOut } from "lucide-react";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -18,6 +18,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { signOutWithPostHog } from "@/lib/posthog-client";
 
 type NavUserData = {
   name?: string | null;
@@ -103,9 +104,7 @@ export function NavUser() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onSelect={() => signOut({ callbackUrl: "/login" })}
-            >
+            <DropdownMenuItem onSelect={() => void signOutWithPostHog()}>
               <LogOut />
               Abmelden
             </DropdownMenuItem>
