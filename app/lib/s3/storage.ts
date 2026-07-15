@@ -79,6 +79,38 @@ export function presignDownload(key: string): Promise<string> {
   );
 }
 
+export function presignNamedDownload(
+  key: string,
+  fileName: string,
+): Promise<string> {
+  const safeName = fileName.replace(/["\\\r\n]/g, "_");
+  return getSignedUrl(
+    s3(),
+    new GetObjectCommand({
+      Bucket: bucket(),
+      Key: key,
+      ResponseContentDisposition: `attachment; filename="${safeName}"`,
+    }),
+    { expiresIn: 300 },
+  );
+}
+
+export async function putObject(
+  key: string,
+  body: Uint8Array,
+  contentType: string,
+): Promise<void> {
+  await s3().send(
+    new PutObjectCommand({
+      Bucket: bucket(),
+      Key: key,
+      Body: body,
+      ContentLength: body.byteLength,
+      ContentType: contentType,
+    }),
+  );
+}
+
 export async function getDownloadInfo(
   key: string,
 ): Promise<{ url: string; contentType: string }> {

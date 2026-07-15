@@ -21,6 +21,7 @@ function buildPayload(input: {
   jobPostingId?: string;
   email?: string;
   formId?: string;
+  files?: Array<Record<string, unknown>>;
 }) {
   const fields: Array<Record<string, unknown>> = [
     { key: "q1", label: "Vorname", type: "INPUT_TEXT", value: "Max" },
@@ -52,6 +53,14 @@ function buildPayload(input: {
       label: "E-Mail",
       type: "INPUT_EMAIL",
       value: input.email,
+    });
+  }
+  if (input.files !== undefined) {
+    fields.push({
+      key: "q-file",
+      label: "Lebenslauf",
+      type: "FILE_UPLOAD",
+      value: input.files,
     });
   }
   return tallyWebhookSchema.parse({
@@ -103,6 +112,15 @@ test("creates a received application scoped to the posting org with a snapshot",
       submissionId: "s1",
       jobPostingId: postingA,
       email: "Max@Example.com",
+      files: [
+        {
+          id: "file-1",
+          name: "cv.pdf",
+          url: "https://storage.tally.so/private/cv.pdf?token=secret",
+          mimeType: "application/pdf",
+          size: 123,
+        },
+      ],
     }),
   );
 
@@ -117,7 +135,17 @@ test("creates a received application scoped to the posting org with a snapshot",
   expect(stored?.organizationId).toBe(orgA);
   expect(stored?.applicantEmailNormalized).toBe("max@example.com");
   expect(stored?.applicantName).toBe("Max Mustermann");
-  expect(stored?.fields).toHaveLength(4);
+  expect(stored?.fields).toHaveLength(5);
+  expect(stored?.files).toEqual([
+    expect.objectContaining({
+      fileName: "cv.pdf",
+      status: "pending",
+      attempts: 0,
+    }),
+  ]);
+  expect(stored?.fields.find((field) => field.key === "q-file")?.value).toEqual(
+    ["cv.pdf"],
+  );
   expect(stored).not.toHaveProperty("applicantPhone");
   expect(stored?.fields.some((field) => field.type.includes("PHONE"))).toBe(
     false,

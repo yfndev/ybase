@@ -2,6 +2,7 @@ import { after } from "next/server";
 import { ingestTallySubmission } from "@/lib/server/applications/ingest";
 import { tallyWebhookSchema } from "@/lib/server/applications/tallyPayload";
 import { sendApplicationEmails } from "@/lib/server/applications/email";
+import { importApplicationFiles } from "@/lib/server/applications/fileImport";
 import { loadTallyWebhookSecret } from "@/lib/server/tally/config";
 import { verifyTallySignature } from "@/lib/server/tally/signature";
 
@@ -47,7 +48,12 @@ export async function POST(request: Request) {
 
   if (outcome.status === "created") {
     const { applicationId } = outcome;
-    after(() => sendApplicationEmails(applicationId));
+    after(async () => {
+      await Promise.all([
+        sendApplicationEmails(applicationId),
+        importApplicationFiles(applicationId),
+      ]);
+    });
   }
 
   return Response.json({ ok: true, status: outcome.status });

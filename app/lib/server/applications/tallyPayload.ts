@@ -4,6 +4,7 @@ import type {
   ApplicationFieldValue,
 } from "../../db/application";
 import { JOB_POSTING_HIDDEN_FIELD } from "../../tally/formTemplate";
+import { extractFiles, type ParsedApplicationFile } from "./tallyFiles";
 
 const fieldSchema = z.object({
   key: z.string(),
@@ -34,6 +35,7 @@ export interface ParsedSubmission {
   emailNormalized: string | null;
   name?: string;
   fields: ApplicationField[];
+  files: ParsedApplicationFile[];
 }
 
 export function normalizeEmail(email: string): string {
@@ -113,6 +115,7 @@ export function parseTallySubmission(
   const jobPostingId =
     pickString(allFields.find(isHiddenJobPostingField)?.value) ?? null;
   const email = pickString(findByType(allFields, "EMAIL")?.value) ?? null;
+  const files = extractFiles(allFields);
 
   const fields: ApplicationField[] = allFields
     .filter((field) => !isHiddenJobPostingField(field))
@@ -122,7 +125,12 @@ export function parseTallySubmission(
       key: field.key,
       label: field.label ?? "",
       type: field.type,
-      value: toFieldValue(field.value),
+      value:
+        field.type.toUpperCase() === "FILE_UPLOAD"
+          ? files
+              .filter((file) => file.fieldKey === field.key)
+              .map((file) => file.fileName)
+          : toFieldValue(field.value),
     }));
 
   return {
@@ -131,5 +139,6 @@ export function parseTallySubmission(
     emailNormalized: email ? normalizeEmail(email) : null,
     name: extractName(allFields),
     fields,
+    files,
   };
 }

@@ -11,6 +11,8 @@ erDiagram
     organizations ||--o{ reimbursements : has
     organizations ||--o{ volunteerAllowance : has
     organizations ||--o{ logs : has
+    organizations ||--o{ applications : has
+    jobPostings ||--o{ applications : receives
     organizations ||--o| jobFeedTokens : authenticates
     reimbursements ||--o{ receipts : has
     reimbursements ||--o| travelDetails : has
@@ -87,6 +89,15 @@ erDiagram
         number expiresAt
     }
 
+    applications {
+        string _id
+        string organizationId
+        string jobPostingId
+        string applicantEmail
+        string status
+        array files
+    }
+
     logs {
         string _id
         string organizationId
@@ -95,6 +106,11 @@ erDiagram
         string entityId
     }
 ```
+
+Application files are embedded in the application snapshot so the application
+and its initial per-file import status are stored atomically. Source URLs remain
+server-only. Imported objects use deterministic storage keys; each file records
+its status, attempt count, error and final object key.
 
 The authoritative field definitions live in
 [`app/lib/db/types.ts`](../app/lib/db/types.ts), while indexes are defined in

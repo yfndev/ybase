@@ -13,6 +13,10 @@ vi.mock("@/lib/server/applications/email", () => ({
   sendApplicationEmails: vi.fn(),
 }));
 
+vi.mock("@/lib/server/applications/fileImport", () => ({
+  importApplicationFiles: vi.fn(),
+}));
+
 vi.mock(
   "@/lib/server/applications/tallyPayload",
   () => import("../../../lib/server/applications/tallyPayload"),
@@ -30,6 +34,7 @@ vi.mock(
 
 import { after } from "next/server";
 import { sendApplicationEmails } from "@/lib/server/applications/email";
+import { importApplicationFiles } from "@/lib/server/applications/fileImport";
 import { ingestTallySubmission } from "@/lib/server/applications/ingest";
 import { POST } from "./route";
 
@@ -104,7 +109,7 @@ test("rejects a signed malformed payload before processing", async () => {
   expect(ingestTallySubmission).not.toHaveBeenCalled();
 });
 
-test("processes a valid signed webhook and schedules its emails", async () => {
+test("processes a valid signed webhook and schedules follow-up work", async () => {
   const rawBody = JSON.stringify(payload());
   vi.mocked(ingestTallySubmission).mockResolvedValue({
     status: "created",
@@ -121,6 +126,7 @@ test("processes a valid signed webhook and schedules its emails", async () => {
   expect(ingestTallySubmission).toHaveBeenCalledWith(payload());
   expect(after).toHaveBeenCalledOnce();
   expect(sendApplicationEmails).toHaveBeenCalledWith("application-1");
+  expect(importApplicationFiles).toHaveBeenCalledWith("application-1");
 });
 
 test("does not schedule emails for an idempotent duplicate", async () => {
@@ -135,6 +141,7 @@ test("does not schedule emails for an idempotent duplicate", async () => {
   });
   expect(after).not.toHaveBeenCalled();
   expect(sendApplicationEmails).not.toHaveBeenCalled();
+  expect(importApplicationFiles).not.toHaveBeenCalled();
 });
 
 test("ignores a valid signed event with another type", async () => {
