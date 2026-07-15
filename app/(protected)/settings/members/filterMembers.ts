@@ -9,10 +9,6 @@ export interface MemberFilters {
   search: string;
 }
 
-export function memberStatusOf(member: User): MemberStatus {
-  return member.memberStatus ?? "onboarding";
-}
-
 export function departmentIdOf(
   member: User,
   teamsById: Map<string, Team>,
@@ -35,7 +31,7 @@ export function filterMembers(
   teamsById: Map<string, Team>,
 ): User[] {
   return members.filter((member) => {
-    if (memberStatusOf(member) !== filters.status) return false;
+    if (member.memberStatus !== filters.status) return false;
     if (
       filters.departmentId !== ALL &&
       departmentIdOf(member, teamsById) !== filters.departmentId

@@ -57,8 +57,8 @@ export interface User {
   accountHolder?: string;
   teamId?: string;
   positionTitle?: string;
-  memberStatus?: MemberStatus;
-  teamOnboardingStatus?: TeamOnboardingStatus;
+  memberStatus: MemberStatus;
+  teamOnboardingStatus: TeamOnboardingStatus;
   registeredAt?: number;
   onboardedAt?: number;
   teamOnboardedAt?: number;

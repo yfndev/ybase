@@ -9,7 +9,7 @@ type TeamOnboardingPatch = Partial<
 >;
 
 export function memberStatusPatch(
-  current: MemberStatus | undefined,
+  current: MemberStatus,
   next: MemberStatus,
   now: number,
 ): MemberStatusPatch {
@@ -21,7 +21,7 @@ export function memberStatusPatch(
 }
 
 export function teamOnboardingPatch(
-  current: TeamOnboardingStatus | undefined,
+  current: TeamOnboardingStatus,
   next: TeamOnboardingStatus,
   now: number,
 ): TeamOnboardingPatch {

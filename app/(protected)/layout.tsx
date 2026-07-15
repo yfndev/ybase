@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/Sidebar/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
+import { requireAuthenticatedUser } from "@/lib/auth/session";
+import { OnboardingNotice } from "./OnboardingNotice";
 import { OffboardedNotice } from "./OffboardedNotice";
 import { OrgOnboarding } from "./OrgOnboarding";
 
@@ -12,8 +14,16 @@ export default async function ProtectedLayout({
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (session.user.memberStatus === "offboarded") return <OffboardedNotice />;
-  if (!session.user.organizationId) return <OrgOnboarding />;
+  const member = await requireAuthenticatedUser();
+  if (member.memberStatus === "offboarded") return <OffboardedNotice />;
+  if (!member.organizationId) return <OrgOnboarding />;
+  if (member.memberStatus === "onboarding") {
+    return (
+      <OnboardingNotice
+        onboardingStatus={member.teamOnboardingStatus}
+      />
+    );
+  }
 
   return (
     <SidebarProvider className="bg-sidebar">

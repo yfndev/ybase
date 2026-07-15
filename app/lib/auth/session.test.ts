@@ -67,6 +67,18 @@ test("offboarded users lose access to protected data", async () => {
   );
 });
 
+test("members in onboarding cannot access regular platform data", async () => {
+  mocks.findOne.mockResolvedValue({
+    _id: "user-id",
+    organizationId: "organization-id",
+    role: "member",
+    memberStatus: "onboarding",
+  });
+
+  await expect(requireUser()).rejects.toThrow("awaiting approval");
+  await expect(requireRole("member")).rejects.toThrow("awaiting approval");
+});
+
 test("invalid persisted roles safely receive member access", async () => {
   mocks.findOne.mockResolvedValue({
     _id: "user-id",

@@ -106,6 +106,8 @@ beforeEach(async () => {
     organizationId: orgA,
     role: "finance" as const,
     email: "actor@a.org",
+    memberStatus: "active" as const,
+    teamOnboardingStatus: "completed" as const,
   };
   await (
     await users()
@@ -116,6 +118,8 @@ beforeEach(async () => {
     organizationId: orgA,
     role: "finance",
     email: "actor@a.org",
+    memberStatus: "active",
+    teamOnboardingStatus: "completed",
   });
   vi.mocked(requireUser).mockResolvedValue(actor);
   vi.mocked(requireRole).mockResolvedValue(actor);

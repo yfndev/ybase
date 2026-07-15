@@ -17,9 +17,9 @@ interface Option<T extends string> {
 }
 
 export const MEMBER_STATUS_OPTIONS: Option<MemberStatus>[] = [
-  { value: "onboarding", label: "Onboarding" },
-  { value: "active", label: "Aktiv" },
-  { value: "offboarded", label: "Offboarded" },
+  { value: "onboarding", label: "Im Onboarding" },
+  { value: "active", label: "Freigegeben" },
+  { value: "offboarded", label: "Ausgeschieden" },
 ];
 
 export const TEAM_ONBOARDING_OPTIONS: Option<TeamOnboardingStatus>[] = [
@@ -32,7 +32,7 @@ export const ROLE_OPTIONS: Option<UserRole>[] = [
   { value: "admin", label: "Admin" },
   { value: "finance", label: "Finance" },
   { value: "people_culture", label: "People & Culture" },
-  { value: "member", label: "Mitglied" },
+  { value: "member", label: "Teammitglied" },
 ];
 
 const MEMBER_STATUS_VARIANT: Record<MemberStatus, BadgeVariant> = {
