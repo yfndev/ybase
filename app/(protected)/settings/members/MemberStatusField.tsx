@@ -24,7 +24,7 @@ export function MemberStatusField({ status, onboarding, onChange }: Props) {
       options={options}
       hint={
         isApprovalAllowed
-          ? "Die Freigabe durch People & Culture schaltet Erstattungen frei."
+          ? undefined
           : "Die Freigabe ist erst möglich, wenn alle Onboarding-Aufgaben abgeschlossen sind."
       }
     />

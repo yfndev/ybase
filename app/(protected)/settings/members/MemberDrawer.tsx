@@ -159,11 +159,6 @@ export function MemberDrawer({
             }
             options={TEAM_ONBOARDING_OPTIONS}
             disabled={member.memberStatus === "active"}
-            hint={
-              member.memberStatus === "active"
-                ? "Nach der Freigabe ist das Onboarding abgeschlossen."
-                : undefined
-            }
           />
 
           <LabeledSelect
