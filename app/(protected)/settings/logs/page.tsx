@@ -41,6 +41,7 @@ const ACTION_LABELS: Record<string, string> = {
   "jobPosting.archive": "Ausschreibung archiviert",
   "jobPosting.tally.publish": "Bewerbungsformular veröffentlicht",
   "jobPosting.tally.error": "Tally-Synchronisierung fehlgeschlagen",
+  "jobFeedToken.rotate": "Job-Feed-Token rotiert",
 };
 
 export default async function LogsPage() {

@@ -5,6 +5,7 @@ import { USER_PERMISSIONS } from "../../auth/roles";
 import { requirePermission } from "../../auth/session";
 import { jobPostings } from "../../db/collections";
 import type { JobPosting } from "../../db/types";
+import { berlinToday, isDeadlinePassed } from "../../jobPostings/deadline";
 import {
   JOB_POSTING_HIDDEN_FIELD,
   normalizeTemplateBlocks,
@@ -23,6 +24,17 @@ export type GenerateTallyFormResult =
   | { ok: true }
   | { ok: false; error: string };
 
+function assertPublishable(posting: JobPosting): void {
+  if (!posting.title.trim() || !posting.teamId.trim()) {
+    throw new Error(
+      "Titel und Team sind vor der Veröffentlichung erforderlich",
+    );
+  }
+  if (isDeadlinePassed(posting.deadline, berlinToday())) {
+    throw new Error("Die Frist liegt in der Vergangenheit");
+  }
+}
+
 export async function generateTallyForm(input: {
   jobPostingId: string;
 }): Promise<GenerateTallyFormResult> {
@@ -40,11 +52,11 @@ export async function generateTallyForm(input: {
       error: "Nur Entwürfe können ein Tally-Formular erhalten",
     };
   }
-
   const save = (fields: TallyFields) =>
     collection.updateOne({ _id: jobPostingId }, { $set: fields });
 
   try {
+    assertPublishable(posting);
     const config = loadTallyFormConfig();
     const client = createConfiguredTallyClient();
     const template = await client.getForm(config.templateFormId);
@@ -64,7 +76,7 @@ export async function generateTallyForm(input: {
 
     await client.updateForm(tallyFormId, {
       blocks: withHiddenField(blocks, JOB_POSTING_HIDDEN_FIELD),
-      settings: { uniqueSubmissionKey: emailFieldUuid },
+      settings: { uniqueSubmissionKey: emailFieldUuid, isClosed: false },
     });
 
     if (!posting.tallyWebhookId) {
@@ -79,13 +91,17 @@ export async function generateTallyForm(input: {
     await client.publishForm(tallyFormId);
     await collection.updateOne(
       { _id: jobPostingId },
-      { $set: { status: "published" }, $unset: { tallyFormError: "" } },
+      {
+        $set: { status: "published", tallyClosed: false },
+        $unset: { tallyFormError: "" },
+      },
     );
     await addLog(
       user.organizationId,
       user._id,
       "jobPosting.tally.publish",
       jobPostingId,
+      "Manuell",
     );
     return { ok: true };
   } catch (error) {

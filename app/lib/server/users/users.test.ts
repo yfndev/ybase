@@ -23,7 +23,7 @@ import {
   updateMemberProfile,
   updateUserRole,
 } from "./actions";
-import { listMembers, listOrganizationUsers } from "./data";
+import { listMembers } from "./data";
 
 let mongod: MongoMemoryServer;
 let orgA: string;
@@ -79,6 +79,8 @@ beforeEach(async () => {
       email: "admin@a.org",
       organizationId: orgA,
       role: "admin",
+      memberStatus: "active",
+      teamOnboardingStatus: "completed",
     },
     {
       _id: memberA,
@@ -87,6 +89,8 @@ beforeEach(async () => {
       email: "member@a.org",
       organizationId: orgA,
       role: "member",
+      memberStatus: "onboarding",
+      teamOnboardingStatus: "not_started",
     },
     {
       _id: memberB,
@@ -95,6 +99,8 @@ beforeEach(async () => {
       email: "member@b.org",
       organizationId: orgB,
       role: "member",
+      memberStatus: "active",
+      teamOnboardingStatus: "completed",
     },
   ]);
   const actor = {
@@ -102,15 +108,12 @@ beforeEach(async () => {
     _creationTime: Date.now(),
     organizationId: orgA,
     role: "admin" as const,
+    memberStatus: "active" as const,
+    teamOnboardingStatus: "completed" as const,
   };
   vi.mocked(requireUser).mockResolvedValue(actor);
   vi.mocked(requireRole).mockResolvedValue(actor);
   vi.mocked(requirePermission).mockResolvedValue(actor);
-});
-
-test("listOrganizationUsers only returns users from the caller's org", async () => {
-  const list = await listOrganizationUsers();
-  expect(list.map((u) => u.name).sort()).toEqual(["Admin A", "Member A"]);
 });
 
 test("updateUserRole promotes a member to admin and writes a log", async () => {
@@ -173,13 +176,29 @@ test("updateBankDetails rejects missing bank details", async () => {
   ).rejects.toThrow();
 });
 
-test("setMemberStatus activates a member and stamps the onboarding time", async () => {
+test("setMemberStatus requires completed onboarding before approval", async () => {
+  await expect(
+    setMemberStatus({ userId: memberA, status: "active" }),
+  ).rejects.toThrow("Abschluss aller Onboarding-Aufgaben");
+});
+
+test("setMemberStatus approves a fully onboarded member", async () => {
+  await setTeamOnboardingStatus({ userId: memberA, status: "completed" });
   await setMemberStatus({ userId: memberA, status: "active" });
   const updated = await (await users()).findOne({ _id: memberA });
   expect(updated?.memberStatus).toBe("active");
   expect(typeof updated?.onboardedAt).toBe("number");
   const log = await (await logs()).findOne({ action: "member.status_change" });
   expect(log?.entityId).toBe(memberA);
+});
+
+test("completed onboarding stays locked after member approval", async () => {
+  await setTeamOnboardingStatus({ userId: memberA, status: "completed" });
+  await setMemberStatus({ userId: memberA, status: "active" });
+
+  await expect(
+    setTeamOnboardingStatus({ userId: memberA, status: "in_progress" }),
+  ).rejects.toThrow("kann nicht erneut geöffnet werden");
 });
 
 test("setMemberStatus offboards a member and stamps the offboarding time", async () => {

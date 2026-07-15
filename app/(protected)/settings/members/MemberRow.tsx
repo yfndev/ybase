@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import type { Department, Team, User } from "@/lib/db/types";
 import { getInitials } from "@/lib/formatters/getInitials";
-import { memberStatusOf } from "./filterMembers";
 import {
   memberStatusLabel,
   memberStatusVariant,
@@ -28,8 +27,8 @@ export function MemberRow({
 }: Props) {
   const team = member.teamId ? teamsById.get(member.teamId) : undefined;
   const department = team ? departmentsById.get(team.departmentId) : undefined;
-  const status = memberStatusOf(member);
-  const onboarding = member.teamOnboardingStatus ?? "not_started";
+  const status = member.memberStatus;
+  const onboarding = member.teamOnboardingStatus;
 
   return (
     <TableRow className="cursor-pointer" onClick={() => onSelect(member)}>
@@ -42,7 +41,7 @@ export function MemberRow({
             </AvatarFallback>
           </Avatar>
           <span className="font-medium">
-            {member.name || "Unbekanntes Mitglied"}
+            {member.name || "Unbekanntes Teammitglied"}
           </span>
         </div>
       </TableCell>

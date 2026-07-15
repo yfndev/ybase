@@ -16,6 +16,7 @@ export type CostType =
   | "accommodation";
 
 export type { JobPosting, JobPostingStatus } from "./jobPosting";
+export type { JobFeedToken } from "./jobFeedToken";
 
 export type {
   Application,
@@ -56,8 +57,8 @@ export interface User {
   accountHolder?: string;
   teamId?: string;
   positionTitle?: string;
-  memberStatus?: MemberStatus;
-  teamOnboardingStatus?: TeamOnboardingStatus;
+  memberStatus: MemberStatus;
+  teamOnboardingStatus: TeamOnboardingStatus;
   registeredAt?: number;
   onboardedAt?: number;
   teamOnboardedAt?: number;

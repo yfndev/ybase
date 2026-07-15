@@ -50,6 +50,8 @@ beforeEach(async () => {
     email: "boss@a.org",
     organizationId: orgA,
     role: "admin",
+    memberStatus: "active",
+    teamOnboardingStatus: "completed",
   });
   const actor = {
     _id: userA,
@@ -57,6 +59,8 @@ beforeEach(async () => {
     email: "boss@a.org",
     organizationId: orgA,
     role: "admin" as const,
+    memberStatus: "active" as const,
+    teamOnboardingStatus: "completed" as const,
   };
   vi.mocked(requireAuthenticatedUser).mockResolvedValue(actor);
   vi.mocked(requireUser).mockResolvedValue(actor);
@@ -84,6 +88,8 @@ test("getOrganizationByDomain reports missing org for an unknown domain", async 
     email: "nobody@unknown.org",
     organizationId: orgA,
     role: "member" as const,
+    memberStatus: "active" as const,
+    teamOnboardingStatus: "completed" as const,
   };
   vi.mocked(requireUser).mockResolvedValue(stranger);
   expect(await getOrganizationByDomain()).toEqual({ exists: false });
@@ -122,11 +128,15 @@ test("initializeOrganization joins an existing org by email domain", async () =>
     _id: newUser,
     _creationTime: Date.now(),
     email: "member@b.org",
+    memberStatus: "onboarding",
+    teamOnboardingStatus: "not_started",
   });
   vi.mocked(requireAuthenticatedUser).mockResolvedValue({
     _id: newUser,
     _creationTime: Date.now(),
     email: "member@b.org",
+    memberStatus: "onboarding",
+    teamOnboardingStatus: "not_started",
   });
 
   const result = await initializeOrganization();
@@ -143,11 +153,15 @@ test("initializeOrganization creates a new org with an Allgemein project", async
     _id: founder,
     _creationTime: Date.now(),
     email: "founder@fresh.org",
+    memberStatus: "onboarding",
+    teamOnboardingStatus: "not_started",
   });
   vi.mocked(requireAuthenticatedUser).mockResolvedValue({
     _id: founder,
     _creationTime: Date.now(),
     email: "founder@fresh.org",
+    memberStatus: "onboarding",
+    teamOnboardingStatus: "not_started",
   });
 
   const result = await initializeOrganization({ organizationName: "Fresh e.V." });
@@ -167,4 +181,6 @@ test("initializeOrganization creates a new org with an Allgemein project", async
   const founderDoc = await (await users()).findOne({ _id: founder });
   expect(founderDoc?.organizationId).toBe(result.organizationId);
   expect(founderDoc?.role).toBe("admin");
+  expect(founderDoc?.memberStatus).toBe("active");
+  expect(founderDoc?.teamOnboardingStatus).toBe("completed");
 });

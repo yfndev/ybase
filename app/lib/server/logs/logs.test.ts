@@ -43,6 +43,8 @@ beforeEach(async () => {
     _creationTime: Date.now(),
     organizationId: orgA,
     role: "admin" as const,
+    memberStatus: "active" as const,
+    teamOnboardingStatus: "completed" as const,
   };
   vi.mocked(requireUser).mockResolvedValue(actor);
   vi.mocked(requireRole).mockResolvedValue(actor);
