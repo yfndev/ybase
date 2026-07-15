@@ -1,0 +1,127 @@
+.tableShell {
+  container-name: reimbursement-table;
+  container-type: inline-size;
+}
+
+.tableShell :global([data-slot="table-container"]) {
+  overscroll-behavior-inline: contain;
+  overflow-x: scroll;
+  scrollbar-color: var(--muted-foreground) var(--muted);
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+}
+
+.tableShell :global([data-slot="table-container"]::-webkit-scrollbar) {
+  height: 0.75rem;
+}
+
+.tableShell :global([data-slot="table-container"]::-webkit-scrollbar-track) {
+  background: var(--muted);
+  border-top: 1px solid var(--border);
+}
+
+.tableShell :global([data-slot="table-container"]::-webkit-scrollbar-thumb) {
+  min-width: 3rem;
+  border: 3px solid var(--muted);
+  border-radius: 999px;
+  background: var(--muted-foreground);
+}
+
+.tableShell :global([data-reimbursement-column="applicant"]),
+.tableShell :global([data-reimbursement-column="project"]),
+.tableShell :global([data-reimbursement-column="created"]),
+.tableShell :global([data-reimbursement-column="reviewed-by"]) {
+  display: none;
+}
+
+.tableShell :global([data-reimbursement-column="request"]) {
+  min-width: 11rem;
+}
+
+.tableShell :global([data-reimbursement-column="status"]) {
+  min-width: 7.5rem;
+}
+
+.tableShell :global([data-reimbursement-mobile-metadata]) {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.125rem;
+  max-width: 18rem;
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tableShell :global([data-reimbursement-metadata-item]) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scrollHint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+
+.scrollHint svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+@container reimbursement-table (min-width: 34rem) {
+  .scrollHint {
+    display: none;
+  }
+}
+
+@container reimbursement-table (min-width: 39rem) {
+  .tableShell :global([data-reimbursement-column="applicant"]) {
+    display: table-cell;
+  }
+
+  .tableShell :global([data-mobile-metadata="applicant"]) {
+    display: none;
+  }
+}
+
+@container reimbursement-table (min-width: 48rem) {
+  .tableShell :global([data-reimbursement-column="created"]) {
+    display: table-cell;
+  }
+
+  .tableShell :global([data-mobile-metadata="created"]) {
+    display: none;
+  }
+}
+
+@container reimbursement-table (min-width: 60rem) {
+  .tableShell :global([data-reimbursement-column="project"]) {
+    display: table-cell;
+  }
+
+  .tableShell :global([data-mobile-metadata="project"]) {
+    display: none;
+  }
+
+  .tableShell :global([data-reimbursement-column="request"]) {
+    min-width: 14rem;
+  }
+
+  .tableShell :global([data-reimbursement-column="status"]) {
+    min-width: 10rem;
+  }
+}
+
+@container reimbursement-table (min-width: 74rem) {
+  .tableShell :global([data-reimbursement-column="reviewed-by"]) {
+    display: table-cell;
+  }
+}
