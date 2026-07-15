@@ -1,5 +1,7 @@
 import type { FormState, LinkKind, LinkType } from "./types";
 
+export const DEFAULT_LINK_TYPE: LinkType = "travel";
+
 export const INITIAL_FORM: FormState = {
   projectId: null,
   description: "",
