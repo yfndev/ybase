@@ -1,5 +1,7 @@
 import type { FormState, LinkKind, LinkType } from "./types";
 
+export const DEFAULT_LINK_TYPE: LinkType = "travel";
+
 export const INITIAL_FORM: FormState = {
   projectId: null,
   description: "",
@@ -13,8 +15,8 @@ export const INITIAL_FORM: FormState = {
 };
 
 export const TYPE_LABELS: Record<LinkType, string> = {
-  expense: "Auslagenerstattung",
   travel: "Reisekostenerstattung",
+  expense: "Auslagenerstattung",
   allowance: "Ehrenamtspauschale",
 };
 

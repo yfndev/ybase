@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { USER_PERMISSIONS } from "../../auth/roles";
 import { requirePermission } from "../../auth/session";
-import { jobPostings, teams } from "../../db/collections";
+import { jobPostings, teams, users } from "../../db/collections";
 import { newId } from "../../db/ids";
 import { addLog } from "../logs";
 import { requireOwnedJobPosting } from "./access";
@@ -22,12 +22,12 @@ const contentSchema = z.object({
   location: optionalText,
   isRemote: z.boolean().optional(),
   deadline: optionalText,
-  contact: optionalText,
+  contactUserIds: z.array(z.string().trim().min(1)).max(20).optional(),
 });
 
 type Content = z.infer<typeof contentSchema>;
 
-function toDocumentFields(content: Content) {
+function toDocumentFields(content: Content, contactUserIds: string[]) {
   return {
     title: content.title,
     teamId: content.teamId,
@@ -39,7 +39,7 @@ function toDocumentFields(content: Content) {
     location: content.location ?? "",
     isRemote: content.isRemote ?? false,
     deadline: content.deadline ?? "",
-    contact: content.contact ?? "",
+    contactUserIds,
   };
 }
 
@@ -82,9 +82,14 @@ export async function updateJobPosting(
 
   await requireOwnedJobPosting(jobPostingId, user.organizationId);
   await requireActiveTeam(content.teamId, user.organizationId);
+  const contactUserIds = [...new Set(content.contactUserIds ?? [])];
+  await requireContactMembers(contactUserIds, user.organizationId);
   await (
     await jobPostings()
-  ).updateOne({ _id: jobPostingId }, { $set: toDocumentFields(content) });
+  ).updateOne(
+    { _id: jobPostingId },
+    { $set: toDocumentFields(content, contactUserIds) },
+  );
   await addLog(
     user.organizationId,
     user._id,
@@ -92,6 +97,29 @@ export async function updateJobPosting(
     jobPostingId,
     content.title,
   );
+}
+
+async function requireContactMembers(
+  contactUserIds: string[],
+  organizationId: string,
+) {
+  if (contactUserIds.length === 0) return;
+  const contacts = await (
+    await users()
+  )
+    .find({
+      _id: { $in: contactUserIds },
+      organizationId,
+      memberStatus: { $ne: "offboarded" },
+    })
+    .project({ _id: 1, email: 1 })
+    .toArray();
+  const validContactIds = new Set(
+    contacts.filter((contact) => contact.email?.trim()).map(({ _id }) => _id),
+  );
+  if (contactUserIds.some((id) => !validContactIds.has(id))) {
+    throw new Error("Ansprechpartner nicht verfügbar");
+  }
 }
 
 async function requireActiveTeam(teamId: string, organizationId: string) {

@@ -47,7 +47,6 @@ export async function getPublicReimbursement(id: string) {
     type: doc.type,
     organizationName: organization?.name || "",
     projectName: project?.name || "",
-    description: doc.description,
     invitedName: doc.invitedName,
     invitedEmail: doc.invitedEmail,
     travelDetails: travel,

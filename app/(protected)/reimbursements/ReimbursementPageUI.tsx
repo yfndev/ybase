@@ -57,7 +57,7 @@ export function ReimbursementPageUI(props: Props) {
       <PageHeader title="Erstattungen" />
       <ReimbursementToolbar
         canManageReimbursements={props.canManageReimbursements}
-        hasSelection={props.selected.size > 0}
+        selectedCount={props.selected.size}
         canDeleteSelected={props.canDeleteSelected}
         isBulkDownloading={props.isBulkDownloading}
         onNewClick={props.onNewClick}

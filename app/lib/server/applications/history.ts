@@ -1,5 +1,10 @@
 import type { TallyWebhookEvent } from "../../db/application";
 import { tallyWebhookEvents } from "../../db/collections";
+import { newId } from "../../db/ids";
+import type {
+  ApplicationHistoryEntry,
+  ApplicationStatus,
+} from "../../db/types";
 import type { TallyWebhookPayload } from "./tallyPayload";
 
 type EventDetails = Partial<
@@ -8,6 +13,22 @@ type EventDetails = Partial<
     "jobPostingId" | "organizationId" | "applicationId" | "reason"
   >
 >;
+
+export function createApplicationHistoryEntry(
+  actorUserId: string,
+  type: ApplicationHistoryEntry["type"],
+  details: string,
+  status?: { fromStatus: ApplicationStatus; toStatus: ApplicationStatus },
+): ApplicationHistoryEntry {
+  return {
+    _id: newId(),
+    timestamp: Date.now(),
+    actorUserId,
+    type,
+    details,
+    ...status,
+  };
+}
 
 export function isDuplicateKeyError(error: unknown): boolean {
   return (

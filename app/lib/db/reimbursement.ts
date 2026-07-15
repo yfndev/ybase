@@ -37,7 +37,6 @@ export interface Reimbursement {
   invitedEmail?: string;
   submittedExternally?: boolean;
   requestedExternally?: boolean;
-  description?: string;
   pendingUploadKeys?: string[];
 }
 
