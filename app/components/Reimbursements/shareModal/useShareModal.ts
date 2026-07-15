@@ -10,12 +10,12 @@ import {
   getPendingSharedLinks,
 } from "@/lib/server/reimbursements/sharing";
 import { createLink as createAllowanceLink } from "@/lib/server/volunteerAllowance/sharing";
-import { INITIAL_FORM, linkUrl } from "./constants";
+import { DEFAULT_LINK_TYPE, INITIAL_FORM, linkUrl } from "./constants";
 import type { LinkKind, LinkType, PendingLink } from "./types";
 
 export function useShareModal(open: boolean, onClose: () => void) {
   const router = useRouter();
-  const [type, setType] = useState<LinkType>("expense");
+  const [type, setType] = useState<LinkType>(DEFAULT_LINK_TYPE);
   const [form, setForm] = useState(INITIAL_FORM);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -53,7 +53,7 @@ export function useShareModal(open: boolean, onClose: () => void) {
 
   const handleClose = () => {
     setForm(INITIAL_FORM);
-    setType("expense");
+    setType(DEFAULT_LINK_TYPE);
     onClose();
   };
 
