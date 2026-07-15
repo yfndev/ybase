@@ -10,23 +10,16 @@ export type UserPermission =
   | "manage_projects"
   | "view_audit_logs";
 
-const rolePermissions: Record<UserRole, readonly UserPermission[]> = {
+const rolePermissions: Record<
+  Exclude<UserRole, "admin">,
+  readonly UserPermission[]
+> = {
   member: [],
   finance: ["manage_finance"],
   people_culture: [
     "manage_recruiting",
     "manage_members",
     "manage_organization_structure",
-  ],
-  admin: [
-    "manage_finance",
-    "manage_recruiting",
-    "manage_members",
-    "manage_organization_structure",
-    "manage_roles",
-    "manage_organization_settings",
-    "manage_projects",
-    "view_audit_logs",
   ],
 };
 
@@ -70,5 +63,7 @@ export function hasPermission(
   role: unknown,
   permission: UserPermission,
 ): boolean {
-  return rolePermissions[normalizeUserRole(role)].includes(permission);
+  const normalizedRole = normalizeUserRole(role);
+  if (normalizedRole === "admin") return true;
+  return rolePermissions[normalizedRole].includes(permission);
 }

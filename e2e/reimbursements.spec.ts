@@ -448,6 +448,28 @@ test.describe.serial("reimbursement flow", () => {
     await page.goto("/reimbursements");
   });
 
+  test("admin can delete processed reimbursements individually and in bulk", async () => {
+    const travelRow = page.locator("table tbody tr").first();
+
+    await page.getByRole("checkbox", { name: "Alle auswählen" }).check();
+    await page.getByRole("button", { name: "Löschen", exact: true }).click();
+    await expect(
+      page.getByRole("alertdialog", {
+        name: "Ausgewählte Erstattungen löschen?",
+      }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Abbrechen" }).click();
+
+    await selectRowAction(page, travelRow, "Löschen");
+    await expect(
+      page.getByRole("alertdialog", {
+        name: "Reisekostenerstattung löschen?",
+      }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Abbrechen" }).click();
+    await page.getByRole("checkbox", { name: "Alle auswählen" }).uncheck();
+  });
+
   test("7. Request changes and resubmit a volunteer allowance", async () => {
     await page.getByRole("button", { name: "Neue Erstattung" }).click();
     await expect(page).toHaveURL(/\/reimbursements\/new$/);

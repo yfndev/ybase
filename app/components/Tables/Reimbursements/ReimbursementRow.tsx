@@ -71,6 +71,7 @@ export function ReimbursementRow({
   const isPending = item.status === "pending";
   const showReviewActions = canManageReimbursements && isPending;
   const showEditAction = canEdit && item.status === "changes_requested";
+  const showDeleteAction = canManageReimbursements;
 
   return (
     <TableRow
@@ -162,7 +163,7 @@ export function ReimbursementRow({
               <ExternalLink className="text-current" />
               Öffnen
             </DropdownMenuItem>
-            {showReviewActions ? (
+            {showDeleteAction ? (
               <DropdownMenuItem
                 className={`${styles.menuItem} ${styles.destructiveMenuItem}`}
                 onSelect={onDelete}
