@@ -90,15 +90,7 @@ export function ReimbursementsClient({
     setSelected(new Set());
   };
 
-  const selectedItems = [
-    ...reimbursements.map((item) => ({ key: `r:${item._id}` as const, item })),
-    ...allowances.map((item) => ({ key: `a:${item._id}` as const, item })),
-  ].filter(({ key }) => selected.has(key));
-  const canDeleteSelected =
-    canManageReimbursements &&
-    selected.size > 0 &&
-    selectedItems.length === selected.size &&
-    selectedItems.every(({ item }) => item.status === "pending");
+  const canDeleteSelected = canManageReimbursements && selected.size > 0;
 
   const handleConfirmDelete = async () => {
     const deletedKeys = await actions.handleDelete(deleteKeys);
