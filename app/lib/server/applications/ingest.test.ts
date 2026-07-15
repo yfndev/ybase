@@ -1,6 +1,4 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
-import { afterAll, beforeAll, beforeEach, expect, test } from "vitest";
-import { getClient, getDb } from "../../db/client";
+import { beforeEach, expect, test } from "vitest";
 import {
   applications,
   jobPostings,
@@ -8,11 +6,11 @@ import {
 } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { JobPosting } from "../../db/types";
+import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { ensureIndexes } from "../../db/indexes";
 import { ingestTallySubmission } from "./ingest";
 import { tallyWebhookSchema } from "./tallyPayload";
 
-let mongod: MongoMemoryServer;
 let orgA: string;
 let postingA: string;
 let postingA2: string;
@@ -89,20 +87,9 @@ async function insertPosting(
   return _id;
 }
 
-beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  process.env.MONGODB_URI = mongod.getUri();
-  process.env.MONGODB_DB = "ybase_test";
-}, 120_000);
-
-afterAll(async () => {
-  const client = await getClient();
-  await client.close();
-  await mongod.stop();
-}, 30_000);
+setupTestDatabase();
 
 beforeEach(async () => {
-  await (await getDb()).dropDatabase();
   await ensureIndexes();
   orgA = newId();
   postingA = await insertPosting(orgA);

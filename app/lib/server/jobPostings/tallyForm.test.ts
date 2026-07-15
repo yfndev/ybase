@@ -1,5 +1,4 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
-import { afterAll, beforeAll, beforeEach, expect, test, vi } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({
   requireUser: vi.fn(),
@@ -9,15 +8,15 @@ vi.mock("../tally/client", () => ({ createConfiguredTallyClient: vi.fn() }));
 vi.mock("../tally/config", () => ({ loadTallyFormConfig: vi.fn() }));
 
 import { requirePermission } from "../../auth/session";
-import { getClient, getDb } from "../../db/client";
 import { jobPostings, logs } from "../../db/collections";
 import { newId } from "../../db/ids";
+import { createTestActor } from "../../test/fixtures";
+import { setupTestDatabase } from "../../test/setupTestDatabase";
 import type { JobPosting } from "../../db/types";
 import { createConfiguredTallyClient } from "../tally/client";
 import { loadTallyFormConfig } from "../tally/config";
 import { generateTallyForm } from "./tallyForm";
 
-let mongod: MongoMemoryServer;
 let orgA: string;
 let orgB: string;
 let userA: string;
@@ -77,32 +76,20 @@ function find(id: string) {
   return jobPostings().then((c) => c.findOne({ _id: id }));
 }
 
-beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  process.env.MONGODB_URI = mongod.getUri();
-  process.env.MONGODB_DB = "ybase_test";
-}, 120_000);
-
-afterAll(async () => {
-  const client = await getClient();
-  await client.close();
-  await mongod.stop();
-}, 30_000);
+setupTestDatabase();
 
 beforeEach(async () => {
-  await (await getDb()).dropDatabase();
   vi.clearAllMocks();
   orgA = newId();
   orgB = newId();
   userA = newId();
-  vi.mocked(requirePermission).mockResolvedValue({
-    _id: userA,
-    _creationTime: Date.now(),
-    organizationId: orgA,
-    role: "people_culture" as const,
-    memberStatus: "active" as const,
-    teamOnboardingStatus: "completed" as const,
-  });
+  vi.mocked(requirePermission).mockResolvedValue(
+    createTestActor({
+      _id: userA,
+      organizationId: orgA,
+      role: "people_culture",
+    }),
+  );
   vi.mocked(loadTallyFormConfig).mockReturnValue({
     workspaceId: "ws",
     templateFormId: "tpl",

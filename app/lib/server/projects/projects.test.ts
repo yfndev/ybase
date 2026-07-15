@@ -1,5 +1,4 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
-import { afterAll, beforeAll, beforeEach, expect, test, vi } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({
   requireUser: vi.fn(),
@@ -7,9 +6,10 @@ vi.mock("../../auth/session", () => ({
 }));
 
 import { requireRole, requireUser } from "../../auth/session";
-import { getClient, getDb } from "../../db/client";
 import { organizations, projects, reimbursements } from "../../db/collections";
 import { newId } from "../../db/ids";
+import { createTestActor } from "../../test/fixtures";
+import { setupTestDatabase } from "../../test/setupTestDatabase";
 import {
   archiveProject,
   createProject,
@@ -19,25 +19,13 @@ import {
 } from "./actions";
 import { getAllProjects, getArchivedProjects } from "./data";
 
-let mongod: MongoMemoryServer;
 let orgA: string;
 let orgB: string;
 let userA: string;
 
-beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  process.env.MONGODB_URI = mongod.getUri();
-  process.env.MONGODB_DB = "ybase_test";
-}, 120_000);
-
-afterAll(async () => {
-  const client = await getClient();
-  await client.close();
-  await mongod.stop();
-}, 30_000);
+setupTestDatabase();
 
 beforeEach(async () => {
-  await (await getDb()).dropDatabase();
   vi.clearAllMocks();
   orgA = newId();
   orgB = newId();
@@ -60,14 +48,10 @@ beforeEach(async () => {
       createdBy: newId(),
     },
   ]);
-  const actor = {
+  const actor = createTestActor({
     _id: userA,
-    _creationTime: Date.now(),
     organizationId: orgA,
-    role: "admin" as const,
-    memberStatus: "active" as const,
-    teamOnboardingStatus: "completed" as const,
-  };
+  });
   vi.mocked(requireUser).mockResolvedValue(actor);
   vi.mocked(requireRole).mockResolvedValue(actor);
 });

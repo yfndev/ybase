@@ -1,5 +1,4 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
-import { afterAll, beforeAll, beforeEach, expect, test, vi } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({
   requireUser: vi.fn(),
@@ -20,15 +19,15 @@ vi.mock("./email", () => ({
 }));
 
 import { requireRole, requireUser } from "../../auth/session";
-import { getClient, getDb } from "../../db/client";
-import {
-  organizations,
-  projects,
-  users,
-  volunteerAllowance,
-} from "../../db/collections";
+import { users, volunteerAllowance } from "../../db/collections";
 import { newId } from "../../db/ids";
+import {
+  createTestActor,
+  insertTestOrganization,
+  insertTestProject,
+} from "../../test/fixtures";
 import { deleteObject } from "../../s3/storage";
+import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { create, remove } from "./actions";
 import { getAll } from "./data";
 import {
@@ -41,7 +40,6 @@ import {
 import { createLink } from "./sharing";
 import { approve, decline, requestChanges } from "./reviewActions";
 
-let mongod: MongoMemoryServer;
 let orgA: string;
 let orgB: string;
 let userA: string;
@@ -63,80 +61,52 @@ function newAllowanceInput(projectId: string) {
   };
 }
 
-beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  process.env.MONGODB_URI = mongod.getUri();
-  process.env.MONGODB_DB = "ybase_test";
-}, 120_000);
+async function insertProject(): Promise<string> {
+  const project = await insertTestProject({
+    name: "Projekt A",
+    organizationId: orgA,
+    createdBy: userA,
+  });
+  return project._id;
+}
 
-afterAll(async () => {
-  const client = await getClient();
-  await client.close();
-  await mongod.stop();
-}, 30_000);
+setupTestDatabase();
 
 beforeEach(async () => {
-  await (await getDb()).dropDatabase();
   vi.clearAllMocks();
   orgA = newId();
   orgB = newId();
   userA = newId();
-  await (
-    await organizations()
-  ).insertMany([
-    {
-      _id: orgA,
-      _creationTime: Date.now(),
-      name: "A",
-      domain: "a.org",
-      createdBy: userA,
-      accountingEmail: "accounting@a.org",
-    },
-    {
-      _id: orgB,
-      _creationTime: Date.now(),
-      name: "B",
-      domain: "b.org",
-      createdBy: newId(),
-    },
-  ]);
-  const actor = {
+  await insertTestOrganization({
+    _id: orgA,
+    name: "A",
+    domain: "a.org",
+    createdBy: userA,
+    accountingEmail: "accounting@a.org",
+  });
+  await insertTestOrganization({
+    _id: orgB,
+    name: "B",
+    domain: "b.org",
+  });
+  const actor = createTestActor({
     _id: userA,
-    _creationTime: Date.now(),
-    organizationId: orgA,
-    role: "finance" as const,
-    email: "actor@a.org",
-    memberStatus: "active" as const,
-    teamOnboardingStatus: "completed" as const,
-  };
-  await (
-    await users()
-  ).insertOne({
-    _id: userA,
-    _creationTime: Date.now(),
-    name: "Actor",
     organizationId: orgA,
     role: "finance",
     email: "actor@a.org",
-    memberStatus: "active",
-    teamOnboardingStatus: "completed",
+  });
+  await (
+    await users()
+  ).insertOne({
+    ...actor,
+    name: "Actor",
   });
   vi.mocked(requireUser).mockResolvedValue(actor);
   vi.mocked(requireRole).mockResolvedValue(actor);
 });
 
 test("create + getAll stay scoped to the caller's org", async () => {
-  const projectA = newId();
-  await (
-    await projects()
-  ).insertOne({
-    _id: projectA,
-    _creationTime: Date.now(),
-    name: "Projekt A",
-    organizationId: orgA,
-    isArchived: false,
-    createdBy: userA,
-  });
+  const projectA = await insertProject();
 
   await create(newAllowanceInput(projectA));
 
@@ -205,17 +175,7 @@ test("create rejects missing bank details", async () => {
 });
 
 test("create persists the allowance as pending", async () => {
-  const projectA = newId();
-  await (
-    await projects()
-  ).insertOne({
-    _id: projectA,
-    _creationTime: Date.now(),
-    name: "Projekt A",
-    organizationId: orgA,
-    isArchived: false,
-    createdBy: userA,
-  });
+  const projectA = await insertProject();
 
   const id = await create(newAllowanceInput(projectA));
   const doc = await (await volunteerAllowance()).findOne({ _id: id });
@@ -239,17 +199,7 @@ test("creating an emailed allowance request sends the request template", async (
 });
 
 test("approve sets status approved", async () => {
-  const projectA = newId();
-  await (
-    await projects()
-  ).insertOne({
-    _id: projectA,
-    _creationTime: Date.now(),
-    name: "Projekt A",
-    organizationId: orgA,
-    isArchived: false,
-    createdBy: userA,
-  });
+  const projectA = await insertProject();
 
   const id = await create(newAllowanceInput(projectA));
   await approve({ id });
@@ -262,17 +212,7 @@ test("approve sets status approved", async () => {
 });
 
 test("decline sets status and sends the review email", async () => {
-  const projectA = newId();
-  await (
-    await projects()
-  ).insertOne({
-    _id: projectA,
-    _creationTime: Date.now(),
-    name: "Projekt A",
-    organizationId: orgA,
-    isArchived: false,
-    createdBy: userA,
-  });
+  const projectA = await insertProject();
 
   const id = await create(newAllowanceInput(projectA));
   await decline({ id, rejectionNote: "Angaben fehlen" });
@@ -284,17 +224,7 @@ test("decline sets status and sends the review email", async () => {
 });
 
 test("requestChanges opens the allowance for editing and sends an email", async () => {
-  const projectA = newId();
-  await (
-    await projects()
-  ).insertOne({
-    _id: projectA,
-    _creationTime: Date.now(),
-    name: "Projekt A",
-    organizationId: orgA,
-    isArchived: false,
-    createdBy: userA,
-  });
+  const projectA = await insertProject();
 
   const id = await create(newAllowanceInput(projectA));
   await requestChanges({ id, reviewNote: "Zeitraum korrigieren" });
@@ -307,17 +237,7 @@ test("requestChanges opens the allowance for editing and sends an email", async 
 });
 
 test("remove deletes the signature from S3 and the document", async () => {
-  const projectA = newId();
-  await (
-    await projects()
-  ).insertOne({
-    _id: projectA,
-    _creationTime: Date.now(),
-    name: "Projekt A",
-    organizationId: orgA,
-    isArchived: false,
-    createdBy: userA,
-  });
+  const projectA = await insertProject();
 
   const id = await create(newAllowanceInput(projectA));
   await remove({ id });
