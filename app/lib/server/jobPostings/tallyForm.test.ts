@@ -10,7 +10,7 @@ vi.mock("../tally/config", () => ({ loadTallyFormConfig: vi.fn() }));
 
 import { requirePermission } from "../../auth/session";
 import { getClient, getDb } from "../../db/client";
-import { jobPostings } from "../../db/collections";
+import { jobPostings, logs } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { JobPosting } from "../../db/types";
 import { createConfiguredTallyClient } from "../tally/client";
@@ -100,6 +100,8 @@ beforeEach(async () => {
     _creationTime: Date.now(),
     organizationId: orgA,
     role: "people_culture" as const,
+    memberStatus: "active" as const,
+    teamOnboardingStatus: "completed" as const,
   });
   vi.mocked(loadTallyFormConfig).mockReturnValue({
     workspaceId: "ws",
@@ -119,15 +121,38 @@ test("creates, configures, publishes and stores the tally ids", async () => {
   expect(posting?.tallyFormId).toBe("form-1");
   expect(posting?.tallyWebhookId).toBe("wh-1");
   expect(posting?.status).toBe("published");
+  expect(posting?.tallyClosed).toBe(false);
   expect(posting?.tallyFormError).toBeUndefined();
   expect(client.createForm).toHaveBeenCalledTimes(1);
   expect(client.publishForm).toHaveBeenCalledTimes(1);
   expect(client.updateForm).toHaveBeenCalledWith(
     "form-1",
     expect.objectContaining({
-      settings: { uniqueSubmissionKey: "email-uuid" },
+      settings: { uniqueSubmissionKey: "email-uuid", isClosed: false },
     }),
   );
+  const publishLog = await (
+    await logs()
+  ).findOne({ entityId: id, action: "jobPosting.tally.publish" });
+  expect(publishLog).toMatchObject({
+    details: "Manuell",
+    userId: userA,
+    _creationTime: expect.any(Number),
+  });
+});
+
+test("rejects an incomplete or expired draft before calling Tally", async () => {
+  const client = useClient(fakeClient());
+  const incomplete = await insertDraft(orgA, { title: "" });
+  const expired = await insertDraft(orgA, { deadline: "2000-01-01" });
+
+  await expect(generateTallyForm({ jobPostingId: incomplete })).rejects.toThrow(
+    "Titel und Team",
+  );
+  await expect(generateTallyForm({ jobPostingId: expired })).rejects.toThrow(
+    "Vergangenheit",
+  );
+  expect(client.getForm).not.toHaveBeenCalled();
 });
 
 test("rejects when the tally configuration is incomplete", async () => {

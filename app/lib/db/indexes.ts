@@ -48,13 +48,20 @@ export async function ensureIndexes(): Promise<void> {
       { key: { tallyFormId: 1 }, sparse: true },
     ]);
 
+  await db.collection("jobFeedTokens").createIndexes([
+    { key: { organizationId: 1 }, unique: true },
+    { key: { tokenHash: 1 }, unique: true },
+  ]);
+
   await db
     .collection("applications")
     .createIndexes([
       { key: { organizationId: 1, _creationTime: -1 } },
       { key: { organizationId: 1, jobPostingId: 1, _creationTime: -1 } },
       { key: { organizationId: 1, "files._id": 1 } },
+      { key: { tallyEventId: 1 }, unique: true },
       { key: { tallySubmissionId: 1 }, unique: true },
+      { key: { tallyResponseId: 1 }, unique: true },
       { key: { jobPostingId: 1, applicantEmailNormalized: 1 }, unique: true },
     ]);
 

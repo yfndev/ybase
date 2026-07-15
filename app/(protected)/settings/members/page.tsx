@@ -6,7 +6,7 @@ import { MembersClient } from "./MembersClient";
 export default async function MembersPage() {
   const session = await auth();
   if (!hasPermission(session?.user?.role, USER_PERMISSIONS.members)) {
-    return <AccessDenied title="Mitglieder" />;
+    return <AccessDenied title="Teammitglieder" />;
   }
 
   return <MembersClient />;

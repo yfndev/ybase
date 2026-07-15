@@ -30,3 +30,9 @@ test("rejects a missing signature", () => {
 test("rejects a signature of a different length without throwing", () => {
   expect(verifyTallySignature(BODY, "short", SECRET)).toBe(false);
 });
+
+test("rejects an invalid signature with the expected length", () => {
+  expect(
+    verifyTallySignature(BODY, "x".repeat(sign(BODY).length), SECRET),
+  ).toBe(false);
+});

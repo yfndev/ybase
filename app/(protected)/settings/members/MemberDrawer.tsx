@@ -23,13 +23,9 @@ import type {
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { memberStatusOf } from "./filterMembers";
 import { LabeledSelect } from "./LabeledSelect";
-import {
-  MEMBER_STATUS_OPTIONS,
-  ROLE_OPTIONS,
-  TEAM_ONBOARDING_OPTIONS,
-} from "./memberLabels";
+import { MemberStatusField } from "./MemberStatusField";
+import { ROLE_OPTIONS, TEAM_ONBOARDING_OPTIONS } from "./memberLabels";
 
 const LAST_ADMIN_MESSAGE =
   "Der letzte Admin kann nicht entfernt werden. Mindestens ein Admin ist erforderlich.";
@@ -56,11 +52,9 @@ export function MemberDrawer({
 
   const [teamId, setTeamId] = useState(member.teamId ?? "");
   const [position, setPosition] = useState(member.positionTitle ?? "");
-  const [status, setStatusDraft] = useState<MemberStatus>(
-    memberStatusOf(member),
-  );
+  const [status, setStatusDraft] = useState<MemberStatus>(member.memberStatus);
   const [onboarding, setOnboardingDraft] = useState<TeamOnboardingStatus>(
-    member.teamOnboardingStatus ?? "not_started",
+    member.teamOnboardingStatus,
   );
   const [role, setRole] = useState<UserRole>(member.role ?? "member");
 
@@ -79,7 +73,6 @@ export function MemberDrawer({
     setStatus.isPending ||
     setOnboarding.isPending ||
     updateRole.isPending;
-
   const handleSave = async () => {
     try {
       const profile: {
@@ -94,14 +87,14 @@ export function MemberDrawer({
       if (profile.teamId || profile.positionTitle)
         await updateProfile.mutateAsync(profile);
 
-      if (status !== memberStatusOf(member))
-        await setStatus.mutateAsync({ userId: member._id, status });
-
-      if (onboarding !== (member.teamOnboardingStatus ?? "not_started"))
+      if (onboarding !== member.teamOnboardingStatus)
         await setOnboarding.mutateAsync({
           userId: member._id,
           status: onboarding,
         });
+
+      if (status !== member.memberStatus)
+        await setStatus.mutateAsync({ userId: member._id, status });
 
       if (canEditRoles && role !== (member.role ?? "member")) {
         const demotesLastAdmin =
@@ -113,10 +106,12 @@ export function MemberDrawer({
         await updateRole.mutateAsync({ userId: member._id, role });
       }
 
-      toast.success("Mitglied aktualisiert");
+      toast.success("Teammitglied aktualisiert");
       onClose();
-    } catch {
-      toast.error("Fehler beim Speichern");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Fehler beim Speichern",
+      );
     }
   };
 
@@ -124,7 +119,7 @@ export function MemberDrawer({
     <Sheet open onOpenChange={(nextOpen) => !nextOpen && onClose()}>
       <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>{member.name || "Mitglied"}</SheetTitle>
+          <SheetTitle>{member.name || "Teammitglied"}</SheetTitle>
           <SheetDescription>{member.email || "Keine E-Mail"}</SheetDescription>
         </SheetHeader>
 
@@ -149,22 +144,26 @@ export function MemberDrawer({
             />
           </div>
 
-          <LabeledSelect
-            id="member-status"
-            label="Mitgliedsstatus"
-            value={status}
-            onValueChange={(value) => setStatusDraft(value as MemberStatus)}
-            options={MEMBER_STATUS_OPTIONS}
+          <MemberStatusField
+            status={status}
+            onboarding={onboarding}
+            onChange={setStatusDraft}
           />
 
           <LabeledSelect
             id="member-onboarding"
-            label="Team-Onboarding"
+            label="Onboarding-Aufgaben"
             value={onboarding}
             onValueChange={(value) =>
               setOnboardingDraft(value as TeamOnboardingStatus)
             }
             options={TEAM_ONBOARDING_OPTIONS}
+            disabled={member.memberStatus === "active"}
+            hint={
+              member.memberStatus === "active"
+                ? "Nach der Freigabe ist das Onboarding abgeschlossen."
+                : undefined
+            }
           />
 
           <LabeledSelect

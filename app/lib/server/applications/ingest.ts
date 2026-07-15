@@ -1,29 +1,20 @@
-import type {
-  Application,
-  ApplicationFile,
-  TallyWebhookEvent,
-} from "../../db/application";
+import type { Application, TallyWebhookEvent } from "../../db/application";
 import {
   applications,
   jobPostings,
   tallyWebhookEvents,
 } from "../../db/collections";
 import { newId } from "../../db/ids";
+import { berlinToday, isDeadlinePassed } from "../../jobPostings/deadline";
 import { addLog } from "../logs";
+import { createApplicationFile } from "./fileRecord";
 import { parseTallySubmission, type TallyWebhookPayload } from "./tallyPayload";
+import { isDuplicateKeyError, recordWebhookEvent } from "./webhookEvent";
 
 export type IngestOutcome =
   | { status: "created"; applicationId: string }
   | { status: "duplicate" }
   | { status: "ignored"; reason: string };
-
-function isDuplicateKeyError(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    (error as { code?: number }).code === 11000
-  );
-}
 
 function toTimestamp(value?: string): number {
   if (!value) return Date.now();
@@ -31,60 +22,11 @@ function toTimestamp(value?: string): number {
   return Number.isNaN(parsed) ? Date.now() : parsed;
 }
 
-function applicationFile(
-  file: ReturnType<typeof parseTallySubmission>["files"][number],
-): ApplicationFile {
-  const now = Date.now();
-  return {
-    _id: newId(),
-    fieldKey: file.fieldKey,
-    fieldLabel: file.fieldLabel,
-    sourceId: file.sourceId,
-    sourceUrl: file.sourceUrl,
-    fileName: file.fileName,
-    mimeType: file.mimeType,
-    size: file.size,
-    status: file.validationError ? "rejected" : "pending",
-    attempts: 0,
-    error: file.validationError,
-    updatedAt: now,
-  };
-}
-
 function outcomeFromEvent(event: TallyWebhookEvent): IngestOutcome {
   if (event.status === "ignored") {
     return { status: "ignored", reason: event.reason ?? "ignored" };
   }
   return { status: "duplicate" };
-}
-
-type EventDetails = Partial<
-  Pick<
-    TallyWebhookEvent,
-    "jobPostingId" | "organizationId" | "applicationId" | "reason"
-  >
->;
-
-async function recordEvent(
-  payload: TallyWebhookPayload,
-  status: TallyWebhookEvent["status"],
-  details: EventDetails,
-): Promise<void> {
-  await (
-    await tallyWebhookEvents()
-  ).updateOne(
-    { _id: payload.eventId },
-    {
-      $set: {
-        eventType: payload.eventType,
-        submissionId: payload.data.submissionId,
-        status,
-        ...details,
-      },
-      $setOnInsert: { _creationTime: Date.now() },
-    },
-    { upsert: true },
-  );
 }
 
 export async function ingestTallySubmission(
@@ -97,7 +39,9 @@ export async function ingestTallySubmission(
 
   const parsed = parseTallySubmission(payload);
   if (!parsed.jobPostingId) {
-    await recordEvent(payload, "ignored", { reason: "missing-job-posting-id" });
+    await recordWebhookEvent(payload, "ignored", {
+      reason: "missing-job-posting-id",
+    });
     return { status: "ignored", reason: "missing-job-posting-id" };
   }
 
@@ -105,7 +49,7 @@ export async function ingestTallySubmission(
     await jobPostings()
   ).findOne({ _id: parsed.jobPostingId });
   if (!posting) {
-    await recordEvent(payload, "ignored", {
+    await recordWebhookEvent(payload, "ignored", {
       reason: "unknown-job-posting",
       jobPostingId: parsed.jobPostingId,
     });
@@ -113,7 +57,7 @@ export async function ingestTallySubmission(
   }
 
   if (posting.tallyFormId !== payload.data.formId) {
-    await recordEvent(payload, "ignored", {
+    await recordWebhookEvent(payload, "ignored", {
       reason: "form-job-posting-mismatch",
       jobPostingId: posting._id,
       organizationId: posting.organizationId,
@@ -121,8 +65,23 @@ export async function ingestTallySubmission(
     return { status: "ignored", reason: "form-job-posting-mismatch" };
   }
 
+  const unavailableReason =
+    posting.status !== "published"
+      ? "job-posting-not-open"
+      : isDeadlinePassed(posting.deadline, berlinToday())
+        ? "job-posting-expired"
+        : undefined;
+  if (unavailableReason) {
+    await recordWebhookEvent(payload, "ignored", {
+      reason: unavailableReason,
+      jobPostingId: posting._id,
+      organizationId: posting.organizationId,
+    });
+    return { status: "ignored", reason: unavailableReason };
+  }
+
   if (!parsed.email || !parsed.emailNormalized) {
-    await recordEvent(payload, "ignored", {
+    await recordWebhookEvent(payload, "ignored", {
       reason: "missing-email",
       jobPostingId: posting._id,
       organizationId: posting.organizationId,
@@ -139,9 +98,8 @@ export async function ingestTallySubmission(
     applicantName: parsed.name,
     applicantEmail: parsed.email,
     applicantEmailNormalized: parsed.emailNormalized,
-    applicantPhone: parsed.phone,
     fields: parsed.fields,
-    files: parsed.files.map(applicationFile),
+    files: parsed.files.map(createApplicationFile),
     tallyEventId: payload.eventId,
     tallySubmissionId: payload.data.submissionId,
     tallyResponseId: payload.data.responseId,
@@ -149,29 +107,48 @@ export async function ingestTallySubmission(
     submittedAt: toTimestamp(payload.data.createdAt),
   };
 
+  const applicationCollection = await applications();
   try {
-    await (await applications()).insertOne(application);
+    await applicationCollection.insertOne(application);
   } catch (error) {
     if (!isDuplicateKeyError(error)) throw error;
-    await recordEvent(payload, "duplicate", {
+
+    const existing = await applicationCollection.findOne({
+      $or: [
+        { tallyEventId: payload.eventId },
+        { tallySubmissionId: payload.data.submissionId },
+        { tallyResponseId: payload.data.responseId },
+        {
+          jobPostingId: posting._id,
+          applicantEmailNormalized: parsed.emailNormalized,
+        },
+      ],
+    });
+    const isSameEvent = existing?.tallyEventId === payload.eventId;
+    await recordWebhookEvent(payload, isSameEvent ? "processed" : "duplicate", {
       jobPostingId: posting._id,
       organizationId: posting.organizationId,
+      applicationId: existing?._id,
     });
     return { status: "duplicate" };
   }
 
-  await recordEvent(payload, "processed", {
+  await recordWebhookEvent(payload, "processed", {
     jobPostingId: posting._id,
     organizationId: posting.organizationId,
     applicationId: application._id,
   });
-  await addLog(
-    posting.organizationId,
-    "tally-webhook",
-    "application.received",
-    application._id,
-    posting.title,
-  );
+  try {
+    await addLog(
+      posting.organizationId,
+      "tally-webhook",
+      "application.received",
+      application._id,
+      posting.title,
+    );
+  } catch (error) {
+    console.error("application audit log failed", error);
+  }
 
   return { status: "created", applicationId: application._id };
 }

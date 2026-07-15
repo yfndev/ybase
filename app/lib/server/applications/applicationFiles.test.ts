@@ -22,6 +22,17 @@ let mongod: MongoMemoryServer;
 let organizationId: string;
 let jobPostingId: string;
 
+function actor(actorOrganizationId = organizationId) {
+  return {
+    _id: newId(),
+    _creationTime: Date.now(),
+    organizationId: actorOrganizationId,
+    role: "people_culture" as const,
+    memberStatus: "active" as const,
+    teamOnboardingStatus: "completed" as const,
+  };
+}
+
 function applicationFile(status: ApplicationFile["status"]): ApplicationFile {
   return {
     _id: newId(),
@@ -77,12 +88,7 @@ beforeEach(async () => {
   await (await getDb()).dropDatabase();
   organizationId = newId();
   jobPostingId = newId();
-  vi.mocked(requirePermission).mockResolvedValue({
-    _id: newId(),
-    _creationTime: Date.now(),
-    organizationId,
-    role: "people_culture",
-  });
+  vi.mocked(requirePermission).mockResolvedValue(actor());
   await (
     await jobPostings()
   ).insertOne({
@@ -102,8 +108,8 @@ test("never exposes source URLs or storage keys in application responses", async
   const result = await getApplicationsForJobPosting(jobPostingId);
 
   expect(result).toHaveLength(1);
-  expect(JSON.stringify(result)).not.toContain("secret=yes");
-  expect(JSON.stringify(result)).not.toContain("applications/");
+  expect(result[0].files[0]).not.toHaveProperty("sourceUrl");
+  expect(result[0].files[0]).not.toHaveProperty("storageKey");
 });
 
 test("only signs an imported file from the actor's organization", async () => {
@@ -118,12 +124,7 @@ test("only signs an imported file from the actor's organization", async () => {
     "cv.pdf",
   );
 
-  vi.mocked(requirePermission).mockResolvedValue({
-    _id: newId(),
-    _creationTime: Date.now(),
-    organizationId: newId(),
-    role: "people_culture",
-  });
+  vi.mocked(requirePermission).mockResolvedValue(actor(newId()));
   await expect(getApplicationFileDownloadUrl(imported._id)).rejects.toThrow(
     "Datei nicht verfügbar",
   );

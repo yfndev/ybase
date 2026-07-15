@@ -34,7 +34,6 @@ export interface ParsedSubmission {
   email: string | null;
   emailNormalized: string | null;
   name?: string;
-  phone?: string;
   fields: ApplicationField[];
   files: ParsedApplicationFile[];
 }
@@ -52,12 +51,15 @@ function toFieldValue(value: unknown): ApplicationFieldValue {
   ) {
     return value;
   }
-  if (Array.isArray(value)) {
-    return value.map((item) =>
-      typeof item === "string" ? item : JSON.stringify(item),
-    );
+  if (Array.isArray(value)) return value.map(toFieldValue);
+  if (typeof value === "object") {
+    const snapshot: { [key: string]: ApplicationFieldValue } = {};
+    for (const [key, item] of Object.entries(value)) {
+      snapshot[key] = toFieldValue(item);
+    }
+    return snapshot;
   }
-  return JSON.stringify(value);
+  return String(value);
 }
 
 function isHiddenJobPostingField(field: TallyField): boolean {
@@ -65,6 +67,10 @@ function isHiddenJobPostingField(field: TallyField): boolean {
     (field.label ?? "").trim().toLowerCase() ===
     JOB_POSTING_HIDDEN_FIELD.toLowerCase()
   );
+}
+
+function isPhoneField(field: TallyField): boolean {
+  return field.type.toUpperCase().includes("PHONE");
 }
 
 function pickString(value: unknown): string | undefined {
@@ -109,12 +115,12 @@ export function parseTallySubmission(
   const jobPostingId =
     pickString(allFields.find(isHiddenJobPostingField)?.value) ?? null;
   const email = pickString(findByType(allFields, "EMAIL")?.value) ?? null;
-  const phone = pickString(findByType(allFields, "PHONE")?.value);
   const files = extractFiles(allFields);
 
   const fields: ApplicationField[] = allFields
     .filter((field) => !isHiddenJobPostingField(field))
     .filter((field) => field.type.toUpperCase() !== "HIDDEN_FIELDS")
+    .filter((field) => !isPhoneField(field))
     .map((field) => ({
       key: field.key,
       label: field.label ?? "",
@@ -132,7 +138,6 @@ export function parseTallySubmission(
     email,
     emailNormalized: email ? normalizeEmail(email) : null,
     name: extractName(allFields),
-    phone,
     fields,
     files,
   };

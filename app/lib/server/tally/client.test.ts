@@ -31,3 +31,23 @@ test("rejects a missing Tally API token", () => {
     "TALLY_MASTER_KEY is not configured",
   );
 });
+
+test("uses a custom API URL only in test mode", async () => {
+  const fetcher = vi.fn(async () => json({ items: [], hasMore: false }));
+  const client = createConfiguredTallyClient(
+    {
+      IS_TEST: "true",
+      NODE_ENV: "test",
+      TALLY_API_URL: "http://localhost:3000/api/test/tally",
+      TALLY_MASTER_KEY: "test-token",
+    },
+    fetcher as unknown as typeof fetch,
+  );
+
+  await client.resources();
+
+  expect(fetcher).toHaveBeenCalledWith(
+    expect.stringMatching(/^http:\/\/localhost:3000\/api\/test\/tally\//),
+    expect.any(Object),
+  );
+});

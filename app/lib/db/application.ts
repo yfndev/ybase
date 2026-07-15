@@ -6,7 +6,13 @@ export type ApplicationStatus =
   | "rejected"
   | "withdrawn";
 
-export type ApplicationFieldValue = string | number | boolean | string[] | null;
+export type ApplicationFieldValue =
+  | string
+  | number
+  | boolean
+  | null
+  | ApplicationFieldValue[]
+  | { [key: string]: ApplicationFieldValue };
 
 export interface ApplicationField {
   key: string;
@@ -53,7 +59,6 @@ export interface Application {
   applicantName?: string;
   applicantEmail: string;
   applicantEmailNormalized: string;
-  applicantPhone?: string;
   fields: ApplicationField[];
   files: ApplicationFile[];
   tallyEventId: string;

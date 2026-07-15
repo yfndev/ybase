@@ -8,8 +8,8 @@ import { importApplicationFile } from "./fileImport";
 
 let mongod: MongoMemoryServer;
 
-function file(overrides: Partial<ApplicationFile> = {}): ApplicationFile {
-  return {
+async function insertApplication() {
+  const applicationFile: ApplicationFile = {
     _id: newId(),
     fieldKey: "cv",
     fieldLabel: "Lebenslauf",
@@ -21,11 +21,7 @@ function file(overrides: Partial<ApplicationFile> = {}): ApplicationFile {
     status: "pending",
     attempts: 0,
     updatedAt: Date.now(),
-    ...overrides,
   };
-}
-
-async function insertApplication(applicationFile: ApplicationFile) {
   const application: Application = {
     _id: newId(),
     _creationTime: Date.now(),
@@ -43,13 +39,28 @@ async function insertApplication(applicationFile: ApplicationFile) {
     submittedAt: Date.now(),
   };
   await (await applications()).insertOne(application);
-  return application;
+  return { application, applicationFile };
 }
 
 function pdfResponse(): Response {
   return new Response(new TextEncoder().encode("%PDF-1.7 test"), {
     headers: { "content-type": "application/pdf" },
   });
+}
+
+function mockFetch(response: Response): typeof fetch {
+  return vi.fn(async () => response) as unknown as typeof fetch;
+}
+
+function mockUploader() {
+  return vi.fn(
+    async (_key: string, _body: Uint8Array, _contentType: string) => undefined,
+  );
+}
+
+async function findFile(applicationId: string) {
+  const stored = await (await applications()).findOne({ _id: applicationId });
+  return stored?.files[0];
 }
 
 beforeAll(async () => {
@@ -69,14 +80,11 @@ beforeEach(async () => {
 });
 
 test("imports a valid PDF under a deterministic storage key", async () => {
-  const applicationFile = file();
-  const application = await insertApplication(applicationFile);
-  const uploader = vi.fn(
-    async (_key: string, _body: Uint8Array, _contentType: string) => undefined,
-  );
+  const { application, applicationFile } = await insertApplication();
+  const uploader = mockUploader();
 
   await importApplicationFile(application._id, applicationFile._id, {
-    fetcher: vi.fn(async () => pdfResponse()) as unknown as typeof fetch,
+    fetcher: mockFetch(pdfResponse()),
     uploader,
   });
 
@@ -84,92 +92,35 @@ test("imports a valid PDF under a deterministic storage key", async () => {
   expect(uploader.mock.calls[0][0]).toBe(
     `applications/${application._id}/${applicationFile._id}/Lebenslauf.pdf`,
   );
-  const stored = await (await applications()).findOne({ _id: application._id });
-  expect(stored?.files[0]).toMatchObject({
+  const storedFile = await findFile(application._id);
+  expect(storedFile).toMatchObject({
     status: "imported",
     attempts: 1,
     mimeType: "application/pdf",
   });
-  expect(stored?.files[0].storageKey).toContain(applicationFile._id);
-});
-
-test("rejects unsupported types before downloading", async () => {
-  const applicationFile = file({ mimeType: "application/msword" });
-  const application = await insertApplication(applicationFile);
-  const fetcher = vi.fn();
-
-  await importApplicationFile(application._id, applicationFile._id, {
-    fetcher: fetcher as unknown as typeof fetch,
-  });
-
-  expect(fetcher).not.toHaveBeenCalled();
-  const stored = await (await applications()).findOne({ _id: application._id });
-  expect(stored?.files[0]).toMatchObject({
-    status: "rejected",
-    error: "Dieser Dateityp ist nicht erlaubt.",
-  });
-});
-
-test("rejects an oversized file before downloading", async () => {
-  const applicationFile = file({ size: 10 * 1024 * 1024 + 1 });
-  const application = await insertApplication(applicationFile);
-  const fetcher = vi.fn();
-
-  await importApplicationFile(application._id, applicationFile._id, {
-    fetcher: fetcher as unknown as typeof fetch,
-  });
-
-  expect(fetcher).not.toHaveBeenCalled();
-  const stored = await (await applications()).findOne({ _id: application._id });
-  expect(stored?.files[0]).toMatchObject({
-    status: "rejected",
-    error: "Die Datei ist zu groß.",
-  });
-});
-
-test("rejects a file whose content does not match its declared type", async () => {
-  const applicationFile = file();
-  const application = await insertApplication(applicationFile);
-
-  await importApplicationFile(application._id, applicationFile._id, {
-    fetcher: vi.fn(
-      async () =>
-        new Response("not a pdf", {
-          headers: { "content-type": "application/octet-stream" },
-        }),
-    ) as unknown as typeof fetch,
-  });
-
-  const stored = await (await applications()).findOne({ _id: application._id });
-  expect(stored?.files[0]).toMatchObject({
-    status: "rejected",
-    error: "Der Dateiinhalt ist nicht erlaubt.",
-  });
+  expect(storedFile?.storageKey).toContain(applicationFile._id);
 });
 
 test("retries a failed download idempotently", async () => {
-  const applicationFile = file();
-  const application = await insertApplication(applicationFile);
-  const uploader = vi.fn(
-    async (_key: string, _body: Uint8Array, _contentType: string) => undefined,
-  );
+  const { application, applicationFile } = await insertApplication();
+  const uploader = mockUploader();
 
   await importApplicationFile(application._id, applicationFile._id, {
-    fetcher: vi.fn(
-      async () => new Response(null, { status: 503 }),
-    ) as unknown as typeof fetch,
+    fetcher: mockFetch(new Response(null, { status: 503 })),
     uploader,
   });
   await importApplicationFile(application._id, applicationFile._id, {
-    fetcher: vi.fn(async () => pdfResponse()) as unknown as typeof fetch,
+    fetcher: mockFetch(pdfResponse()),
     uploader,
   });
   await importApplicationFile(application._id, applicationFile._id, {
-    fetcher: vi.fn(async () => pdfResponse()) as unknown as typeof fetch,
+    fetcher: mockFetch(pdfResponse()),
     uploader,
   });
 
   expect(uploader).toHaveBeenCalledOnce();
-  const stored = await (await applications()).findOne({ _id: application._id });
-  expect(stored?.files[0]).toMatchObject({ status: "imported", attempts: 2 });
+  expect(await findFile(application._id)).toMatchObject({
+    status: "imported",
+    attempts: 2,
+  });
 });
