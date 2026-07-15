@@ -13,10 +13,8 @@ type StatusMutation = {
 };
 
 export function JobPostingStatusActions({ posting }: { posting: JobPosting }) {
-  const { generateForm, close, reopen, archive, retrySync } =
-    useJobPostingMutations();
+  const { close, reopen, archive, retrySync } = useJobPostingMutations();
   const pending =
-    generateForm.isPending ||
     close.isPending ||
     reopen.isPending ||
     archive.isPending ||
@@ -52,17 +50,6 @@ export function JobPostingStatusActions({ posting }: { posting: JobPosting }) {
           className="h-full border-y-0 border-r-0 px-2.5"
         />
       </div>
-      {posting.status === "draft" ? (
-        <Button
-          size="sm"
-          disabled={pending}
-          onClick={() => run(generateForm, "Ausschreibung veröffentlicht")}
-        >
-          {posting.tallyFormError
-            ? "Veröffentlichung erneut versuchen"
-            : "Veröffentlichen"}
-        </Button>
-      ) : null}
       {posting.status === "published" ? (
         <Button
           variant="outline"
