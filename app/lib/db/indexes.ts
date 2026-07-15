@@ -48,6 +48,11 @@ export async function ensureIndexes(): Promise<void> {
       { key: { tallyFormId: 1 }, sparse: true },
     ]);
 
+  await db.collection("jobFeedTokens").createIndexes([
+    { key: { organizationId: 1 }, unique: true },
+    { key: { tokenHash: 1 }, unique: true },
+  ]);
+
   await db
     .collection("applications")
     .createIndexes([

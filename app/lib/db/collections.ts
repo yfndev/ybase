@@ -2,6 +2,7 @@ import { getDb } from "./client";
 import type {
   Application,
   Department,
+  JobFeedToken,
   JobPosting,
   Log,
   Organization,
@@ -38,6 +39,10 @@ export async function teams() {
 
 export async function jobPostings() {
   return (await getDb()).collection<JobPosting>("jobPostings");
+}
+
+export async function jobFeedTokens() {
+  return (await getDb()).collection<JobFeedToken>("jobFeedTokens");
 }
 
 export async function applications() {
