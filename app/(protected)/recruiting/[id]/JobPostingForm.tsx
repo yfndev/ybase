@@ -15,7 +15,6 @@ import { JobPostingApplications } from "./JobPostingApplications";
 import { JobPostingBasicFields } from "./JobPostingBasicFields";
 import { JobPostingContentFields } from "./JobPostingContentFields";
 import { JobPostingStatusActions } from "./JobPostingStatusActions";
-import { JobPostingTallySection } from "./JobPostingTallySection";
 
 export function JobPostingForm({ posting }: { posting: JobPosting }) {
   const { update } = useJobPostingMutations();
@@ -59,8 +58,9 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
         </Button>
       </div>
 
-      <JobPostingTallySection posting={posting} />
-      <JobPostingApplications posting={posting} />
+      {posting.status === "draft" ? null : (
+        <JobPostingApplications posting={posting} />
+      )}
       <JobPostingBasicFields values={values} onChange={patch} />
       <JobPostingContentFields values={values} onChange={patch} />
     </div>

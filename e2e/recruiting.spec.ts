@@ -81,7 +81,10 @@ test.describe("Ausschreibungen", () => {
     await expect(page.getByText(DEPARTMENT)).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Bewerbungen", exact: true }),
-    ).toBeVisible();
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "Bewerbungsformular" }),
+    ).toHaveCount(0);
 
     const description = page.locator('[aria-label="Beschreibung"]');
     await description.click();
@@ -98,6 +101,9 @@ test.describe("Ausschreibungen", () => {
     await expect(page.getByText("Ausschreibung veröffentlicht")).toBeVisible();
     await expect(
       page.getByText("Veröffentlicht", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Bewerbungen", exact: true }),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Schließen" }).click();

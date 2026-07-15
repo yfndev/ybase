@@ -1,5 +1,4 @@
 import { expect, test } from "vitest";
-import { tallyFormEditorUrl } from "./editor";
 import {
   JOB_POSTING_HIDDEN_FIELD,
   normalizeTemplateBlocks,
@@ -54,10 +53,4 @@ test("withHiddenField appends when there is no page break", () => {
     JOB_POSTING_HIDDEN_FIELD,
   );
   expect(result[result.length - 1].type).toBe("HIDDEN_FIELDS");
-});
-
-test("tallyFormEditorUrl builds the editor link", () => {
-  expect(tallyFormEditorUrl("form-1")).toBe(
-    "https://tally.so/forms/form-1/edit",
-  );
 });
