@@ -7,8 +7,8 @@ import {
   Clock3,
   LogOut,
 } from "lucide-react";
-import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { signOutWithPostHog } from "@/lib/posthog-client";
 import {
   Card,
   CardContent,
@@ -110,10 +110,7 @@ export function OnboardingNotice({ onboardingStatus }: Props) {
               Bei Fragen zu deinen Aufgaben wende dich bitte an People &amp;
               Culture.
             </p>
-            <Button
-              variant="outline"
-              onClick={() => signOut({ callbackUrl: "/login" })}
-            >
+            <Button variant="outline" onClick={() => void signOutWithPostHog()}>
               <LogOut aria-hidden="true" />
               Abmelden
             </Button>
