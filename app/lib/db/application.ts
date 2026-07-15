@@ -21,6 +21,18 @@ export interface ApplicationField {
   value: ApplicationFieldValue;
 }
 
+export type ApplicationHistoryType = "status_changed" | "management_updated";
+
+export interface ApplicationHistoryEntry {
+  _id: string;
+  timestamp: number;
+  type: ApplicationHistoryType;
+  actorUserId: string;
+  details: string;
+  fromStatus?: ApplicationStatus;
+  toStatus?: ApplicationStatus;
+}
+
 export type ApplicationFileStatus =
   | "pending"
   | "importing"
@@ -66,10 +78,16 @@ export interface Application {
   tallyResponseId: string;
   tallyFormId: string;
   submittedAt: number;
+  ownerId?: string;
+  internalNotes?: string;
+  interviewAt?: number;
+  updatedAt?: number;
+  history?: ApplicationHistoryEntry[];
 }
 
 export type ApplicationWithFiles = Omit<Application, "files"> & {
   files: ApplicationFileView[];
+  jobPostingTitle: string;
 };
 
 export type TallyWebhookEventStatus = "processed" | "duplicate" | "ignored";
