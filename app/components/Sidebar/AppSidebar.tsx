@@ -31,9 +31,13 @@ import {
 import { MainNav, type NavItem } from "./MainNav";
 import { NavUser } from "./UserNav";
 
-const NAV_ITEMS: NavItem[] = [
-  { name: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+const MEMBER_NAV_ITEMS: NavItem[] = [
   { name: "Erstattungen", url: "/reimbursements", icon: Coins },
+];
+
+const STAFF_NAV_ITEMS: NavItem[] = [
+  { name: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  ...MEMBER_NAV_ITEMS,
 ];
 
 type ProtectedNavItem = NavItem & { permission: UserPermission };
@@ -73,8 +77,9 @@ const ADMINISTRATION_NAV_ITEMS: ProtectedNavItem[] = [
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const role = useCurrentUserRole();
+  const homeUrl = role === "member" ? "/reimbursements" : "/dashboard";
   const mainItems: NavItem[] = [
-    ...NAV_ITEMS,
+    ...(role === "member" ? MEMBER_NAV_ITEMS : STAFF_NAV_ITEMS),
     ...(hasPermission(role, USER_PERMISSIONS.recruiting)
       ? [
           { name: "Ausschreibungen", url: "/recruiting", icon: Megaphone },
@@ -96,7 +101,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/dashboard">
+              <Link href={homeUrl}>
                 <Image src="/AppIcon.png" alt="YBase" width={32} height={32} />
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate text-base font-bold">YBase</span>
