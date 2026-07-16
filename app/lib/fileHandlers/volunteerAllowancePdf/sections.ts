@@ -180,7 +180,8 @@ export function drawBody(
     `Sollte sich im Laufe des Jahres eine Änderung ergeben, werde ich dies umgehend mitteilen.`;
   drawTextLines(page, fonts, cursor, confirmText, 85, 8.5, 13);
 
-  if (data.status === "approved" && data.reviewedByName) {
+  const isApproved = data.status === "approved" || data.status === "paid";
+  if (isApproved && data.reviewedByName) {
     cursor.y -= 8;
     drawSection(page, fonts, cursor, "GENEHMIGUNG");
     drawRow(page, fonts, cursor, "Freigegeben von", data.reviewedByName, true);

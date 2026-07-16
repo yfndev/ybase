@@ -211,6 +211,14 @@ test.describe("critical reimbursement journeys", () => {
     await expect(
       page.getByRole("table").getByText("Genehmigt", { exact: true }),
     ).toBeVisible();
+    await selectRowAction(
+      page,
+      page.locator("table tbody tr").first(),
+      "Als bezahlt markieren",
+    );
+    await expect(
+      page.getByRole("table").getByText("Bezahlt", { exact: true }),
+    ).toBeVisible();
 
     await page.setViewportSize({ width: 730, height: 628 });
     const selectedRow = page.locator("table tbody tr").first();

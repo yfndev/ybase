@@ -15,6 +15,8 @@ export interface VolunteerAllowance {
   createdBy: string;
   reviewedBy?: string;
   reviewedAt?: number;
+  paidBy?: string;
+  paidAt?: number;
   activityDescription: string;
   startDate: string;
   endDate: string;

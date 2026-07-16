@@ -5,12 +5,14 @@ import { deleteReimbursement } from "@/lib/server/reimbursements/deletion";
 import {
   approve as approveReimbursement,
   decline as declineReimbursement,
+  markAsPaid as markReimbursementAsPaid,
   requestChanges as requestReimbursementChanges,
 } from "@/lib/server/reimbursements/review";
 import { remove as removeAllowance } from "@/lib/server/volunteerAllowance/actions";
 import {
   approve as approveAllowance,
   decline as declineAllowance,
+  markAsPaid as markAllowanceAsPaid,
   requestChanges as requestAllowanceChanges,
 } from "@/lib/server/volunteerAllowance/reviewActions";
 import type { RejectDialog, SelectionKey } from "./types";
@@ -148,6 +150,18 @@ export function useReimbursementActions() {
         () => approveAllowance({ id }),
         "Genehmigt",
         "Fehler beim Genehmigen",
+      ),
+    handleMarkReimbursementAsPaid: (id: string) =>
+      run(
+        () => markReimbursementAsPaid({ reimbursementId: id }),
+        "Als bezahlt markiert",
+        "Zahlungsstatus konnte nicht aktualisiert werden",
+      ),
+    handleMarkAllowanceAsPaid: (id: string) =>
+      run(
+        () => markAllowanceAsPaid({ id }),
+        "Als bezahlt markiert",
+        "Zahlungsstatus konnte nicht aktualisiert werden",
       ),
   };
 }

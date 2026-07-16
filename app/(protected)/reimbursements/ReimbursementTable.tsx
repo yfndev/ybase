@@ -22,6 +22,8 @@ type Props = {
   onRowClick: (id: string) => void;
   onApproveReimbursement: (id: string) => void;
   onApproveAllowance: (id: string) => void;
+  onMarkReimbursementAsPaid: (id: string) => void;
+  onMarkAllowanceAsPaid: (id: string) => void;
   onOpenChangesDialog: (
     type: "reimbursement" | "allowance",
     id: string,
@@ -46,6 +48,8 @@ export function ReimbursementTable({
   onRowClick,
   onApproveReimbursement,
   onApproveAllowance,
+  onMarkReimbursementAsPaid,
+  onMarkAllowanceAsPaid,
   onOpenChangesDialog,
   onOpenRejectDialog,
   onOpenReimbursement,
@@ -137,6 +141,7 @@ export function ReimbursementTable({
               applicantName={item.submitterName || item.creatorName}
               onClick={() => onRowClick(item._id)}
               onApprove={() => onApproveReimbursement(item._id)}
+              onMarkAsPaid={() => onMarkReimbursementAsPaid(item._id)}
               onRequestChanges={() =>
                 onOpenChangesDialog("reimbursement", item._id)
               }
@@ -167,6 +172,7 @@ export function ReimbursementTable({
               detail={item.activityDescription}
               applicantName={item.volunteerName || item.creatorName}
               onApprove={() => onApproveAllowance(item._id)}
+              onMarkAsPaid={() => onMarkAllowanceAsPaid(item._id)}
               onRequestChanges={() =>
                 onOpenChangesDialog("allowance", item._id)
               }
