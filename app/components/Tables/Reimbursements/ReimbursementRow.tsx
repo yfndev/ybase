@@ -21,8 +21,11 @@ import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import { formatDate } from "@/lib/formatters/formatDate";
 import { STATUS_DISPLAY } from "@/lib/reimbursementStatus";
 import type { ReimbursementStatus as Status } from "@/lib/reimbursementStatus";
-import styles from "./ReimbursementRow.module.css";
 import { ReimbursementRowMetadata } from "./ReimbursementRowMetadata";
+import { reimbursementColumnClassNames as columns } from "./reimbursementTableClasses";
+
+const menuItemClassName =
+  "relative flex cursor-pointer flex-wrap items-center gap-4 rounded-none px-4 py-3 font-medium text-foreground outline-none select-none data-[highlighted]:bg-primary data-[highlighted]:text-black [&_svg]:size-6";
 
 interface ReimbursementRowProps {
   item: {
@@ -79,7 +82,7 @@ export function ReimbursementRow({
           {selectionCheckbox}
         </TableCell>
       )}
-      <TableCell className="py-3" data-reimbursement-column="request">
+      <TableCell className={`${columns.request} py-3`}>
         <div className="min-w-0">
           <div className="font-medium text-foreground">{title}</div>
           {detail ? (
@@ -96,36 +99,26 @@ export function ReimbursementRow({
         </div>
       </TableCell>
       {canManageReimbursements ? (
-        <TableCell
-          className="max-w-48 truncate"
-          data-reimbursement-column="applicant"
-        >
+        <TableCell className={`${columns.applicant} max-w-48 truncate`}>
           {applicantName}
         </TableCell>
       ) : null}
-      <TableCell
-        className="max-w-48 truncate"
-        data-reimbursement-column="project"
-      >
+      <TableCell className={`${columns.project} max-w-48 truncate`}>
         {item.projectName}
       </TableCell>
-      <TableCell
-        className="text-muted-foreground"
-        data-reimbursement-column="created"
-      >
+      <TableCell className={`${columns.created} text-muted-foreground`}>
         {formatDate(item._creationTime)}
       </TableCell>
       <TableCell className="text-right font-medium">
         {formatCurrency(item.amount)}
       </TableCell>
       <TableCell
-        className="max-w-48 truncate text-muted-foreground"
-        data-reimbursement-column="reviewed-by"
+        className={`${columns.reviewedBy} max-w-48 truncate text-muted-foreground`}
       >
         {item.reviewedByName ?? "–"}
       </TableCell>
       <TableCell
-        data-reimbursement-column="status"
+        className={columns.status}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-3">
@@ -137,32 +130,35 @@ export function ReimbursementRow({
               <Button
                 variant="ghost"
                 size="icon-sm"
-                className={styles.menuTrigger}
+                className="rounded-[0.25rem] border-0 bg-transparent text-foreground shadow-none transition-colors duration-200 ease-out hover:bg-muted hover:text-foreground focus-visible:border-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:shadow-none [&_svg]:size-6"
                 aria-label="Aktionen anzeigen"
                 title="Aktionen anzeigen"
               >
                 <MoreVertical />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent sideOffset={0} className={styles.menuContent}>
+            <DropdownMenuContent
+              sideOffset={0}
+              className="min-w-[220px] animate-menu-enter rounded-[0.125rem] border-0 bg-background p-0 text-foreground shadow-member-menu will-change-[transform,opacity] motion-reduce:animate-none data-[side=bottom]:[--menu-enter-y:2px] data-[side=left]:[--menu-enter-x:2px] data-[side=right]:[--menu-enter-x:-2px] data-[side=top]:[--menu-enter-y:-2px] [&>*:not(:last-child)]:border-b"
+            >
               {showReviewActions ? (
                 <>
                   <DropdownMenuItem
-                    className={styles.menuItem}
+                    className={menuItemClassName}
                     onSelect={onApprove}
                   >
                     <Check className="text-current" />
                     Genehmigen
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className={styles.menuItem}
+                    className={menuItemClassName}
                     onSelect={onRequestChanges}
                   >
                     <MessageSquareWarning className="text-current" />
                     Änderungen anfordern
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className={`${styles.menuItem} ${styles.destructiveMenuItem}`}
+                    className={`${menuItemClassName} text-destructive`}
                     onSelect={onReject}
                   >
                     <X className="text-current" />
@@ -171,18 +167,21 @@ export function ReimbursementRow({
                 </>
               ) : null}
               {showEditAction ? (
-                <DropdownMenuItem className={styles.menuItem} onSelect={onEdit}>
+                <DropdownMenuItem
+                  className={menuItemClassName}
+                  onSelect={onEdit}
+                >
                   <Pencil className="text-current" />
                   Bearbeiten
                 </DropdownMenuItem>
               ) : null}
-              <DropdownMenuItem className={styles.menuItem} onSelect={onOpen}>
+              <DropdownMenuItem className={menuItemClassName} onSelect={onOpen}>
                 <ExternalLink className="text-current" />
                 Öffnen
               </DropdownMenuItem>
               {canManageReimbursements ? (
                 <DropdownMenuItem
-                  className={`${styles.menuItem} ${styles.destructiveMenuItem}`}
+                  className={`${menuItemClassName} text-destructive`}
                   onSelect={onDelete}
                 >
                   <Trash2 className="text-current" />

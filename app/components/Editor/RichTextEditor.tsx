@@ -25,7 +25,13 @@ export function RichTextEditor({ value, onChange, ariaLabel }: Props) {
     immediatelyRender: false,
     extensions: [StarterKit.configure({ heading: { levels: [2, 3] } })],
     content: value,
-    editorProps: { attributes: { "aria-label": ariaLabel } },
+    editorProps: {
+      attributes: {
+        "aria-label": ariaLabel,
+        class:
+          "min-h-32 px-3 py-2 outline-none [&_p]:my-1 [&_h2]:mt-2 [&_h2]:mb-1 [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:mt-2 [&_h3]:mb-1 [&_h3]:text-base [&_h3]:font-semibold [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6",
+      },
+    },
     onUpdate: ({ editor }) =>
       onChange(editor.getText().trim() ? editor.getHTML() : ""),
   });
