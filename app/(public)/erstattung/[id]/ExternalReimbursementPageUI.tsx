@@ -59,12 +59,12 @@ export default function ExternalReimbursementPageUI(
                   onEndTimeChange={props.onEndTimeChange}
                   onIsInternationalChange={props.onIsInternationalChange}
                 />
-
                 <TravelCostsSection
                   organizationName={props.organizationName}
                   travelReceipts={props.travelReceipts}
                   costLabels={props.costLabels}
-                  onToggleCostType={props.onToggleCostType}
+                  onAddTravelReceipt={props.onAddTravelReceipt}
+                  onRemoveTravelReceipt={props.onRemoveTravelReceipt}
                   onUpdateTravelReceipt={props.onUpdateTravelReceipt}
                   toNet={props.toNet}
                   generateUploadUrl={props.generateUploadUrl}

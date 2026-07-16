@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { verticalActionMenuClassNames as actionMenu } from "@/components/ui/vertical-action-menu";
 import { formatDate } from "@/lib/formatters/formatDate";
 import {
   deleteSharedAllowanceLink,
@@ -114,14 +115,19 @@ export function PendingLinksTable({ links }: Props) {
                         <Button
                           variant="ghost"
                           size="icon-sm"
+                          className={actionMenu.trigger}
                           aria-label={`Aktionen für ${label} anzeigen`}
                           title="Aktionen anzeigen"
                         >
                           <MoreVertical />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent
+                        sideOffset={0}
+                        className={actionMenu.content}
+                      >
                         <DropdownMenuItem
+                          className={actionMenu.item}
                           onSelect={() => void handleCopy(link)}
                         >
                           {copiedId === link._id ? (
@@ -132,7 +138,7 @@ export function PendingLinksTable({ links }: Props) {
                           Link kopieren
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          variant="destructive"
+                          className={`${actionMenu.item} ${actionMenu.destructiveItem}`}
                           disabled={isDeleting}
                           onSelect={() => void handleDelete(link)}
                         >

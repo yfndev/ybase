@@ -20,6 +20,7 @@ export function statusTotals(
     pending: { count: 0, sum: 0 },
     changes_requested: { count: 0, sum: 0 },
     approved: { count: 0, sum: 0 },
+    paid: { count: 0, sum: 0 },
     declined: { count: 0, sum: 0 },
   };
   for (const entry of entries) {
@@ -33,7 +34,7 @@ export function statusTotals(
 export function sumByProject(entries: DashboardEntry[]) {
   const byProject = new Map<string, StatusTotal>();
   for (const entry of entries) {
-    if (entry.status !== "approved") continue;
+    if (entry.status !== "approved" && entry.status !== "paid") continue;
     const stats = byProject.get(entry.projectName) ?? { count: 0, sum: 0 };
     stats.count += 1;
     stats.sum += entry.amount;
@@ -49,7 +50,11 @@ const NO_TAX_YEAR = "Ohne Steuerjahr";
 export function allowanceByTaxYear(entries: DashboardEntry[]) {
   const byYear = new Map<string, StatusTotal>();
   for (const entry of entries) {
-    if (entry.kind !== "allowance" || entry.status !== "approved") continue;
+    if (
+      entry.kind !== "allowance" ||
+      (entry.status !== "approved" && entry.status !== "paid")
+    )
+      continue;
     const taxYear = entry.taxYear || NO_TAX_YEAR;
     const stats = byYear.get(taxYear) ?? { count: 0, sum: 0 };
     stats.count += 1;

@@ -210,6 +210,14 @@ test.describe("critical reimbursement journeys", () => {
     await expect(
       page.getByRole("table").getByText("Genehmigt", { exact: true }),
     ).toBeVisible();
+    await selectRowAction(
+      page,
+      page.locator("table tbody tr").first(),
+      "Als bezahlt markieren",
+    );
+    await expect(
+      page.getByRole("table").getByText("Bezahlt", { exact: true }),
+    ).toBeVisible();
 
     await page.setViewportSize({ width: 730, height: 628 });
     const selectedRow = page.locator("table tbody tr").first();
@@ -269,19 +277,55 @@ test.describe("critical reimbursement journeys", () => {
     await page.getByRole("combobox", { name: "Projekt suchen..." }).click();
     await page.getByRole("button", { name: "Allgemein" }).click();
 
-    const destination = page.getByPlaceholder("z.B. München, Berlin");
-    const purpose = page.getByPlaceholder("z.B. Kundentermin, Konferenz");
+    const destination = page.getByLabel("Reiseziel *");
+    const purpose = page.getByLabel("Reisezweck *");
     await destination.fill("Berlin");
     await purpose.fill("Event");
-    await page.getByPlaceholder("TT.MM.JJJJ").first().fill("15.05.2026");
-    await page.getByPlaceholder("TT.MM.JJJJ").nth(1).fill("20.05.2026");
-    await page.locator('input[type="time"]').first().fill("08:00");
-    await page.locator('input[type="time"]').nth(1).fill("18:00");
-    await page.getByPlaceholder("TT.MM.JJJJ").nth(1).blur();
+    const travelStart = page.getByRole("group", { name: "Reisebeginn" });
+    const travelEnd = page.getByRole("group", { name: "Reiseende" });
+    await travelStart.getByLabel("Datum *").fill("15.05.2026");
+    await travelEnd.getByLabel("Datum *").fill("20.05.2026");
+    await travelStart.getByLabel("Uhrzeit *").fill("08:00");
+    await travelEnd.getByLabel("Uhrzeit *").fill("18:00");
+    await travelEnd.getByLabel("Datum *").blur();
 
-    await page.getByRole("button", { name: "PKW" }).click();
+    await page.getByRole("button", { name: "Bahn hinzufügen" }).click();
+    await page.getByRole("button", { name: "Bahn hinzufügen" }).click();
 
-    await page.getByRole("spinbutton").first().fill("500");
+    const firstTrainReceipt = page.getByRole("group", { name: "Bahn 1" });
+    const secondTrainReceipt = page.getByRole("group", { name: "Bahn 2" });
+    await expect(firstTrainReceipt).toBeVisible();
+    await expect(secondTrainReceipt).toBeVisible();
+
+    await firstTrainReceipt
+      .getByPlaceholder("Deutsche Bahn, Flix, etc.")
+      .fill("Deutsche Bahn Hinfahrt");
+    await firstTrainReceipt
+      .getByPlaceholder("z.B. RE-2026-001 (optional)")
+      .fill("DB-001");
+    await firstTrainReceipt.getByRole("spinbutton").fill("40");
+    await firstTrainReceipt
+      .locator('input[type="file"]')
+      .setInputFiles(IMAGE_FILE);
+    await expect(
+      firstTrainReceipt.getByRole("img", { name: "Beleg" }),
+    ).toBeVisible({
+      timeout: 10000,
+    });
+
+    await secondTrainReceipt
+      .getByPlaceholder("Deutsche Bahn, Flix, etc.")
+      .fill("Deutsche Bahn Rückfahrt");
+    await secondTrainReceipt
+      .getByPlaceholder("z.B. RE-2026-001 (optional)")
+      .fill("DB-002");
+    await secondTrainReceipt.getByRole("spinbutton").fill("60");
+    await secondTrainReceipt
+      .locator('input[type="file"]')
+      .setInputFiles(IMAGE_FILE);
+    await expect(
+      secondTrainReceipt.getByRole("img", { name: "Beleg" }),
+    ).toBeVisible({ timeout: 10000 });
 
     await page
       .getByRole("checkbox", {
@@ -290,8 +334,7 @@ test.describe("critical reimbursement journeys", () => {
       .check();
     await page.locator("#fullDay-days").fill("1");
 
-    await expect(page.getByText("PKW500 km × 0,30 €")).toBeVisible();
-    await expect(page.getByText("Brutto gesamt178,00 €")).toBeVisible();
+    await expect(page.getByText("Brutto gesamt128,00 €")).toBeVisible();
 
     await saveBankDetails(page);
     await addSignature(page);

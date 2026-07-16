@@ -12,6 +12,10 @@ import {
   getMealAllowanceTotal,
   OVERNIGHT_ALLOWANCE_EUR,
 } from "@/lib/travel-costs";
+import {
+  createClientReceiptId,
+  withoutClientReceiptId,
+} from "@/lib/travelReceiptForm";
 import { getTravelDateRangeError } from "@/lib/travelDates";
 import type { BankDetails, Receipt } from "./types";
 
@@ -41,18 +45,11 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
   const update = (field: Partial<typeof travel>) =>
     setTravel((prev) => ({ ...prev, ...field }));
 
-  const hasReceipt = (type: CostType) =>
-    receipts.some((receipt) => receipt.costType === type);
-
-  const toggleType = (type: CostType) => {
-    if (hasReceipt(type)) {
-      return setReceipts(
-        receipts.filter((receipt) => receipt.costType !== type),
-      );
-    }
-    setReceipts([
-      ...receipts,
+  const addReceipt = (type: CostType) => {
+    setReceipts((current) => [
+      ...current,
       {
+        clientId: createClientReceiptId(),
         costType: type,
         receiptNumber: undefined,
         receiptDate: travel.startDate,
@@ -67,10 +64,15 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
     ]);
   };
 
-  const updateReceipt = (type: CostType, updates: Partial<Receipt>) =>
-    setReceipts(
-      receipts.map((receipt) =>
-        receipt.costType === type ? { ...receipt, ...updates } : receipt,
+  const removeReceipt = (clientId: string) =>
+    setReceipts((current) =>
+      current.filter((receipt) => receipt.clientId !== clientId),
+    );
+
+  const updateReceipt = (clientId: string, updates: Partial<Receipt>) =>
+    setReceipts((current) =>
+      current.map((receipt) =>
+        receipt.clientId === clientId ? { ...receipt, ...updates } : receipt,
       ),
     );
 
@@ -145,7 +147,7 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
           travel.overnightAllowanceNights > 0
             ? travel.overnightAllowanceRate
             : undefined,
-        receipts,
+        receipts: receipts.map(withoutClientReceiptId),
       });
       toast.success("Reisekostenerstattung eingereicht");
       router.push("/reimbursements");
@@ -169,8 +171,8 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
     receipts,
     travel,
     update,
-    hasReceipt,
-    toggleType,
+    addReceipt,
+    removeReceipt,
     updateReceipt,
     hasBasicInfo,
     mealTotal,

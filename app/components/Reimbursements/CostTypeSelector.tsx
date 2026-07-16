@@ -8,14 +8,16 @@ type Props = {
   costTypes: readonly CostType[];
   labels: Record<CostType, string>;
   isSelected: (costType: CostType) => boolean;
-  onToggle: (costType: CostType) => void;
+  onSelect: (costType: CostType) => void;
+  getAccessibleLabel?: (costType: CostType) => string;
 };
 
 export function CostTypeSelector({
   costTypes,
   labels,
   isSelected,
-  onToggle,
+  onSelect,
+  getAccessibleLabel,
 }: Props) {
   return (
     <fieldset className="flex flex-wrap gap-2" aria-label="Kostenarten">
@@ -27,8 +29,8 @@ export function CostTypeSelector({
             key={costType}
             type="button"
             variant={selected ? "primary" : "outline"}
-            aria-pressed={selected}
-            onClick={() => onToggle(costType)}
+            aria-label={getAccessibleLabel?.(costType)}
+            onClick={() => onSelect(costType)}
           >
             {selected ? <Check className="size-4" aria-hidden="true" /> : null}
             {labels[costType]}

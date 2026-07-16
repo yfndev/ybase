@@ -15,6 +15,7 @@ export type Receipt = {
 };
 
 export type TravelReceipt = Receipt & {
+  clientId: string;
   costType: CostType;
   kilometers?: number;
 };
@@ -77,9 +78,10 @@ export type ExternalReimbursementPageUIProps = {
   travelReceipts: TravelReceipt[];
   onAddReceipt: () => void;
   onRemoveReceipt: (index: number) => void;
-  onToggleCostType: (costType: CostType) => void;
+  onAddTravelReceipt: (costType: CostType) => void;
+  onRemoveTravelReceipt: (clientId: string) => void;
   onUpdateTravelReceipt: (
-    costType: CostType,
+    clientId: string,
     updates: Partial<TravelReceipt>,
   ) => void;
 

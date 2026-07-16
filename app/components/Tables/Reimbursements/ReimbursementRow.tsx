@@ -1,28 +1,13 @@
-import {
-  Check,
-  ExternalLink,
-  MessageSquareWarning,
-  MoreVertical,
-  Pencil,
-  Trash2,
-  X,
-} from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import { formatDate } from "@/lib/formatters/formatDate";
 import { STATUS_DISPLAY } from "@/lib/reimbursementStatus";
 import type { ReimbursementStatus as Status } from "@/lib/reimbursementStatus";
-import styles from "./ReimbursementRow.module.css";
+import { ReimbursementActionsMenu } from "./ReimbursementActionsMenu";
 import { ReimbursementRowMetadata } from "./ReimbursementRowMetadata";
+import { reimbursementColumnClassNames as columns } from "./reimbursementTableClasses";
 
 interface ReimbursementRowProps {
   item: {
@@ -41,6 +26,7 @@ interface ReimbursementRowProps {
   selectionCheckbox?: ReactNode;
   onClick?: () => void;
   onApprove: () => void;
+  onMarkAsPaid: () => void;
   onRequestChanges: () => void;
   onReject: () => void;
   onOpen: () => void;
@@ -58,6 +44,7 @@ export function ReimbursementRow({
   selectionCheckbox,
   onClick,
   onApprove,
+  onMarkAsPaid,
   onRequestChanges,
   onReject,
   onOpen,
@@ -68,6 +55,8 @@ export function ReimbursementRow({
   const showReviewActions =
     canManageReimbursements && item.status === "pending";
   const showEditAction = canEdit && item.status === "changes_requested";
+  const showPaymentAction =
+    canManageReimbursements && item.status === "approved";
 
   return (
     <TableRow
@@ -79,7 +68,7 @@ export function ReimbursementRow({
           {selectionCheckbox}
         </TableCell>
       )}
-      <TableCell className="py-3" data-reimbursement-column="request">
+      <TableCell className={`${columns.request} py-3`}>
         <div className="min-w-0">
           <div className="font-medium text-foreground">{title}</div>
           {detail ? (
@@ -96,101 +85,45 @@ export function ReimbursementRow({
         </div>
       </TableCell>
       {canManageReimbursements ? (
-        <TableCell
-          className="max-w-48 truncate"
-          data-reimbursement-column="applicant"
-        >
+        <TableCell className={`${columns.applicant} max-w-48 truncate`}>
           {applicantName}
         </TableCell>
       ) : null}
-      <TableCell
-        className="max-w-48 truncate"
-        data-reimbursement-column="project"
-      >
+      <TableCell className={`${columns.project} max-w-48 truncate`}>
         {item.projectName}
       </TableCell>
-      <TableCell
-        className="text-muted-foreground"
-        data-reimbursement-column="created"
-      >
+      <TableCell className={`${columns.created} text-muted-foreground`}>
         {formatDate(item._creationTime)}
       </TableCell>
       <TableCell className="text-right font-medium">
         {formatCurrency(item.amount)}
       </TableCell>
       <TableCell
-        className="max-w-48 truncate text-muted-foreground"
-        data-reimbursement-column="reviewed-by"
+        className={`${columns.reviewedBy} max-w-48 truncate text-muted-foreground`}
       >
         {item.reviewedByName ?? "–"}
       </TableCell>
       <TableCell
-        data-reimbursement-column="status"
+        className={columns.status}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-3">
           <Badge variant={display.variant} className={display.className}>
             {display.label}
           </Badge>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className={styles.menuTrigger}
-                aria-label="Aktionen anzeigen"
-                title="Aktionen anzeigen"
-              >
-                <MoreVertical />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent sideOffset={0} className={styles.menuContent}>
-              {showReviewActions ? (
-                <>
-                  <DropdownMenuItem
-                    className={styles.menuItem}
-                    onSelect={onApprove}
-                  >
-                    <Check className="text-current" />
-                    Genehmigen
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className={styles.menuItem}
-                    onSelect={onRequestChanges}
-                  >
-                    <MessageSquareWarning className="text-current" />
-                    Änderungen anfordern
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className={`${styles.menuItem} ${styles.destructiveMenuItem}`}
-                    onSelect={onReject}
-                  >
-                    <X className="text-current" />
-                    Ablehnen
-                  </DropdownMenuItem>
-                </>
-              ) : null}
-              {showEditAction ? (
-                <DropdownMenuItem className={styles.menuItem} onSelect={onEdit}>
-                  <Pencil className="text-current" />
-                  Bearbeiten
-                </DropdownMenuItem>
-              ) : null}
-              <DropdownMenuItem className={styles.menuItem} onSelect={onOpen}>
-                <ExternalLink className="text-current" />
-                Öffnen
-              </DropdownMenuItem>
-              {canManageReimbursements ? (
-                <DropdownMenuItem
-                  className={`${styles.menuItem} ${styles.destructiveMenuItem}`}
-                  onSelect={onDelete}
-                >
-                  <Trash2 className="text-current" />
-                  Löschen
-                </DropdownMenuItem>
-              ) : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ReimbursementActionsMenu
+            showReviewActions={showReviewActions}
+            showEditAction={showEditAction}
+            showPaymentAction={showPaymentAction}
+            canDelete={canManageReimbursements}
+            onApprove={onApprove}
+            onMarkAsPaid={onMarkAsPaid}
+            onRequestChanges={onRequestChanges}
+            onReject={onReject}
+            onOpen={onOpen}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
         </div>
       </TableCell>
     </TableRow>

@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/sheet";
 import { XIcon } from "lucide-react";
 import { MemberDrawerPanel } from "./MemberDrawerPanel";
-import styles from "./MemberDrawer.module.css";
 import type { MemberDrawerProps } from "./MemberDrawer.types";
 import { useDesktopDrawer } from "./useDesktopDrawer";
 import { useMemberDrawerForm } from "./useMemberDrawerForm";
@@ -36,10 +35,10 @@ export function MemberDrawer(props: MemberDrawerProps) {
     return (
       <aside
         data-member-drawer
-        className={styles.drawerRail}
+        className="fixed inset-y-4 right-4 z-40 w-(--member-drawer-width) overflow-hidden transition-[width] duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] starting:w-0 motion-reduce:transition-none"
         aria-label={`Teammitglied ${displayName} bearbeiten`}
       >
-        <div className={styles.drawerSurface}>
+        <div className="absolute inset-y-0 left-0 flex w-(--member-drawer-width) flex-col overflow-hidden rounded-[0.25rem] border bg-background">
           <Button
             type="button"
             variant="ghost"

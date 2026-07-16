@@ -55,8 +55,8 @@ export function TravelReimbursementFormUI({
         {form.hasBasicInfo && (
           <ReceiptsSection
             receipts={form.receipts}
-            hasReceipt={form.hasReceipt}
-            toggleType={form.toggleType}
+            addReceipt={form.addReceipt}
+            removeReceipt={form.removeReceipt}
             updateReceipt={form.updateReceipt}
             travel={form.travel}
             update={form.update}

@@ -7,6 +7,7 @@ import {
   CAR_ALLOWANCE_RATE_EUR_PER_KM,
   COST_LABELS as LABELS,
 } from "@/lib/travel-costs";
+import { getTravelReceiptLabel } from "@/lib/travelReceiptForm";
 import { Loader2 } from "lucide-react";
 import type { Receipt } from "./types";
 
@@ -47,27 +48,32 @@ export function SummarySection({
       ) : (
         <>
           <div className="space-y-2">
-            {items.map((receipt) => (
-              <div
-                key={receipt.costType}
-                className="flex items-start justify-between gap-2 border bg-muted px-3 py-2"
-              >
-                <div className="min-w-0">
-                  <div className="font-semibold truncate">
-                    {LABELS[receipt.costType]}
-                  </div>
-                  {receipt.costType === "car" && (
-                    <div className="text-sm text-muted-foreground">
-                      {receipt.kilometers} km ×{" "}
-                      {formatCurrency(CAR_ALLOWANCE_RATE_EUR_PER_KM)}
+            {items.map((receipt) => {
+              const receiptIndex = receipts.findIndex(
+                (item) => item.clientId === receipt.clientId,
+              );
+              return (
+                <div
+                  key={receipt.clientId}
+                  className="flex items-start justify-between gap-2 border bg-muted px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <div className="font-semibold truncate">
+                      {getTravelReceiptLabel(receipts, receiptIndex, LABELS)}
                     </div>
-                  )}
+                    {receipt.costType === "car" && (
+                      <div className="text-sm text-muted-foreground">
+                        {receipt.kilometers} km ×{" "}
+                        {formatCurrency(CAR_ALLOWANCE_RATE_EUR_PER_KM)}
+                      </div>
+                    )}
+                  </div>
+                  <span className="font-semibold whitespace-nowrap">
+                    {formatCurrency(receipt.grossAmount)}
+                  </span>
                 </div>
-                <span className="font-semibold whitespace-nowrap">
-                  {formatCurrency(receipt.grossAmount)}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="space-y-2">

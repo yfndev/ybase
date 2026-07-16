@@ -3,6 +3,7 @@ import { submitReimbursement } from "@/(public)/_lib/reimbursements";
 import { BIC_REGEX, IBAN_REGEX, normalizeIban } from "@/lib/bank-utils";
 import type { MealAllowance } from "@/lib/db/types";
 import { getTravelDateRangeError } from "@/lib/travelDates";
+import { withoutClientReceiptId } from "@/lib/travelReceiptForm";
 import type { Receipt, TravelReceipt } from "./types";
 
 type SubmitParams = {
@@ -120,9 +121,9 @@ export async function submitReimbursementForm(params: SubmitParams) {
     params.receipts.filter((receipt) => receipt.fileStorageId),
   );
 
-  const validTravelReceipts = params.travelReceipts.filter(
-    (receipt) => receipt.grossAmount > 0,
-  );
+  const validTravelReceipts = params.travelReceipts
+    .filter((receipt) => receipt.grossAmount > 0)
+    .map(withoutClientReceiptId);
 
   try {
     await submitReimbursement(params.id, {

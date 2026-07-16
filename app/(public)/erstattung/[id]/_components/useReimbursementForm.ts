@@ -9,6 +9,7 @@ import {
   reimbursementUploadUrl,
   validateReimbursementLink,
 } from "@/(public)/_lib/reimbursements";
+import { createClientReceiptId } from "@/lib/travelReceiptForm";
 import {
   submitReimbursementForm,
   validateReimbursement,
@@ -57,9 +58,17 @@ export function useReimbursementForm(id: string) {
             })),
         );
         setTravelReceipts(
-          submission.receipts.filter(
-            (receipt) => receipt.costType,
-          ) as typeof receiptState.travelReceipts,
+          submission.receipts.flatMap((receipt) => {
+            if (!receipt.costType) return [];
+            return [
+              {
+                ...receipt,
+                costType: receipt.costType,
+                receiptNumber: receipt.receiptNumber,
+                clientId: createClientReceiptId(),
+              },
+            ];
+          }),
         );
       }
 
