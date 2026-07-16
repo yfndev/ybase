@@ -59,14 +59,7 @@ export function SignatureField({
             Mit dem Handy
           </Button>
         </div>
-      ) : (
-        <div className="flex items-start gap-3 border-l-4 border-primary bg-primary/10 px-4 py-3">
-          <Smartphone className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-          <p className="text-sm leading-relaxed">
-            Unterschreibe direkt mit Finger, Stift oder Maus auf diesem Gerät.
-          </p>
-        </div>
-      )}
+      ) : null}
 
       {mode === "direct" ? (
         <SignatureCanvas

@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
@@ -16,6 +16,7 @@ type Props = {
   totalGross: number;
   costLabels: Record<CostType, string>;
   isSubmitting: boolean;
+  onRemoveReceipt: (index: number) => void;
   onSubmit: () => void;
 };
 
@@ -25,6 +26,7 @@ export function PublicReimbursementSummary(props: Props) {
     title: string;
     detail: string;
     key: string;
+    onRemove?: () => void;
   }> = props.isTravel
     ? props.travelReceipts
         .filter((receipt) => receipt.grossAmount > 0)
@@ -35,13 +37,14 @@ export function PublicReimbursementSummary(props: Props) {
             receipt.costType === "car"
               ? `${receipt.kilometers ?? 0} km × ${formatCurrency(CAR_ALLOWANCE_RATE_EUR_PER_KM)}`
               : receipt.description,
-          key: receipt.costType,
+          key: receipt.clientId,
         }))
     : props.receipts.map((receipt, index) => ({
         receipt,
         title: receipt.companyName,
         detail: receipt.description,
         key: `${receipt.fileStorageId ?? index}-${receipt.companyName}`,
+        onRemove: () => props.onRemoveReceipt(index),
       }));
   const totalNet = costs.reduce((sum, item) => sum + item.receipt.netAmount, 0);
   const taxForRate = (rate: number) =>
@@ -68,7 +71,7 @@ export function PublicReimbursementSummary(props: Props) {
       ) : (
         <>
           <div className="space-y-2">
-            {costs.map(({ receipt, title, detail, key }) => (
+            {costs.map(({ receipt, title, detail, key, onRemove }) => (
               <div
                 key={key}
                 className="flex items-start justify-between gap-3 border bg-muted px-3 py-2"
@@ -81,9 +84,24 @@ export function PublicReimbursementSummary(props: Props) {
                     </p>
                   ) : null}
                 </div>
-                <span className="shrink-0 font-semibold tabular-nums">
-                  {formatCurrency(receipt.grossAmount)}
-                </span>
+                <div className="flex shrink-0 items-center gap-1">
+                  <span className="font-semibold tabular-nums">
+                    {formatCurrency(receipt.grossAmount)}
+                  </span>
+                  {onRemove ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={onRemove}
+                      className="size-8 hover:bg-destructive/10 hover:text-destructive"
+                      aria-label="Beleg entfernen"
+                      title="Beleg entfernen"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  ) : null}
+                </div>
               </div>
             ))}
           </div>

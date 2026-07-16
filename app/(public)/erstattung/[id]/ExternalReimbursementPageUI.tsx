@@ -112,7 +112,6 @@ export default function ExternalReimbursementPageUI(
                 onTaxRateChange={props.onTaxRateChange}
                 onFileChange={props.onFileChange}
                 onAddReceipt={props.onAddReceipt}
-                onRemoveReceipt={props.onRemoveReceipt}
                 toNet={props.toNet}
                 generateUploadUrl={props.generateUploadUrl}
                 getFileUrl={props.getFileUrl}
@@ -144,6 +143,7 @@ export default function ExternalReimbursementPageUI(
               totalGross={props.totalGross}
               costLabels={props.costLabels}
               isSubmitting={props.isSubmitting}
+              onRemoveReceipt={props.onRemoveReceipt}
               onSubmit={props.onSubmit}
             />
           </div>
