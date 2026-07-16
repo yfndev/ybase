@@ -1,14 +1,16 @@
 "use client";
 
 import { PageHeader } from "@/components/Layout/PageHeader";
+import { PendingLinksTable } from "./PendingLinksTable";
 import { ReimbursementFilters } from "./ReimbursementFilters";
 import { ReimbursementTable } from "./ReimbursementTable";
 import { ReimbursementToolbar } from "./ReimbursementToolbar";
 import { ReviewDialog } from "./ReviewDialog";
 import type {
   Allowance,
+  PendingLink,
   Reimbursement,
-  ReimbursementTypeFilter,
+  ReimbursementView,
   RejectDialog,
   SelectionKey,
 } from "./types";
@@ -18,7 +20,8 @@ interface Props {
   currentUserId: string;
   reimbursements: Reimbursement[];
   allowances: Allowance[];
-  typeFilter: ReimbursementTypeFilter;
+  pendingLinks: PendingLink[];
+  view: ReimbursementView;
   rejectDialog: RejectDialog;
   selected: Set<SelectionKey>;
   isBulkDownloading: boolean;
@@ -45,7 +48,7 @@ interface Props {
   onDeleteSelected: () => void;
   onToggleSelect: (key: SelectionKey) => void;
   onToggleSelectAll: () => void;
-  onTypeFilterChange: (value: ReimbursementTypeFilter) => void;
+  onViewChange: (value: ReimbursementView) => void;
   onBulkDownload: () => void;
   onFinomCsv: () => void;
   onSepaXml: () => void;
@@ -68,29 +71,35 @@ export function ReimbursementPageUI(props: Props) {
         onSepaXml={props.onSepaXml}
       />
       <ReimbursementFilters
-        value={props.typeFilter}
-        onChange={props.onTypeFilterChange}
-      />
-      <ReimbursementTable
+        value={props.view}
         canManageReimbursements={props.canManageReimbursements}
-        currentUserId={props.currentUserId}
-        reimbursements={props.reimbursements}
-        allowances={props.allowances}
-        selected={props.selected}
-        onRowClick={props.onRowClick}
-        onApproveReimbursement={props.onApproveReimbursement}
-        onApproveAllowance={props.onApproveAllowance}
-        onOpenChangesDialog={props.onOpenChangesDialog}
-        onOpenRejectDialog={props.onOpenRejectDialog}
-        onOpenReimbursement={props.onOpenReimbursement}
-        onOpenAllowance={props.onOpenAllowance}
-        onEditReimbursement={props.onEditReimbursement}
-        onEditAllowance={props.onEditAllowance}
-        onDeleteReimbursement={props.onDeleteReimbursement}
-        onDeleteAllowance={props.onDeleteAllowance}
-        onToggleSelect={props.onToggleSelect}
-        onToggleSelectAll={props.onToggleSelectAll}
+        pendingLinksCount={props.pendingLinks.length}
+        onChange={props.onViewChange}
       />
+      {props.view === "links" ? (
+        <PendingLinksTable links={props.pendingLinks} />
+      ) : (
+        <ReimbursementTable
+          canManageReimbursements={props.canManageReimbursements}
+          currentUserId={props.currentUserId}
+          reimbursements={props.reimbursements}
+          allowances={props.allowances}
+          selected={props.selected}
+          onRowClick={props.onRowClick}
+          onApproveReimbursement={props.onApproveReimbursement}
+          onApproveAllowance={props.onApproveAllowance}
+          onOpenChangesDialog={props.onOpenChangesDialog}
+          onOpenRejectDialog={props.onOpenRejectDialog}
+          onOpenReimbursement={props.onOpenReimbursement}
+          onOpenAllowance={props.onOpenAllowance}
+          onEditReimbursement={props.onEditReimbursement}
+          onEditAllowance={props.onEditAllowance}
+          onDeleteReimbursement={props.onDeleteReimbursement}
+          onDeleteAllowance={props.onDeleteAllowance}
+          onToggleSelect={props.onToggleSelect}
+          onToggleSelectAll={props.onToggleSelectAll}
+        />
+      )}
       <ReviewDialog
         dialog={props.rejectDialog}
         onChange={props.onRejectDialogChange}
