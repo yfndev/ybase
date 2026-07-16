@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Monitor, Smartphone } from "lucide-react";
+import { CheckCircle2, PenLine, RotateCcw, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getFileUrlAction } from "@/lib/server/reimbursements/files";
@@ -10,62 +10,91 @@ import { SignatureQRPanel } from "./SignatureQRPanel";
 interface Props {
   onSignatureComplete: (key: string) => void;
   storageId?: string;
-  generateUploadUrl?: () => Promise<string>;
+  uploadSignature?: (blob: Blob) => Promise<string>;
+  getFileUrl?: (storageId: string) => Promise<string | null>;
+  onClear?: () => void;
+  allowMobileHandoff?: boolean;
 }
 
 export function SignatureField({
   onSignatureComplete,
   storageId,
-  generateUploadUrl: customUploadUrl,
+  uploadSignature,
+  getFileUrl = getFileUrlAction,
+  onClear,
+  allowMobileHandoff = true,
 }: Props) {
-  const [mode, setMode] = useState<"mobile" | "desktop">("mobile");
+  const [mode, setMode] = useState<"direct" | "mobile">("direct");
 
   if (storageId) {
-    return <SignaturePreview storageId={storageId} />;
+    return (
+      <SignaturePreview
+        storageId={storageId}
+        getFileUrl={getFileUrl}
+        onClear={onClear}
+      />
+    );
   }
 
   return (
     <div className="w-full space-y-4">
-      <div className="grid grid-cols-2 gap-2">
-        <Button
-          type="button"
-          variant={mode === "mobile" ? "default" : "outline"}
-          className="h-12 min-w-0 w-full px-3"
-          onClick={() => setMode("mobile")}
-        >
-          <Smartphone className="size-4 mr-1" />
-          Auf dem Handy
-        </Button>
-        <Button
-          type="button"
-          variant={mode === "desktop" ? "default" : "outline"}
-          className="h-12 min-w-0 w-full px-3"
-          onClick={() => setMode("desktop")}
-        >
-          <Monitor className="size-4 mr-1" />
-          Am Computer
-        </Button>
-      </div>
-
-      {mode === "mobile" ? (
-        <SignatureQRPanel onSignatureComplete={onSignatureComplete} />
+      {allowMobileHandoff ? (
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <Button
+            type="button"
+            variant={mode === "direct" ? "default" : "outline"}
+            className="h-12 min-w-0 w-full px-3"
+            onClick={() => setMode("direct")}
+          >
+            <PenLine className="size-4 mr-1" />
+            Auf diesem Gerät
+          </Button>
+          <Button
+            type="button"
+            variant={mode === "mobile" ? "default" : "outline"}
+            className="h-12 min-w-0 w-full px-3"
+            onClick={() => setMode("mobile")}
+          >
+            <Smartphone className="size-4 mr-1" />
+            Mit dem Handy
+          </Button>
+        </div>
       ) : (
+        <div className="flex items-start gap-3 border-l-4 border-primary bg-primary/10 px-4 py-3">
+          <Smartphone className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+          <p className="text-sm leading-relaxed">
+            Unterschreibe direkt mit Finger, Stift oder Maus auf diesem Gerät.
+          </p>
+        </div>
+      )}
+
+      {mode === "direct" ? (
         <SignatureCanvas
           onUploadComplete={onSignatureComplete}
-          generateUploadUrl={customUploadUrl}
+          uploadSignature={uploadSignature}
         />
+      ) : (
+        <SignatureQRPanel onSignatureComplete={onSignatureComplete} />
       )}
     </div>
   );
 }
 
-function SignaturePreview({ storageId }: { storageId: string }) {
+function SignaturePreview({
+  storageId,
+  getFileUrl,
+  onClear,
+}: {
+  storageId: string;
+  getFileUrl: (storageId: string) => Promise<string | null>;
+  onClear?: () => void;
+}) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
     setPreviewUrl(null);
-    getFileUrlAction(storageId)
+    getFileUrl(storageId)
       .then((url) => {
         if (active) setPreviewUrl(url);
       })
@@ -75,7 +104,7 @@ function SignaturePreview({ storageId }: { storageId: string }) {
     return () => {
       active = false;
     };
-  }, [storageId]);
+  }, [getFileUrl, storageId]);
 
   return (
     <div className="border rounded-lg p-4">
@@ -90,6 +119,17 @@ function SignaturePreview({ storageId }: { storageId: string }) {
       <p className="text-sm text-muted-foreground text-center mt-2">
         Unterschrift gespeichert
       </p>
+      {onClear ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="mt-3 w-full"
+          onClick={onClear}
+        >
+          <RotateCcw className="size-4" />
+          Neu unterschreiben
+        </Button>
+      ) : null}
     </div>
   );
 }

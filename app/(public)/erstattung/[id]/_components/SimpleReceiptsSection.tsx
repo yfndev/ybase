@@ -1,7 +1,8 @@
 "use client";
 
-import { ReceiptUploadExternal } from "@/components/Reimbursements/ReceiptUploadExternal";
+import { Plus } from "lucide-react";
 import { InvoiceOrganizationHint } from "@/components/Reimbursements/InvoiceOrganizationHint";
+import { ReceiptUploadExternal } from "@/components/Reimbursements/ReceiptUploadExternal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
 import { AddedReceiptsList } from "./AddedReceiptsList";
 import type { Receipt } from "./types";
 
@@ -50,7 +50,7 @@ export function SimpleReceiptsSection(props: Props) {
         Füge alle Belege hinzu, die du einreichen möchtest.
       </p>
       <div className="border rounded-lg p-4 space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <Label>Name/Firma *</Label>
             <Input
@@ -78,7 +78,7 @@ export function SimpleReceiptsSection(props: Props) {
           />
         </div>
 
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <Label>Belegdatum *</Label>
             <Input

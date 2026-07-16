@@ -1,16 +1,15 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { OvernightAllowanceSection } from "../OvernightAllowanceSection";
 import {
   COST_TYPES,
   type CostType,
   COST_LABELS as LABELS,
 } from "@/lib/travel-costs";
 import { getTravelReceiptLabel } from "@/lib/travelReceiptForm";
-import { Plus } from "lucide-react";
-import { ReceiptCard } from "./ReceiptCard";
+import { CostTypeSelector } from "../CostTypeSelector";
+import { OvernightAllowanceSection } from "../OvernightAllowanceSection";
 import { MealAllowanceSection } from "./MealAllowanceSection";
+import { ReceiptCard } from "./ReceiptCard";
 import type { Receipt, Travel } from "./types";
 
 interface Props {
@@ -53,20 +52,15 @@ export function ReceiptsSection({
         <p className="text-sm text-muted-foreground mb-2">
           Wähle eine Kostenart, um eine Position hinzuzufügen.
         </p>
-        <div className="flex flex-wrap gap-2">
-          {COST_TYPES.map((type) => (
-            <Button
-              key={type}
-              type="button"
-              variant="outline"
-              aria-label={`${LABELS[type]} hinzufügen`}
-              onClick={() => addReceipt(type)}
-            >
-              <Plus className="size-4" />
-              {LABELS[type]}
-            </Button>
-          ))}
-        </div>
+        <CostTypeSelector
+          costTypes={COST_TYPES}
+          labels={LABELS}
+          isSelected={(type) =>
+            receipts.some((receipt) => receipt.costType === type)
+          }
+          onSelect={addReceipt}
+          getAccessibleLabel={(type) => `${LABELS[type]} hinzufügen`}
+        />
       </div>
 
       {receipts.map((receipt, index) => (

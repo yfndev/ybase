@@ -1,15 +1,15 @@
 "use client";
 
+import { useParams } from "next/navigation";
 import { formatIban, toNet } from "@/lib/bank-utils";
 import { COST_LABELS } from "@/lib/travel-costs";
-import { useParams } from "next/navigation";
-import ExternalReimbursementPageUI from "./ExternalReimbursementPageUI";
 import {
   ReimbursementInvalidScreen,
   ReimbursementLoadingScreen,
   ReimbursementSubmittedScreen,
 } from "./_components/ReimbursementStatusScreen";
 import { useReimbursementForm } from "./_components/useReimbursementForm";
+import ExternalReimbursementPageUI from "./ExternalReimbursementPageUI";
 
 export default function ExternalReimbursementPage() {
   const { id } = useParams<{ id: string }>();
@@ -92,9 +92,7 @@ export default function ExternalReimbursementPage() {
       onAccountHolderChange={form.setAccountHolder}
       onIbanChange={form.setIban}
       onBicChange={form.setBic}
-      confirmation={form.confirmation}
       signature={form.signature}
-      onConfirmationChange={form.setConfirmation}
       onSignatureChange={form.setSignature}
       isSubmitting={form.isSubmitting}
       onSubmit={form.handleSubmit}

@@ -42,7 +42,7 @@ async function drawSignature(page: Page) {
 }
 
 async function addSignature(page: Page) {
-  await page.getByRole("button", { name: "Am Computer" }).click();
+  await page.getByRole("button", { name: "Auf diesem Gerät" }).click();
   await page.waitForTimeout(100);
   await drawSignature(page);
   await page.getByRole("button", { name: "Unterschrift speichern" }).click();
@@ -64,7 +64,7 @@ async function saveBankDetails(page: Page) {
   await page
     .getByPlaceholder("DE12 3456 7890 0000 0000 00")
     .fill("DE89370400440532013000");
-  await page.getByRole("button", { name: "Speichern" }).click();
+  await page.getByRole("button", { name: "Speichern", exact: true }).click();
   await expect(page.getByText("Bankverbindung gespeichert")).toBeVisible();
 }
 
@@ -145,7 +145,7 @@ test.describe("critical reimbursement journeys", () => {
     });
 
     await page.getByRole("button", { name: "Beleg speichern" }).click();
-    await expect(page.getByText("Test Firma")).toBeVisible();
+    await expect(page.getByText("Test Firma").first()).toBeVisible();
 
     await saveBankDetails(page);
     await addSignature(page);
@@ -192,8 +192,7 @@ test.describe("critical reimbursement journeys", () => {
     await expect(
       page.getByText("Bitte Beschreibung präzisieren"),
     ).toBeVisible();
-    await expect(page.getByText("Test Firma")).toBeVisible();
-    await page.getByRole("checkbox").check();
+    await expect(page.getByText("Test Firma").first()).toBeVisible();
     await page.getByRole("button", { name: "Einreichen" }).click();
     await expect(
       page.getByRole("heading", { name: "Erfolgreich eingereicht" }),

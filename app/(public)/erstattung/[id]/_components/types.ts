@@ -94,9 +94,7 @@ export type ExternalReimbursementPageUIProps = {
   onIbanChange: (value: string) => void;
   onBicChange: (value: string) => void;
 
-  confirmation: boolean;
   signature: string | null;
-  onConfirmationChange: (value: boolean) => void;
   onSignatureChange: (value: string) => void;
 
   isSubmitting: boolean;

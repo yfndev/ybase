@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { CostTypeSelector } from "@/components/Reimbursements/CostTypeSelector";
+import { COST_TYPES } from "@/lib/travel-costs";
 import { getTravelReceiptLabel } from "@/lib/travelReceiptForm";
-import { Plus } from "lucide-react";
 import { TravelReceiptCard } from "./TravelReceiptCard";
 import type { CostType, TravelReceipt } from "./types";
 
@@ -30,20 +30,17 @@ export function TravelCostsSection(props: Props) {
       <p className="text-sm text-muted-foreground">
         Wähle eine Kostenart, um eine Position hinzuzufügen.
       </p>
-      <div className="flex flex-wrap gap-2">
-        {(Object.keys(props.costLabels) as CostType[]).map((costType) => (
-          <Button
-            key={costType}
-            type="button"
-            variant="outline"
-            aria-label={`${props.costLabels[costType]} hinzufügen`}
-            onClick={() => props.onAddTravelReceipt(costType)}
-          >
-            <Plus className="size-4" />
-            {props.costLabels[costType]}
-          </Button>
-        ))}
-      </div>
+      <CostTypeSelector
+        costTypes={COST_TYPES}
+        labels={props.costLabels}
+        isSelected={(costType) =>
+          props.travelReceipts.some((receipt) => receipt.costType === costType)
+        }
+        onSelect={props.onAddTravelReceipt}
+        getAccessibleLabel={(costType) =>
+          `${props.costLabels[costType]} hinzufügen`
+        }
+      />
 
       {props.travelReceipts.map((receipt, index) => (
         <TravelReceiptCard

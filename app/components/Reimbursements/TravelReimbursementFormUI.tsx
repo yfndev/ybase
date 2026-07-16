@@ -39,7 +39,7 @@ export function TravelReimbursementFormUI({
   };
 
   return (
-    <div className="p-6 xl:grid xl:grid-cols-[minmax(0,1fr)_400px] xl:items-start xl:gap-10">
+    <div className="p-4 sm:p-6 xl:grid xl:grid-cols-[minmax(0,1fr)_400px] xl:items-start xl:gap-10">
       <div className="space-y-8 min-w-0">
         <div className="w-full sm:w-[260px]">
           <Label>Projekt *</Label>
