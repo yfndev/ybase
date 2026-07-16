@@ -9,7 +9,7 @@ import { deleteObject } from "../../s3/storage";
 import { volunteerAllowanceFields } from "../../volunteerAllowance/schemas";
 import { addLog } from "../logs";
 import { requireActiveOrganizationProject } from "../projects/access";
-import { claimPendingUploads } from "../uploads/ownership";
+import { claimUploadsForSubmission } from "../uploads/ownership";
 import { getSignatureUrl } from "./data";
 import { sendSubmissionReceivedEmail } from "./email";
 
@@ -40,10 +40,10 @@ export async function create(input: {
   await requireActiveOrganizationProject(args.projectId, user.organizationId);
 
   const _id = newId();
-  await claimPendingUploads(
-    [args.signatureStorageId],
+  await claimUploadsForSubmission(
+    [],
+    args.signatureStorageId,
     { organizationId: user.organizationId, userId: user._id },
-    ["user", "signatureToken"],
     { type: "allowance", id: _id },
   );
   await (

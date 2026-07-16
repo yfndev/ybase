@@ -7,7 +7,7 @@ import { newId } from "../../db/ids";
 import type { Receipt, Reimbursement } from "../../db/types";
 import { addLog } from "../logs";
 import { requireActiveOrganizationProject } from "../projects/access";
-import { claimPendingUploads } from "../uploads/ownership";
+import { claimUploadsForSubmission } from "../uploads/ownership";
 import { sendSubmissionReceivedEmail } from "./email";
 import {
   createReimbursementSchema,
@@ -112,15 +112,12 @@ async function claimSubmissionUploads(
   signatureStorageId: string,
   receiptList: ReceiptInsert[],
 ): Promise<void> {
-  await claimPendingUploads(
-    [
-      signatureStorageId,
-      ...receiptList.flatMap((receipt) =>
-        receipt.fileStorageId ? [receipt.fileStorageId] : [],
-      ),
-    ],
+  await claimUploadsForSubmission(
+    receiptList.flatMap((receipt) =>
+      receipt.fileStorageId ? [receipt.fileStorageId] : [],
+    ),
+    signatureStorageId,
     { organizationId: user.organizationId, userId: user._id },
-    ["user", "signatureToken"],
     { type: "reimbursement", id: reimbursementId },
   );
 }

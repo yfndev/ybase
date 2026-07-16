@@ -19,7 +19,12 @@ vi.mock("./email", () => ({
 }));
 
 import { requireRole, requireUser } from "../../auth/session";
-import { users, volunteerAllowance } from "../../db/collections";
+import {
+  signatureTokens,
+  uploadOwnerships,
+  users,
+  volunteerAllowance,
+} from "../../db/collections";
 import { newId } from "../../db/ids";
 import { deleteObject } from "../../s3/storage";
 import {
@@ -28,6 +33,7 @@ import {
   insertTestProject,
 } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
+import { submitPublicSignature } from "../signatures/public";
 import { registerPendingUpload } from "../uploads/ownership";
 import { create, remove } from "./actions";
 import { getAll, getSignatureUrl } from "./data";
@@ -210,6 +216,44 @@ test("create persists the allowance as pending", async () => {
   expect(doc?.status).toBe("pending");
   expect(doc?.organizationId).toBe(orgA);
   expect(sendSubmissionReceivedEmail).toHaveBeenCalledWith(id);
+});
+
+test("create transfers a completed mobile signature to the allowance", async () => {
+  const projectA = await insertProject();
+  const tokenId = newId();
+  const token = crypto.randomUUID();
+  await (
+    await signatureTokens()
+  ).insertOne({
+    _id: tokenId,
+    _creationTime: Date.now(),
+    token,
+    organizationId: orgA,
+    createdBy: userA,
+    expiresAt: Date.now() + 60_000,
+    pendingSignatureStorageId: "mobile-allowance-signature",
+  });
+  await registerPendingUpload("mobile-allowance-signature", {
+    organizationId: orgA,
+    userId: userA,
+    contextType: "signatureToken",
+    contextId: tokenId,
+  });
+  await submitPublicSignature(token);
+
+  const id = await create({
+    ...newAllowanceInput(projectA),
+    signatureStorageId: "mobile-allowance-signature",
+  });
+
+  expect(
+    await (
+      await uploadOwnerships()
+    ).findOne({ _id: "mobile-allowance-signature" }),
+  ).toMatchObject({
+    claimedByType: "allowance",
+    claimedById: id,
+  });
 });
 
 test("creating an emailed allowance request sends the request template", async () => {

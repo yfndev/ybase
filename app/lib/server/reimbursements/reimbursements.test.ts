@@ -30,6 +30,7 @@ import {
   reimbursements,
   signatureTokens,
   travelDetails,
+  uploadOwnerships,
   users,
 } from "../../db/collections";
 import { newId } from "../../db/ids";
@@ -45,7 +46,10 @@ import {
 } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { submitPublicSignature } from "../signatures/public";
-import { registerPendingUpload } from "../uploads/ownership";
+import {
+  claimPendingUploads,
+  registerPendingUpload,
+} from "../uploads/ownership";
 import { createReimbursement, createTravelReimbursement } from "./creation";
 import { getAllReimbursements, getFileInfo, getReimbursement } from "./data";
 import { deleteReimbursement } from "./deletion";
@@ -151,6 +155,29 @@ function reimbursementInput() {
   };
 }
 
+async function completeMobileSignature(storageKey: string): Promise<void> {
+  const tokenId = newId();
+  const token = crypto.randomUUID();
+  await (
+    await signatureTokens()
+  ).insertOne({
+    _id: tokenId,
+    _creationTime: Date.now(),
+    token,
+    organizationId: orgA,
+    createdBy: userA,
+    expiresAt: Date.now() + 60_000,
+    pendingSignatureStorageId: storageKey,
+  });
+  await registerPendingUpload(storageKey, {
+    organizationId: orgA,
+    userId: userA,
+    contextType: "signatureToken",
+    contextId: tokenId,
+  });
+  await submitPublicSignature(token);
+}
+
 test("createReimbursement writes the reimbursement and receipts scoped to the org", async () => {
   const id = await createReimbursement(reimbursementInput());
 
@@ -164,6 +191,80 @@ test("createReimbursement writes the reimbursement and receipts scoped to the or
   expect(receiptList).toHaveLength(1);
   expect(receiptList[0]?.fileStorageId).toBe("receipt-key");
   expect(sendSubmissionReceivedEmail).toHaveBeenCalledWith(id);
+});
+
+test("travel creation transfers a mobile signature with repeated receipt types", async () => {
+  await completeMobileSignature("mobile-signature-key");
+  await registerPendingUpload("second-receipt-key", {
+    organizationId: orgA,
+    userId: userA,
+    contextType: "user",
+    contextId: userA,
+  });
+
+  const id = await createTravelReimbursement({
+    ...reimbursementInput(),
+    signatureStorageId: "mobile-signature-key",
+    startDate: "2026-05-15",
+    startTime: "08:00",
+    endDate: "2026-05-20",
+    endTime: "18:00",
+    destination: "Berlin",
+    purpose: "Event",
+    isInternational: false,
+    receipts: [
+      {
+        ...reimbursementInput().receipts[0],
+        costType: "train",
+      },
+      {
+        ...reimbursementInput().receipts[0],
+        fileStorageId: "second-receipt-key",
+        costType: "train",
+      },
+    ],
+  });
+
+  expect(await (await receipts()).countDocuments({ reimbursementId: id })).toBe(
+    2,
+  );
+  expect(
+    await (await uploadOwnerships()).findOne({ _id: "mobile-signature-key" }),
+  ).toMatchObject({
+    claimedByType: "reimbursement",
+    claimedById: id,
+  });
+
+  await expect(
+    createReimbursement({
+      ...reimbursementInput(),
+      signatureStorageId: "mobile-signature-key",
+      receipts: [],
+    }),
+  ).rejects.toThrow("Upload does not belong to the current user");
+});
+
+test("creation rejects a mobile signature claimed by a different token", async () => {
+  await registerPendingUpload("mismatched-mobile-signature", {
+    organizationId: orgA,
+    userId: userA,
+    contextType: "signatureToken",
+    contextId: "original-token-id",
+  });
+  await claimPendingUploads(
+    ["mismatched-mobile-signature"],
+    { organizationId: orgA, userId: userA },
+    ["signatureToken"],
+    { type: "signatureToken", id: "different-token-id" },
+  );
+
+  await expect(
+    createReimbursement({
+      ...reimbursementInput(),
+      signatureStorageId: "mismatched-mobile-signature",
+      receipts: [],
+    }),
+  ).rejects.toThrow("Upload does not belong to the current user");
 });
 
 test("travel PDF data includes travel details and the project name", async () => {
@@ -431,6 +532,9 @@ test("creation rejects a signature upload owned by another user", async () => {
     }),
   ).rejects.toThrow("Upload does not belong to the current user");
   expect(await (await reimbursements()).findOne({ amount: 50 })).toBeNull();
+  expect(
+    await (await uploadOwnerships()).findOne({ _id: "receipt-key" }),
+  ).not.toHaveProperty("claimedAt");
 });
 
 test("public links reject raw keys owned by another link", async () => {
