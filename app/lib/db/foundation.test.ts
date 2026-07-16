@@ -45,6 +45,26 @@ test("ensureAppUser is idempotent for the same email", async () => {
   expect(await db.collection("users").countDocuments()).toBe(1);
 });
 
+test("ensureAppUser updates an existing user from the current login profile", async () => {
+  const first = await ensureAppUser({
+    email: "alice@youngfounders.network",
+    name: "Outdated Name",
+  });
+  const second = await ensureAppUser({
+    email: "alice@youngfounders.network",
+    name: "Alice Example",
+    firstName: "Alice",
+    lastName: "Example",
+  });
+
+  expect(second).toMatchObject({
+    _id: first._id,
+    name: "Alice Example",
+    firstName: "Alice",
+    lastName: "Example",
+  });
+});
+
 test("ensureAppUser leaves organizationId unset when no org matches the domain", async () => {
   const user = await ensureAppUser({ email: "bob@newverein.de", name: "Bob" });
 

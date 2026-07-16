@@ -30,6 +30,26 @@ export async function ensureAppUser(profile: SignInProfile): Promise<User> {
       registeredAt: now,
     };
     await usersCol.insertOne(user);
+  } else {
+    const profileUpdates = {
+      ...(profile.name && profile.name !== user.name
+        ? { name: profile.name }
+        : {}),
+      ...(profile.image && profile.image !== user.image
+        ? { image: profile.image }
+        : {}),
+      ...(profile.firstName && profile.firstName !== user.firstName
+        ? { firstName: profile.firstName }
+        : {}),
+      ...(profile.lastName && profile.lastName !== user.lastName
+        ? { lastName: profile.lastName }
+        : {}),
+    };
+
+    if (Object.keys(profileUpdates).length > 0) {
+      await usersCol.updateOne({ _id: user._id }, { $set: profileUpdates });
+      user = { ...user, ...profileUpdates };
+    }
   }
 
   if (!user.organizationId) {
