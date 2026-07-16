@@ -1,7 +1,6 @@
 "use client";
 
 import { Loader2, Pencil } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,6 @@ interface Props {
 export function BankDetailsEditor({ value, onChange }: Props) {
   const [editing, setEditing] = useState(() => !!getBankDetailsError(value));
   const [isSaving, setIsSaving] = useState(false);
-  const router = useRouter();
 
   const toggle = async () => {
     if (!editing) {
@@ -40,7 +38,6 @@ export function BankDetailsEditor({ value, onChange }: Props) {
       await updateBankDetails(normalized);
       onChange(normalized);
       toast.success("Bankverbindung gespeichert");
-      router.refresh();
       setEditing(false);
     } catch {
       toast.error("Fehler beim Speichern");
