@@ -117,6 +117,8 @@ export function ReimbursementsClient({
         onRowClick={(id) => router.push(`/reimbursements/${id}`)}
         onApproveReimbursement={actions.handleApproveReimbursement}
         onApproveAllowance={actions.handleApproveAllowance}
+        onMarkReimbursementAsPaid={actions.handleMarkReimbursementAsPaid}
+        onMarkAllowanceAsPaid={actions.handleMarkAllowanceAsPaid}
         onOpenChangesDialog={(type, id) =>
           actions.handleOpenReviewDialog("changes", type, id)
         }

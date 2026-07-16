@@ -2,6 +2,7 @@ export type ReimbursementStatus =
   | "pending"
   | "changes_requested"
   | "approved"
+  | "paid"
   | "declined";
 
 export const STATUS_DISPLAY: Record<
@@ -30,6 +31,12 @@ export const STATUS_DISPLAY: Record<
     label: "Genehmigt",
     dot: "bg-green-500",
     className: "bg-green-50 border-green-200 text-green-800",
+  },
+  paid: {
+    variant: "default",
+    label: "Bezahlt",
+    dot: "bg-blue-500",
+    className: "bg-blue-50 border-blue-200 text-blue-800",
   },
   declined: {
     variant: "default",

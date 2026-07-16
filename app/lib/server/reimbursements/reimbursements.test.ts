@@ -59,7 +59,7 @@ import {
 import { getReimbursementPdfData } from "./files";
 import { getPublicReimbursementFileUrl } from "./public";
 import { submitPublicReimbursement } from "./publicSubmission";
-import { approve, decline, requestChanges } from "./review";
+import { approve, decline, markAsPaid, requestChanges } from "./review";
 import { createReimbursementLink, getPendingSharedLinks } from "./sharing";
 
 let orgA: string;
@@ -637,6 +637,50 @@ test("approve sets the status", async () => {
   expect(stored?.status).toBe("approved");
   expect(stored?.reviewedBy).toBe(userA);
   expect(sendApprovalEmail).toHaveBeenCalledWith(id);
+});
+
+test("markAsPaid moves an approved reimbursement to paid", async () => {
+  const id = await createReimbursement(reimbursementInput());
+  await approve({ reimbursementId: id });
+  await markAsPaid({ reimbursementId: id });
+
+  const stored = await (await reimbursements()).findOne({ _id: id });
+  expect(stored?.status).toBe("paid");
+  expect(stored?.paidBy).toBe(userA);
+  expect(stored?.paidAt).toEqual(expect.any(Number));
+});
+
+test("markAsPaid rejects a reimbursement that is not approved", async () => {
+  const id = await createReimbursement(reimbursementInput());
+
+  await expect(markAsPaid({ reimbursementId: id })).rejects.toThrow(
+    "Approved reimbursement not found",
+  );
+});
+
+test("markAsPaid rejects an approved reimbursement from another org", async () => {
+  const foreign = newId();
+  await (
+    await reimbursements()
+  ).insertOne({
+    _id: foreign,
+    _creationTime: Date.now(),
+    organizationId: orgB,
+    projectId: newId(),
+    amount: 10,
+    type: "expense",
+    status: "approved",
+    iban: "DE00",
+    accountHolder: "Foreign",
+    createdBy: newId(),
+  });
+
+  await expect(markAsPaid({ reimbursementId: foreign })).rejects.toThrow(
+    "Approved reimbursement not found",
+  );
+  expect(
+    (await (await reimbursements()).findOne({ _id: foreign }))?.status,
+  ).toBe("approved");
 });
 
 test("decline sets the status and sends the review email", async () => {

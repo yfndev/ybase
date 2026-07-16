@@ -54,6 +54,47 @@ export async function approve(input: { id: string }): Promise<void> {
   await sendApprovalEmail(id);
 }
 
+export async function markAsPaid(input: { id: string }): Promise<void> {
+  const user = await requireRole("finance");
+  const { id } = z.object({ id: z.string() }).parse(input);
+  const allowance = await (
+    await volunteerAllowance()
+  ).findOne({
+    _id: id,
+    organizationId: user.organizationId,
+    status: "approved",
+  });
+  if (!allowance) throw new Error("Approved allowance not found");
+
+  const result = await (
+    await volunteerAllowance()
+  ).updateOne(
+    {
+      _id: id,
+      organizationId: user.organizationId,
+      status: "approved",
+    },
+    {
+      $set: {
+        status: "paid",
+        paidBy: user._id,
+        paidAt: Date.now(),
+      },
+    },
+  );
+  if (result.modifiedCount !== 1) {
+    throw new Error("Allowance payment status changed concurrently");
+  }
+
+  await addLog(
+    user.organizationId,
+    user._id,
+    "volunteerAllowance.markAsPaid",
+    id,
+    `${allowance.amount}€`,
+  );
+}
+
 export async function decline(input: {
   id: string;
   rejectionNote: string;

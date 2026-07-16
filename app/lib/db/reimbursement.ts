@@ -5,6 +5,7 @@ export type ReviewStatus =
   | "pending"
   | "changes_requested"
   | "approved"
+  | "paid"
   | "declined";
 export interface Reimbursement {
   _id: string;
@@ -22,6 +23,8 @@ export interface Reimbursement {
   createdBy: string;
   reviewedBy?: string;
   reviewedAt?: number;
+  paidBy?: string;
+  paidAt?: number;
   currency?: string;
   signatureStorageId?: string;
   isSharedLink?: boolean;

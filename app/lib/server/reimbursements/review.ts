@@ -93,6 +93,51 @@ export async function approve(input: {
   await sendApprovalEmail(reimbursementId);
 }
 
+export async function markAsPaid(input: {
+  reimbursementId: string;
+}): Promise<void> {
+  const user = await requireRole("finance");
+  const { reimbursementId } = z
+    .object({ reimbursementId: z.string() })
+    .parse(input);
+  const reimbursement = await (
+    await reimbursements()
+  ).findOne({
+    _id: reimbursementId,
+    organizationId: user.organizationId,
+    status: "approved",
+  });
+  if (!reimbursement) throw new Error("Approved reimbursement not found");
+
+  const result = await (
+    await reimbursements()
+  ).updateOne(
+    {
+      _id: reimbursementId,
+      organizationId: user.organizationId,
+      status: "approved",
+    },
+    {
+      $set: {
+        status: "paid",
+        paidBy: user._id,
+        paidAt: Date.now(),
+      },
+    },
+  );
+  if (result.modifiedCount !== 1) {
+    throw new Error("Reimbursement payment status changed concurrently");
+  }
+
+  await addLog(
+    user.organizationId,
+    user._id,
+    "reimbursement.markAsPaid",
+    reimbursementId,
+    `${reimbursement.amount}€`,
+  );
+}
+
 export async function decline(input: {
   reimbursementId: string;
   rejectionNote: string;

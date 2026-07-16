@@ -39,7 +39,7 @@ import {
   sendSubmissionRequestedEmail,
 } from "./email";
 import { submitPublicAllowance } from "./public";
-import { approve, decline, requestChanges } from "./reviewActions";
+import { approve, decline, markAsPaid, requestChanges } from "./reviewActions";
 import { createLink } from "./sharing";
 
 let orgA: string;
@@ -347,6 +347,58 @@ test("approve sets status approved", async () => {
   expect(doc?.status).toBe("approved");
   expect(doc?.reviewedBy).toBe(userA);
   expect(sendApprovalEmail).toHaveBeenCalledWith(id);
+});
+
+test("markAsPaid moves an approved allowance to paid", async () => {
+  const projectA = await insertProject();
+  const id = await create(newAllowanceInput(projectA));
+  await approve({ id });
+  await markAsPaid({ id });
+
+  const doc = await (await volunteerAllowance()).findOne({ _id: id });
+  expect(doc?.status).toBe("paid");
+  expect(doc?.paidBy).toBe(userA);
+  expect(doc?.paidAt).toEqual(expect.any(Number));
+});
+
+test("markAsPaid rejects an allowance that is not approved", async () => {
+  const projectA = await insertProject();
+  const id = await create(newAllowanceInput(projectA));
+
+  await expect(markAsPaid({ id })).rejects.toThrow(
+    "Approved allowance not found",
+  );
+});
+
+test("markAsPaid rejects an approved allowance from another org", async () => {
+  const foreign = newId();
+  await (
+    await volunteerAllowance()
+  ).insertOne({
+    _id: foreign,
+    _creationTime: Date.now(),
+    organizationId: orgB,
+    projectId: newId(),
+    amount: 50,
+    status: "approved",
+    iban: "DE00",
+    accountHolder: "Foreign",
+    createdBy: newId(),
+    activityDescription: "Foreign",
+    startDate: "2026-01-01",
+    endDate: "2026-01-31",
+    volunteerName: "Foreign",
+    volunteerStreet: "x",
+    volunteerPlz: "x",
+    volunteerCity: "x",
+  });
+
+  await expect(markAsPaid({ id: foreign })).rejects.toThrow(
+    "Approved allowance not found",
+  );
+  expect(
+    (await (await volunteerAllowance()).findOne({ _id: foreign }))?.status,
+  ).toBe("approved");
 });
 
 test("decline sets status and sends the review email", async () => {
