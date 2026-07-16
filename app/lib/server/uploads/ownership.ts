@@ -13,6 +13,8 @@ type UploadClaim = {
   id: string;
 };
 
+type UploadIdentity = Pick<UploadOwner, "organizationId" | "userId">;
+
 export async function registerPendingUpload(
   storageKey: string,
   owner: UploadOwner,
@@ -31,7 +33,7 @@ export async function registerPendingUpload(
 
 export async function claimPendingUploads(
   storageKeys: string[],
-  owner: Pick<UploadOwner, "organizationId" | "userId">,
+  owner: UploadIdentity,
   allowedContexts: UploadContextType[],
   claim: UploadClaim,
   contextId?: string,
@@ -67,24 +69,86 @@ export async function claimPendingUploads(
       claimedKeys.push(storageKey);
     }
   } catch (error) {
-    if (claimedKeys.length > 0) {
-      await (
-        await uploadOwnerships()
-      ).updateMany(
+    await releaseUploadsClaimedBy(claimedKeys, claim);
+    throw error;
+  }
+}
+
+async function releaseUploadsClaimedBy(
+  storageKeys: string[],
+  claim: UploadClaim,
+): Promise<void> {
+  if (storageKeys.length === 0) return;
+
+  await (
+    await uploadOwnerships()
+  ).updateMany(
+    {
+      _id: { $in: storageKeys },
+      claimedByType: claim.type,
+      claimedById: claim.id,
+    },
+    {
+      $unset: {
+        claimedByType: "",
+        claimedById: "",
+        claimedAt: "",
+      },
+    },
+  );
+}
+
+async function claimSubmissionSignature(
+  storageKey: string,
+  owner: UploadIdentity,
+  claim: UploadClaim,
+): Promise<void> {
+  const result = await (
+    await uploadOwnerships()
+  ).updateOne(
+    {
+      _id: storageKey,
+      organizationId: owner.organizationId,
+      userId: owner.userId,
+      $or: [
         {
-          _id: { $in: claimedKeys },
-          claimedByType: claim.type,
-          claimedById: claim.id,
+          contextType: "user",
+          claimedAt: { $exists: false },
         },
         {
-          $unset: {
-            claimedByType: "",
-            claimedById: "",
-            claimedAt: "",
-          },
+          contextType: "signatureToken",
+          claimedByType: "signatureToken",
+          $expr: { $eq: ["$claimedById", "$contextId"] },
         },
-      );
-    }
+      ],
+    },
+    {
+      $set: {
+        claimedByType: claim.type,
+        claimedById: claim.id,
+        claimedAt: Date.now(),
+      },
+    },
+  );
+
+  if (result.modifiedCount !== 1) {
+    throw new Error("Upload does not belong to the current user");
+  }
+}
+
+export async function claimUploadsForSubmission(
+  receiptStorageKeys: string[],
+  signatureStorageKey: string,
+  owner: UploadIdentity,
+  claim: UploadClaim,
+): Promise<void> {
+  const uniqueReceiptKeys = [...new Set(receiptStorageKeys)];
+  await claimPendingUploads(uniqueReceiptKeys, owner, ["user"], claim);
+
+  try {
+    await claimSubmissionSignature(signatureStorageKey, owner, claim);
+  } catch (error) {
+    await releaseUploadsClaimedBy(uniqueReceiptKeys, claim);
     throw error;
   }
 }
