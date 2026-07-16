@@ -1,6 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { getTravelReceiptLabel } from "@/lib/travelReceiptForm";
+import { Plus } from "lucide-react";
 import { TravelReceiptCard } from "./TravelReceiptCard";
 import type { CostType, TravelReceipt } from "./types";
 
@@ -8,9 +10,10 @@ type Props = {
   organizationName: string;
   travelReceipts: TravelReceipt[];
   costLabels: Record<CostType, string>;
-  onToggleCostType: (costType: CostType) => void;
+  onAddTravelReceipt: (costType: CostType) => void;
+  onRemoveTravelReceipt: (clientId: string) => void;
   onUpdateTravelReceipt: (
-    costType: CostType,
+    clientId: string,
     updates: Partial<TravelReceipt>,
   ) => void;
   toNet: (gross: number, tax: number) => number;
@@ -23,37 +26,37 @@ type Props = {
 export function TravelCostsSection(props: Props) {
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-medium">Kostenarten</h2>
+      <h2 className="text-lg font-medium">Kostenpositionen hinzufügen</h2>
       <p className="text-sm text-muted-foreground">
-        Wähle alle Kostenarten aus, die du geltend machen möchtest.
+        Wähle eine Kostenart, um eine Position hinzuzufügen.
       </p>
       <div className="flex flex-wrap gap-2">
         {(Object.keys(props.costLabels) as CostType[]).map((costType) => (
           <Button
             key={costType}
             type="button"
-            variant={
-              props.travelReceipts.some(
-                (receipt) => receipt.costType === costType,
-              )
-                ? "default"
-                : "outline"
-            }
-            onClick={() => props.onToggleCostType(costType)}
+            variant="outline"
+            aria-label={`${props.costLabels[costType]} hinzufügen`}
+            onClick={() => props.onAddTravelReceipt(costType)}
           >
+            <Plus className="size-4" />
             {props.costLabels[costType]}
           </Button>
         ))}
       </div>
 
-      {props.travelReceipts.map((receipt) => (
+      {props.travelReceipts.map((receipt, index) => (
         <TravelReceiptCard
-          key={receipt.costType}
+          key={receipt.clientId}
           receipt={receipt}
-          costLabels={props.costLabels}
-          onRemove={() => props.onToggleCostType(receipt.costType)}
+          title={getTravelReceiptLabel(
+            props.travelReceipts,
+            index,
+            props.costLabels,
+          )}
+          onRemove={() => props.onRemoveTravelReceipt(receipt.clientId)}
           onUpdate={(updates) =>
-            props.onUpdateTravelReceipt(receipt.costType, updates)
+            props.onUpdateTravelReceipt(receipt.clientId, updates)
           }
           toNet={props.toNet}
           generateUploadUrl={props.generateUploadUrl}

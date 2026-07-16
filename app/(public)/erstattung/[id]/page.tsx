@@ -82,7 +82,8 @@ export default function ExternalReimbursementPage() {
       travelReceipts={form.travelReceipts}
       onAddReceipt={form.addReceipt}
       onRemoveReceipt={form.removeReceipt}
-      onToggleCostType={form.toggleCostType}
+      onAddTravelReceipt={form.addTravelReceipt}
+      onRemoveTravelReceipt={form.removeTravelReceipt}
       onUpdateTravelReceipt={form.updateTravelReceipt}
       totalGross={form.totalGross}
       accountHolder={form.accountHolder}

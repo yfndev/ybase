@@ -6,7 +6,7 @@ export type BankDetails = { iban: string; bic: string; accountHolder: string };
 export type Receipt = Omit<
   ReceiptDoc,
   "_id" | "_creationTime" | "reimbursementId"
-> & { costType: CostType };
+> & { clientId: string; costType: CostType };
 
 export type Travel = {
   destination: string;

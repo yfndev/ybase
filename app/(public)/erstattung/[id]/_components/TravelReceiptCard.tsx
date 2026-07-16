@@ -15,11 +15,11 @@ import {
 import { Trash2 } from "lucide-react";
 import { CAR_ALLOWANCE_RATE_EUR_PER_KM } from "@/lib/travel-costs";
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
-import type { CostType, TravelReceipt } from "./types";
+import type { TravelReceipt } from "./types";
 
 type Props = {
   receipt: TravelReceipt;
-  costLabels: Record<CostType, string>;
+  title: string;
   onRemove: () => void;
   onUpdate: (updates: Partial<TravelReceipt>) => void;
   toNet: (gross: number, tax: number) => number;
@@ -35,14 +35,21 @@ export function TravelReceiptCard(props: Props) {
   const isCar = receipt.costType === "car";
 
   return (
-    <div className="@container border rounded-lg p-4 space-y-4">
+    <fieldset className="@container min-w-0 border rounded-lg p-4 space-y-4">
+      <legend className="sr-only">{props.title}</legend>
       <div className="flex justify-between items-center">
         <h3 className="font-medium">
           {isCar
-            ? `PKW (${formatCurrency(CAR_ALLOWANCE_RATE_EUR_PER_KM)}/km)`
-            : props.costLabels[receipt.costType]}
+            ? `${props.title} (${formatCurrency(CAR_ALLOWANCE_RATE_EUR_PER_KM)}/km)`
+            : props.title}
         </h3>
-        <Button variant="ghost" size="icon" onClick={props.onRemove}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={props.onRemove}
+          aria-label={`${props.title} entfernen`}
+          title={`${props.title} entfernen`}
+        >
           <Trash2 className="size-4" />
         </Button>
       </div>
@@ -169,6 +176,6 @@ export function TravelReceiptCard(props: Props) {
           />
         </div>
       )}
-    </div>
+    </fieldset>
   );
 }
