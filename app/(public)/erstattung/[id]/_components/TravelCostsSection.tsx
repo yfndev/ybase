@@ -33,9 +33,6 @@ export function TravelCostsSection(props: Props) {
       <CostTypeSelector
         costTypes={COST_TYPES}
         labels={props.costLabels}
-        isSelected={(costType) =>
-          props.travelReceipts.some((receipt) => receipt.costType === costType)
-        }
         onSelect={props.onAddTravelReceipt}
         getAccessibleLabel={(costType) =>
           `${props.costLabels[costType]} hinzufügen`
