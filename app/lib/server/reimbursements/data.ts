@@ -109,9 +109,11 @@ export async function getAllReimbursements(): Promise<
     USER_PERMISSIONS.finance,
   );
 
-  const scope = canManageReimbursements
-    ? { organizationId: user.organizationId }
-    : { organizationId: user.organizationId, createdBy: user._id };
+  const scope = {
+    organizationId: user.organizationId,
+    ...(canManageReimbursements ? {} : { createdBy: user._id }),
+    $or: [{ isSharedLink: { $ne: true } }, { submittedAt: { $exists: true } }],
+  };
 
   const list = await (await reimbursements())
     .find(scope)

@@ -16,7 +16,7 @@ export async function submitPublicReimbursement(
   const collection = await reimbursements();
   const existing = await requireOpenSharedReimbursement(id);
   const isResubmission = existing.status === "changes_requested";
-  if (existing.submitterName && !isResubmission) {
+  if (existing.submittedAt !== undefined && !isResubmission) {
     throw new Error("Already submitted");
   }
 
@@ -52,7 +52,7 @@ export async function submitPublicReimbursement(
       _id: id,
       isSharedLink: true,
       $or: [
-        { submitterName: { $exists: false } },
+        { submittedAt: { $exists: false } },
         { status: "changes_requested" },
       ],
     },

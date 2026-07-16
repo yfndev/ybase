@@ -60,7 +60,7 @@ import { getReimbursementPdfData } from "./files";
 import { getPublicReimbursementFileUrl } from "./public";
 import { submitPublicReimbursement } from "./publicSubmission";
 import { approve, decline, requestChanges } from "./review";
-import { createReimbursementLink } from "./sharing";
+import { createReimbursementLink, getPendingSharedLinks } from "./sharing";
 
 let orgA: string;
 let orgB: string;
@@ -242,6 +242,32 @@ test("creating an emailed submission request sends the request template", async 
   const stored = await (await reimbursements()).findOne({ _id: id });
   expect(stored?.invitedEmail).toBe("erika@example.com");
   expect(sendSubmissionRequestedEmail).toHaveBeenCalledWith(id);
+});
+
+test("unsubmitted shared links stay out of the reimbursement list", async () => {
+  const openLinkId = await createReimbursementLink({
+    projectId: projectA,
+    type: "expense",
+  });
+  const submittedZeroAmountLinkId = await createReimbursementLink({
+    projectId: projectA,
+    type: "expense",
+  });
+  await (
+    await reimbursements()
+  ).updateOne(
+    { _id: submittedZeroAmountLinkId },
+    { $set: { submittedAt: Date.now(), submitterName: "Erika" } },
+  );
+
+  const list = await getAllReimbursements();
+  const pendingLinks = await getPendingSharedLinks();
+
+  expect(list.map((item) => item._id)).toEqual([submittedZeroAmountLinkId]);
+  expect(list.some((item) => item._id === openLinkId)).toBe(false);
+  expect(pendingLinks.reimbursementLinks.map((item) => item._id)).toEqual([
+    openLinkId,
+  ]);
 });
 
 test("getFileInfo returns signed download metadata", async () => {

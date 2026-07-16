@@ -12,7 +12,7 @@ export async function requireOpenSharedReimbursement(id: string) {
   const doc = await (await reimbursements()).findOne({ _id: id });
   if (
     !doc?.isSharedLink ||
-    (doc.amount !== 0 && doc.status !== "changes_requested")
+    (doc.submittedAt !== undefined && doc.status !== "changes_requested")
   ) {
     throw new Error("Invalid link");
   }
@@ -26,7 +26,7 @@ export async function getPublicReimbursement(id: string) {
     return { valid: false as const, error: "Kein geteilter Link" };
   }
   const isEditing = doc.status === "changes_requested";
-  if (doc.amount > 0 && !isEditing) {
+  if (doc.submittedAt !== undefined && !isEditing) {
     return { valid: false as const, error: "Bereits eingereicht" };
   }
 
@@ -80,7 +80,7 @@ export async function createPublicReimbursementUpload(
       _id: id,
       isSharedLink: true,
       $or: [
-        { submitterName: { $exists: false } },
+        { submittedAt: { $exists: false } },
         { status: "changes_requested" },
       ],
     },
