@@ -13,11 +13,7 @@ import {
 } from "@/components/ui/select";
 import { toNet } from "@/lib/bank-utils";
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
-import {
-  CAR_ALLOWANCE_RATE_EUR_PER_KM,
-  COST_LABELS as LABELS,
-  type CostType,
-} from "@/lib/travel-costs";
+import { CAR_ALLOWANCE_RATE_EUR_PER_KM } from "@/lib/travel-costs";
 import { Trash2 } from "lucide-react";
 import { InvoiceOrganizationHint } from "../InvoiceOrganizationHint";
 import { PLACEHOLDERS } from "./constants";
@@ -25,31 +21,34 @@ import type { Receipt } from "./types";
 
 interface Props {
   receipt: Receipt;
-  toggleType: (type: CostType) => void;
-  updateReceipt: (type: CostType, updates: Partial<Receipt>) => void;
+  title: string;
+  onRemove: () => void;
+  onUpdate: (updates: Partial<Receipt>) => void;
   organizationName: string;
 }
 
 export function ReceiptCard({
   receipt,
-  toggleType,
-  updateReceipt,
+  title,
+  onRemove,
+  onUpdate,
   organizationName,
 }: Props) {
   return (
-    <div className="@container border rounded-lg p-4 space-y-4">
+    <fieldset className="@container min-w-0 border rounded-lg p-4 space-y-4">
+      <legend className="sr-only">{title}</legend>
       <div className="flex justify-between items-center">
         <h3 className="font-medium">
           {receipt.costType === "car"
-            ? `PKW (${formatCurrency(CAR_ALLOWANCE_RATE_EUR_PER_KM)}/km)`
-            : LABELS[receipt.costType]}
+            ? `${title} (${formatCurrency(CAR_ALLOWANCE_RATE_EUR_PER_KM)}/km)`
+            : title}
         </h3>
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => toggleType(receipt.costType)}
-          aria-label="Position entfernen"
-          title="Position entfernen"
+          onClick={onRemove}
+          aria-label={`${title} entfernen`}
+          title={`${title} entfernen`}
         >
           <Trash2 className="size-4" />
         </Button>
@@ -63,7 +62,7 @@ export function ReceiptCard({
               <Input
                 value={receipt.companyName}
                 onChange={(e) =>
-                  updateReceipt(receipt.costType, {
+                  onUpdate({
                     companyName: e.target.value,
                   })
                 }
@@ -75,7 +74,7 @@ export function ReceiptCard({
               <Input
                 value={receipt.receiptNumber ?? ""}
                 onChange={(e) =>
-                  updateReceipt(receipt.costType, {
+                  onUpdate({
                     receiptNumber: e.target.value || undefined,
                   })
                 }
@@ -99,7 +98,7 @@ export function ReceiptCard({
                   );
                   const amount =
                     Math.round(km * CAR_ALLOWANCE_RATE_EUR_PER_KM * 100) / 100;
-                  updateReceipt(receipt.costType, {
+                  onUpdate({
                     kilometers: km,
                     grossAmount: amount,
                     netAmount: amount,
@@ -128,7 +127,7 @@ export function ReceiptCard({
                 value={receipt.grossAmount || ""}
                 onChange={(e) => {
                   const gross = Math.max(0, parseFloat(e.target.value) || 0);
-                  updateReceipt(receipt.costType, {
+                  onUpdate({
                     grossAmount: gross,
                     netAmount: toNet(gross, receipt.taxRate),
                   });
@@ -142,7 +141,7 @@ export function ReceiptCard({
                 value={String(receipt.taxRate)}
                 onValueChange={(value) => {
                   const tax = parseInt(value, 10);
-                  updateReceipt(receipt.costType, {
+                  onUpdate({
                     taxRate: tax,
                     netAmount: toNet(receipt.grossAmount, tax),
                   });
@@ -168,13 +167,11 @@ export function ReceiptCard({
             <Label>Beleg *</Label>
             <InvoiceOrganizationHint organizationName={organizationName} />
             <ReceiptUpload
-              onUploadComplete={(id) =>
-                updateReceipt(receipt.costType, { fileStorageId: id })
-              }
+              onUploadComplete={(id) => onUpdate({ fileStorageId: id })}
               storageId={receipt.fileStorageId || undefined}
             />
           </div>
         )}
-    </div>
+    </fieldset>
   );
 }

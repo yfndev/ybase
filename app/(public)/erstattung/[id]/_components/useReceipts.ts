@@ -2,6 +2,7 @@
 
 import { toNet } from "@/lib/bank-utils";
 import { type CostType, DEFAULT_TAX_RATES } from "@/lib/travel-costs";
+import { createClientReceiptId } from "@/lib/travelReceiptForm";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import type { Receipt, TravelReceipt } from "./types";
@@ -23,8 +24,8 @@ export function useReceipts(startDate: string) {
       return toast.error("Bitte Pflichtfelder ausfüllen");
     }
 
-    setReceipts([
-      ...receipts,
+    setReceipts((current) => [
+      ...current,
       {
         receiptNumber: number || undefined,
         receiptDate: date,
@@ -49,24 +50,14 @@ export function useReceipts(startDate: string) {
   };
 
   const removeReceipt = (index: number) => {
-    setReceipts(receipts.filter((_, idx) => idx !== index));
+    setReceipts((current) => current.filter((_, idx) => idx !== index));
   };
 
-  const toggleCostType = (costType: CostType) => {
-    const exists = travelReceipts.some(
-      (receipt) => receipt.costType === costType,
-    );
-
-    if (exists) {
-      setTravelReceipts(
-        travelReceipts.filter((receipt) => receipt.costType !== costType),
-      );
-      return;
-    }
-
-    setTravelReceipts([
-      ...travelReceipts,
+  const addTravelReceipt = (costType: CostType) => {
+    setTravelReceipts((current) => [
+      ...current,
       {
+        clientId: createClientReceiptId(),
         costType,
         receiptNumber: undefined,
         receiptDate: startDate,
@@ -81,13 +72,19 @@ export function useReceipts(startDate: string) {
     ]);
   };
 
+  const removeTravelReceipt = (clientId: string) => {
+    setTravelReceipts((current) =>
+      current.filter((receipt) => receipt.clientId !== clientId),
+    );
+  };
+
   const updateTravelReceipt = (
-    costType: CostType,
+    clientId: string,
     updates: Partial<TravelReceipt>,
   ) => {
-    setTravelReceipts(
-      travelReceipts.map((receipt) =>
-        receipt.costType === costType ? { ...receipt, ...updates } : receipt,
+    setTravelReceipts((current) =>
+      current.map((receipt) =>
+        receipt.clientId === clientId ? { ...receipt, ...updates } : receipt,
       ),
     );
   };
@@ -113,7 +110,8 @@ export function useReceipts(startDate: string) {
     setFile,
     addReceipt,
     removeReceipt,
-    toggleCostType,
+    addTravelReceipt,
+    removeTravelReceipt,
     updateTravelReceipt,
   };
 }
