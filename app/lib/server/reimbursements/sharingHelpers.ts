@@ -75,8 +75,14 @@ export async function loadPendingSharedLinks(organizationId: string): Promise<{
   reimbursementLinks: PendingReimbursementLink[];
   allowanceLinks: PendingAllowanceLink[];
 }> {
-  const pendingReimbursements = await (await reimbursements())
-    .find({ organizationId, isSharedLink: true, amount: 0 })
+  const pendingReimbursements = await (
+    await reimbursements()
+  )
+    .find({
+      organizationId,
+      isSharedLink: true,
+      submittedAt: { $exists: false },
+    })
     .toArray();
 
   const allAllowances = await (await volunteerAllowance())

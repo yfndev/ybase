@@ -44,7 +44,8 @@ export async function deleteSharedReimbursementLink(input: {
 
   if (!doc) throw new Error("Not found");
   if (!doc.isSharedLink) throw new Error("Not a shared link");
-  if (doc.amount > 0) throw new Error("Cannot delete submitted reimbursement");
+  if (doc.submittedAt !== undefined)
+    throw new Error("Cannot delete submitted reimbursement");
   if (doc.organizationId !== user.organizationId)
     throw new Error("Unauthorized");
 
