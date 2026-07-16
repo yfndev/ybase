@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ReimbursementRow } from "../../components/Tables/Reimbursements/ReimbursementRow";
-import styles from "./ReimbursementTable.module.css";
+import { reimbursementColumnClassNames as columns } from "../../components/Tables/Reimbursements/reimbursementTableClasses";
 import type { Allowance, Reimbursement, SelectionKey } from "./types";
 
 type Props = {
@@ -76,7 +76,7 @@ export function ReimbursementTable({
   }
 
   return (
-    <div className={`${styles.tableShell} rounded-lg border bg-card`}>
+    <div className="@container/reimbursement-table rounded-lg border bg-card">
       <span id="reimbursement-table-scroll-description" className="sr-only">
         Die Tabelle kann bei sehr schmalen Bildschirmen horizontal gescrollt
         werden.
@@ -84,6 +84,7 @@ export function ReimbursementTable({
       <Table
         aria-label="Erstattungen"
         aria-describedby="reimbursement-table-scroll-description"
+        containerClassName="overflow-x-scroll [overscroll-behavior-inline:contain] [scrollbar-color:var(--muted-foreground)_var(--muted)] [scrollbar-gutter:stable] [scrollbar-width:auto] [&::-webkit-scrollbar]:h-3 [&::-webkit-scrollbar-track]:border-t [&::-webkit-scrollbar-track]:border-border [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:min-w-12 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-[3px] [&::-webkit-scrollbar-thumb]:border-muted [&::-webkit-scrollbar-thumb]:bg-muted-foreground"
       >
         <TableHeader>
           <TableRow>
@@ -100,19 +101,20 @@ export function ReimbursementTable({
                 aria-label="Alle auswählen"
               />
             </TableHead>
-            <TableHead>Antrag</TableHead>
+            <TableHead className={columns.request}>Antrag</TableHead>
             {canManageReimbursements ? (
-              <TableHead data-reimbursement-column="applicant">
-                Antragsteller
-              </TableHead>
+              <TableHead className={columns.applicant}>Antragsteller</TableHead>
             ) : null}
-            <TableHead data-reimbursement-column="project">Projekt</TableHead>
-            <TableHead data-reimbursement-column="created">Erstellt</TableHead>
-            <TableHead className="text-right">Betrag</TableHead>
-            <TableHead data-reimbursement-column="reviewed-by">
-              Bearbeitet von
+            <TableHead
+              className={columns.project}
+              data-reimbursement-column="project"
+            >
+              Projekt
             </TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead className={columns.created}>Erstellt</TableHead>
+            <TableHead className="text-right">Betrag</TableHead>
+            <TableHead className={columns.reviewedBy}>Bearbeitet von</TableHead>
+            <TableHead className={columns.status}>Status</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -184,8 +186,11 @@ export function ReimbursementTable({
           ))}
         </TableBody>
       </Table>
-      <div className={styles.scrollHint} aria-hidden="true">
-        <MoveHorizontal />
+      <div
+        className="flex items-center justify-center gap-1.5 border-t px-3 py-2 text-xs text-muted-foreground @min-[34rem]/reimbursement-table:hidden"
+        aria-hidden="true"
+      >
+        <MoveHorizontal className="size-4" />
         Seitlich scrollen für weitere Spalten
       </div>
     </div>

@@ -7,6 +7,7 @@ import { STATUS_DISPLAY } from "@/lib/reimbursementStatus";
 import type { ReimbursementStatus as Status } from "@/lib/reimbursementStatus";
 import { ReimbursementActionsMenu } from "./ReimbursementActionsMenu";
 import { ReimbursementRowMetadata } from "./ReimbursementRowMetadata";
+import { reimbursementColumnClassNames as columns } from "./reimbursementTableClasses";
 
 interface ReimbursementRowProps {
   item: {
@@ -67,7 +68,7 @@ export function ReimbursementRow({
           {selectionCheckbox}
         </TableCell>
       )}
-      <TableCell className="py-3" data-reimbursement-column="request">
+      <TableCell className={`${columns.request} py-3`}>
         <div className="min-w-0">
           <div className="font-medium text-foreground">{title}</div>
           {detail ? (
@@ -84,36 +85,26 @@ export function ReimbursementRow({
         </div>
       </TableCell>
       {canManageReimbursements ? (
-        <TableCell
-          className="max-w-48 truncate"
-          data-reimbursement-column="applicant"
-        >
+        <TableCell className={`${columns.applicant} max-w-48 truncate`}>
           {applicantName}
         </TableCell>
       ) : null}
-      <TableCell
-        className="max-w-48 truncate"
-        data-reimbursement-column="project"
-      >
+      <TableCell className={`${columns.project} max-w-48 truncate`}>
         {item.projectName}
       </TableCell>
-      <TableCell
-        className="text-muted-foreground"
-        data-reimbursement-column="created"
-      >
+      <TableCell className={`${columns.created} text-muted-foreground`}>
         {formatDate(item._creationTime)}
       </TableCell>
       <TableCell className="text-right font-medium">
         {formatCurrency(item.amount)}
       </TableCell>
       <TableCell
-        className="max-w-48 truncate text-muted-foreground"
-        data-reimbursement-column="reviewed-by"
+        className={`${columns.reviewedBy} max-w-48 truncate text-muted-foreground`}
       >
         {item.reviewedByName ?? "–"}
       </TableCell>
       <TableCell
-        data-reimbursement-column="status"
+        className={columns.status}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-3">

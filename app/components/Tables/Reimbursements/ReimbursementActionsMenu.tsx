@@ -15,7 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import styles from "@/components/ui/vertical-action-menu.module.css";
+import { verticalActionMenuClassNames as menu } from "@/components/ui/vertical-action-menu";
 
 type Props = {
   showReviewActions: boolean;
@@ -38,32 +38,29 @@ export function ReimbursementActionsMenu(props: Props) {
         <Button
           variant="ghost"
           size="icon-sm"
-          className={styles.menuTrigger}
+          className={menu.trigger}
           aria-label="Aktionen anzeigen"
           title="Aktionen anzeigen"
         >
           <MoreVertical />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent sideOffset={0} className={styles.menuContent}>
+      <DropdownMenuContent sideOffset={0} className={menu.content}>
         {props.showReviewActions ? (
           <>
-            <DropdownMenuItem
-              className={styles.menuItem}
-              onSelect={props.onApprove}
-            >
+            <DropdownMenuItem className={menu.item} onSelect={props.onApprove}>
               <Check className="text-current" />
               Genehmigen
             </DropdownMenuItem>
             <DropdownMenuItem
-              className={styles.menuItem}
+              className={menu.item}
               onSelect={props.onRequestChanges}
             >
               <MessageSquareWarning className="text-current" />
               Änderungen anfordern
             </DropdownMenuItem>
             <DropdownMenuItem
-              className={`${styles.menuItem} ${styles.destructiveMenuItem}`}
+              className={`${menu.item} ${menu.destructiveItem}`}
               onSelect={props.onReject}
             >
               <X className="text-current" />
@@ -72,27 +69,24 @@ export function ReimbursementActionsMenu(props: Props) {
           </>
         ) : null}
         {props.showEditAction ? (
-          <DropdownMenuItem className={styles.menuItem} onSelect={props.onEdit}>
+          <DropdownMenuItem className={menu.item} onSelect={props.onEdit}>
             <Pencil className="text-current" />
             Bearbeiten
           </DropdownMenuItem>
         ) : null}
         {props.showPaymentAction ? (
-          <DropdownMenuItem
-            className={styles.menuItem}
-            onSelect={props.onMarkAsPaid}
-          >
+          <DropdownMenuItem className={menu.item} onSelect={props.onMarkAsPaid}>
             <Banknote className="text-current" />
             Als bezahlt markieren
           </DropdownMenuItem>
         ) : null}
-        <DropdownMenuItem className={styles.menuItem} onSelect={props.onOpen}>
+        <DropdownMenuItem className={menu.item} onSelect={props.onOpen}>
           <ExternalLink className="text-current" />
           Öffnen
         </DropdownMenuItem>
         {props.canDelete ? (
           <DropdownMenuItem
-            className={`${styles.menuItem} ${styles.destructiveMenuItem}`}
+            className={`${menu.item} ${menu.destructiveItem}`}
             onSelect={props.onDelete}
           >
             <Trash2 className="text-current" />

@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import actionMenuStyles from "@/components/ui/vertical-action-menu.module.css";
+import { verticalActionMenuClassNames as actionMenu } from "@/components/ui/vertical-action-menu";
 import { formatDate } from "@/lib/formatters/formatDate";
 import {
   deleteSharedAllowanceLink,
@@ -115,7 +115,7 @@ export function PendingLinksTable({ links }: Props) {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          className={actionMenuStyles.menuTrigger}
+                          className={actionMenu.trigger}
                           aria-label={`Aktionen für ${label} anzeigen`}
                           title="Aktionen anzeigen"
                         >
@@ -124,10 +124,10 @@ export function PendingLinksTable({ links }: Props) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
                         sideOffset={0}
-                        className={actionMenuStyles.menuContent}
+                        className={actionMenu.content}
                       >
                         <DropdownMenuItem
-                          className={actionMenuStyles.menuItem}
+                          className={actionMenu.item}
                           onSelect={() => void handleCopy(link)}
                         >
                           {copiedId === link._id ? (
@@ -138,7 +138,7 @@ export function PendingLinksTable({ links }: Props) {
                           Link kopieren
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          className={`${actionMenuStyles.menuItem} ${actionMenuStyles.destructiveMenuItem}`}
+                          className={`${actionMenu.item} ${actionMenu.destructiveItem}`}
                           disabled={isDeleting}
                           onSelect={() => void handleDelete(link)}
                         >
