@@ -148,6 +148,10 @@ test.describe("critical reimbursement journeys", () => {
     await expect(page.getByText("Test Firma").first()).toBeVisible();
 
     await saveBankDetails(page);
+    await expect(page.getByText("Test Firma").first()).toBeVisible();
+    await expect(
+      page.getByText("Beschreibung", { exact: true }).first(),
+    ).toBeVisible();
     await addSignature(page);
 
     await page
