@@ -9,8 +9,9 @@ import { DeleteReimbursementsDialog } from "./DeleteReimbursementsDialog";
 import { ReimbursementPageUI } from "./ReimbursementPageUI";
 import type {
   Allowance,
+  PendingLink,
   Reimbursement,
-  ReimbursementTypeFilter,
+  ReimbursementView,
   SelectionKey,
 } from "./types";
 import { usePaymentExports } from "./usePaymentExports";
@@ -21,6 +22,7 @@ import { useReimbursementSelection } from "./useReimbursementSelection";
 interface Props {
   reimbursements: Reimbursement[];
   allowances: Allowance[];
+  pendingLinks: PendingLink[];
   projects: Project[];
   organizationName: string;
   currentUserId: string;
@@ -29,6 +31,7 @@ interface Props {
 export function ReimbursementsClient({
   reimbursements,
   allowances,
+  pendingLinks,
   projects,
   organizationName,
   currentUserId,
@@ -37,20 +40,16 @@ export function ReimbursementsClient({
   const router = useRouter();
 
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [typeFilter, setTypeFilter] = useState<ReimbursementTypeFilter>("all");
+  const [view, setView] = useState<ReimbursementView>("all");
   const [deleteKeys, setDeleteKeys] = useState<SelectionKey[]>([]);
 
   const filteredReimbursements = useMemo(
-    () =>
-      reimbursements.filter(
-        (item) => typeFilter === "all" || item.type === typeFilter,
-      ),
-    [reimbursements, typeFilter],
+    () => reimbursements.filter((item) => view === "all" || item.type === view),
+    [reimbursements, view],
   );
   const filteredAllowances = useMemo(
-    () =>
-      typeFilter === "all" || typeFilter === "allowance" ? allowances : [],
-    [allowances, typeFilter],
+    () => (view === "all" || view === "allowance" ? allowances : []),
+    [allowances, view],
   );
   const selection = useReimbursementSelection(
     filteredReimbursements,
@@ -78,8 +77,8 @@ export function ReimbursementsClient({
     clearSelection: selection.clearSelection,
   });
 
-  const handleTypeFilterChange = (value: ReimbursementTypeFilter) => {
-    setTypeFilter(value);
+  const handleViewChange = (value: ReimbursementView) => {
+    setView(value);
     selection.clearSelection();
   };
 
@@ -108,7 +107,8 @@ export function ReimbursementsClient({
         currentUserId={currentUserId}
         reimbursements={filteredReimbursements}
         allowances={filteredAllowances}
-        typeFilter={typeFilter}
+        pendingLinks={pendingLinks}
+        view={view}
         rejectDialog={actions.rejectDialog}
         selected={selected}
         isBulkDownloading={isBulkDownloading}
@@ -136,7 +136,7 @@ export function ReimbursementsClient({
         onDeleteSelected={() => setDeleteKeys([...selected])}
         onToggleSelect={selection.toggleSelection}
         onToggleSelectAll={selection.toggleAll}
-        onTypeFilterChange={handleTypeFilterChange}
+        onViewChange={handleViewChange}
         onBulkDownload={handleBulkDownload}
         onFinomCsv={handleFinomCsv}
         onSepaXml={handleSepaXml}

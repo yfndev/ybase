@@ -5,7 +5,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ExistingLinks } from "./shareModal/ExistingLinks";
 import { ShareForm } from "./shareModal/ShareForm";
 import type { ShareModalUIProps } from "./shareModal/types";
 
@@ -17,14 +16,10 @@ export function ShareModalUI({
   projects,
   isGenerating,
   needsDates,
-  allLinks,
-  copiedId,
   onTypeChange,
   onFormUpdate,
   onCopy,
   onSend,
-  onCopyExistingLink,
-  onDeleteLink,
 }: ShareModalUIProps) {
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -47,13 +42,6 @@ export function ShareModalUI({
           onFormUpdate={onFormUpdate}
           onCopy={onCopy}
           onSend={onSend}
-        />
-
-        <ExistingLinks
-          allLinks={allLinks}
-          copiedId={copiedId}
-          onCopyExistingLink={onCopyExistingLink}
-          onDeleteLink={onDeleteLink}
         />
       </DialogContent>
     </Dialog>

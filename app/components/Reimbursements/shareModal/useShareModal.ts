@@ -1,50 +1,21 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
-import {
-  createReimbursementLink,
-  deleteSharedAllowanceLink,
-  deleteSharedReimbursementLink,
-  getPendingSharedLinks,
-} from "@/lib/server/reimbursements/sharing";
+import { createReimbursementLink } from "@/lib/server/reimbursements/sharing";
 import { createLink as createAllowanceLink } from "@/lib/server/volunteerAllowance/sharing";
 import { DEFAULT_LINK_TYPE, INITIAL_FORM, linkUrl } from "./constants";
-import type { LinkKind, LinkType, PendingLink } from "./types";
+import type { LinkKind, LinkType } from "./types";
 
-export function useShareModal(open: boolean, onClose: () => void) {
+export function useShareModal(onClose: () => void) {
   const router = useRouter();
   const [type, setType] = useState<LinkType>(DEFAULT_LINK_TYPE);
   const [form, setForm] = useState(INITIAL_FORM);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [allLinks, setAllLinks] = useState<PendingLink[]>([]);
   const needsDates = type === "allowance";
 
-  useEffect(() => {
-    if (!open) return;
-    void getPendingSharedLinks().then(
-      ({ reimbursementLinks, allowanceLinks }) => {
-        setAllLinks([
-          ...reimbursementLinks.map((link) => ({
-            _id: link._id,
-            projectName: link.projectName,
-            linkType: "reimbursement" as const,
-            type: link.type,
-          })),
-          ...allowanceLinks.map((link) => ({
-            _id: link._id,
-            projectName: link.projectName,
-            linkType: "allowance" as const,
-          })),
-        ]);
-      },
-    );
-  }, [open]);
-
   const refresh = () => {
-    setAllLinks([]);
     router.refresh();
   };
 
@@ -122,40 +93,15 @@ export function useShareModal(open: boolean, onClose: () => void) {
     }
   };
 
-  const handleCopyExisting = async (id: string, linkType: LinkKind) => {
-    await navigator.clipboard.writeText(linkUrl(linkType, id));
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const handleDelete = async (id: string, linkType: LinkKind) => {
-    try {
-      if (linkType === "allowance") {
-        await deleteSharedAllowanceLink({ id });
-      } else {
-        await deleteSharedReimbursementLink({ id });
-      }
-      toast.success("Link gelöscht");
-      setAllLinks((prev) => prev.filter((link) => link._id !== id));
-      router.refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Fehler");
-    }
-  };
-
   return {
     type,
     form,
     isGenerating,
-    copiedId,
-    allLinks,
     needsDates,
     setType,
     updateForm,
     handleClose,
     handleCopy,
     handleSend,
-    handleCopyExisting,
-    handleDelete,
   };
 }

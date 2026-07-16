@@ -30,6 +30,17 @@ export type ReimbursementTypeFilter =
   | "travel"
   | "allowance";
 
+export type ReimbursementView = ReimbursementTypeFilter | "links";
+
+export type PendingLink = {
+  _id: string;
+  _creationTime: number;
+  projectName: string;
+  creatorName: string;
+  linkType: "reimbursement" | "allowance";
+  type?: "expense" | "travel";
+};
+
 export type RejectDialog = {
   open: boolean;
   action: "changes" | "reject";

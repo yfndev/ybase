@@ -1,8 +1,8 @@
 "use client";
 
 import type { Project } from "@/lib/db/types";
-import { useShareModal } from "./shareModal/useShareModal";
 import { ShareModalUI } from "./ShareModalUI";
+import { useShareModal } from "./shareModal/useShareModal";
 
 export function ShareModal({
   open,
@@ -17,17 +17,13 @@ export function ShareModal({
     type,
     form,
     isGenerating,
-    copiedId,
-    allLinks,
     needsDates,
     setType,
     updateForm,
     handleClose,
     handleCopy,
     handleSend,
-    handleCopyExisting,
-    handleDelete,
-  } = useShareModal(open, onClose);
+  } = useShareModal(onClose);
 
   return (
     <ShareModalUI
@@ -38,14 +34,10 @@ export function ShareModal({
       projects={projects}
       isGenerating={isGenerating}
       needsDates={needsDates}
-      allLinks={allLinks}
-      copiedId={copiedId}
       onTypeChange={setType}
       onFormUpdate={updateForm}
       onCopy={handleCopy}
       onSend={handleSend}
-      onCopyExistingLink={handleCopyExisting}
-      onDeleteLink={handleDelete}
     />
   );
 }
