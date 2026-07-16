@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 
 const PUBLIC_PREFIXES = [
   "/login",
+  "/invite",
   "/erstattung",
   "/ehrenamtspauschale",
   "/sign",
@@ -10,12 +11,15 @@ const PUBLIC_PREFIXES = [
   "/datenschutz",
 ];
 
-export default auth((req) => {
-  const { pathname } = req.nextUrl;
-  const isPublic = PUBLIC_PREFIXES.some(
+export function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
-  if (!req.auth && !isPublic) {
+}
+
+export default auth((req) => {
+  const { pathname } = req.nextUrl;
+  if (!req.auth && !isPublicPath(pathname)) {
     return Response.redirect(new URL("/login", req.nextUrl));
   }
 });
