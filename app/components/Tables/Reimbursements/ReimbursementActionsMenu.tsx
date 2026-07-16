@@ -15,7 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import styles from "./ReimbursementRow.module.css";
+import styles from "@/components/ui/vertical-action-menu.module.css";
 
 type Props = {
   showReviewActions: boolean;
