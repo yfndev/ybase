@@ -55,9 +55,6 @@ export function ReceiptsSection({
         <CostTypeSelector
           costTypes={COST_TYPES}
           labels={LABELS}
-          isSelected={(type) =>
-            receipts.some((receipt) => receipt.costType === type)
-          }
           onSelect={addReceipt}
           getAccessibleLabel={(type) => `${LABELS[type]} hinzufügen`}
         />
