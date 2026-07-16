@@ -71,7 +71,7 @@ export function TravelDetailsSection({ travel, update }: Props) {
           </div>
         </fieldset>
 
-        <div className="border-t pt-6">
+        <div className="pt-6">
           <fieldset className="min-w-0">
             <legend className="mb-3 text-base font-medium">Reiseende</legend>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
