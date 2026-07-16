@@ -27,82 +27,102 @@ export function TravelDetailsSection({ travel, update }: Props) {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-medium">Reiseangaben</h2>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Reiseziel *</Label>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="min-w-0">
+          <Label htmlFor="travel-destination">Reiseziel *</Label>
           <Input
+            id="travel-destination"
             value={travel.destination}
             onChange={(e) => update({ destination: e.target.value })}
             placeholder="z.B. München, Berlin"
           />
         </div>
-        <div>
-          <Label>Reisezweck *</Label>
+        <div className="min-w-0">
+          <Label htmlFor="travel-purpose">Reisezweck *</Label>
           <Input
+            id="travel-purpose"
             value={travel.purpose}
             onChange={(e) => update({ purpose: e.target.value })}
             placeholder="z.B. Kundentermin, Konferenz"
           />
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div>
-          <Label>Reisebeginn – Datum *</Label>
-          <DateInput
-            value={travel.startDate}
-            onChange={(value) => update({ startDate: value })}
-          />
-        </div>
-        <div>
-          <Label>Reisebeginn – Uhrzeit *</Label>
-          <Input
-            type="time"
-            value={travel.startTime}
-            onChange={(event) => update({ startTime: event.target.value })}
-          />
-        </div>
-        <div>
-          <Label>Reiseende – Datum *</Label>
-          <DateInput
-            value={travel.endDate}
-            onChange={(value) => update({ endDate: value })}
-            invalid={Boolean(dateRangeError)}
-            describedBy={dateRangeError ? "travel-date-range-error" : undefined}
-          />
-        </div>
-        <div>
-          <Label>Reiseende – Uhrzeit *</Label>
-          <Input
-            type="time"
-            value={travel.endTime}
-            onChange={(event) => update({ endTime: event.target.value })}
-            aria-invalid={Boolean(dateRangeError) || undefined}
-            aria-describedby={
-              dateRangeError ? "travel-date-range-error" : undefined
-            }
-          />
-        </div>
-        <div className="flex items-end pb-2 sm:col-span-2 lg:col-span-4">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="international"
-              checked={travel.isInternational}
-              onCheckedChange={(checked) => {
-                const isInternational = checked === true;
-                update({
-                  isInternational,
-                  mealAllowance: changeMealAllowanceCountry(
-                    travel.mealAllowance,
-                    isInternational,
-                  ),
-                  overnightAllowanceRate: OVERNIGHT_ALLOWANCE_EUR,
-                });
-              }}
-            />
-            <Label htmlFor="international" className="font-normal">
-              Auslandsreise
-            </Label>
+      <div className="space-y-6">
+        <fieldset className="min-w-0">
+          <legend className="mb-3 text-base font-medium">Reisebeginn</legend>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="min-w-0">
+              <Label htmlFor="travel-start-date">Datum *</Label>
+              <DateInput
+                id="travel-start-date"
+                value={travel.startDate}
+                onChange={(value) => update({ startDate: value })}
+              />
+            </div>
+            <div className="min-w-0">
+              <Label htmlFor="travel-start-time">Uhrzeit *</Label>
+              <Input
+                id="travel-start-time"
+                type="time"
+                value={travel.startTime}
+                onChange={(event) => update({ startTime: event.target.value })}
+              />
+            </div>
           </div>
+        </fieldset>
+
+        <div className="border-t pt-6">
+          <fieldset className="min-w-0">
+            <legend className="mb-3 text-base font-medium">Reiseende</legend>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="min-w-0">
+                <Label htmlFor="travel-end-date">Datum *</Label>
+                <DateInput
+                  id="travel-end-date"
+                  value={travel.endDate}
+                  onChange={(value) => update({ endDate: value })}
+                  invalid={Boolean(dateRangeError)}
+                  describedBy={
+                    dateRangeError ? "travel-date-range-error" : undefined
+                  }
+                />
+              </div>
+              <div className="min-w-0">
+                <Label htmlFor="travel-end-time">Uhrzeit *</Label>
+                <Input
+                  id="travel-end-time"
+                  type="time"
+                  value={travel.endTime}
+                  onChange={(event) => update({ endTime: event.target.value })}
+                  aria-invalid={Boolean(dateRangeError) || undefined}
+                  aria-describedby={
+                    dateRangeError ? "travel-date-range-error" : undefined
+                  }
+                />
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="international"
+            checked={travel.isInternational}
+            onCheckedChange={(checked) => {
+              const isInternational = checked === true;
+              update({
+                isInternational,
+                mealAllowance: changeMealAllowanceCountry(
+                  travel.mealAllowance,
+                  isInternational,
+                ),
+                overnightAllowanceRate: OVERNIGHT_ALLOWANCE_EUR,
+              });
+            }}
+          />
+          <Label htmlFor="international" className="font-normal">
+            Auslandsreise
+          </Label>
         </div>
       </div>
       {dateRangeError ? (
