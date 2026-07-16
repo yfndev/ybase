@@ -71,38 +71,36 @@ export function TravelDetailsSection({ travel, update }: Props) {
           </div>
         </fieldset>
 
-        <div className="pt-6">
-          <fieldset className="min-w-0">
-            <legend className="mb-3 text-base font-medium">Reiseende</legend>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="min-w-0">
-                <Label htmlFor="travel-end-date">Datum *</Label>
-                <DateInput
-                  id="travel-end-date"
-                  value={travel.endDate}
-                  onChange={(value) => update({ endDate: value })}
-                  invalid={Boolean(dateRangeError)}
-                  describedBy={
-                    dateRangeError ? "travel-date-range-error" : undefined
-                  }
-                />
-              </div>
-              <div className="min-w-0">
-                <Label htmlFor="travel-end-time">Uhrzeit *</Label>
-                <Input
-                  id="travel-end-time"
-                  type="time"
-                  value={travel.endTime}
-                  onChange={(event) => update({ endTime: event.target.value })}
-                  aria-invalid={Boolean(dateRangeError) || undefined}
-                  aria-describedby={
-                    dateRangeError ? "travel-date-range-error" : undefined
-                  }
-                />
-              </div>
+        <fieldset className="min-w-0">
+          <legend className="mb-3 text-base font-medium">Reiseende</legend>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="min-w-0">
+              <Label htmlFor="travel-end-date">Datum *</Label>
+              <DateInput
+                id="travel-end-date"
+                value={travel.endDate}
+                onChange={(value) => update({ endDate: value })}
+                invalid={Boolean(dateRangeError)}
+                describedBy={
+                  dateRangeError ? "travel-date-range-error" : undefined
+                }
+              />
             </div>
-          </fieldset>
-        </div>
+            <div className="min-w-0">
+              <Label htmlFor="travel-end-time">Uhrzeit *</Label>
+              <Input
+                id="travel-end-time"
+                type="time"
+                value={travel.endTime}
+                onChange={(event) => update({ endTime: event.target.value })}
+                aria-invalid={Boolean(dateRangeError) || undefined}
+                aria-describedby={
+                  dateRangeError ? "travel-date-range-error" : undefined
+                }
+              />
+            </div>
+          </div>
+        </fieldset>
 
         <div className="flex items-center space-x-2">
           <Checkbox
