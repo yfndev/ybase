@@ -2,7 +2,7 @@ import {
   Check,
   ExternalLink,
   MessageSquareWarning,
-  MoreHorizontal,
+  MoreVertical,
   Pencil,
   Trash2,
   X,
@@ -118,11 +118,6 @@ export function ReimbursementRow({
       <TableCell className="text-right font-medium">
         {formatCurrency(item.amount)}
       </TableCell>
-      <TableCell data-reimbursement-column="status">
-        <Badge variant={display.variant} className={display.className}>
-          {display.label}
-        </Badge>
-      </TableCell>
       <TableCell
         className="max-w-48 truncate text-muted-foreground"
         data-reimbursement-column="reviewed-by"
@@ -130,68 +125,73 @@ export function ReimbursementRow({
         {item.reviewedByName ?? "–"}
       </TableCell>
       <TableCell
-        className="w-12 text-right"
+        data-reimbursement-column="status"
         onClick={(e) => e.stopPropagation()}
       >
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className={styles.menuTrigger}
-              aria-label="Aktionen anzeigen"
-              title="Aktionen anzeigen"
-            >
-              <MoreHorizontal />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent sideOffset={0} className={styles.menuContent}>
-            {showReviewActions ? (
-              <>
-                <DropdownMenuItem
-                  className={styles.menuItem}
-                  onSelect={onApprove}
-                >
-                  <Check className="text-current" />
-                  Genehmigen
+        <div className="flex items-center justify-between gap-3">
+          <Badge variant={display.variant} className={display.className}>
+            {display.label}
+          </Badge>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className={styles.menuTrigger}
+                aria-label="Aktionen anzeigen"
+                title="Aktionen anzeigen"
+              >
+                <MoreVertical />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent sideOffset={0} className={styles.menuContent}>
+              {showReviewActions ? (
+                <>
+                  <DropdownMenuItem
+                    className={styles.menuItem}
+                    onSelect={onApprove}
+                  >
+                    <Check className="text-current" />
+                    Genehmigen
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className={styles.menuItem}
+                    onSelect={onRequestChanges}
+                  >
+                    <MessageSquareWarning className="text-current" />
+                    Änderungen anfordern
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className={`${styles.menuItem} ${styles.destructiveMenuItem}`}
+                    onSelect={onReject}
+                  >
+                    <X className="text-current" />
+                    Ablehnen
+                  </DropdownMenuItem>
+                </>
+              ) : null}
+              {showEditAction ? (
+                <DropdownMenuItem className={styles.menuItem} onSelect={onEdit}>
+                  <Pencil className="text-current" />
+                  Bearbeiten
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  className={styles.menuItem}
-                  onSelect={onRequestChanges}
-                >
-                  <MessageSquareWarning className="text-current" />
-                  Änderungen anfordern
-                </DropdownMenuItem>
+              ) : null}
+              <DropdownMenuItem className={styles.menuItem} onSelect={onOpen}>
+                <ExternalLink className="text-current" />
+                Öffnen
+              </DropdownMenuItem>
+              {canManageReimbursements ? (
                 <DropdownMenuItem
                   className={`${styles.menuItem} ${styles.destructiveMenuItem}`}
-                  onSelect={onReject}
+                  onSelect={onDelete}
                 >
-                  <X className="text-current" />
-                  Ablehnen
+                  <Trash2 className="text-current" />
+                  Löschen
                 </DropdownMenuItem>
-              </>
-            ) : null}
-            {showEditAction ? (
-              <DropdownMenuItem className={styles.menuItem} onSelect={onEdit}>
-                <Pencil className="text-current" />
-                Bearbeiten
-              </DropdownMenuItem>
-            ) : null}
-            <DropdownMenuItem className={styles.menuItem} onSelect={onOpen}>
-              <ExternalLink className="text-current" />
-              Öffnen
-            </DropdownMenuItem>
-            {canManageReimbursements ? (
-              <DropdownMenuItem
-                className={`${styles.menuItem} ${styles.destructiveMenuItem}`}
-                onSelect={onDelete}
-              >
-                <Trash2 className="text-current" />
-                Löschen
-              </DropdownMenuItem>
-            ) : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </TableCell>
     </TableRow>
   );

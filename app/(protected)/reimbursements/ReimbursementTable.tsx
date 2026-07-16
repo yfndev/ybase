@@ -105,11 +105,10 @@ export function ReimbursementTable({
             <TableHead data-reimbursement-column="project">Projekt</TableHead>
             <TableHead data-reimbursement-column="created">Erstellt</TableHead>
             <TableHead className="text-right">Betrag</TableHead>
-            <TableHead>Status</TableHead>
             <TableHead data-reimbursement-column="reviewed-by">
               Bearbeitet von
             </TableHead>
-            <TableHead className="w-12 text-right" />
+            <TableHead>Status</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
