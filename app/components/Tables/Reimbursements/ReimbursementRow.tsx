@@ -17,11 +17,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TableCell, TableRow } from "@/components/ui/table";
+import styles from "@/components/ui/vertical-action-menu.module.css";
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import { formatDate } from "@/lib/formatters/formatDate";
 import { STATUS_DISPLAY } from "@/lib/reimbursementStatus";
 import type { ReimbursementStatus as Status } from "@/lib/reimbursementStatus";
-import styles from "./ReimbursementRow.module.css";
 import { ReimbursementRowMetadata } from "./ReimbursementRowMetadata";
 
 interface ReimbursementRowProps {
