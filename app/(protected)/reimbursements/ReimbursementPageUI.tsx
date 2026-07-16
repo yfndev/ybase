@@ -30,6 +30,8 @@ interface Props {
   onRowClick: (id: string) => void;
   onApproveReimbursement: (id: string) => void;
   onApproveAllowance: (id: string) => void;
+  onMarkReimbursementAsPaid: (id: string) => void;
+  onMarkAllowanceAsPaid: (id: string) => void;
   onOpenChangesDialog: (
     type: "reimbursement" | "allowance",
     id: string,
@@ -88,6 +90,8 @@ export function ReimbursementPageUI(props: Props) {
           onRowClick={props.onRowClick}
           onApproveReimbursement={props.onApproveReimbursement}
           onApproveAllowance={props.onApproveAllowance}
+          onMarkReimbursementAsPaid={props.onMarkReimbursementAsPaid}
+          onMarkAllowanceAsPaid={props.onMarkAllowanceAsPaid}
           onOpenChangesDialog={props.onOpenChangesDialog}
           onOpenRejectDialog={props.onOpenRejectDialog}
           onOpenReimbursement={props.onOpenReimbursement}

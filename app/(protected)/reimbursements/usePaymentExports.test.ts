@@ -63,4 +63,15 @@ describe("buildApprovedPayments", () => {
 
     expect(payments).toEqual([]);
   });
+
+  test("excludes payments that are already paid", () => {
+    const paid = { ...reimbursement, status: "paid" } as Reimbursement;
+    const payments = buildApprovedPayments({
+      reimbursements: [paid],
+      allowances: [],
+      selected: new Set<SelectionKey>(),
+    });
+
+    expect(payments).toEqual([]);
+  });
 });

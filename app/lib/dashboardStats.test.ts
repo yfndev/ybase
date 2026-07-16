@@ -24,12 +24,14 @@ describe("statusTotals", () => {
       entry({ status: "pending", amount: 50 }),
       entry({ status: "pending", amount: 70 }),
       entry({ status: "approved", amount: 200 }),
+      entry({ status: "paid", amount: 150 }),
       entry({ status: "declined", amount: 10 }),
       entry({ status: "changes_requested", amount: 20 }),
     ]);
 
     expect(totals.pending).toEqual({ count: 2, sum: 120 });
     expect(totals.approved).toEqual({ count: 1, sum: 200 });
+    expect(totals.paid).toEqual({ count: 1, sum: 150 });
     expect(totals.declined).toEqual({ count: 1, sum: 10 });
     expect(totals.changes_requested).toEqual({ count: 1, sum: 20 });
   });
@@ -38,6 +40,7 @@ describe("statusTotals", () => {
     const totals = statusTotals([]);
     expect(totals.pending).toEqual({ count: 0, sum: 0 });
     expect(totals.approved).toEqual({ count: 0, sum: 0 });
+    expect(totals.paid).toEqual({ count: 0, sum: 0 });
     expect(totals.declined).toEqual({ count: 0, sum: 0 });
     expect(totals.changes_requested).toEqual({ count: 0, sum: 0 });
   });
@@ -48,13 +51,14 @@ describe("sumByProject", () => {
     const result = sumByProject([
       entry({ projectName: "Event A", amount: 100 }),
       entry({ projectName: "Event A", amount: 50 }),
+      entry({ projectName: "Event A", status: "paid", amount: 25 }),
       entry({ projectName: "Event B", amount: 300 }),
       entry({ projectName: "Event B", status: "pending", amount: 999 }),
     ]);
 
     expect(result).toEqual([
       { projectName: "Event B", count: 1, sum: 300 },
-      { projectName: "Event A", count: 2, sum: 150 },
+      { projectName: "Event A", count: 3, sum: 175 },
     ]);
   });
 });
@@ -68,6 +72,12 @@ describe("allowanceByTaxYear", () => {
       entry({
         kind: "allowance",
         taxYear: "2024",
+        status: "paid",
+        amount: 50,
+      }),
+      entry({
+        kind: "allowance",
+        taxYear: "2024",
         status: "pending",
         amount: 999,
       }),
@@ -76,7 +86,7 @@ describe("allowanceByTaxYear", () => {
 
     expect(result).toEqual([
       { taxYear: "2025", count: 1, sum: 100 },
-      { taxYear: "2024", count: 1, sum: 200 },
+      { taxYear: "2024", count: 2, sum: 250 },
       { taxYear: "Ohne Steuerjahr", count: 1, sum: 40 },
     ]);
   });
