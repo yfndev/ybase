@@ -39,7 +39,7 @@
 }
 
 .tableShell :global([data-reimbursement-column="status"]) {
-  min-width: 7.5rem;
+  min-width: 11rem;
 }
 
 .tableShell :global([data-reimbursement-mobile-metadata]) {
@@ -116,7 +116,7 @@
   }
 
   .tableShell :global([data-reimbursement-column="status"]) {
-    min-width: 10rem;
+    min-width: 13rem;
   }
 }
 
