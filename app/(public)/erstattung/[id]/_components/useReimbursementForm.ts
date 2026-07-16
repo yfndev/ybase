@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { uploadViaPresign } from "@/(public)/_lib/http";
 import {
@@ -13,8 +13,8 @@ import {
   submitReimbursementForm,
   validateReimbursement,
 } from "./submitReimbursementForm";
-import { useReceipts } from "./useReceipts";
 import { usePublicTravelFields } from "./usePublicTravelFields";
+import { useReceipts } from "./useReceipts";
 
 export function useReimbursementForm(id: string) {
   const [link, setLink] = useState<ReimbursementLink | null>(null);
@@ -24,7 +24,6 @@ export function useReimbursementForm(id: string) {
   const [iban, setIban] = useState("");
   const [bic, setBic] = useState("");
   const [accountHolder, setAccountHolder] = useState("");
-  const [confirmation, setConfirmation] = useState(false);
   const [signature, setSignature] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,15 +86,23 @@ export function useReimbursementForm(id: string) {
         0,
       );
 
-  const generateUploadUrl = (contentType: string) =>
-    reimbursementUploadUrl(id, contentType);
-  const getFileUrl = (key: string) => reimbursementFileUrl(id, key);
-  const uploadSignature = (blob: Blob) =>
-    uploadViaPresign(
-      `/api/public/reimbursement/${id}/upload-url`,
-      { contentType: "image/png" },
-      blob,
-    );
+  const generateUploadUrl = useCallback(
+    (contentType: string) => reimbursementUploadUrl(id, contentType),
+    [id],
+  );
+  const getFileUrl = useCallback(
+    (key: string) => reimbursementFileUrl(id, key),
+    [id],
+  );
+  const uploadSignature = useCallback(
+    (blob: Blob) =>
+      uploadViaPresign(
+        `/api/public/reimbursement/${id}/upload-url`,
+        { contentType: "image/png" },
+        blob,
+      ),
+    [id],
+  );
 
   const handleSubmit = async () => {
     const params = {
@@ -108,7 +115,6 @@ export function useReimbursementForm(id: string) {
       iban,
       bic,
       accountHolder,
-      confirmation,
       signature,
       destination: travel.destination,
       purpose: travel.purpose,
@@ -151,14 +157,12 @@ export function useReimbursementForm(id: string) {
     iban,
     bic,
     accountHolder,
-    confirmation,
     signature,
     setName,
     setEmail,
     setIban,
     setBic,
     setAccountHolder,
-    setConfirmation,
     setSignature,
     handleSubmit,
     generateUploadUrl,

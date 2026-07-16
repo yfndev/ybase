@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { Receipt } from "./types";
 
 type Props = {
@@ -20,16 +20,16 @@ export function AddedReceiptsList(props: Props) {
       {props.receipts.map((receipt, index) => (
         <div
           key={receipt.fileStorageId}
-          className="flex items-center justify-between px-3 py-2 bg-gray-50 border rounded-md"
+          className="flex flex-col gap-3 border bg-muted px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
         >
-          <div className="flex items-center gap-4">
-            <span className="font-medium">{receipt.companyName}</span>
-            <span className="text-sm text-muted-foreground">
+          <div className="min-w-0">
+            <p className="truncate font-medium">{receipt.companyName}</p>
+            <p className="truncate text-sm text-muted-foreground">
               {receipt.description || "Keine Beschreibung"}
-            </span>
+            </p>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="font-medium">
+          <div className="flex items-center justify-between gap-4 sm:justify-end">
+            <span className="font-medium tabular-nums">
               {receipt.grossAmount.toFixed(2)} €
             </span>
             <Button
@@ -37,6 +37,8 @@ export function AddedReceiptsList(props: Props) {
               size="icon"
               onClick={() => props.onRemoveReceipt(index)}
               className="hover:bg-destructive/10 hover:text-destructive"
+              aria-label="Beleg entfernen"
+              title="Beleg entfernen"
             >
               <Trash2 className="size-4" />
             </Button>

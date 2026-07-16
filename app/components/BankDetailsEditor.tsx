@@ -55,8 +55,8 @@ export function BankDetailsEditor({ value, onChange }: Props) {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-medium">Bankverbindung</h2>
-      <div className="flex items-end gap-4">
-        <div className="grid grid-cols-[1fr_2fr_1fr] gap-4 flex-1">
+      <div className="flex flex-col gap-4 sm:items-end lg:flex-row">
+        <div className="grid w-full flex-1 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_2fr_1fr]">
           <div>
             <Label className="text-xs text-muted-foreground uppercase">
               Kontoinhaber *
@@ -102,7 +102,7 @@ export function BankDetailsEditor({ value, onChange }: Props) {
         <Button
           type="button"
           variant={editing ? "default" : "outline"}
-          className="h-[52px] min-w-[52px] border-input px-4 hover:border-ring focus-visible:border-foreground focus-visible:ring-0 md:h-12 md:min-w-12"
+          className="h-[52px] w-full border-input px-4 hover:border-ring focus-visible:border-foreground focus-visible:ring-0 sm:w-auto md:h-12 md:min-w-12"
           onClick={toggle}
           disabled={isSaving}
           aria-label={editing ? "Speichern" : "Bearbeiten"}

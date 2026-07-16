@@ -1,12 +1,12 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { OvernightAllowanceSection } from "../OvernightAllowanceSection";
 import {
   COST_TYPES,
   type CostType,
   COST_LABELS as LABELS,
 } from "@/lib/travel-costs";
+import { CostTypeSelector } from "../CostTypeSelector";
+import { OvernightAllowanceSection } from "../OvernightAllowanceSection";
 import { MealAllowanceSection } from "./MealAllowanceSection";
 import { ReceiptCard } from "./ReceiptCard";
 import type { Receipt, Travel } from "./types";
@@ -49,19 +49,12 @@ export function ReceiptsSection({
         <p className="text-sm text-muted-foreground mb-2">
           Wähle alle Kostenarten aus, die du geltend machen möchtest.
         </p>
-        <div className="flex flex-wrap gap-2">
-          {COST_TYPES.map((type) => (
-            <Button
-              key={type}
-              type="button"
-              variant={hasReceipt(type) ? "primary" : "outline"}
-              aria-pressed={hasReceipt(type)}
-              onClick={() => toggleType(type)}
-            >
-              {LABELS[type]}
-            </Button>
-          ))}
-        </div>
+        <CostTypeSelector
+          costTypes={COST_TYPES}
+          labels={LABELS}
+          isSelected={hasReceipt}
+          onToggle={toggleType}
+        />
       </div>
 
       {receipts.map((receipt) => (

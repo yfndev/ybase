@@ -1,7 +1,6 @@
 "use client";
 
-import { PublicSignaturePad } from "@/(public)/_components/PublicSignaturePad";
-import { Checkbox } from "@/components/ui/checkbox";
+import { SignatureField } from "@/components/Reimbursements/SignatureField";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -13,15 +12,14 @@ type Props = {
   onAccountHolderChange: (value: string) => void;
   onIbanChange: (value: string) => void;
   onBicChange: (value: string) => void;
-  confirmation: boolean;
   signature: string | null;
-  onConfirmationChange: (value: boolean) => void;
   onSignatureChange: (value: string) => void;
   formatIban: (iban: string) => string;
   uploadSignature: (blob: Blob) => Promise<string>;
+  getFileUrl: (storageId: string) => Promise<string | null>;
 };
 
-export function BankAndConfirmation(props: Props) {
+export function BankAndSignature(props: Props) {
   return (
     <>
       <div className="space-y-4">
@@ -63,28 +61,14 @@ export function BankAndConfirmation(props: Props) {
       <Separator />
 
       <div className="space-y-4">
-        <h2 className="text-lg font-medium">Bestätigung</h2>
-        <div className="flex items-start gap-3">
-          <Checkbox
-            id="confirmation"
-            checked={props.confirmation}
-            onCheckedChange={(checked) =>
-              props.onConfirmationChange(checked === true)
-            }
-          />
-          <Label htmlFor="confirmation" className="text-sm leading-relaxed">
-            Ich bestätige, dass alle Angaben korrekt sind und die eingereichten
-            Belege tatsächlich entstandene Kosten darstellen.
-          </Label>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <h2 className="text-lg font-medium">Unterschrift</h2>
-        <PublicSignaturePad
-          onUploadComplete={props.onSignatureChange}
+        <h2 className="text-lg font-medium">Unterschrift *</h2>
+        <SignatureField
+          onSignatureComplete={props.onSignatureChange}
           storageId={props.signature || undefined}
           uploadSignature={props.uploadSignature}
+          getFileUrl={props.getFileUrl}
+          onClear={() => props.onSignatureChange("")}
+          allowMobileHandoff={false}
         />
       </div>
     </>

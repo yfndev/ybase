@@ -1,6 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { CostTypeSelector } from "@/components/Reimbursements/CostTypeSelector";
+import { COST_TYPES } from "@/lib/travel-costs";
 import { TravelReceiptCard } from "./TravelReceiptCard";
 import type { CostType, TravelReceipt } from "./types";
 
@@ -27,24 +28,14 @@ export function TravelCostsSection(props: Props) {
       <p className="text-sm text-muted-foreground">
         Wähle alle Kostenarten aus, die du geltend machen möchtest.
       </p>
-      <div className="flex flex-wrap gap-2">
-        {(Object.keys(props.costLabels) as CostType[]).map((costType) => (
-          <Button
-            key={costType}
-            type="button"
-            variant={
-              props.travelReceipts.some(
-                (receipt) => receipt.costType === costType,
-              )
-                ? "default"
-                : "outline"
-            }
-            onClick={() => props.onToggleCostType(costType)}
-          >
-            {props.costLabels[costType]}
-          </Button>
-        ))}
-      </div>
+      <CostTypeSelector
+        costTypes={COST_TYPES}
+        labels={props.costLabels}
+        isSelected={(costType) =>
+          props.travelReceipts.some((receipt) => receipt.costType === costType)
+        }
+        onToggle={props.onToggleCostType}
+      />
 
       {props.travelReceipts.map((receipt) => (
         <TravelReceiptCard

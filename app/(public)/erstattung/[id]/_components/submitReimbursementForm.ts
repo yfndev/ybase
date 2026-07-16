@@ -1,9 +1,9 @@
 import toast from "react-hot-toast";
 import { submitReimbursement } from "@/(public)/_lib/reimbursements";
 import { BIC_REGEX, IBAN_REGEX, normalizeIban } from "@/lib/bank-utils";
+import type { MealAllowance } from "@/lib/db/types";
 import { getTravelDateRangeError } from "@/lib/travelDates";
 import type { Receipt, TravelReceipt } from "./types";
-import type { MealAllowance } from "@/lib/db/types";
 
 type SubmitParams = {
   id: string;
@@ -15,7 +15,6 @@ type SubmitParams = {
   iban: string;
   bic: string;
   accountHolder: string;
-  confirmation: boolean;
   signature: string | null;
   destination: string;
   purpose: string;
@@ -46,7 +45,6 @@ export function validateReimbursement(params: SubmitParams) {
     !params.email ||
     !params.iban ||
     !params.accountHolder ||
-    !params.confirmation ||
     !params.signature
   ) {
     return "Bitte alle Pflichtfelder ausfüllen";
