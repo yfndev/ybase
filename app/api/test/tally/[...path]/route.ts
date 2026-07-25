@@ -49,3 +49,9 @@ export async function PATCH() {
   if (denied) return denied;
   return new Response(null, { status: 204 });
 }
+
+export async function DELETE() {
+  const denied = forbidden();
+  if (denied) return denied;
+  return new Response(null, { status: 204 });
+}

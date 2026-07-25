@@ -1,6 +1,8 @@
 "use client";
 
 import { CreateJobPostingDialog } from "@/components/Dialogs/CreateJobPostingDialog";
+import { DeleteJobPostingDialog } from "@/components/JobPostings/DeleteJobPostingDialog";
+import { JobPostingActionsMenu } from "@/components/JobPostings/JobPostingActionsMenu";
 import { JobPostingStatusBadge } from "@/components/JobPostings/JobPostingStatusBadge";
 import { PageHeader } from "@/components/Layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -12,16 +14,51 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useJobPostingMutations } from "@/lib/client/jobPostings/hooks/useJobPostingMutations";
 import { useJobPostings } from "@/lib/client/jobPostings/hooks/useJobPostings";
 import { useTeamDirectory } from "@/lib/client/teams/hooks/useTeamDirectory";
-import { Megaphone, Pencil, Plus } from "lucide-react";
+import type { JobPosting } from "@/lib/db/types";
+import { Megaphone, Plus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 export function RecruitingClient() {
   const { jobPostings, isLoading } = useJobPostings();
   const { lookup } = useTeamDirectory();
+  const { archive, deletePosting } = useJobPostingMutations();
   const [createOpen, setCreateOpen] = useState(false);
+  const [postingToDelete, setPostingToDelete] = useState<JobPosting | null>(
+    null,
+  );
+
+  const handleArchive = async (posting: JobPosting) => {
+    try {
+      await archive.mutateAsync({ jobPostingId: posting._id });
+      toast.success("Ausschreibung archiviert");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Archivieren fehlgeschlagen",
+      );
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!postingToDelete) return;
+    try {
+      await deletePosting.mutateAsync({
+        jobPostingId: postingToDelete._id,
+      });
+      toast.success("Ausschreibung gelöscht");
+      setPostingToDelete(null);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Ausschreibung konnte nicht gelöscht werden",
+      );
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -71,13 +108,13 @@ export function RecruitingClient() {
                       <TableCell>
                         <JobPostingStatusBadge status={posting.status} />
                       </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm" asChild>
-                          <Link href={`/recruiting/${posting._id}`}>
-                            <Pencil className="h-4 w-4" />
-                            Bearbeiten
-                          </Link>
-                        </Button>
+                      <TableCell className="text-right">
+                        <JobPostingActionsMenu
+                          posting={posting}
+                          disabled={archive.isPending || deletePosting.isPending}
+                          onArchive={() => void handleArchive(posting)}
+                          onDelete={() => setPostingToDelete(posting)}
+                        />
                       </TableCell>
                     </TableRow>
                   );
@@ -89,6 +126,15 @@ export function RecruitingClient() {
       </section>
 
       <CreateJobPostingDialog open={createOpen} onOpenChange={setCreateOpen} />
+      {postingToDelete ? (
+        <DeleteJobPostingDialog
+          postingTitle={postingToDelete.title}
+          open
+          isDeleting={deletePosting.isPending}
+          onOpenChange={(open) => !open && setPostingToDelete(null)}
+          onConfirm={handleDelete}
+        />
+      ) : null}
     </div>
   );
 }
