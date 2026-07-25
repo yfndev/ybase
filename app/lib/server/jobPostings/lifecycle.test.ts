@@ -158,6 +158,18 @@ test("archiveJobPosting archives and closes the form", async () => {
   });
 });
 
+test("archiveJobPosting also archives a draft", async () => {
+  const client = fakeClient();
+  const id = await insertPosting(orgA, { status: "draft" });
+
+  await archiveJobPosting({ jobPostingId: id });
+
+  expect((await read(id)).status).toBe("archived");
+  expect(client.updateForm).toHaveBeenCalledWith("form-1", {
+    settings: { isClosed: true },
+  });
+});
+
 test("a Tally sync failure is recorded, visible, and retryable idempotently", async () => {
   const updateForm = vi
     .fn()

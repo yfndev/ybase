@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { tallyApiError } from "./apiError";
-import { TALLY_API_VERSION } from "./constants";
+import { createTallyRequest, TALLY_API_URL } from "./transport";
 import type {
   TallyBlock,
   TallyForm,
@@ -12,7 +11,6 @@ import type {
 
 type FormPatch = Partial<Pick<TallyForm, "blocks" | "settings" | "status">>;
 
-const TALLY_API_URL = "https://api.tally.so";
 const MAX_PAGES = 50;
 const itemSchema = z.object({ id: z.string(), name: z.string() });
 const formSchema = itemSchema.extend({
@@ -77,28 +75,7 @@ export function createTallyClient(
 ) {
   if (!apiToken) throw new Error("Tally API token is required");
 
-  async function request(
-    path: string,
-    init?: { method: string; body: unknown },
-  ): Promise<unknown> {
-    const response = await fetcher(`${apiUrl}${path}`, {
-      method: init?.method ?? "GET",
-      headers: {
-        Authorization: `Bearer ${apiToken}`,
-        Accept: "application/json",
-        "tally-version": TALLY_API_VERSION,
-        ...(init ? { "Content-Type": "application/json" } : {}),
-      },
-      body: init ? JSON.stringify(init.body) : undefined,
-      cache: "no-store",
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!response.ok) {
-      throw await tallyApiError(response);
-    }
-    if (response.status === 204) return {};
-    return response.json();
-  }
+  const request = createTallyRequest(apiToken, fetcher, apiUrl);
 
   async function listPages<T>(
     path: string,
@@ -192,5 +169,13 @@ export function createTallyClient(
     publishForm: (formId: string) =>
       updateForm(formId, { status: "PUBLISHED" }),
     createWebhook,
+    deleteForm: (formId: string) =>
+      request(`/forms/${formId}`, { method: "DELETE" }, true).then(
+        () => undefined,
+      ),
+    deleteWebhook: (webhookId: string) =>
+      request(`/webhooks/${webhookId}`, { method: "DELETE" }, true).then(
+        () => undefined,
+      ),
   };
 }

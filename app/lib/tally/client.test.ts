@@ -204,6 +204,39 @@ test("creates a signed FORM_RESPONSE webhook", async () => {
   });
 });
 
+test("deletes a webhook and form without a request body", async () => {
+  const fetcher = vi.fn(
+    async (_input: string | URL | Request, _init?: RequestInit) =>
+      new Response(null, { status: 204 }),
+  );
+  const client = createTallyClient("token", fetcher as unknown as typeof fetch);
+
+  await client.deleteWebhook("webhook-1");
+  await client.deleteForm("form-1");
+
+  expect(fetcher.mock.calls).toHaveLength(2);
+  expect(fetcher.mock.calls[0][0]).toBe(
+    "https://api.tally.so/webhooks/webhook-1",
+  );
+  expect(fetcher.mock.calls[1][0]).toBe("https://api.tally.so/forms/form-1");
+  for (const [, init] of fetcher.mock.calls) {
+    expect(init?.method).toBe("DELETE");
+    expect(init?.body).toBeUndefined();
+    expect(new Headers(init?.headers).has("content-type")).toBe(false);
+  }
+});
+
+test("treats already deleted Tally resources as deleted", async () => {
+  const fetcher = vi.fn(
+    async (_input: string | URL | Request, _init?: RequestInit) =>
+      new Response(null, { status: 404 }),
+  );
+  const client = createTallyClient("token", fetcher as unknown as typeof fetch);
+
+  await expect(client.deleteWebhook("missing")).resolves.toBeUndefined();
+  await expect(client.deleteForm("missing")).resolves.toBeUndefined();
+});
+
 test("reads a form with its blocks and settings", async () => {
   const fetcher = recordingFetch({
     id: "form-1",

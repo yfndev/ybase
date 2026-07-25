@@ -1,6 +1,7 @@
 "use client";
 
 import { PageHeader } from "@/components/Layout/PageHeader";
+import { DeleteJobPostingDialog } from "@/components/JobPostings/DeleteJobPostingDialog";
 import { Button } from "@/components/ui/button";
 import { useJobPostingMutations } from "@/lib/client/jobPostings/hooks/useJobPostingMutations";
 import type { JobPosting } from "@/lib/db/types";
@@ -8,7 +9,8 @@ import {
   type JobPostingFormValues,
   toJobPostingForm,
 } from "@/lib/jobPostings/form";
-import { Loader2, Save, Send } from "lucide-react";
+import { Loader2, Save, Send, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { JobPostingApplications } from "./JobPostingApplications";
@@ -17,10 +19,12 @@ import { JobPostingContentFields } from "./JobPostingContentFields";
 import { JobPostingStatusActions } from "./JobPostingStatusActions";
 
 export function JobPostingForm({ posting }: { posting: JobPosting }) {
-  const { update, generateForm } = useJobPostingMutations();
+  const router = useRouter();
+  const { update, generateForm, deletePosting } = useJobPostingMutations();
   const [values, setValues] = useState<JobPostingFormValues>(() =>
     toJobPostingForm(posting),
   );
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [activeAction, setActiveAction] = useState<"save" | "publish" | null>(
     null,
   );
@@ -68,7 +72,22 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
     }
   };
 
-  const isBusy = activeAction !== null;
+  const handleDelete = async () => {
+    try {
+      await deletePosting.mutateAsync({ jobPostingId: posting._id });
+      toast.success("Ausschreibung gelöscht");
+      setDeleteDialogOpen(false);
+      router.replace("/recruiting");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Ausschreibung konnte nicht gelöscht werden",
+      );
+    }
+  };
+
+  const isBusy = activeAction !== null || deletePosting.isPending;
 
   return (
     <div className="space-y-6">
@@ -83,6 +102,15 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
           <JobPostingStatusActions posting={posting} />
         )}
         <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          <Button
+            variant="outline"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => setDeleteDialogOpen(true)}
+            disabled={isBusy}
+          >
+            <Trash2 className="size-4" />
+            Ausschreibung löschen
+          </Button>
           <Button
             variant={posting.status === "draft" ? "outline" : "primary"}
             onClick={handleSave}
@@ -121,6 +149,13 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
       )}
       <JobPostingBasicFields values={values} onChange={patch} />
       <JobPostingContentFields values={values} onChange={patch} />
+      <DeleteJobPostingDialog
+        postingTitle={posting.title}
+        open={deleteDialogOpen}
+        isDeleting={deletePosting.isPending}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

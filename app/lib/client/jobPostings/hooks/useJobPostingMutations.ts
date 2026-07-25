@@ -8,6 +8,7 @@ import {
   reopenJobPosting,
   retryTallySync,
 } from "@/lib/server/jobPostings/lifecycle";
+import { deleteJobPosting } from "@/lib/server/jobPostings/deletion";
 import { generateTallyForm } from "@/lib/server/jobPostings/tallyForm";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -44,6 +45,10 @@ export function useJobPostingMutations() {
     retrySync: useMutation({
       mutationFn: retryTallySync,
       onSettled: invalidate,
+    }),
+    deletePosting: useMutation({
+      mutationFn: deleteJobPosting,
+      onSuccess: invalidate,
     }),
   };
 }
