@@ -13,17 +13,32 @@ const envFiles = [
 ];
 dotenv.config({ path: envFiles, processEnv: env, quiet: true });
 
-const nextArgs = process.argv.slice(2);
+function withoutPortArguments(args) {
+  const filtered = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === "--port" || arg === "-p") {
+      index += 1;
+      continue;
+    }
+    if (
+      arg.startsWith("--port=") ||
+      arg.startsWith("-p=") ||
+      /^-p\d+$/.test(arg)
+    ) {
+      continue;
+    }
+    filtered.push(arg);
+  }
+  return filtered;
+}
+
+const nextArgs = withoutPortArguments(process.argv.slice(2));
 let mongo;
 
-if (
-  env.CONDUCTOR_PORT &&
-  !nextArgs.some(
-    (arg) => arg === "--port" || arg === "-p" || arg.startsWith("--port="),
-  )
-) {
-  nextArgs.push("--port", env.CONDUCTOR_PORT);
-}
+const localUrl = "http://localhost:3000";
+if (!env.AUTH_URL && !env.NEXTAUTH_URL) env.AUTH_URL = localUrl;
+if (!env.NEXT_PUBLIC_APP_URL) env.NEXT_PUBLIC_APP_URL = localUrl;
 
 const shouldStartTemporaryDatabase =
   !env.MONGODB_URI || (env.IS_TEST === "true" && !hasExplicitMongoUri);
@@ -38,7 +53,7 @@ if (shouldStartTemporaryDatabase) {
 
 const next = spawn(
   "pnpm",
-  ["exec", "next", "dev", "--turbopack", ...nextArgs],
+  ["exec", "next", "dev", "--turbopack", "--port", "3000", ...nextArgs],
   {
     env,
     stdio: "inherit",
