@@ -4,10 +4,11 @@ import { z } from "zod";
 import { appendWorkspaceAccessDetails } from "../../applications/decisionEmail";
 import { APPLICATION_STATUS_LABELS } from "../../applications/status";
 import { isApplicationStatusTransitionAllowed } from "../../applications/transitions";
-import { applications, jobPostings, organizations } from "../../db/collections";
+import { applications, jobPostings } from "../../db/collections";
 import { sendMail } from "../../email/brevo";
 import { BREVO_TEMPLATE_IDS } from "../../email/templates";
 import { provisionWorkspaceUser } from "../../googleWorkspace/users";
+import { YFN_ORGANIZATION } from "../../organization";
 import { addLog } from "../logs";
 import { loadOwnedApplication } from "./access";
 import { createApplicationHistoryEntry } from "./history";
@@ -62,23 +63,21 @@ export async function sendApplicationDecision(
     throw new Error("Das Workspace-Konto wird bereits eingerichtet");
   }
 
-  const [posting, organization] = await Promise.all([
-    (await jobPostings()).findOne({
-      _id: application.jobPostingId,
-      organizationId: user.organizationId,
-    }),
-    (await organizations()).findOne({ _id: user.organizationId }),
-  ]);
+  const posting = await (
+    await jobPostings()
+  ).findOne({
+    _id: application.jobPostingId,
+    organizationId: user.organizationId,
+  });
   if (!posting) throw new Error("Ausschreibung nicht gefunden");
 
   let message = parsed.message;
   let workspaceUserId: string | undefined;
   if (parsed.decision === "accepted") {
-    if (!organization) throw new Error("Organisation nicht gefunden");
     const loginUrl = ybaseLoginUrl();
     const reservation = await reserveWorkspaceProvisioning({
       application,
-      organizationDomain: organization.domain,
+      organizationDomain: YFN_ORGANIZATION.domain,
       yfnEmail: parsed.yfnEmail,
     });
     try {
@@ -122,7 +121,7 @@ export async function sendApplicationDecision(
       params: {
         applicantName: application.applicantName ?? "",
         jobTitle: posting.title,
-        organizationName: organization?.name ?? "",
+        organizationName: YFN_ORGANIZATION.name,
         message,
       },
       tags: ["ybase", "application", `application-${parsed.decision}`],

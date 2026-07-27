@@ -2,8 +2,9 @@
 
 import { z } from "zod";
 import { emailDomain, normalizeYfnEmail } from "../../applications/yfnEmail";
-import { applications, organizations, users } from "../../db/collections";
+import { applications, users } from "../../db/collections";
 import type { Application } from "../../db/types";
+import { YFN_ORGANIZATION } from "../../organization";
 import { addLog } from "../logs";
 import { loadOwnedApplication } from "./access";
 import { createApplicationHistoryEntry, isDuplicateKeyError } from "./history";
@@ -34,19 +35,16 @@ export async function setApplicationYfnEmail(
     );
   }
 
-  const [organization, existingApplication, existingUser] = await Promise.all([
-    (await organizations()).findOne({ _id: user.organizationId }),
+  const [existingApplication, existingUser] = await Promise.all([
     (await applications()).findOne({
       _id: { $ne: application._id },
       yfnEmailNormalized: normalizeYfnEmail(parsed.yfnEmail),
     }),
     (await users()).findOne({ email: normalizeYfnEmail(parsed.yfnEmail) }),
   ]);
-  if (!organization) throw new Error("Organisation nicht gefunden");
-
   const yfnEmail = normalizeYfnEmail(parsed.yfnEmail);
-  if (emailDomain(yfnEmail) !== organization.domain.toLowerCase()) {
-    throw new Error(`Die E-Mail muss auf @${organization.domain} enden`);
+  if (emailDomain(yfnEmail) !== YFN_ORGANIZATION.domain) {
+    throw new Error(`Die E-Mail muss auf @${YFN_ORGANIZATION.domain} enden`);
   }
   if (existingApplication) {
     throw new Error("Diese YFN-E-Mail ist bereits einer Bewerbung zugeordnet");

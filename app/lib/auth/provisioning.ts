@@ -1,6 +1,7 @@
-import { organizations, users } from "../db/collections";
+import { organizations, projects, users } from "../db/collections";
 import { newId } from "../db/ids";
 import type { User } from "../db/types";
+import { YFN_ORGANIZATION } from "../organization";
 import { linkAcceptedApplication } from "./applicationLinking";
 
 type SignInProfile = {
@@ -61,24 +62,77 @@ export async function ensureAppUser(profile: SignInProfile): Promise<User> {
     }
   }
 
-  if (!user.organizationId) {
-    const organizationId = await findOrgIdByDomain(normalizedEmail);
-    if (organizationId) {
-      await usersCol.updateOne(
-        { _id: user._id },
-        { $set: { organizationId, role: "member" } },
-      );
-      user.organizationId = organizationId;
-      user.role = "member";
-    }
+  if (isYfnEmail(normalizedEmail)) {
+    const organization = await ensureYfnOrganization(user._id);
+    const role =
+      user.organizationId === organization.id
+        ? (user.role ?? ("member" as const))
+        : ("member" as const);
+    const membership = organization.isNew
+      ? {
+          organizationId: organization.id,
+          role: "admin" as const,
+          memberStatus: "active" as const,
+          teamOnboardingStatus: "completed" as const,
+          onboardedAt: Date.now(),
+          teamOnboardedAt: Date.now(),
+        }
+      : {
+          organizationId: organization.id,
+          role,
+        };
+
+    await usersCol.updateOne({ _id: user._id }, { $set: membership });
+    user = { ...user, ...membership };
   }
 
   return linkAcceptedApplication(user);
 }
 
-async function findOrgIdByDomain(email: string): Promise<string | undefined> {
-  const domain = email.split("@")[1]?.toLowerCase();
-  if (!domain) return undefined;
-  const org = await (await organizations()).findOne({ domain });
-  return org?._id;
+function isYfnEmail(email: string): boolean {
+  return email.endsWith(`@${YFN_ORGANIZATION.domain}`);
+}
+
+async function ensureYfnOrganization(
+  createdBy: string,
+): Promise<{ id: string; isNew: boolean }> {
+  const candidateId = newId();
+  const result = await (
+    await organizations()
+  ).updateOne(
+    { domain: YFN_ORGANIZATION.domain },
+    {
+      $setOnInsert: {
+        _id: candidateId,
+        _creationTime: Date.now(),
+        createdBy,
+        ...YFN_ORGANIZATION,
+      },
+    },
+    { upsert: true },
+  );
+  const id = result.upsertedId ?? (await findYfnOrganizationId());
+  if (!id) throw new Error("YFN organization could not be provisioned");
+
+  if (result.upsertedCount === 1) {
+    await (
+      await projects()
+    ).insertOne({
+      _id: newId(),
+      _creationTime: Date.now(),
+      name: "Allgemein",
+      organizationId: id,
+      isArchived: false,
+      createdBy,
+    });
+  }
+
+  return { id, isNew: result.upsertedCount === 1 };
+}
+
+async function findYfnOrganizationId(): Promise<string | undefined> {
+  const organization = await (
+    await organizations()
+  ).findOne({ domain: YFN_ORGANIZATION.domain }, { projection: { _id: 1 } });
+  return organization?._id;
 }
