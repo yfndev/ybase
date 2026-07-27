@@ -42,6 +42,7 @@ export function ApplicationsPanel({ jobPostingId }: Props) {
       <ApplicationsToolbar
         filters={filters}
         owners={owners}
+        showOwnerFilter={!jobPostingId}
         onChange={(patch) =>
           setFilters((current) => ({ ...current, ...patch }))
         }
@@ -51,13 +52,6 @@ export function ApplicationsPanel({ jobPostingId }: Props) {
         ownersById={ownersById}
         isLoading={isLoading}
         showJobPosting={!jobPostingId}
-        sortDirection={filters.sortDirection}
-        onSort={() =>
-          setFilters((current) => ({
-            ...current,
-            sortDirection: current.sortDirection === "desc" ? "asc" : "desc",
-          }))
-        }
         onSelect={(application: ApplicationWithFiles) =>
           router.push(`/applications/${application._id}`)
         }
