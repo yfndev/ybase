@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { APPLICATION_STATUS_LABELS } from "@/lib/applications/status";
 import type { ApplicationStatus, User } from "@/lib/db/types";
+import { cn } from "@/lib/utils";
 import { ALL_APPLICATIONS, type ApplicationFilters } from "./applicationTable";
 
 const STATUSES = Object.entries(APPLICATION_STATUS_LABELS) as [
@@ -21,10 +22,16 @@ const STATUSES = Object.entries(APPLICATION_STATUS_LABELS) as [
 interface Props {
   filters: ApplicationFilters;
   owners: User[];
+  showOwnerFilter: boolean;
   onChange: (patch: Partial<ApplicationFilters>) => void;
 }
 
-export function ApplicationsToolbar({ filters, owners, onChange }: Props) {
+export function ApplicationsToolbar({
+  filters,
+  owners,
+  showOwnerFilter,
+  onChange,
+}: Props) {
   const ownerOptions = owners.map((owner) => ({
     value: owner._id,
     label: owner.name || owner.email || "Unbenannt",
@@ -33,7 +40,14 @@ export function ApplicationsToolbar({ filters, owners, onChange }: Props) {
   }));
 
   return (
-    <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(9rem,12rem)_minmax(10rem,14rem)]">
+    <div
+      className={cn(
+        "grid gap-2",
+        showOwnerFilter
+          ? "md:grid-cols-[minmax(0,1fr)_minmax(8rem,11rem)_minmax(9rem,13rem)_minmax(10rem,12rem)]"
+          : "md:grid-cols-[minmax(0,1fr)_minmax(9rem,12rem)_minmax(10rem,12rem)]",
+      )}
+    >
       <Input
         value={filters.search}
         onChange={(e) => onChange({ search: e.target.value })}
@@ -59,16 +73,34 @@ export function ApplicationsToolbar({ filters, owners, onChange }: Props) {
           ))}
         </SelectContent>
       </Select>
-      <MultiSelect
-        value={filters.ownerIds}
-        onValueChange={(ownerIds) => onChange({ ownerIds })}
-        options={ownerOptions}
-        placeholder="Verantwortlich"
-        searchPlaceholder="Person suchen …"
-        renderValue={(selected, count) =>
-          count === 1 ? selected[0]?.label : `${count} Verantwortliche`
+      {showOwnerFilter ? (
+        <MultiSelect
+          value={filters.ownerIds}
+          onValueChange={(ownerIds) => onChange({ ownerIds })}
+          options={ownerOptions}
+          placeholder="Zuständig"
+          searchPlaceholder="Person suchen …"
+          renderValue={(selected, count) =>
+            count === 1 ? selected[0]?.label : `${count} Zuständige`
+          }
+        />
+      ) : null}
+      <Select
+        value={filters.sortDirection}
+        onValueChange={(sortDirection) =>
+          onChange({
+            sortDirection: sortDirection as ApplicationFilters["sortDirection"],
+          })
         }
-      />
+      >
+        <SelectTrigger aria-label="Nach Eingang sortieren" className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="desc">Neueste zuerst</SelectItem>
+          <SelectItem value="asc">Älteste zuerst</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
   );
 }
