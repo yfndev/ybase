@@ -24,8 +24,8 @@ export function MemberStatusField({ status, onboarding, onChange }: Props) {
       options={options}
       hint={
         isApprovalAllowed
-          ? undefined
-          : "Die Freigabe ist erst möglich, wenn alle Onboarding-Aufgaben abgeschlossen sind."
+          ? "Aktive Mitglieder werden automatisch auf der Team-Seite synchronisiert."
+          : "Die Aktivierung ist erst möglich, wenn alle Onboarding-Aufgaben abgeschlossen sind."
       }
     />
   );

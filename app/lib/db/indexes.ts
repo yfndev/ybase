@@ -10,13 +10,17 @@ export async function ensureIndexes(): Promise<void> {
       { key: { domain: 1 }, unique: true },
     ]);
 
-  await db
-    .collection("users")
-    .createIndexes([
-      { key: { email: 1 }, unique: true, sparse: true },
-      { key: { applicationId: 1 }, unique: true, sparse: true },
-      { key: { organizationId: 1 } },
-    ]);
+  await db.collection("users").createIndexes([
+    { key: { email: 1 }, unique: true, sparse: true },
+    { key: { applicationId: 1 }, unique: true, sparse: true },
+    { key: { organizationId: 1 } },
+    {
+      key: {
+        organizationId: 1,
+        memberStatus: 1,
+      },
+    },
+  ]);
 
   await db
     .collection("projects")
