@@ -17,6 +17,7 @@ export type { SignatureToken } from "./signature";
 export type { UploadContextType, UploadOwnership } from "./upload";
 export type {
   MemberStatus,
+  ProfileImageSource,
   TeamOnboardingStatus,
   User,
   UserRole,

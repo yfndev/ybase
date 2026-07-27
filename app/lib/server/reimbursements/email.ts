@@ -1,21 +1,12 @@
-import {
-  organizations,
-  projects,
-  reimbursements,
-  users,
-} from "../../db/collections";
-import type {
-  Organization,
-  Project,
-  Reimbursement,
-  User,
-} from "../../db/types";
+import { projects, reimbursements, users } from "../../db/collections";
+import type { Project, Reimbursement, User } from "../../db/types";
 import { type EmailRecipient, sendMail } from "../../email/brevo";
 import { BREVO_TEMPLATE_IDS } from "../../email/templates";
 import { appUrl } from "../../email/urls";
+import { YFN_ORGANIZATION } from "../../organization";
 
 type ReimbursementMailData = Reimbursement & {
-  organization: Organization;
+  organization: typeof YFN_ORGANIZATION;
   creator: User;
   project: Project;
 };
@@ -49,8 +40,7 @@ async function getMailData(
   });
   if (!reimbursement) return null;
 
-  const [organization, creator, project] = await Promise.all([
-    (await organizations()).findOne({ _id: reimbursement.organizationId }),
+  const [creator, project] = await Promise.all([
     (await users()).findOne({
       _id: reimbursement.createdBy,
       organizationId: reimbursement.organizationId,
@@ -61,8 +51,13 @@ async function getMailData(
     }),
   ]);
 
-  if (!organization || !creator || !project) return null;
-  return { ...reimbursement, organization, creator, project };
+  if (!creator || !project) return null;
+  return {
+    ...reimbursement,
+    organization: YFN_ORGANIZATION,
+    creator,
+    project,
+  };
 }
 
 function submitterRecipient(

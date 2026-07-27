@@ -70,6 +70,10 @@ beforeEach(async () => {
     withdrawalTokenHash: withdrawal.tokenHash,
     yfnEmail: "member@youngfounders.network",
     yfnEmailNormalized: "member@youngfounders.network",
+    workspaceUserId: "workspace-user",
+    workspaceProvisioningStatus: "invited",
+    workspaceProvisioningStartedAt: Date.now(),
+    workspaceProvisionedAt: Date.now(),
     onboardingUserId,
     onboardingLinkedAt: Date.now(),
     onboardingCompletedAt: Date.now(),
@@ -124,6 +128,8 @@ test("anonymizes personal data, locks the application and removes files", async 
   expect(stored).not.toHaveProperty("ownerIds");
   expect(stored).not.toHaveProperty("withdrawalTokenHash");
   expect(stored).not.toHaveProperty("yfnEmail");
+  expect(stored).not.toHaveProperty("workspaceUserId");
+  expect(stored).not.toHaveProperty("workspaceProvisioningStatus");
   expect(stored).not.toHaveProperty("onboardingUserId");
   expect(stored).not.toHaveProperty("onboardingCompletedAt");
   expect(stored).not.toHaveProperty("onboardingCompletedBy");
@@ -141,6 +147,20 @@ test("anonymizes personal data, locks the application and removes files", async 
   expect(
     await (await logs()).findOne({ entityId: applicationId }),
   ).toMatchObject({ action: "application.withdrawn", userId: "applicant" });
+});
+
+test("blocks withdrawal while Workspace provisioning is active", async () => {
+  await (
+    await applications()
+  ).updateOne(
+    { _id: applicationId },
+    { $set: { workspaceProvisioningStatus: "provisioned" } },
+  );
+
+  expect(await canWithdrawApplication(token)).toBe(false);
+  await expect(withdrawApplicationByToken(token)).rejects.toThrow(
+    "nicht mehr gültig",
+  );
 });
 
 test("rejects an invalid or already consumed token without changing data", async () => {

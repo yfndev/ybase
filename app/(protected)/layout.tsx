@@ -7,7 +7,7 @@ import { auth } from "@/lib/auth";
 import { requireAuthenticatedUser } from "@/lib/auth/session";
 import { OnboardingNotice } from "./OnboardingNotice";
 import { OffboardedNotice } from "./OffboardedNotice";
-import { OrgOnboarding } from "./OrgOnboarding";
+import { PublicProfileSetup } from "./PublicProfileSetup";
 
 export default async function ProtectedLayout({
   children,
@@ -21,8 +21,14 @@ export default async function ProtectedLayout({
   let content: ReactNode;
   if (member.memberStatus === "offboarded") {
     content = <OffboardedNotice />;
-  } else if (!member.organizationId) {
-    content = <OrgOnboarding />;
+  } else if (member.publicProfileSetupRequired === true) {
+    content = (
+      <PublicProfileSetup
+        canUseGooglePhoto={
+          member.googlePhotoIsDefault === false && Boolean(member.image)
+        }
+      />
+    );
   } else if (member.memberStatus === "onboarding") {
     content = (
       <OnboardingNotice onboardingStatus={member.teamOnboardingStatus} />

@@ -10,7 +10,12 @@ import type {
 
 type DirectoryUser = Pick<
   User,
-  "_id" | "name" | "teamId" | "positionTitle"
+  | "_id"
+  | "name"
+  | "teamId"
+  | "positionTitle"
+  | "profileImageStorageKey"
+  | "publicProfileCompletedAt"
 >;
 
 const byName = (left: { name: string }, right: { name: string }) =>
@@ -35,16 +40,23 @@ function namespacedId(
 function memberDto(
   user: DirectoryUser,
   organizationId: string,
+  publicOrigin: string,
 ): TeamDirectoryMember {
   return {
     id: namespacedId(organizationId, "member", user._id),
     name: profileName(user),
     role: profileRole(user),
+    ...(user.profileImageStorageKey && user.publicProfileCompletedAt
+      ? {
+          imageUrl: `${publicOrigin}/api/v1/team-directory/images/${encodeURIComponent(user._id)}`,
+        }
+      : {}),
   };
 }
 
 export async function getTeamDirectory(
   organizationId: string,
+  publicOrigin: string,
 ): Promise<TeamDirectoryFeed> {
   const [departmentDocs, teamDocs, memberDocs] = await Promise.all([
     (await departments()).find({ organizationId, isArchived: false }).toArray(),
@@ -59,6 +71,8 @@ export async function getTeamDirectory(
         name: 1,
         teamId: 1,
         positionTitle: 1,
+        profileImageStorageKey: 1,
+        publicProfileCompletedAt: 1,
       })
       .toArray(),
   ]);
@@ -87,6 +101,7 @@ export async function getTeamDirectory(
           teamsByDepartment.get(department._id) ?? [],
           membersByTeam,
           organizationId,
+          publicOrigin,
         ),
       )
       .filter((department) => department.teams.length > 0)
@@ -132,6 +147,7 @@ function departmentDto(
   departmentTeams: Team[],
   membersByTeam: Map<string, DirectoryUser[]>,
   organizationId: string,
+  publicOrigin: string,
 ): TeamDirectoryDepartment {
   return {
     id: namespacedId(organizationId, "department", department._id),
@@ -141,7 +157,7 @@ function departmentDto(
         id: namespacedId(organizationId, "team", team._id),
         name: team.name,
         members: (membersByTeam.get(team._id) ?? [])
-          .map((member) => memberDto(member, organizationId))
+          .map((member) => memberDto(member, organizationId, publicOrigin))
           .sort(byName),
       }))
       .filter((team) => team.members.length > 0)

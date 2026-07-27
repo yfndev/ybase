@@ -11,6 +11,7 @@ import {
 import { newId } from "../../db/ids";
 import type { Application } from "../../db/types";
 import { sendMail } from "../../email/brevo";
+import { YFN_ORGANIZATION } from "../../organization";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { sendApplicationEmails } from "./email";
 
@@ -76,6 +77,7 @@ test("includes the secure withdrawal link in the receipt email", async () => {
     expect.objectContaining({
       to: [{ email: "alex@example.com", name: "Alex" }],
       params: expect.objectContaining({
+        organizationName: YFN_ORGANIZATION.name,
         withdrawalUrl:
           "https://ybase.example/withdraw-application/secure_token",
       }),

@@ -17,7 +17,7 @@ export function applicationDecisionEmailDefaults(input: {
   if (input.decision === "accepted") {
     return {
       subject: `Zusage für deine Bewerbung als ${input.jobTitle}`,
-      message: `${greeting}\n\nvielen Dank für deine Bewerbung. Wir freuen uns, dir für die Position ${input.jobTitle} eine Zusage zu geben.\n\nPeople & Culture führt anschließend das interne Onboarding durch und richtet die benötigten Zugänge sowie deine YFN-E-Mail ein. Sobald deine neue YFN-E-Mail bereit ist, kannst du dich damit in YBase registrieren.`,
+      message: `${greeting}\n\nvielen Dank für deine Bewerbung. Wir freuen uns, dir für die Position ${input.jobTitle} eine Zusage zu geben.\n\nDein YFN-Konto wird mit der Zusage eingerichtet. Die Zugangsdaten und den Link zu YBase findest du in dieser E-Mail.`,
     };
   }
 
@@ -25,4 +25,13 @@ export function applicationDecisionEmailDefaults(input: {
     subject: `Rückmeldung zu deiner Bewerbung als ${input.jobTitle}`,
     message: `${greeting}\n\nvielen Dank für deine Bewerbung und dein Interesse an der Position ${input.jobTitle}. Leider können wir dir dieses Mal keine Zusage geben.\n\nWir wünschen dir für deinen weiteren Weg alles Gute.`,
   };
+}
+
+export function appendWorkspaceAccessDetails(input: {
+  message: string;
+  primaryEmail: string;
+  temporaryPassword: string;
+  loginUrl: string;
+}): string {
+  return `${input.message.trim()}\n\nDein YFN-Zugang\nE-Mail: ${input.primaryEmail}\nTemporäres Passwort: ${input.temporaryPassword}\n\nBitte ändere das Passwort bei deiner ersten Anmeldung. Anschließend kannst du dich direkt über Google in YBase anmelden:\n${input.loginUrl}`;
 }

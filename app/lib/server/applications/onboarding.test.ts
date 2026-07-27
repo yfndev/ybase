@@ -216,3 +216,19 @@ test("does not change the email after the profile was linked", async () => {
     }),
   ).rejects.toThrow("bereits mit einem Profil verknüpft");
 });
+
+test("does not change the email of a provisioned Workspace account", async () => {
+  await (
+    await applications()
+  ).updateOne(
+    { _id: applicationId },
+    { $set: { workspaceUserId: "google-1" } },
+  );
+
+  await expect(
+    setApplicationYfnEmail({
+      applicationId,
+      yfnEmail: "other@youngfounders.network",
+    }),
+  ).rejects.toThrow("Workspace-Kontos");
+});

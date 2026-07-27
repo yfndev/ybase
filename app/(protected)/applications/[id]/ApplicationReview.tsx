@@ -17,9 +17,11 @@ import type { ApplicationWithFiles, User } from "@/lib/db/types";
 export function ApplicationReview({
   initialApplication,
   members,
+  organizationDomain,
 }: {
   initialApplication: ApplicationWithFiles;
   members: User[];
+  organizationDomain: string;
 }) {
   const { application, refetch } = useApplication(
     initialApplication._id,
@@ -66,6 +68,8 @@ export function ApplicationReview({
             status={application.status}
             applicantName={application.applicantName}
             jobPostingTitle={application.jobPostingTitle}
+            organizationDomain={organizationDomain}
+            yfnEmail={application.yfnEmail}
           />
         }
       >

@@ -136,3 +136,10 @@ export async function getObjectBuffer(key: string): Promise<Buffer> {
   if (!result.Body) throw new Error(`Object not found: ${key}`);
   return Buffer.from(await result.Body.transformToByteArray());
 }
+
+export async function getObjectSize(key: string): Promise<number> {
+  const result = await s3().send(
+    new HeadObjectCommand({ Bucket: bucket(), Key: key }),
+  );
+  return result.ContentLength ?? 0;
+}

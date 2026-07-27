@@ -9,7 +9,7 @@ type UploadOwner = {
 };
 
 type UploadClaim = {
-  type: "reimbursement" | "allowance" | "signatureToken";
+  type: "profileImage" | "reimbursement" | "allowance" | "signatureToken";
   id: string;
 };
 

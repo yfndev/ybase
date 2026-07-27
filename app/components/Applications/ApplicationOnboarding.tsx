@@ -20,6 +20,7 @@ export function ApplicationOnboarding({
     useApplicationMutations();
   const [yfnEmail, setYfnEmail] = useState(application.yfnEmail ?? "");
   const linked = Boolean(application.onboardingUserId);
+  const workspaceProvisioned = Boolean(application.workspaceProvisionedAt);
   const onboardingCompleted = Boolean(application.onboardingCompletedAt);
 
   async function saveYfnEmail() {
@@ -79,6 +80,16 @@ export function ApplicationOnboarding({
         </div>
       ) : null}
 
+      {workspaceProvisioned ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <CircleCheck
+            className="size-4 shrink-0 text-emerald-600"
+            aria-hidden="true"
+          />
+          <span>Google-Konto erstellt</span>
+        </div>
+      ) : null}
+
       <div className="grid gap-1.5">
         <Label htmlFor="application-yfn-email">YFN-E-Mail</Label>
         <Input
@@ -88,19 +99,20 @@ export function ApplicationOnboarding({
           value={yfnEmail}
           onChange={(event) => setYfnEmail(event.target.value)}
           placeholder="vorname.nachname@youngfounders.network"
-          disabled={linked}
+          disabled={linked || workspaceProvisioned}
           aria-describedby="application-yfn-email-help"
         />
         <p
           id="application-yfn-email-help"
           className="text-xs text-muted-foreground"
         >
-          Muss der Domain dieser Organisation entsprechen und darf nur einer
-          Bewerbung zugeordnet sein.
+          {workspaceProvisioned
+            ? "Diese Adresse gehört zum automatisch erstellten Workspace-Konto."
+            : "Muss der Organisations-Domain entsprechen und eindeutig sein."}
         </p>
       </div>
 
-      {!linked ? (
+      {!linked && !workspaceProvisioned ? (
         <Button
           size="member"
           onClick={saveYfnEmail}

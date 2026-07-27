@@ -1,17 +1,17 @@
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
+import { YFN_ORGANIZATION } from "../organization";
+import { getGooglePhotoIsDefault } from "./googlePeople";
 import { ensureAppUser } from "./provisioning";
 import { normalizeOptionalUserRole } from "./roles";
 
-const ALLOWED_EMAIL_DOMAIN = "youngfounders.network";
-
 function isAllowedEmail(email: string | null | undefined): boolean {
-  return Boolean(email?.toLowerCase().endsWith(`@${ALLOWED_EMAIL_DOMAIN}`));
+  return Boolean(email?.toLowerCase().endsWith(`@${YFN_ORGANIZATION.domain}`));
 }
 
 const google = Google({
   authorization: {
-    params: { prompt: "select_account", hd: ALLOWED_EMAIL_DOMAIN },
+    params: { prompt: "select_account", hd: YFN_ORGANIZATION.domain },
   },
   profile(profile) {
     if (!isAllowedEmail(profile.email)) {
@@ -39,15 +39,20 @@ export const authConfig = {
     signIn({ user }) {
       return isAllowedEmail(user.email);
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       const email = user?.email ?? (token.email as string | undefined);
       if (email) {
+        const googlePhotoIsDefault =
+          account?.provider === "google"
+            ? await getGooglePhotoIsDefault(account.access_token)
+            : undefined;
         const appUser = await ensureAppUser({
           email,
           name: user?.name ?? (token.name as string | undefined),
           image: user?.image ?? undefined,
           firstName: user?.firstName,
           lastName: user?.lastName,
+          googlePhotoIsDefault,
         });
         token.userId = appUser._id;
         token.organizationId = appUser.organizationId;

@@ -1,17 +1,8 @@
 import { hasPermission, USER_PERMISSIONS } from "../../auth/roles";
 import { requireUser } from "../../auth/session";
-import {
-  organizations,
-  projects,
-  users,
-  volunteerAllowance,
-} from "../../db/collections";
-import type {
-  Organization,
-  Project,
-  User,
-  VolunteerAllowance,
-} from "../../db/types";
+import { projects, users, volunteerAllowance } from "../../db/collections";
+import type { Project, User, VolunteerAllowance } from "../../db/types";
+import { YFN_ORGANIZATION } from "../../organization";
 import { presignDownload } from "../../s3/storage";
 import { requireFileAccess } from "../uploads/access";
 
@@ -53,11 +44,6 @@ export async function getAll(): Promise<VolunteerAllowanceWithNames[]> {
     ),
   ];
 
-  const organization = await (
-    await organizations()
-  ).findOne({
-    _id: user.organizationId,
-  });
   const creators = await (
     await users()
   )
@@ -97,10 +83,10 @@ export async function getAll(): Promise<VolunteerAllowanceWithNames[]> {
     ...item,
     creatorName: creatorMap.get(item.createdBy) || "Unknown",
     projectName: projectMap.get(item.projectId) || "Unknown",
-    organizationName: organization?.name || "",
-    organizationStreet: organization?.street || "",
-    organizationPlz: organization?.plz || "",
-    organizationCity: organization?.city || "",
+    organizationName: YFN_ORGANIZATION.name,
+    organizationStreet: YFN_ORGANIZATION.street,
+    organizationPlz: YFN_ORGANIZATION.plz,
+    organizationCity: YFN_ORGANIZATION.city,
     reviewedByName: item.reviewedBy
       ? reviewerMap.get(item.reviewedBy)
       : undefined,
@@ -121,7 +107,7 @@ export async function getSignatureUrl(storageId: string): Promise<string> {
 }
 
 export type VolunteerAllowanceWithDetails = VolunteerAllowance & {
-  organization: Organization;
+  organization: typeof YFN_ORGANIZATION;
   creator: User;
   project: Project;
 };
@@ -132,19 +118,18 @@ export async function getWithDetails(
   const doc = await (await volunteerAllowance()).findOne({ _id: id });
   if (!doc) return null;
 
-  const organization = await (
-    await organizations()
-  ).findOne({
-    _id: doc.organizationId,
-  });
-  const creator = await (
-    await users()
-  ).findOne({ _id: doc.createdBy, organizationId: doc.organizationId });
-  const project = await (
-    await projects()
-  ).findOne({ _id: doc.projectId, organizationId: doc.organizationId });
+  const [creator, project] = await Promise.all([
+    (await users()).findOne({
+      _id: doc.createdBy,
+      organizationId: doc.organizationId,
+    }),
+    (await projects()).findOne({
+      _id: doc.projectId,
+      organizationId: doc.organizationId,
+    }),
+  ]);
 
-  if (!organization || !creator || !project) return null;
+  if (!creator || !project) return null;
 
-  return { ...doc, organization, creator, project };
+  return { ...doc, organization: YFN_ORGANIZATION, creator, project };
 }

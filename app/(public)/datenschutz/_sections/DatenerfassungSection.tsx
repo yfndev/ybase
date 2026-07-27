@@ -5,6 +5,15 @@ export function DatenerfassungSection() {
         4. Datenerfassung auf dieser Website
       </h2>
 
+      <h3 className="text-xl font-semibold mt-6 mb-3">Profilbilder</h3>
+      <p className="mb-4">
+        Für Mitglieder verwenden wir das im Google-Konto hinterlegte oder in
+        YBase hochgeladene Profilbild. Hochgeladene Bilder werden auch als
+        Google-Workspace-Profilbild gesetzt. Das Profilbild erscheint auf der
+        öffentlich erreichbaren YFN-Teamseite. Die Verarbeitung erfolgt auf
+        Grundlage von Art. 6 Abs. 1 lit. f DSGVO zur Darstellung unseres Teams.
+      </p>
+
       <h3 className="text-xl font-semibold mt-6 mb-3">Cookies</h3>
       <p className="mb-4">
         Unsere Internetseiten verwenden so genannte „Cookies". Cookies sind

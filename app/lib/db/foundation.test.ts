@@ -1,8 +1,16 @@
 import { expect, test } from "vitest";
 import { ensureAppUser } from "../auth/provisioning";
+import { YFN_ORGANIZATION } from "../organization";
 import { setupTestDatabase } from "../test/setupTestDatabase";
 import { getDb } from "./client";
-import { applications, jobPostings, logs, organizations } from "./collections";
+import {
+  applications,
+  jobPostings,
+  logs,
+  organizations,
+  projects,
+  users,
+} from "./collections";
 import { newId } from "./ids";
 import type { Application } from "./types";
 
@@ -29,12 +37,22 @@ test("ensureAppUser creates a user and auto-joins an existing org by domain", as
   expect(user.role).toBe("member");
 });
 
-test("ensureAppUser starts a new user in the onboarding lifecycle", async () => {
+test("ensureAppUser bootstraps the static YFN organization", async () => {
   const user = await ensureAppUser({ email: "alice@youngfounders.network" });
 
-  expect(user.memberStatus).toBe("onboarding");
-  expect(user.teamOnboardingStatus).toBe("not_started");
+  expect(user.role).toBe("admin");
+  expect(user.memberStatus).toBe("active");
+  expect(user.teamOnboardingStatus).toBe("completed");
+  expect(user.organizationId).toEqual(expect.any(String));
+  expect(user.publicProfileSetupRequired).toBe(true);
   expect(typeof user.registeredAt).toBe("number");
+
+  await expect(
+    (await organizations()).findOne({ _id: user.organizationId }),
+  ).resolves.toMatchObject(YFN_ORGANIZATION);
+  await expect(
+    (await projects()).findOne({ organizationId: user.organizationId }),
+  ).resolves.toMatchObject({ name: "Allgemein", isArchived: false });
 });
 
 test("ensureAppUser is idempotent for the same email", async () => {
@@ -66,11 +84,42 @@ test("ensureAppUser updates an existing user from the current login profile", as
   });
 });
 
-test("ensureAppUser leaves organizationId unset when no org matches the domain", async () => {
+test("ensureAppUser does not provision a non-YFN account", async () => {
   const user = await ensureAppUser({ email: "bob@newverein.de", name: "Bob" });
 
   expect(user.organizationId).toBeUndefined();
   expect(user.role).toBeUndefined();
+});
+
+test("ensureAppUser moves a legacy account into YFN without carrying over admin access", async () => {
+  const organizationId = newId();
+  await (
+    await organizations()
+  ).insertOne({
+    _id: organizationId,
+    _creationTime: Date.now(),
+    name: YFN_ORGANIZATION.name,
+    domain: YFN_ORGANIZATION.domain,
+    createdBy: "seed",
+  });
+  await (
+    await users()
+  ).insertOne({
+    _id: newId(),
+    _creationTime: Date.now(),
+    email: "legacy@youngfounders.network",
+    organizationId: "legacy-organization",
+    role: "admin",
+    memberStatus: "active",
+    teamOnboardingStatus: "completed",
+  });
+
+  const user = await ensureAppUser({
+    email: "legacy@youngfounders.network",
+  });
+
+  expect(user.organizationId).toBe(organizationId);
+  expect(user.role).toBe("member");
 });
 
 test("links an accepted application on the first matching login", async () => {

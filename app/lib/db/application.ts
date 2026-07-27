@@ -23,6 +23,12 @@ export interface ApplicationField {
 
 export type ApplicationHistoryType = "status_changed" | "management_updated";
 
+export type WorkspaceProvisioningStatus =
+  | "pending"
+  | "provisioned"
+  | "invited"
+  | "failed";
+
 export interface ApplicationHistoryEntry {
   _id: string;
   timestamp: number;
@@ -81,6 +87,11 @@ export interface Application {
   withdrawalTokenHash?: string;
   yfnEmail?: string;
   yfnEmailNormalized?: string;
+  workspaceUserId?: string;
+  workspaceProvisioningStatus?: WorkspaceProvisioningStatus;
+  workspaceProvisioningStartedAt?: number;
+  workspaceProvisionedAt?: number;
+  workspaceProvisioningError?: string;
   onboardingUserId?: string;
   onboardingLinkedAt?: number;
   onboardingLinkError?: string;
@@ -105,6 +116,7 @@ export type ApplicationWithFiles = Omit<
   | "tallyFormId"
   | "withdrawalTokenHash"
   | "yfnEmailNormalized"
+  | "workspaceUserId"
   | "onboardingCompletedBy"
   | "cleanupEligibleAt"
 > & {
