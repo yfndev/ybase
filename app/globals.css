@@ -39,6 +39,7 @@
   --font-mono: monospace;
   --radius: 0;
   --member-drawer-width: max(26rem, 28vw);
+  --application-review-sidebar-width: clamp(24rem, 28vw, 30rem);
   --shadow-x: 0rem;
   --shadow-y: 0.125rem;
   --shadow-blur: 1px;
