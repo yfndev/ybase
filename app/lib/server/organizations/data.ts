@@ -33,7 +33,9 @@ export async function getOrganizationByDomain(): Promise<OrganizationByDomain> {
 
 export async function getOrganization(): Promise<OrganizationSettings> {
   const user = await requireUser();
-  const org = (await (await organizations()).findOne({
+  const org = (await (
+    await organizations()
+  ).findOne({
     _id: user.organizationId,
   })) as OrganizationRecord | null;
   if (!org) throw new Error("Organization not found");
@@ -47,4 +49,13 @@ export async function getOrganization(): Promise<OrganizationSettings> {
     careOf: org.careOf || "",
     taxId: org.taxId || "",
   };
+}
+
+export async function getOrganizationDomain(): Promise<string> {
+  const user = await requireUser();
+  const organization = await (
+    await organizations()
+  ).findOne({ _id: user.organizationId }, { projection: { domain: 1 } });
+  if (!organization) throw new Error("Organization not found");
+  return organization.domain;
 }

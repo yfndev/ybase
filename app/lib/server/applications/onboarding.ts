@@ -28,6 +28,11 @@ export async function setApplicationYfnEmail(
   if (application.onboardingUserId) {
     throw new Error("Diese Bewerbung wurde bereits mit einem Profil verknüpft");
   }
+  if (application.workspaceUserId) {
+    throw new Error(
+      "Die E-Mail eines Workspace-Kontos kann hier nicht geändert werden",
+    );
+  }
 
   const [organization, existingApplication, existingUser] = await Promise.all([
     (await organizations()).findOne({ _id: user.organizationId }),
