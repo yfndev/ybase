@@ -7,7 +7,11 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import type { Department, Team } from "@/lib/db/types";
 import { Archive, Check, Pencil, X } from "lucide-react";
 
-type EditValues = { name: string; departmentId: string };
+type EditValues = {
+  name: string;
+  departmentId: string;
+  websiteSortOrder: number;
+};
 
 export function TeamRow({
   team,
@@ -67,6 +71,26 @@ export function TeamRow({
           <span className="text-muted-foreground">{departmentName}</span>
         )}
       </TableCell>
+      <TableCell>
+        {isEditing ? (
+          <Input
+            aria-label="Website-Sortierung"
+            type="number"
+            min={0}
+            max={9999}
+            value={editValues.websiteSortOrder}
+            onChange={(event) =>
+              onEditValuesChange({
+                websiteSortOrder: event.target.valueAsNumber,
+              })
+            }
+          />
+        ) : (
+          <span className="text-muted-foreground">
+            {team.websiteSortOrder ?? 100}
+          </span>
+        )}
+      </TableCell>
       <TableCell className="pr-6">
         <div className="flex items-center justify-end gap-1">
           {isEditing ? (
@@ -77,7 +101,13 @@ export function TeamRow({
                 className="h-8 w-8"
                 title="Speichern"
                 aria-label="Speichern"
-                disabled={!editValues.name.trim() || !editValues.departmentId}
+                disabled={
+                  !editValues.name.trim() ||
+                  !editValues.departmentId ||
+                  !Number.isInteger(editValues.websiteSortOrder) ||
+                  editValues.websiteSortOrder < 0 ||
+                  editValues.websiteSortOrder > 9999
+                }
                 onClick={onUpdate}
               >
                 <Check className="h-4 w-4" />

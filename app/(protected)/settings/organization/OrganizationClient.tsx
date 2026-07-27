@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { OrganizationFormFields } from "./OrganizationFormFields";
+import { TeamDirectoryIntegration } from "./TeamDirectoryIntegration";
 
 interface Props {
   organization: OrganizationSettings;
@@ -74,6 +75,7 @@ export function OrganizationClient({ organization }: Props) {
             </div>
           ) : null}
         </form>
+        <TeamDirectoryIntegration />
       </main>
     </div>
   );

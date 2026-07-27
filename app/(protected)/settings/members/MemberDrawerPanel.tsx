@@ -16,6 +16,7 @@ import {
   TEAM_ONBOARDING_OPTIONS,
 } from "./memberLabels";
 import type { MemberDrawerFormState } from "./useMemberDrawerForm";
+import { PublicTeamProfileFields } from "./PublicTeamProfileFields";
 
 interface Props {
   member: User;
@@ -102,6 +103,11 @@ export function MemberDrawerPanel({
               ? undefined
               : "Rollen können nur von Admins geändert werden."
           }
+        />
+        <PublicTeamProfileFields
+          form={form}
+          memberName={displayName}
+          memberRole={member.positionTitle}
         />
       </div>
 

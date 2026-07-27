@@ -6,11 +6,13 @@ import { requirePermission } from "../../auth/session";
 import { departments, teams } from "../../db/collections";
 import { newId } from "../../db/ids";
 import { addLog } from "../logs";
+import { scheduleTeamDirectoryRevalidation } from "../teamDirectory/revalidate";
 
 const teamFieldsSchema = z.object({
   name: z.string().trim().min(1),
   departmentId: z.string().trim().min(1),
 });
+const sortOrderSchema = z.number().int().min(0).max(9999);
 
 export async function createTeam(input: {
   name: string;
@@ -31,6 +33,7 @@ export async function createTeam(input: {
     organizationId: user.organizationId,
     isArchived: false,
     createdBy: user._id,
+    websiteSortOrder: 100,
   });
   await addLog(user.organizationId, user._id, "team.create", _id, name);
   return _id;
@@ -40,17 +43,26 @@ export async function updateTeam(input: {
   teamId: string;
   name: string;
   departmentId: string;
+  websiteSortOrder?: number;
 }): Promise<void> {
   const user = await requirePermission(USER_PERMISSIONS.organizationStructure);
-  const { teamId, name, departmentId } = z
-    .object({ teamId: z.string(), ...teamFieldsSchema.shape })
+  const { teamId, name, departmentId, websiteSortOrder } = z
+    .object({
+      teamId: z.string(),
+      websiteSortOrder: sortOrderSchema.optional(),
+      ...teamFieldsSchema.shape,
+    })
     .parse(input);
 
   await requireOwnedTeam(teamId, user.organizationId);
   await requireActiveDepartment(departmentId, user.organizationId);
-  await (
-    await teams()
-  ).updateOne({ _id: teamId }, { $set: { name, departmentId } });
+  const changes = {
+    name,
+    departmentId,
+    ...(websiteSortOrder === undefined ? {} : { websiteSortOrder }),
+  };
+  await (await teams()).updateOne({ _id: teamId }, { $set: changes });
+  scheduleTeamDirectoryRevalidation();
   await addLog(user.organizationId, user._id, "team.update", teamId, name);
 }
 
@@ -71,6 +83,7 @@ async function setArchived(
   const id = z.string().parse(teamId);
   const team = await requireOwnedTeam(id, user.organizationId);
   await (await teams()).updateOne({ _id: id }, { $set: { isArchived } });
+  scheduleTeamDirectoryRevalidation();
   await addLog(user.organizationId, user._id, action, id, team.name);
 }
 

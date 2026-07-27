@@ -5,6 +5,7 @@ import { requireUser } from "../../auth/session";
 import { users } from "../../db/collections";
 import type { User } from "../../db/types";
 import { bankDetailsSchema } from "../bankDetails";
+import { scheduleTeamDirectoryRevalidation } from "../teamDirectory/revalidate";
 import { loadManagedMember, requireActiveOrganizationTeam } from "./access";
 
 export async function updateBankDetails(input: {
@@ -41,4 +42,5 @@ export async function updateMemberProfile(input: {
   if (positionTitle !== undefined) patch.positionTitle = positionTitle;
   if (Object.keys(patch).length === 0) return;
   await (await users()).updateOne({ _id: target._id }, { $set: patch });
+  scheduleTeamDirectoryRevalidation();
 }

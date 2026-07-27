@@ -10,13 +10,18 @@ export async function ensureIndexes(): Promise<void> {
       { key: { domain: 1 }, unique: true },
     ]);
 
-  await db
-    .collection("users")
-    .createIndexes([
-      { key: { email: 1 }, unique: true, sparse: true },
-      { key: { applicationId: 1 }, unique: true, sparse: true },
-      { key: { organizationId: 1 } },
-    ]);
+  await db.collection("users").createIndexes([
+    { key: { email: 1 }, unique: true, sparse: true },
+    { key: { applicationId: 1 }, unique: true, sparse: true },
+    { key: { organizationId: 1 } },
+    {
+      key: {
+        organizationId: 1,
+        memberStatus: 1,
+        "publicTeamProfile.isPublished": 1,
+      },
+    },
+  ]);
 
   await db
     .collection("projects")
@@ -39,6 +44,11 @@ export async function ensureIndexes(): Promise<void> {
       { key: { organizationId: 1, isArchived: 1 } },
       { key: { organizationId: 1, departmentId: 1 } },
     ]);
+
+  await db.collection("teamDirectoryTokens").createIndexes([
+    { key: { organizationId: 1 }, unique: true },
+    { key: { tokenHash: 1 }, unique: true },
+  ]);
 
   await db
     .collection("jobPostings")

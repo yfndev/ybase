@@ -26,13 +26,22 @@ export function DepartmentsSection() {
   const [archivedOpen, setArchivedOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [editOrder, setEditOrder] = useState(100);
 
-  const handleUpdate = async (departmentId: string, currentName: string) => {
+  const handleUpdate = async (
+    departmentId: string,
+    currentName: string,
+    currentOrder: number,
+  ) => {
     const name = editName.trim();
     setEditingId(null);
-    if (!name || name === currentName) return;
+    if (!name || (name === currentName && editOrder === currentOrder)) return;
     try {
-      await update.mutateAsync({ departmentId, name });
+      await update.mutateAsync({
+        departmentId,
+        name,
+        websiteSortOrder: editOrder,
+      });
       toast.success("Department aktualisiert");
     } catch {
       toast.error("Fehler beim Aktualisieren");
@@ -89,6 +98,7 @@ export function DepartmentsSection() {
                     </Button>
                   </div>
                 </TableHead>
+                <TableHead className="w-32">Website-Sortierung</TableHead>
                 <TableHead className="w-px" />
               </TableRow>
             </TableHeader>
@@ -99,14 +109,23 @@ export function DepartmentsSection() {
                   department={department}
                   isEditing={editingId === department._id}
                   editName={editName}
+                  editOrder={editOrder}
                   isArchiving={archive.isPending}
                   onEditNameChange={setEditName}
+                  onEditOrderChange={setEditOrder}
                   onStartEdit={() => {
                     setEditingId(department._id);
                     setEditName(department.name);
+                    setEditOrder(department.websiteSortOrder ?? 100);
                   }}
                   onCancelEdit={() => setEditingId(null)}
-                  onUpdate={() => handleUpdate(department._id, department.name)}
+                  onUpdate={() =>
+                    handleUpdate(
+                      department._id,
+                      department.name,
+                      department.websiteSortOrder ?? 100,
+                    )
+                  }
                   onArchive={() => handleArchive(department._id)}
                 />
               ))}

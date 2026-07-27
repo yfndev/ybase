@@ -19,6 +19,7 @@ import { listMembers } from "./data";
 import { setMemberStatus, setTeamOnboardingStatus } from "./lifecycleActions";
 import { addUserToOrganization } from "./membership";
 import { updateBankDetails, updateMemberProfile } from "./profile";
+import { updatePublicTeamProfile } from "./publicTeamProfile";
 import { updateUserRole } from "./roles";
 
 let orgA: string;
@@ -243,6 +244,60 @@ test("updateMemberProfile rejects an archived team", async () => {
   await expect(
     updateMemberProfile({ userId: memberA, teamId: "team-archived" }),
   ).rejects.toThrow("Team nicht verfügbar");
+});
+
+test("updatePublicTeamProfile publishes only complete active profiles", async () => {
+  await seedTeam("team-1", orgA);
+  await (
+    await users()
+  ).updateOne(
+    { _id: memberA },
+    {
+      $set: {
+        memberStatus: "active",
+        teamId: "team-1",
+        positionTitle: "People Lead",
+      },
+    },
+  );
+
+  await updatePublicTeamProfile({
+    userId: memberA,
+    isPublished: true,
+    isTeamLead: true,
+    sortOrder: 20,
+    board: {
+      role: "Operations",
+      isChair: false,
+      icon: "operations",
+      sortOrder: 10,
+    },
+  });
+
+  const updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.publicTeamProfile).toEqual({
+    isPublished: true,
+    isTeamLead: true,
+    sortOrder: 20,
+    board: {
+      role: "Operations",
+      isChair: false,
+      icon: "operations",
+      sortOrder: 10,
+    },
+  });
+});
+
+test("updatePublicTeamProfile rejects publishing onboarding members", async () => {
+  await expect(
+    updatePublicTeamProfile({
+      userId: memberA,
+      isPublished: true,
+      role: "People Lead",
+      isTeamLead: false,
+      sortOrder: 100,
+    }),
+  ).rejects.toThrow("Nur aktive Mitglieder");
 });
 
 test("listMembers keeps offboarded profiles visible", async () => {

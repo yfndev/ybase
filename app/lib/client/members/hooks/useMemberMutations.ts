@@ -4,6 +4,7 @@ import {
   setTeamOnboardingStatus,
 } from "@/lib/server/users/lifecycleActions";
 import { updateMemberProfile } from "@/lib/server/users/profile";
+import { updatePublicTeamProfile } from "@/lib/server/users/publicTeamProfile";
 import { updateUserRole } from "@/lib/server/users/roles";
 
 export function useMemberMutations() {
@@ -13,6 +14,10 @@ export function useMemberMutations() {
 
   return {
     updateProfile: useMutation({ mutationFn: updateMemberProfile, onSuccess }),
+    updatePublicProfile: useMutation({
+      mutationFn: updatePublicTeamProfile,
+      onSuccess,
+    }),
     setStatus: useMutation({ mutationFn: setMemberStatus, onSuccess }),
     setOnboarding: useMutation({
       mutationFn: setTeamOnboardingStatus,
