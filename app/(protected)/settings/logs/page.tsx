@@ -45,7 +45,6 @@ const ACTION_LABELS: Record<string, string> = {
   "jobPosting.tally.publish": "Bewerbungsformular veröffentlicht",
   "jobPosting.tally.error": "Tally-Synchronisierung fehlgeschlagen",
   "jobFeedToken.rotate": "Job-Feed-Token rotiert",
-  "teamDirectoryToken.rotate": "Team-Directory-Token rotiert",
   "member.public_team_profile_update": "Öffentliches Teamprofil aktualisiert",
   "application.received": "Bewerbung eingegangen",
   "application.management_update": "Bewerbung aktualisiert",

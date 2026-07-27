@@ -13,7 +13,6 @@ import type {
   SignatureToken,
   TallyWebhookEvent,
   Team,
-  TeamDirectoryToken,
   TravelDetails,
   UploadOwnership,
   User,
@@ -38,10 +37,6 @@ export async function departments() {
 
 export async function teams() {
   return (await getDb()).collection<Team>("teams");
-}
-
-export async function teamDirectoryTokens() {
-  return (await getDb()).collection<TeamDirectoryToken>("teamDirectoryTokens");
 }
 
 export async function jobPostings() {

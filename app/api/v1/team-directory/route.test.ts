@@ -3,12 +3,12 @@ import { beforeEach, expect, test, vi } from "vitest";
 vi.mock("@/lib/server/teamDirectory/feed", () => ({
   getTeamDirectoryV1: vi.fn(),
 }));
-vi.mock("@/lib/server/teamDirectory/token", () => ({
+vi.mock("@/lib/server/teamDirectory/auth", () => ({
   authenticateTeamDirectoryToken: vi.fn(),
 }));
 
+import { authenticateTeamDirectoryToken } from "@/lib/server/teamDirectory/auth";
 import { getTeamDirectoryV1 } from "@/lib/server/teamDirectory/feed";
-import { authenticateTeamDirectoryToken } from "@/lib/server/teamDirectory/token";
 import { GET } from "./route";
 
 beforeEach(() => {
@@ -25,7 +25,7 @@ test("GET rejects requests without a valid bearer token", async () => {
 });
 
 test("GET returns the versioned feed and revision ETag", async () => {
-  vi.mocked(authenticateTeamDirectoryToken).mockResolvedValue("org-1");
+  vi.mocked(authenticateTeamDirectoryToken).mockReturnValue("org-1");
   vi.mocked(getTeamDirectoryV1).mockResolvedValue({
     version: "v1",
     generatedAt: "2026-07-27T12:00:00.000Z",
@@ -41,11 +41,12 @@ test("GET returns the versioned feed and revision ETag", async () => {
 
   expect(response.status).toBe(200);
   expect(response.headers.get("etag")).toBe('"revision-1"');
+  expect(authenticateTeamDirectoryToken).toHaveBeenCalledWith("valid-token");
   expect(getTeamDirectoryV1).toHaveBeenCalledWith("org-1");
 });
 
 test("GET returns 304 when the feed revision is unchanged", async () => {
-  vi.mocked(authenticateTeamDirectoryToken).mockResolvedValue("org-1");
+  vi.mocked(authenticateTeamDirectoryToken).mockReturnValue("org-1");
   vi.mocked(getTeamDirectoryV1).mockResolvedValue({
     version: "v1",
     generatedAt: "2026-07-27T12:00:00.000Z",

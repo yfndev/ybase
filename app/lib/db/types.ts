@@ -14,7 +14,6 @@ export type {
 } from "./reimbursement";
 export type { CostType, MealAllowance, MealAllowanceLine } from "./travelTypes";
 export type { SignatureToken } from "./signature";
-export type { TeamDirectoryToken } from "./teamDirectoryToken";
 export type { UploadContextType, UploadOwnership } from "./upload";
 export type {
   MemberStatus,

@@ -1,5 +1,5 @@
+import { authenticateTeamDirectoryToken } from "@/lib/server/teamDirectory/auth";
 import { getTeamDirectoryV1 } from "@/lib/server/teamDirectory/feed";
-import { authenticateTeamDirectoryToken } from "@/lib/server/teamDirectory/token";
 
 export const runtime = "nodejs";
 
@@ -16,9 +16,7 @@ function bearerToken(request: Request): string | null {
 
 export async function GET(request: Request) {
   const token = bearerToken(request);
-  const organizationId = token
-    ? await authenticateTeamDirectoryToken(token)
-    : null;
+  const organizationId = token ? authenticateTeamDirectoryToken(token) : null;
   if (!organizationId) {
     return Response.json(
       { error: "Nicht autorisiert" },

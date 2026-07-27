@@ -44,11 +44,6 @@ export async function ensureIndexes(): Promise<void> {
       { key: { organizationId: 1, departmentId: 1 } },
     ]);
 
-  await db.collection("teamDirectoryTokens").createIndexes([
-    { key: { organizationId: 1 }, unique: true },
-    { key: { tokenHash: 1 }, unique: true },
-  ]);
-
   await db
     .collection("jobPostings")
     .createIndexes([
