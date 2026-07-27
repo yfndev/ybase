@@ -110,6 +110,9 @@ erDiagram
         string status
         array ownerIds
         string yfnEmailNormalized
+        string workspaceUserId
+        string workspaceProvisioningStatus
+        number workspaceProvisionedAt
         string onboardingUserId
         number onboardingLinkedAt
         number onboardingCompletedAt
@@ -132,11 +135,11 @@ and its initial per-file import status are stored atomically. Source URLs remain
 server-only. Imported objects use deterministic storage keys; each file records
 its status, attempt count, error and final object key.
 
-Accepted applications may hold a normalized YFN email until the first matching
-Google login. A successful, unique match links the application to the onboarding
-user, copies team and position from the job posting, and sets
-`cleanupEligibleAt` for the retention workflow. Link conflicts stay on the
-application for correction by P&C.
+Accepted applications hold the normalized YFN email and Google Workspace
+provisioning state. No temporary password is persisted. The first matching
+Google login links the application to the onboarding user, copies team and
+position from the job posting, and sets `cleanupEligibleAt` for the retention
+workflow. Link conflicts stay on the application for correction by P&C.
 
 The authoritative field definitions live in
 [`app/lib/db/types.ts`](../app/lib/db/types.ts), while indexes are defined in

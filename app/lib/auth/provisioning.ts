@@ -9,6 +9,7 @@ type SignInProfile = {
   image?: string;
   firstName?: string;
   lastName?: string;
+  googlePhotoIsDefault?: boolean;
 };
 
 export async function ensureAppUser(profile: SignInProfile): Promise<User> {
@@ -24,6 +25,8 @@ export async function ensureAppUser(profile: SignInProfile): Promise<User> {
       email: normalizedEmail,
       name: profile.name,
       image: profile.image,
+      googlePhotoIsDefault: profile.googlePhotoIsDefault,
+      publicProfileSetupRequired: true,
       firstName: profile.firstName,
       lastName: profile.lastName,
       emailVerificationTime: now,
@@ -45,6 +48,10 @@ export async function ensureAppUser(profile: SignInProfile): Promise<User> {
         : {}),
       ...(profile.lastName && profile.lastName !== user.lastName
         ? { lastName: profile.lastName }
+        : {}),
+      ...(profile.googlePhotoIsDefault !== undefined &&
+      profile.googlePhotoIsDefault !== user.googlePhotoIsDefault
+        ? { googlePhotoIsDefault: profile.googlePhotoIsDefault }
         : {}),
     };
 

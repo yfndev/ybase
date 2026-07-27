@@ -11,6 +11,7 @@ import {
   APPLICATION_STATUS_TRANSITIONS,
   type ApplicationNextStatus,
 } from "@/lib/applications/transitions";
+import { suggestYfnEmail } from "@/lib/applications/yfnEmail";
 import { useApplicationMutations } from "@/lib/client/applications/hooks/useApplicationMutations";
 import type { ApplicationStatus } from "@/lib/db/types";
 import {
@@ -35,11 +36,15 @@ export function ApplicationActionFooter({
   status,
   applicantName,
   jobPostingTitle,
+  organizationDomain,
+  yfnEmail,
 }: {
   applicationId: string;
   status: ApplicationStatus;
   applicantName?: string;
   jobPostingTitle: string;
+  organizationDomain: string;
+  yfnEmail?: string;
 }) {
   const { setStatus, sendDecision } = useApplicationMutations();
   const [decisionDraft, setDecisionDraft] =
@@ -68,14 +73,21 @@ export function ApplicationActionFooter({
   }
 
   function openDecision(decision: ApplicationDecision) {
-    setDecisionDraft({
+    const email = applicationDecisionEmailDefaults({
       decision,
-      ...applicationDecisionEmailDefaults({
-        decision,
-        applicantName,
-        jobTitle: jobPostingTitle,
-      }),
+      applicantName,
+      jobTitle: jobPostingTitle,
     });
+    if (decision === "accepted") {
+      setDecisionDraft({
+        decision,
+        ...email,
+        yfnEmail:
+          yfnEmail ?? suggestYfnEmail(applicantName, organizationDomain),
+      });
+      return;
+    }
+    setDecisionDraft({ decision, ...email });
   }
 
   async function submitDecision() {

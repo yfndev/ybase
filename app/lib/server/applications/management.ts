@@ -26,6 +26,7 @@ function toApplicationView(
     tallyFormId: _tallyFormId,
     withdrawalTokenHash: _withdrawalTokenHash,
     yfnEmailNormalized: _yfnEmailNormalized,
+    workspaceUserId: _workspaceUserId,
     onboardingCompletedBy: _onboardingCompletedBy,
     cleanupEligibleAt: _cleanupEligibleAt,
     ownerIds,

@@ -20,7 +20,13 @@ export async function canWithdrawApplication(token: string): Promise<boolean> {
   return Boolean(
     await (
       await applications()
-    ).findOne({ withdrawalTokenHash: hash }, { projection: { _id: 1 } }),
+    ).findOne(
+      {
+        withdrawalTokenHash: hash,
+        workspaceProvisioningStatus: { $nin: ["pending", "provisioned"] },
+      },
+      { projection: { _id: 1 } },
+    ),
   );
 }
 
@@ -46,7 +52,11 @@ export async function withdrawApplicationByToken(
     toStatus: "withdrawn",
   };
   const result = await collection.updateOne(
-    { _id: application._id, withdrawalTokenHash: hash },
+    {
+      _id: application._id,
+      withdrawalTokenHash: hash,
+      workspaceProvisioningStatus: { $nin: ["pending", "provisioned"] },
+    },
     {
       $set: {
         status: "withdrawn",
@@ -69,6 +79,11 @@ export async function withdrawApplicationByToken(
         withdrawalTokenHash: "",
         yfnEmail: "",
         yfnEmailNormalized: "",
+        workspaceUserId: "",
+        workspaceProvisioningStatus: "",
+        workspaceProvisioningStartedAt: "",
+        workspaceProvisionedAt: "",
+        workspaceProvisioningError: "",
         onboardingUserId: "",
         onboardingLinkedAt: "",
         onboardingLinkError: "",

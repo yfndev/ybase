@@ -1,7 +1,10 @@
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({ requirePermission: vi.fn() }));
 vi.mock("../../email/brevo", () => ({ sendMail: vi.fn() }));
+vi.mock("../../googleWorkspace/users", () => ({
+  provisionWorkspaceUser: vi.fn(),
+}));
 
 import { requirePermission } from "../../auth/session";
 import {
@@ -14,6 +17,7 @@ import { newId } from "../../db/ids";
 import type { Application } from "../../db/types";
 import { sendMail } from "../../email/brevo";
 import { BREVO_TEMPLATE_IDS } from "../../email/templates";
+import { provisionWorkspaceUser } from "../../googleWorkspace/users";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { sendApplicationDecision } from "./decision";
@@ -25,6 +29,8 @@ let applicationId: string;
 
 setupTestDatabase();
 
+afterEach(() => vi.unstubAllEnvs());
+
 beforeEach(async () => {
   vi.clearAllMocks();
   applicationId = newId();
@@ -35,6 +41,12 @@ beforeEach(async () => {
     status: "sent",
     messageId: "message-1",
   });
+  vi.mocked(provisionWorkspaceUser).mockResolvedValue({
+    userId: "google-user-1",
+    primaryEmail: "alex@example.org",
+    temporaryPassword: "temporary-password",
+  });
+  vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://ybase.example");
   await (
     await organizations()
   ).insertOne({
@@ -79,6 +91,7 @@ test("sends the edited acceptance email before changing the status", async () =>
   await sendApplicationDecision({
     applicationId,
     decision: "accepted",
+    yfnEmail: "alex@example.org",
     subject: "Individuelle Zusage",
     message: "Wir freuen uns sehr auf dich.",
   });
@@ -87,13 +100,19 @@ test("sends the edited acceptance email before changing the status", async () =>
     expect.objectContaining({
       subject: "Individuelle Zusage",
       params: expect.objectContaining({
-        message: "Wir freuen uns sehr auf dich.",
+        message: expect.stringContaining("temporary-password"),
         jobTitle: "Fundraising",
       }),
     }),
   );
   const stored = await (await applications()).findOne({ _id: applicationId });
-  expect(stored?.status).toBe("accepted");
+  expect(stored).toMatchObject({
+    status: "accepted",
+    yfnEmail: "alex@example.org",
+    workspaceUserId: "google-user-1",
+    workspaceProvisioningStatus: "invited",
+  });
+  expect(JSON.stringify(stored)).not.toContain("temporary-password");
   expect(stored?.history?.at(-1)).toMatchObject({
     fromStatus: "review",
     toStatus: "accepted",
@@ -138,6 +157,7 @@ test.each([
     sendApplicationDecision({
       applicationId,
       decision: "accepted",
+      yfnEmail: "alex@example.org",
       subject: "Zusage",
       message: "Willkommen!",
     }),
@@ -146,6 +166,7 @@ test.each([
   const stored = await (await applications()).findOne({ _id: applicationId });
   expect(stored?.status).toBe("review");
   expect(stored?.history).toBeUndefined();
+  expect(stored?.workspaceProvisioningStatus).toBe("provisioned");
 });
 
 test("does not overwrite a withdrawal that happens during delivery", async () => {
@@ -163,6 +184,7 @@ test("does not overwrite a withdrawal that happens during delivery", async () =>
     sendApplicationDecision({
       applicationId,
       decision: "accepted",
+      yfnEmail: "alex@example.org",
       subject: "Zusage",
       message: "Willkommen!",
     }),

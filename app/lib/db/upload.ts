@@ -1,5 +1,6 @@
 export type UploadContextType =
   | "user"
+  | "profileImage"
   | "reimbursement"
   | "allowance"
   | "signatureToken";
@@ -11,7 +12,11 @@ export interface UploadOwnership {
   userId: string;
   contextType: UploadContextType;
   contextId: string;
-  claimedByType?: "reimbursement" | "allowance" | "signatureToken";
+  claimedByType?:
+    | "profileImage"
+    | "reimbursement"
+    | "allowance"
+    | "signatureToken";
   claimedById?: string;
   claimedAt?: number;
 }

@@ -1,5 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
+import { getGooglePhotoIsDefault } from "./googlePeople";
 import { ensureAppUser } from "./provisioning";
 import { normalizeOptionalUserRole } from "./roles";
 
@@ -39,15 +40,20 @@ export const authConfig = {
     signIn({ user }) {
       return isAllowedEmail(user.email);
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       const email = user?.email ?? (token.email as string | undefined);
       if (email) {
+        const googlePhotoIsDefault =
+          account?.provider === "google"
+            ? await getGooglePhotoIsDefault(account.access_token)
+            : undefined;
         const appUser = await ensureAppUser({
           email,
           name: user?.name ?? (token.name as string | undefined),
           image: user?.image ?? undefined,
           firstName: user?.firstName,
           lastName: user?.lastName,
+          googlePhotoIsDefault,
         });
         token.userId = appUser._id;
         token.organizationId = appUser.organizationId;

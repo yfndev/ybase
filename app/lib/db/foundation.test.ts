@@ -34,6 +34,7 @@ test("ensureAppUser starts a new user in the onboarding lifecycle", async () => 
 
   expect(user.memberStatus).toBe("onboarding");
   expect(user.teamOnboardingStatus).toBe("not_started");
+  expect(user.publicProfileSetupRequired).toBe(true);
   expect(typeof user.registeredAt).toBe("number");
 });
 
