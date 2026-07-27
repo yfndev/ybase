@@ -20,6 +20,8 @@ const DISPLAYABLE_DECISION_ERRORS = new Set([
   "Das Workspace-Konto verwendet eine andere E-Mail",
   "Google-Workspace-Integration ist nicht konfiguriert",
   "Google-Workspace-Konfiguration ist ungültig",
+  "Google-Workspace-Admin ist nicht konfiguriert",
+  "Google-Workspace-Domaindelegierung ist nicht autorisiert",
   "Google-Workspace-Authentifizierung fehlgeschlagen",
   "Google hat kein Zugriffstoken zurückgegeben",
   "Google Workspace hat die Kontoerstellung nicht autorisiert",

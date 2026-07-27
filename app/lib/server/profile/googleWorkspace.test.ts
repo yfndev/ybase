@@ -7,7 +7,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-test("authenticates the service account directly and updates the user photo", async () => {
+test("delegates to a Workspace admin and updates the user photo", async () => {
   const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
   const tokenUri = "https://oauth.example/token";
   const encodedCredentials = Buffer.from(
@@ -20,6 +20,10 @@ test("authenticates the service account directly and updates the user photo", as
   vi.stubEnv(
     "GOOGLE_WORKSPACE_SERVICE_ACCOUNT_JSON_BASE64",
     encodedCredentials,
+  );
+  vi.stubEnv(
+    "GOOGLE_WORKSPACE_ADMIN_EMAIL",
+    "Admin@youngfounders.network ",
   );
 
   const fetchMock = vi
@@ -44,9 +48,9 @@ test("authenticates the service account directly and updates the user photo", as
   );
   expect(payload).toMatchObject({
     iss: "profile-sync@example.iam.gserviceaccount.com",
+    sub: "admin@youngfounders.network",
     scope: "https://www.googleapis.com/auth/admin.directory.user",
   });
-  expect(payload).not.toHaveProperty("sub");
 
   const photoRequest = fetchMock.mock.calls[1];
   expect(photoRequest?.[0]).toContain(

@@ -93,4 +93,21 @@ describe("provisionWorkspaceUser", () => {
       "Google-Workspace-Integration ist nicht konfiguriert",
     );
   });
+
+  test("reports a missing delegated Workspace admin", async () => {
+    vi.stubEnv(
+      "GOOGLE_WORKSPACE_SERVICE_ACCOUNT_JSON_BASE64",
+      Buffer.from(
+        JSON.stringify({
+          client_email: "ybase@example.iam.gserviceaccount.com",
+          private_key: "unused",
+        }),
+      ).toString("base64"),
+    );
+    vi.stubEnv("GOOGLE_WORKSPACE_ADMIN_EMAIL", "");
+
+    await expect(provisionWorkspaceUser(input)).rejects.toThrow(
+      "Google-Workspace-Admin ist nicht konfiguriert",
+    );
+  });
 });
