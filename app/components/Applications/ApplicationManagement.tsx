@@ -24,7 +24,7 @@ export function ApplicationManagement({
         applicationId: application._id,
         ownerIds: nextOwnerIds,
       });
-      toast.success("Verantwortliche aktualisiert");
+      toast.success("Interne Zuständigkeit aktualisiert");
     } catch (error) {
       setOwnerIds(previousOwnerIds);
       toast.error(
@@ -35,13 +35,13 @@ export function ApplicationManagement({
 
   return (
     <section className="space-y-3 border-t pt-5">
-      <h3 className="text-xl font-semibold">Verantwortliche</h3>
+      <h3 className="text-xl font-semibold">Interne Zuständigkeit</h3>
       <SelectMembers
         id="application-owners"
         members={owners}
         value={ownerIds}
         onValueChange={updateOwners}
-        placeholder="Verantwortliche auswählen"
+        placeholder="Zuständige Personen auswählen"
         searchPlaceholder="Name oder E-Mail suchen"
         disabled={updateManagement.isPending}
       />
