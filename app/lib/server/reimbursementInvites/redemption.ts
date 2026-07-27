@@ -1,9 +1,6 @@
 import { requireAuthenticatedUser } from "../../auth/session";
-import {
-  organizations,
-  reimbursementInvites,
-  users,
-} from "../../db/collections";
+import { reimbursementInvites, users } from "../../db/collections";
+import { YFN_ORGANIZATION } from "../../organization";
 import { addLog } from "../logs";
 import {
   hashReimbursementInviteToken,
@@ -27,14 +24,10 @@ export async function redeemReimbursementInvite(token: string): Promise<void> {
     throw new Error("Dein Konto wurde deaktiviert");
   }
 
-  const organization = await (
-    await organizations()
-  ).findOne({ _id: invite.organizationId });
-  if (!organization) throw new Error("Organisation nicht gefunden");
   const email = user.email?.trim().toLowerCase();
-  if (!email?.endsWith(`@${organization.domain.toLowerCase()}`)) {
+  if (!email?.endsWith(`@${YFN_ORGANIZATION.domain}`)) {
     throw new Error(
-      `Bitte melde dich mit einem @${organization.domain}-Konto an`,
+      `Bitte melde dich mit einem @${YFN_ORGANIZATION.domain}-Konto an`,
     );
   }
   if (user.memberStatus === "active") return;

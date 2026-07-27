@@ -18,6 +18,7 @@ import type { Application } from "../../db/types";
 import { sendMail } from "../../email/brevo";
 import { BREVO_TEMPLATE_IDS } from "../../email/templates";
 import { provisionWorkspaceUser } from "../../googleWorkspace/users";
+import { YFN_ORGANIZATION } from "../../organization";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { sendApplicationDecision } from "./decision";
@@ -25,6 +26,7 @@ import { sendApplicationDecision } from "./decision";
 const organizationId = newId();
 const actorId = newId();
 const postingId = newId();
+const yfnEmail = `alex@${YFN_ORGANIZATION.domain}`;
 let applicationId: string;
 
 setupTestDatabase();
@@ -43,7 +45,7 @@ beforeEach(async () => {
   });
   vi.mocked(provisionWorkspaceUser).mockResolvedValue({
     userId: "google-user-1",
-    primaryEmail: "alex@example.org",
+    primaryEmail: yfnEmail,
     temporaryPassword: "temporary-password",
   });
   vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://ybase.example");
@@ -52,8 +54,8 @@ beforeEach(async () => {
   ).insertOne({
     _id: organizationId,
     _creationTime: Date.now(),
-    name: "YFN",
-    domain: "example.org",
+    name: YFN_ORGANIZATION.name,
+    domain: YFN_ORGANIZATION.domain,
     createdBy: actorId,
   });
   await (
@@ -91,7 +93,7 @@ test("sends the edited acceptance email before changing the status", async () =>
   await sendApplicationDecision({
     applicationId,
     decision: "accepted",
-    yfnEmail: "alex@example.org",
+    yfnEmail,
     subject: "Individuelle Zusage",
     message: "Wir freuen uns sehr auf dich.",
   });
@@ -102,13 +104,14 @@ test("sends the edited acceptance email before changing the status", async () =>
       params: expect.objectContaining({
         message: expect.stringContaining("temporary-password"),
         jobTitle: "Fundraising",
+        organizationName: YFN_ORGANIZATION.name,
       }),
     }),
   );
   const stored = await (await applications()).findOne({ _id: applicationId });
   expect(stored).toMatchObject({
     status: "accepted",
-    yfnEmail: "alex@example.org",
+    yfnEmail,
     workspaceUserId: "google-user-1",
     workspaceProvisioningStatus: "invited",
   });
@@ -157,7 +160,7 @@ test.each([
     sendApplicationDecision({
       applicationId,
       decision: "accepted",
-      yfnEmail: "alex@example.org",
+      yfnEmail,
       subject: "Zusage",
       message: "Willkommen!",
     }),
@@ -184,7 +187,7 @@ test("does not overwrite a withdrawal that happens during delivery", async () =>
     sendApplicationDecision({
       applicationId,
       decision: "accepted",
-      yfnEmail: "alex@example.org",
+      yfnEmail,
       subject: "Zusage",
       message: "Willkommen!",
     }),

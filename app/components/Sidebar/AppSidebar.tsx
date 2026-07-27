@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Building2,
   Coins,
   FolderKanban,
   LayoutDashboard,
@@ -60,12 +59,6 @@ const ADMINISTRATION_NAV_ITEMS: ProtectedNavItem[] = [
     url: "/settings/projects",
     icon: FolderKanban,
     permission: USER_PERMISSIONS.projects,
-  },
-  {
-    name: "Organisation",
-    url: "/settings/organization",
-    icon: Building2,
-    permission: USER_PERMISSIONS.organizationSettings,
   },
   {
     name: "Logs",

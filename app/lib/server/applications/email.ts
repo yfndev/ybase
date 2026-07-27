@@ -1,13 +1,9 @@
-import {
-  applications,
-  jobPostings,
-  organizations,
-  users,
-} from "../../db/collections";
+import { applications, jobPostings, users } from "../../db/collections";
 import type { Application, JobPosting } from "../../db/types";
 import { type EmailRecipient, sendMail } from "../../email/brevo";
 import { BREVO_TEMPLATE_IDS } from "../../email/templates";
 import { appUrl } from "../../email/urls";
+import { YFN_ORGANIZATION } from "../../organization";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -105,14 +101,10 @@ export async function sendApplicationEmails(
   ).findOne({ _id: application.jobPostingId });
   if (!posting) return;
 
-  const organization = await (
-    await organizations()
-  ).findOne({ _id: application.organizationId });
-
   await sendApplicantEmail(
     application,
     posting,
-    organization?.name ?? "",
+    YFN_ORGANIZATION.name,
     withdrawalToken,
   );
   await sendContactEmail(application, posting);

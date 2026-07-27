@@ -1,10 +1,10 @@
 import {
-  organizations,
   projects,
   receipts,
   reimbursements,
   travelDetails,
 } from "../../db/collections";
+import { YFN_ORGANIZATION } from "../../organization";
 import { presignDownload, presignUpload } from "../../s3/storage";
 import { contextOwnsUpload, registerPendingUpload } from "../uploads/ownership";
 
@@ -30,8 +30,7 @@ export async function getPublicReimbursement(id: string) {
     return { valid: false as const, error: "Bereits eingereicht" };
   }
 
-  const [organization, project, travel, receiptList] = await Promise.all([
-    (await organizations()).findOne({ _id: doc.organizationId }),
+  const [project, travel, receiptList] = await Promise.all([
     (await projects()).findOne({
       _id: doc.projectId,
       organizationId: doc.organizationId,
@@ -45,7 +44,7 @@ export async function getPublicReimbursement(id: string) {
   return {
     valid: true as const,
     type: doc.type,
-    organizationName: organization?.name || "",
+    organizationName: YFN_ORGANIZATION.name,
     projectName: project?.name || "",
     invitedName: doc.invitedName,
     invitedEmail: doc.invitedEmail,

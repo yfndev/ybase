@@ -1,12 +1,7 @@
-import {
-  departments,
-  jobPostings,
-  organizations,
-  teams,
-  users,
-} from "../../db/collections";
+import { departments, jobPostings, teams, users } from "../../db/collections";
 import type { JobPosting, User } from "../../db/types";
 import { berlinToday } from "../../jobPostings/deadline";
+import { YFN_ORGANIZATION } from "../../organization";
 
 export const JOB_FEED_TAG = "YFN_TEAM" as const;
 
@@ -44,11 +39,6 @@ export async function getJobFeedV1(
   organizationId: string,
   today: string = berlinToday(),
 ): Promise<JobFeedItemV1[]> {
-  const organization = await (
-    await organizations()
-  ).findOne({ _id: organizationId }, { projection: { name: 1 } });
-  if (!organization) return [];
-
   const postings = await (
     await jobPostings()
   )
@@ -119,7 +109,7 @@ export async function getJobFeedV1(
     toFeedItem(
       posting,
       organizationId,
-      organization.name,
+      YFN_ORGANIZATION.name,
       teamsById,
       departmentsById,
       contactsById,

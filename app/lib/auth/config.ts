@@ -1,18 +1,17 @@
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
+import { YFN_ORGANIZATION } from "../organization";
 import { getGooglePhotoIsDefault } from "./googlePeople";
 import { ensureAppUser } from "./provisioning";
 import { normalizeOptionalUserRole } from "./roles";
 
-const ALLOWED_EMAIL_DOMAIN = "youngfounders.network";
-
 function isAllowedEmail(email: string | null | undefined): boolean {
-  return Boolean(email?.toLowerCase().endsWith(`@${ALLOWED_EMAIL_DOMAIN}`));
+  return Boolean(email?.toLowerCase().endsWith(`@${YFN_ORGANIZATION.domain}`));
 }
 
 const google = Google({
   authorization: {
-    params: { prompt: "select_account", hd: ALLOWED_EMAIL_DOMAIN },
+    params: { prompt: "select_account", hd: YFN_ORGANIZATION.domain },
   },
   profile(profile) {
     if (!isAllowedEmail(profile.email)) {

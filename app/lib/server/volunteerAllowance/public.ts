@@ -1,9 +1,6 @@
 import type { z } from "zod";
-import {
-  organizations,
-  projects,
-  volunteerAllowance,
-} from "../../db/collections";
+import { projects, volunteerAllowance } from "../../db/collections";
+import { YFN_ORGANIZATION } from "../../organization";
 import { presignUpload } from "../../s3/storage";
 import type { volunteerAllowanceSubmissionSchema } from "../../volunteerAllowance/schemas";
 import { addLog } from "../logs";
@@ -40,19 +37,18 @@ export async function getPublicAllowance(id: string) {
       error: "Dieses Formular wurde bereits eingereicht.",
     };
   }
-  const [organization, project] = await Promise.all([
-    (await organizations()).findOne({ _id: doc.organizationId }),
-    (await projects()).findOne({
-      _id: doc.projectId,
-      organizationId: doc.organizationId,
-    }),
-  ]);
+  const project = await (
+    await projects()
+  ).findOne({
+    _id: doc.projectId,
+    organizationId: doc.organizationId,
+  });
   return {
     valid: true as const,
-    organizationName: organization?.name || "",
-    organizationStreet: organization?.street || "",
-    organizationPlz: organization?.plz || "",
-    organizationCity: organization?.city || "",
+    organizationName: YFN_ORGANIZATION.name,
+    organizationStreet: YFN_ORGANIZATION.street,
+    organizationPlz: YFN_ORGANIZATION.plz,
+    organizationCity: YFN_ORGANIZATION.city,
     projectName: project?.name || "",
     activityDescription: doc.activityDescription,
     startDate: doc.startDate,
