@@ -49,9 +49,7 @@ export async function reopenJobPosting(input: {
     );
   }
   if (isDeadlinePassed(posting.deadline, berlinToday())) {
-    throw new Error(
-      "Die Frist liegt in der Vergangenheit",
-    );
+    throw new Error("Die Frist liegt in der Vergangenheit");
   }
   const result = await applyStatusTransition({
     posting,
@@ -67,10 +65,8 @@ export async function archiveJobPosting(input: {
   jobPostingId: string;
 }): Promise<void> {
   const { user, posting } = await loadOwnedForAction(input);
-  if (posting.status !== "published" && posting.status !== "closed") {
-    throw new Error(
-      "Nur veröffentlichte oder geschlossene Ausschreibungen können archiviert werden",
-    );
+  if (posting.status === "archived") {
+    throw new Error("Die Ausschreibung ist bereits archiviert");
   }
   const result = await applyStatusTransition({
     posting,

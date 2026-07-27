@@ -9,7 +9,7 @@ export const APPLICATION_STATUS_TRANSITIONS: Record<
   ApplicationStatus,
   readonly ApplicationNextStatus[]
 > = {
-  received: ["review", "rejected"],
+  received: ["interview", "rejected"],
   review: ["interview", "accepted", "rejected"],
   interview: ["accepted", "rejected"],
   accepted: [],

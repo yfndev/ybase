@@ -14,6 +14,7 @@ export async function ensureIndexes(): Promise<void> {
     .collection("users")
     .createIndexes([
       { key: { email: 1 }, unique: true, sparse: true },
+      { key: { applicationId: 1 }, unique: true, sparse: true },
       { key: { organizationId: 1 } },
     ]);
 
@@ -59,12 +60,13 @@ export async function ensureIndexes(): Promise<void> {
       { key: { organizationId: 1, _creationTime: -1 } },
       { key: { organizationId: 1, jobPostingId: 1, _creationTime: -1 } },
       { key: { organizationId: 1, status: 1, _creationTime: -1 } },
-      { key: { organizationId: 1, ownerId: 1, _creationTime: -1 } },
+      { key: { organizationId: 1, ownerIds: 1, _creationTime: -1 } },
       { key: { organizationId: 1, "files._id": 1 } },
       { key: { tallyEventId: 1 }, unique: true },
       { key: { tallySubmissionId: 1 }, unique: true },
       { key: { tallyResponseId: 1 }, unique: true },
       { key: { withdrawalTokenHash: 1 }, unique: true, sparse: true },
+      { key: { yfnEmailNormalized: 1 }, unique: true, sparse: true },
       { key: { jobPostingId: 1, applicantEmailNormalized: 1 }, unique: true },
     ]);
 

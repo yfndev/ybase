@@ -1,4 +1,3 @@
-import { berlinToday } from "../../jobPostings/deadline";
 import {
   departments,
   jobPostings,
@@ -7,6 +6,7 @@ import {
   users,
 } from "../../db/collections";
 import type { JobPosting, User } from "../../db/types";
+import { berlinToday } from "../../jobPostings/deadline";
 
 export const JOB_FEED_TAG = "YFN_TEAM" as const;
 
@@ -34,8 +34,10 @@ function namespacedId(organizationId: string, postingId: string): string {
   return `ybase:${organizationId}:job-posting:${postingId}`;
 }
 
-function tallyUrl(formId: string | undefined): string {
-  return formId ? `https://tally.so/r/${encodeURIComponent(formId)}` : "";
+function tallyUrl(formId: string | undefined, jobPostingId: string): string {
+  if (!formId) return "";
+  const params = new URLSearchParams({ jobPostingId });
+  return `https://tally.so/r/${encodeURIComponent(formId)}?${params}`;
 }
 
 export async function getJobFeedV1(
@@ -152,7 +154,7 @@ function toFeedItem(
     location: posting.location ?? "",
     deadline: posting.deadline || null,
     contact: formatContacts(posting, contactsById),
-    tallyUrl: tallyUrl(posting.tallyFormId),
+    tallyUrl: tallyUrl(posting.tallyFormId, posting._id),
     tags: [JOB_FEED_TAG],
   };
 }

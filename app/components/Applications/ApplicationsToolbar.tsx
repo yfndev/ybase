@@ -1,5 +1,6 @@
 "use client";
 
+import { MultiSelect } from "@/components/Selectors/MultiSelect";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -10,11 +11,7 @@ import {
 } from "@/components/ui/select";
 import { APPLICATION_STATUS_LABELS } from "@/lib/applications/status";
 import type { ApplicationStatus, User } from "@/lib/db/types";
-import {
-  ALL_APPLICATIONS,
-  type ApplicationFilters,
-  UNASSIGNED_APPLICATIONS,
-} from "./applicationTable";
+import { ALL_APPLICATIONS, type ApplicationFilters } from "./applicationTable";
 
 const STATUSES = Object.entries(APPLICATION_STATUS_LABELS) as [
   ApplicationStatus,
@@ -28,14 +25,21 @@ interface Props {
 }
 
 export function ApplicationsToolbar({ filters, owners, onChange }: Props) {
+  const ownerOptions = owners.map((owner) => ({
+    value: owner._id,
+    label: owner.name || owner.email || "Unbenannt",
+    description: owner.name ? owner.email : undefined,
+    keywords: `${owner.name ?? ""} ${owner.email ?? ""}`,
+  }));
+
   return (
-    <div className="flex flex-col gap-2 lg:flex-row">
+    <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(9rem,12rem)_minmax(10rem,14rem)]">
       <Input
         value={filters.search}
         onChange={(e) => onChange({ search: e.target.value })}
         placeholder="Bewerbungen durchsuchen…"
         aria-label="Bewerbungen durchsuchen"
-        className="lg:max-w-xs"
+        className="w-full"
       />
       <Select
         value={filters.status}
@@ -43,7 +47,7 @@ export function ApplicationsToolbar({ filters, owners, onChange }: Props) {
           onChange({ status: status as ApplicationFilters["status"] })
         }
       >
-        <SelectTrigger aria-label="Status filtern" className="w-full lg:w-48">
+        <SelectTrigger aria-label="Status filtern" className="w-full">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -55,30 +59,16 @@ export function ApplicationsToolbar({ filters, owners, onChange }: Props) {
           ))}
         </SelectContent>
       </Select>
-      <Select
-        value={filters.ownerId}
-        onValueChange={(ownerId) => onChange({ ownerId })}
-      >
-        <SelectTrigger
-          aria-label="Verantwortung filtern"
-          className="w-full lg:w-56"
-        >
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ALL_APPLICATIONS}>
-            Alle Verantwortlichen
-          </SelectItem>
-          <SelectItem value={UNASSIGNED_APPLICATIONS}>
-            Nicht zugewiesen
-          </SelectItem>
-          {owners.map((owner) => (
-            <SelectItem key={owner._id} value={owner._id}>
-              {owner.name || owner.email || "Unbenannt"}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <MultiSelect
+        value={filters.ownerIds}
+        onValueChange={(ownerIds) => onChange({ ownerIds })}
+        options={ownerOptions}
+        placeholder="Verantwortlich"
+        searchPlaceholder="Person suchen …"
+        renderValue={(selected, count) =>
+          count === 1 ? selected[0]?.label : `${count} Verantwortliche`
+        }
+      />
     </div>
   );
 }

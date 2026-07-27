@@ -1,7 +1,11 @@
-import { updateApplicationManagement } from "@/lib/server/applications/management";
-import { sendApplicationDecision } from "@/lib/server/applications/decision";
-import { setApplicationStatus } from "@/lib/server/applications/status";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { sendApplicationDecision } from "@/lib/server/applications/decision";
+import { updateApplicationManagement } from "@/lib/server/applications/management";
+import {
+  setApplicationOnboardingCompleted,
+  setApplicationYfnEmail,
+} from "@/lib/server/applications/onboarding";
+import { setApplicationStatus } from "@/lib/server/applications/status";
 
 export function useApplicationMutations() {
   const queryClient = useQueryClient();
@@ -19,6 +23,14 @@ export function useApplicationMutations() {
     }),
     sendDecision: useMutation({
       mutationFn: sendApplicationDecision,
+      onSuccess: invalidate,
+    }),
+    setYfnEmail: useMutation({
+      mutationFn: setApplicationYfnEmail,
+      onSuccess: invalidate,
+    }),
+    setOnboardingCompleted: useMutation({
+      mutationFn: setApplicationOnboardingCompleted,
       onSuccess: invalidate,
     }),
   };

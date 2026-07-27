@@ -2,9 +2,7 @@ import { CircleAlert } from "lucide-react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/Auth/LoginForm";
-import { TestAuthForm } from "@/components/Auth/TestAuthForm";
 import { auth } from "@/lib/auth";
-import { isTestMode } from "@/lib/auth/environment";
 import { isValidReimbursementInvite } from "@/lib/server/reimbursementInvites/data";
 import { redeemReimbursementInvite } from "@/lib/server/reimbursementInvites/redemption";
 import {
@@ -73,15 +71,12 @@ export default async function ReimbursementInvitePage({ params }: Props) {
   }
 
   const callbackUrl = `/invite/${token}`;
-  const loginForm = isTestMode() ? (
-    <TestAuthForm callbackUrl={callbackUrl} />
-  ) : (
-    <LoginForm callbackUrl={callbackUrl} />
-  );
 
   return (
     <div className="flex min-h-svh -mt-24 items-center justify-center p-8">
-      <div className="w-full max-w-sm">{loginForm}</div>
+      <div className="w-full max-w-sm">
+        <LoginForm callbackUrl={callbackUrl} />
+      </div>
     </div>
   );
 }

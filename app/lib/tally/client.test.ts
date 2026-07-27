@@ -9,99 +9,30 @@ function json(value: unknown) {
   });
 }
 
-function tallyFetch(options?: {
-  requiredPhone?: boolean;
-  workspaceId?: string;
-}) {
-  return vi.fn(async (input: string | URL | Request, _init?: RequestInit) => {
-    const url = new URL(String(input));
-    if (url.pathname === "/workspaces") {
-      return json({
-        items: [{ id: "ws-a", name: "Workspace A" }],
-        hasMore: false,
-      });
-    }
-    if (url.pathname === "/forms") {
-      return json({
-        items: [
-          {
-            id: "form-a",
-            name: "Application",
-            workspaceId: "ws-a",
-            status: "PUBLISHED",
-          },
-        ],
-        hasMore: false,
-      });
-    }
-    if (url.pathname === "/forms/form-a") {
-      return json({
+test("loads a form with a pinned API version", async () => {
+  const fetcher = vi.fn(
+    async (_input: string | URL | Request, _init?: RequestInit) =>
+      json({
         id: "form-a",
-        name: "Application",
-        workspaceId: options?.workspaceId ?? "ws-a",
+        workspaceId: "ws-a",
         status: "PUBLISHED",
-        blocks: options?.requiredPhone
-          ? [{ type: "INPUT_PHONE_NUMBER", payload: { isRequired: true } }]
-          : [],
-      });
-    }
-    if (url.pathname === "/forms/form-a/questions") {
-      return json({
-        questions: [
-          {
-            id: "q-name",
-            title: "Name",
-            type: "INPUT_TEXT",
-            fields: [{ type: "INPUT_TEXT" }],
-          },
-          {
-            id: "q-phone",
-            title: "Telefon",
-            type: "INPUT_PHONE_NUMBER",
-            fields: [{ type: "INPUT_PHONE_NUMBER" }],
-          },
-        ],
-      });
-    }
-    return new Response(null, { status: 404 });
-  });
-}
-
-test("loads resources and questions with a pinned API version", async () => {
-  const fetcher = tallyFetch();
+        blocks: [],
+        settings: {},
+      }),
+  );
   const client = createTallyClient(
     "token-a",
     fetcher as unknown as typeof fetch,
   );
 
-  const resources = await client.resources();
-  const questions = await client.questions("ws-a", "form-a");
+  const form = await client.getForm("form-a");
 
-  expect(resources.workspaces[0]?.name).toBe("Workspace A");
-  expect(questions).toEqual([
-    { id: "q-name", title: "Name", type: "INPUT_TEXT" },
-  ]);
+  expect(form.workspaceId).toBe("ws-a");
   for (const call of fetcher.mock.calls) {
     const headers = new Headers(call[1]?.headers);
     expect(headers.get("tally-version")).toBe(TALLY_API_VERSION);
     expect(headers.get("authorization")).toBe("Bearer token-a");
   }
-});
-
-test("rejects a form outside the selected workspace", async () => {
-  const fetcher = tallyFetch({ workspaceId: "ws-b" });
-  const client = createTallyClient("token", fetcher as unknown as typeof fetch);
-  await expect(client.questions("ws-a", "form-a")).rejects.toThrow(
-    "does not belong to this workspace",
-  );
-});
-
-test("rejects a base form that requires a phone number", async () => {
-  const fetcher = tallyFetch({ requiredPhone: true });
-  const client = createTallyClient("token", fetcher as unknown as typeof fetch);
-  await expect(client.questions("ws-a", "form-a")).rejects.toThrow(
-    "requires a phone number",
-  );
 });
 
 test("requires a Tally API token", () => {
@@ -202,6 +133,64 @@ test("creates a signed FORM_RESPONSE webhook", async () => {
     eventTypes: ["FORM_RESPONSE"],
     signingSecret: "secret",
   });
+});
+
+test("updates and enables a signed FORM_RESPONSE webhook", async () => {
+  const fetcher = vi.fn(
+    async (_input: string | URL | Request, _init?: RequestInit) =>
+      new Response(null, { status: 204 }),
+  );
+  const client = createTallyClient("t", fetcher as unknown as typeof fetch);
+
+  await client.updateWebhook("wh-1", {
+    formId: "form-1",
+    url: "https://stage-ybase.test/api/webhooks/tally",
+    signingSecret: "secret",
+  });
+
+  const [url, init] = fetcher.mock.calls[0];
+  expect(url).toBe("https://api.tally.so/webhooks/wh-1");
+  expect(init?.method).toBe("PATCH");
+  expect(JSON.parse(String(init?.body))).toEqual({
+    formId: "form-1",
+    url: "https://stage-ybase.test/api/webhooks/tally",
+    signingSecret: "secret",
+    eventTypes: ["FORM_RESPONSE"],
+    isEnabled: true,
+  });
+});
+
+test("deletes a webhook and form without a request body", async () => {
+  const fetcher = vi.fn(
+    async (_input: string | URL | Request, _init?: RequestInit) =>
+      new Response(null, { status: 204 }),
+  );
+  const client = createTallyClient("token", fetcher as unknown as typeof fetch);
+
+  await client.deleteWebhook("webhook-1");
+  await client.deleteForm("form-1");
+
+  expect(fetcher.mock.calls).toHaveLength(2);
+  expect(fetcher.mock.calls[0][0]).toBe(
+    "https://api.tally.so/webhooks/webhook-1",
+  );
+  expect(fetcher.mock.calls[1][0]).toBe("https://api.tally.so/forms/form-1");
+  for (const [, init] of fetcher.mock.calls) {
+    expect(init?.method).toBe("DELETE");
+    expect(init?.body).toBeUndefined();
+    expect(new Headers(init?.headers).has("content-type")).toBe(false);
+  }
+});
+
+test("treats already deleted Tally resources as deleted", async () => {
+  const fetcher = vi.fn(
+    async (_input: string | URL | Request, _init?: RequestInit) =>
+      new Response(null, { status: 404 }),
+  );
+  const client = createTallyClient("token", fetcher as unknown as typeof fetch);
+
+  await expect(client.deleteWebhook("missing")).resolves.toBeUndefined();
+  await expect(client.deleteForm("missing")).resolves.toBeUndefined();
 });
 
 test("reads a form with its blocks and settings", async () => {

@@ -1,6 +1,7 @@
 import { organizations, users } from "../db/collections";
 import { newId } from "../db/ids";
 import type { User } from "../db/types";
+import { linkAcceptedApplication } from "./applicationLinking";
 
 type SignInProfile = {
   email: string;
@@ -12,14 +13,15 @@ type SignInProfile = {
 
 export async function ensureAppUser(profile: SignInProfile): Promise<User> {
   const usersCol = await users();
+  const normalizedEmail = profile.email.trim().toLowerCase();
 
-  let user = await usersCol.findOne({ email: profile.email });
+  let user = await usersCol.findOne({ email: normalizedEmail });
   if (!user) {
     const now = Date.now();
     user = {
       _id: newId(),
       _creationTime: now,
-      email: profile.email,
+      email: normalizedEmail,
       name: profile.name,
       image: profile.image,
       firstName: profile.firstName,
@@ -53,7 +55,7 @@ export async function ensureAppUser(profile: SignInProfile): Promise<User> {
   }
 
   if (!user.organizationId) {
-    const organizationId = await findOrgIdByDomain(profile.email);
+    const organizationId = await findOrgIdByDomain(normalizedEmail);
     if (organizationId) {
       await usersCol.updateOne(
         { _id: user._id },
@@ -64,7 +66,7 @@ export async function ensureAppUser(profile: SignInProfile): Promise<User> {
     }
   }
 
-  return user;
+  return linkAcceptedApplication(user);
 }
 
 async function findOrgIdByDomain(email: string): Promise<string | undefined> {

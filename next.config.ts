@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  distDir: process.env.NEXT_DIST_DIR ?? ".next",
   // Self-contained server build for Docker/Coolify deployment.
   output: "standalone",
   // Pin the file-tracing root to this project so standalone output lands at

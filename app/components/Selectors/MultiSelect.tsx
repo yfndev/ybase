@@ -27,6 +27,7 @@ interface Props<TOption extends MultiSelectOption> {
   emptyMessage?: string;
   loadingMessage?: string;
   isLoading?: boolean;
+  disabled?: boolean;
   maxSelected?: number;
   renderOption?: (option: TOption) => ReactNode;
   renderValue?: (options: TOption[], selectedCount: number) => ReactNode;
@@ -42,6 +43,7 @@ export function MultiSelect<TOption extends MultiSelectOption>({
   emptyMessage = "Keine passenden Einträge gefunden.",
   loadingMessage = "Einträge werden geladen …",
   isLoading = false,
+  disabled = false,
   maxSelected = Number.POSITIVE_INFINITY,
   renderOption,
   renderValue,
@@ -96,6 +98,7 @@ export function MultiSelect<TOption extends MultiSelectOption>({
           aria-haspopup="listbox"
           aria-expanded={open}
           data-placeholder={value.length === 0}
+          disabled={disabled}
           className={cn(
             inputClassName,
             "flex min-h-12 items-center justify-between gap-2 text-left data-[placeholder=true]:text-muted-foreground",
@@ -118,7 +121,7 @@ export function MultiSelect<TOption extends MultiSelectOption>({
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="w-(--radix-popover-trigger-width) p-0"
+        className="w-(--radix-popover-trigger-width) max-w-[calc(100vw-2rem)] overflow-hidden p-0"
       >
         <div className="relative border-b p-2">
           <Search className="pointer-events-none absolute top-1/2 left-5 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -150,14 +153,15 @@ export function MultiSelect<TOption extends MultiSelectOption>({
             ) : null}
             {visibleOptions.map((option) => {
               const selected = selectedValues.has(option.value);
-              const disabled = !selected && value.length >= maxSelected;
+              const optionDisabled =
+                disabled || (!selected && value.length >= maxSelected);
               return (
                 <button
                   key={option.value}
                   type="button"
                   role="option"
                   aria-selected={selected}
-                  disabled={disabled}
+                  disabled={optionDisabled}
                   onClick={() => toggleOption(option)}
                   className="flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left outline-none transition-colors hover:bg-accent focus-visible:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
                 >

@@ -17,7 +17,7 @@ export function applicationDecisionEmailDefaults(input: {
   if (input.decision === "accepted") {
     return {
       subject: `Zusage für deine Bewerbung als ${input.jobTitle}`,
-      message: `${greeting}\n\nvielen Dank für deine Bewerbung. Wir freuen uns, dir eine Zusage für die Position ${input.jobTitle} geben zu können.\n\nWir melden uns zeitnah mit den nächsten Schritten bei dir.`,
+      message: `${greeting}\n\nvielen Dank für deine Bewerbung. Wir freuen uns, dir für die Position ${input.jobTitle} eine Zusage zu geben.\n\nPeople & Culture führt anschließend das interne Onboarding durch und richtet die benötigten Zugänge sowie deine YFN-E-Mail ein. Sobald deine neue YFN-E-Mail bereit ist, kannst du dich damit in YBase registrieren.`,
     };
   }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowDown, ArrowUp, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -10,7 +11,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { ApplicationWithFiles, User } from "@/lib/db/types";
-import { ArrowDown, ArrowUp, Inbox } from "lucide-react";
 import { ApplicationStatusBadge } from "./ApplicationStatusBadge";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("de-DE", {
@@ -72,9 +72,18 @@ export function ApplicationsTable({
               application.status === "withdrawn"
                 ? "Anonymisierte Bewerbung"
                 : application.applicantName || application.applicantEmail;
-            const owner = application.ownerId
-              ? ownersById.get(application.ownerId)
-              : undefined;
+            const responsiblePeople = application.ownerIds.flatMap(
+              (ownerId) => {
+                const owner = ownersById.get(ownerId);
+                return owner ? [owner] : [];
+              },
+            );
+            const responsibilityLabel =
+              responsiblePeople.length === 0
+                ? "–"
+                : responsiblePeople
+                    .map((owner) => owner.name || owner.email || "Unbenannt")
+                    .join(", ");
             return (
               <TableRow
                 key={application._id}
@@ -104,7 +113,9 @@ export function ApplicationsTable({
                 <TableCell>
                   <ApplicationStatusBadge status={application.status} />
                 </TableCell>
-                <TableCell>{owner?.name || owner?.email || "–"}</TableCell>
+                <TableCell className="max-w-56 truncate">
+                  {responsibilityLabel}
+                </TableCell>
                 <TableCell className="pr-4 text-muted-foreground">
                   {DATE_FORMAT.format(application.submittedAt)}
                 </TableCell>

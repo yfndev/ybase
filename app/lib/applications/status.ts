@@ -4,7 +4,7 @@ export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
   received: "Eingegangen",
   review: "In Prüfung",
   interview: "Interview",
-  accepted: "Angenommen",
+  accepted: "Onboarding",
   rejected: "Abgelehnt",
   withdrawn: "Zurückgezogen",
 };

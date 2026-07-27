@@ -45,6 +45,11 @@ erDiagram
         string organizationId
         string email
         string role
+        string teamId
+        string positionTitle
+        string applicationId
+        string memberStatus
+        string teamOnboardingStatus
     }
 
     projects {
@@ -101,7 +106,15 @@ erDiagram
         string organizationId
         string jobPostingId
         string applicantEmail
+        string applicantPhone
         string status
+        array ownerIds
+        string yfnEmailNormalized
+        string onboardingUserId
+        number onboardingLinkedAt
+        number onboardingCompletedAt
+        string onboardingCompletedBy
+        number cleanupEligibleAt
         array files
     }
 
@@ -118,6 +131,12 @@ Application files are embedded in the application snapshot so the application
 and its initial per-file import status are stored atomically. Source URLs remain
 server-only. Imported objects use deterministic storage keys; each file records
 its status, attempt count, error and final object key.
+
+Accepted applications may hold a normalized YFN email until the first matching
+Google login. A successful, unique match links the application to the onboarding
+user, copies team and position from the job posting, and sets
+`cleanupEligibleAt` for the retention workflow. Link conflicts stay on the
+application for correction by P&C.
 
 The authoritative field definitions live in
 [`app/lib/db/types.ts`](../app/lib/db/types.ts), while indexes are defined in

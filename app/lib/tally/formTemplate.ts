@@ -14,10 +14,45 @@ export function resolveEmailFieldUuid(blocks: TallyBlock[]): string {
   return email.uuid;
 }
 
+export function withRequiredPhoneField(blocks: TallyBlock[]): TallyBlock[] {
+  let hasPhoneField = false;
+  const requiredBlocks = blocks.map((block) => {
+    if (!block.type.toUpperCase().includes("PHONE")) return block;
+    hasPhoneField = true;
+    return {
+      ...block,
+      payload: {
+        ...block.payload,
+        isRequired: true,
+      },
+    };
+  });
+  if (!hasPhoneField) {
+    throw new Error("Die Tally-Vorlage enthält kein Telefonnummer-Feld");
+  }
+  return requiredBlocks;
+}
+
 export function withHiddenField(
   blocks: TallyBlock[],
   name: string,
 ): TallyBlock[] {
+  const alreadyExists = blocks.some((block) => {
+    if (block.type !== "HIDDEN_FIELDS") return false;
+    const hiddenFields = block.payload?.hiddenFields;
+    return (
+      Array.isArray(hiddenFields) &&
+      hiddenFields.some(
+        (field) =>
+          typeof field === "object" &&
+          field !== null &&
+          "name" in field &&
+          field.name === name,
+      )
+    );
+  });
+  if (alreadyExists) return blocks;
+
   const hiddenBlock: TallyBlock = {
     uuid: crypto.randomUUID(),
     type: "HIDDEN_FIELDS",

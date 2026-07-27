@@ -1,29 +1,10 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { useApplicationMutations } from "@/lib/client/applications/hooks/useApplicationMutations";
-import type { ApplicationWithFiles, User } from "@/lib/db/types";
-import { LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { UNASSIGNED_APPLICATIONS } from "./applicationTable";
-
-function toLocalDateTime(timestamp?: number): string {
-  if (!timestamp) return "";
-  const date = new Date(timestamp);
-  const offset = date.getTimezoneOffset() * 60_000;
-  return new Date(timestamp - offset).toISOString().slice(0, 16);
-}
+import { SelectMembers } from "@/components/Selectors/SelectMembers";
+import { useApplicationMutations } from "@/lib/client/applications/hooks/useApplicationMutations";
+import type { ApplicationWithFiles, User } from "@/lib/db/types";
 
 export function ApplicationManagement({
   application,
@@ -33,33 +14,19 @@ export function ApplicationManagement({
   owners: User[];
 }) {
   const { updateManagement } = useApplicationMutations();
-  const [ownerId, setOwnerId] = useState(
-    application.ownerId ?? UNASSIGNED_APPLICATIONS,
-  );
-  const [internalNotes, setInternalNotes] = useState(
-    application.internalNotes ?? "",
-  );
-  const [interviewAt, setInterviewAt] = useState(
-    toLocalDateTime(application.interviewAt),
-  );
+  const [ownerIds, setOwnerIds] = useState(application.ownerIds);
 
-  async function saveManagement() {
-    const parsedInterview = interviewAt
-      ? new Date(interviewAt).getTime()
-      : null;
-    if (parsedInterview !== null && Number.isNaN(parsedInterview)) {
-      toast.error("Bitte gib einen gültigen Interviewtermin an");
-      return;
-    }
+  async function updateOwners(nextOwnerIds: string[]) {
+    const previousOwnerIds = ownerIds;
+    setOwnerIds(nextOwnerIds);
     try {
       await updateManagement.mutateAsync({
         applicationId: application._id,
-        ownerId: ownerId === UNASSIGNED_APPLICATIONS ? null : ownerId,
-        internalNotes,
-        interviewAt: parsedInterview,
+        ownerIds: nextOwnerIds,
       });
-      toast.success("Bewerbung aktualisiert");
+      toast.success("Verantwortliche aktualisiert");
     } catch (error) {
+      setOwnerIds(previousOwnerIds);
       toast.error(
         error instanceof Error ? error.message : "Fehler beim Speichern",
       );
@@ -67,51 +34,17 @@ export function ApplicationManagement({
   }
 
   return (
-    <section className="space-y-4">
-      <h3 className="text-sm font-semibold">Interne Bearbeitung</h3>
-      <div className="grid gap-1.5">
-        <Label htmlFor="application-owner">Verantwortlich</Label>
-        <Select value={ownerId} onValueChange={setOwnerId}>
-          <SelectTrigger id="application-owner" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={UNASSIGNED_APPLICATIONS}>
-              Nicht zugewiesen
-            </SelectItem>
-            {owners.map((owner) => (
-              <SelectItem key={owner._id} value={owner._id}>
-                {owner.name || owner.email || "Unbenannt"}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="grid gap-1.5">
-        <Label htmlFor="application-interview">Interviewtermin</Label>
-        <Input
-          id="application-interview"
-          type="datetime-local"
-          value={interviewAt}
-          onChange={(e) => setInterviewAt(e.target.value)}
-        />
-      </div>
-      <div className="grid gap-1.5">
-        <Label htmlFor="application-notes">Interne Notizen</Label>
-        <Textarea
-          id="application-notes"
-          value={internalNotes}
-          onChange={(e) => setInternalNotes(e.target.value)}
-          placeholder="Nur für P&C und Admins sichtbar"
-          rows={5}
-        />
-      </div>
-      <Button onClick={saveManagement} disabled={updateManagement.isPending}>
-        {updateManagement.isPending ? (
-          <LoaderCircle className="animate-spin" />
-        ) : null}
-        Bearbeitung speichern
-      </Button>
+    <section className="space-y-3 border-t pt-5">
+      <h3 className="text-xl font-semibold">Verantwortliche</h3>
+      <SelectMembers
+        id="application-owners"
+        members={owners}
+        value={ownerIds}
+        onValueChange={updateOwners}
+        placeholder="Verantwortliche auswählen"
+        searchPlaceholder="Name oder E-Mail suchen"
+        disabled={updateManagement.isPending}
+      />
     </section>
   );
 }

@@ -2,7 +2,12 @@ import { beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../s3/storage", () => ({ deleteObject: vi.fn() }));
 
-import { applications, logs, tallyWebhookEvents } from "../../db/collections";
+import {
+  applications,
+  logs,
+  tallyWebhookEvents,
+  users,
+} from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { Application } from "../../db/types";
 import { deleteObject } from "../../s3/storage";
@@ -17,10 +22,12 @@ setupTestDatabase();
 
 let applicationId: string;
 let token: string;
+let onboardingUserId: string;
 
 beforeEach(async () => {
   vi.clearAllMocks();
   applicationId = newId();
+  onboardingUserId = newId();
   const withdrawal = createApplicationWithdrawalToken();
   token = withdrawal.token;
   const application: Application = {
@@ -32,6 +39,7 @@ beforeEach(async () => {
     applicantName: "Secret Person",
     applicantEmail: "secret@example.com",
     applicantEmailNormalized: "secret@example.com",
+    applicantPhone: "+4915123456789",
     fields: [
       {
         key: "motivation",
@@ -60,12 +68,29 @@ beforeEach(async () => {
     tallyResponseId: "tally-response-secret",
     tallyFormId: "tally-form-secret",
     withdrawalTokenHash: withdrawal.tokenHash,
+    yfnEmail: "member@youngfounders.network",
+    yfnEmailNormalized: "member@youngfounders.network",
+    onboardingUserId,
+    onboardingLinkedAt: Date.now(),
+    onboardingCompletedAt: Date.now(),
+    onboardingCompletedBy: newId(),
+    cleanupEligibleAt: Date.now(),
     submittedAt: Date.now(),
-    ownerId: newId(),
-    internalNotes: "secret note",
-    interviewAt: Date.now() + 1_000,
+    ownerIds: [newId()],
   };
   await (await applications()).insertOne(application);
+  await (
+    await users()
+  ).insertOne({
+    _id: onboardingUserId,
+    _creationTime: Date.now(),
+    email: "member@youngfounders.network",
+    organizationId: application.organizationId,
+    role: "member",
+    applicationId,
+    memberStatus: "onboarding",
+    teamOnboardingStatus: "not_started",
+  });
   await (
     await tallyWebhookEvents()
   ).insertOne({
@@ -95,16 +120,24 @@ test("anonymizes personal data, locks the application and removes files", async 
     history: [expect.objectContaining({ toStatus: "withdrawn" })],
   });
   expect(stored).not.toHaveProperty("applicantName");
-  expect(stored).not.toHaveProperty("internalNotes");
+  expect(stored).not.toHaveProperty("applicantPhone");
+  expect(stored).not.toHaveProperty("ownerIds");
   expect(stored).not.toHaveProperty("withdrawalTokenHash");
+  expect(stored).not.toHaveProperty("yfnEmail");
+  expect(stored).not.toHaveProperty("onboardingUserId");
+  expect(stored).not.toHaveProperty("onboardingCompletedAt");
+  expect(stored).not.toHaveProperty("onboardingCompletedBy");
   expect(JSON.stringify(stored)).not.toMatch(
-    /Secret Person|secret@example.com|secret answer|secret note|tally-event-secret/,
+    /Secret Person|secret@example.com|secret answer|tally-event-secret/,
   );
   expect(deleteObject).toHaveBeenCalledWith("applications/secret-cv.pdf");
   expect(
     await (await tallyWebhookEvents()).countDocuments({ applicationId }),
   ).toBe(0);
   expect(await canWithdrawApplication(token)).toBe(false);
+  expect(
+    await (await users()).findOne({ _id: onboardingUserId }),
+  ).not.toHaveProperty("applicationId");
   expect(
     await (await logs()).findOne({ entityId: applicationId }),
   ).toMatchObject({ action: "application.withdrawn", userId: "applicant" });

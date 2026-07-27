@@ -73,9 +73,7 @@ let projectA: string;
 
 setupTestDatabase();
 
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
+afterEach(() => {});
 
 beforeEach(async () => {
   vi.clearAllMocks();
@@ -372,8 +370,6 @@ test("unsubmitted shared links stay out of the reimbursement list", async () => 
 });
 
 test("getFileInfo returns signed download metadata", async () => {
-  vi.stubEnv("IS_TEST", "false");
-
   await expect(getFileInfo("receipt-key")).resolves.toEqual({
     url: "signed-url",
     contentType: "application/pdf",
@@ -382,7 +378,6 @@ test("getFileInfo returns signed download metadata", async () => {
 });
 
 test("file downloads reject a receipt from another organization", async () => {
-  vi.stubEnv("IS_TEST", "false");
   const foreignReimbursementId = newId();
   await (
     await reimbursements()
@@ -420,7 +415,6 @@ test("file downloads reject a receipt from another organization", async () => {
 });
 
 test("members cannot download another member's receipt", async () => {
-  vi.stubEnv("IS_TEST", "false");
   const reimbursementId = newId();
   await (
     await reimbursements()
@@ -538,7 +532,6 @@ test("creation rejects a signature upload owned by another user", async () => {
 });
 
 test("public links reject raw keys owned by another link", async () => {
-  vi.stubEnv("IS_TEST", "false");
   const id = await createReimbursementLink({
     projectId: projectA,
     type: "expense",

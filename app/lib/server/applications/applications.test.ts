@@ -8,7 +8,11 @@ import { newId } from "../../db/ids";
 import type { Application } from "../../db/types";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
-import { getApplications, updateApplicationManagement } from "./management";
+import {
+  getApplication,
+  getApplications,
+  updateApplicationManagement,
+} from "./management";
 import { setApplicationStatus } from "./status";
 
 let organizationId: string;
@@ -17,6 +21,7 @@ let actorId: string;
 let postingId: string;
 let applicationId: string;
 let ownerId: string;
+let secondOwnerId: string;
 
 setupTestDatabase();
 
@@ -54,6 +59,7 @@ beforeEach(async () => {
   postingId = newId();
   applicationId = newId();
   ownerId = newId();
+  secondOwnerId = newId();
   vi.mocked(requirePermission).mockResolvedValue(
     createTestActor({
       _id: actorId,
@@ -83,6 +89,17 @@ beforeEach(async () => {
     memberStatus: "active",
     teamOnboardingStatus: "completed",
   });
+  await (
+    await users()
+  ).insertOne({
+    _id: secondOwnerId,
+    _creationTime: Date.now(),
+    organizationId,
+    name: "Sam Owner",
+    role: "member",
+    memberStatus: "active",
+    teamOnboardingStatus: "completed",
+  });
   await insertApplication({ _id: applicationId });
 });
 
@@ -102,21 +119,50 @@ test("lists only applications from the actor organization with posting titles", 
   });
 });
 
-test("stores management fields and an internal history entry", async () => {
-  const interviewAt = Date.now() + 86_400_000;
+test("loads one application without internal identifiers", async () => {
+  await (
+    await applications()
+  ).updateOne(
+    { _id: applicationId },
+    {
+      $set: {
+        ownerIds: [ownerId],
+        withdrawalTokenHash: "secret-withdrawal-hash",
+        fields: [
+          {
+            key: "phone-in-fields",
+            label: "Telefon",
+            type: "INPUT_PHONE_NUMBER",
+            value: "+49 151 23456789",
+          },
+        ],
+      },
+    },
+  );
+
+  const application = await getApplication(applicationId);
+  expect(application).toMatchObject({
+    _id: applicationId,
+    jobPostingTitle: "Fundraising",
+    ownerIds: [ownerId],
+  });
+  expect(application).not.toHaveProperty("applicantPhone");
+  expect(application).not.toHaveProperty("applicantEmailNormalized");
+  expect(application).not.toHaveProperty("tallyEventId");
+  expect(application).not.toHaveProperty("tallySubmissionId");
+  expect(application).not.toHaveProperty("tallyResponseId");
+  expect(application).not.toHaveProperty("tallyFormId");
+  expect(application).not.toHaveProperty("withdrawalTokenHash");
+});
+
+test("stores multiple responsible people and an internal history entry", async () => {
   await updateApplicationManagement({
     applicationId,
-    ownerId,
-    internalNotes: "Gute Vorerfahrung",
-    interviewAt,
+    ownerIds: [ownerId, secondOwnerId],
   });
 
   const stored = await (await applications()).findOne({ _id: applicationId });
-  expect(stored).toMatchObject({
-    ownerId,
-    internalNotes: "Gute Vorerfahrung",
-    interviewAt,
-  });
+  expect(stored).toMatchObject({ ownerIds: [ownerId, secondOwnerId] });
   expect(stored?.history?.[0]).toMatchObject({
     actorUserId: actorId,
     type: "management_updated",
@@ -128,23 +174,18 @@ test("stores management fields and an internal history entry", async () => {
   });
 });
 
-test("removes an assigned owner and interview date", async () => {
+test("removes an assigned owner", async () => {
   await updateApplicationManagement({
     applicationId,
-    ownerId,
-    internalNotes: "",
-    interviewAt: Date.now() + 86_400_000,
+    ownerIds: [ownerId],
   });
   await updateApplicationManagement({
     applicationId,
-    ownerId: null,
-    internalNotes: "",
-    interviewAt: null,
+    ownerIds: [],
   });
 
   const stored = await (await applications()).findOne({ _id: applicationId });
-  expect(stored?.ownerId).toBeUndefined();
-  expect(stored?.interviewAt).toBeUndefined();
+  expect(stored?.ownerIds).toEqual([]);
 });
 
 test("rejects an owner from another organization", async () => {
@@ -163,20 +204,21 @@ test("rejects an owner from another organization", async () => {
   await expect(
     updateApplicationManagement({
       applicationId,
-      ownerId: foreignOwnerId,
-      internalNotes: "",
-      interviewAt: null,
+      ownerIds: [ownerId, foreignOwnerId],
     }),
-  ).rejects.toThrow("Verantwortliche Person nicht verfügbar");
+  ).rejects.toThrow("nicht verfügbar");
 });
 
 test("enforces allowed non-decision transitions and records them", async () => {
-  await setApplicationStatus({ applicationId, status: "review" });
   await setApplicationStatus({ applicationId, status: "interview" });
 
   const stored = await (await applications()).findOne({ _id: applicationId });
   expect(stored?.status).toBe("interview");
-  expect(stored?.history).toHaveLength(2);
+  expect(stored?.history).toHaveLength(1);
+  expect(stored?.history?.at(-1)).toMatchObject({
+    fromStatus: "received",
+    toStatus: "interview",
+  });
   await expect(
     setApplicationStatus({ applicationId, status: "review" }),
   ).rejects.toThrow("nicht zulässig");
@@ -205,9 +247,7 @@ test("blocks management changes after a withdrawal", async () => {
   await expect(
     updateApplicationManagement({
       applicationId,
-      ownerId: null,
-      internalNotes: "Neue Notiz",
-      interviewAt: null,
+      ownerIds: [],
     }),
   ).rejects.toThrow("nicht bearbeitet");
 });
@@ -220,5 +260,8 @@ test("cannot read or update an application from another organization", async () 
   await expect(
     setApplicationStatus({ applicationId, status: "review" }),
   ).rejects.toThrow("Bewerbung nicht gefunden");
+  await expect(getApplication(applicationId)).rejects.toThrow(
+    "Bewerbung nicht gefunden",
+  );
   await expect(getApplications()).resolves.toEqual([]);
 });
