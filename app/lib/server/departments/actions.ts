@@ -6,7 +6,6 @@ import { requirePermission } from "../../auth/session";
 import { departments } from "../../db/collections";
 import { newId } from "../../db/ids";
 import { addLog } from "../logs";
-import { scheduleTeamDirectoryRevalidation } from "../teamDirectory/revalidate";
 
 const nameSchema = z.object({ name: z.string().trim().min(1) });
 const sortOrderSchema = z.number().int().min(0).max(9999);
@@ -55,7 +54,6 @@ export async function updateDepartment(input: {
   await (
     await departments()
   ).updateOne({ _id: departmentId }, { $set: changes });
-  scheduleTeamDirectoryRevalidation();
   await addLog(
     user.organizationId,
     user._id,
@@ -86,7 +84,6 @@ async function setArchived(
   const id = z.string().parse(departmentId);
   const department = await requireOwnedDepartment(id, user.organizationId);
   await (await departments()).updateOne({ _id: id }, { $set: { isArchived } });
-  scheduleTeamDirectoryRevalidation();
   await addLog(user.organizationId, user._id, action, id, department.name);
 }
 

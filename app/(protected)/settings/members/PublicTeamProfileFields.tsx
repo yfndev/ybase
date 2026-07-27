@@ -25,8 +25,8 @@ export function PublicTeamProfileFields({
         Darstellung auf der Team-Seite
       </legend>
       <p className="text-muted-foreground text-sm">
-        Aktive Mitglieder werden automatisch synchronisiert. Für inaktive oder
-        archivierte Mitglieder endet die Synchronisierung.
+        Aktive Mitglieder werden automatisch synchronisiert. Für inaktive
+        Mitglieder endet die Synchronisierung.
       </p>
       <div className="grid gap-1.5">
         <Label htmlFor="member-public-name">Öffentlicher Name</Label>

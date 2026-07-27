@@ -1,26 +1,18 @@
-import { authenticateTeamDirectoryToken } from "@/lib/server/teamDirectory/auth";
 import { getTeamDirectoryV1 } from "@/lib/server/teamDirectory/feed";
 
 export const runtime = "nodejs";
 
 const RESPONSE_HEADERS = {
-  "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
-  Vary: "Authorization",
+  "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
 };
 
-function bearerToken(request: Request): string | null {
-  const authorization = request.headers.get("authorization");
-  const match = authorization?.match(/^Bearer ([^\s]+)$/);
-  return match?.[1] ?? null;
-}
-
 export async function GET(request: Request) {
-  const token = bearerToken(request);
-  const organizationId = token ? authenticateTeamDirectoryToken(token) : null;
+  const organizationId =
+    process.env.YFN_TEAM_DIRECTORY_ORGANIZATION_ID?.trim();
   if (!organizationId) {
     return Response.json(
-      { error: "Nicht autorisiert" },
-      { status: 401, headers: RESPONSE_HEADERS },
+      { error: "Team-Directory ist nicht konfiguriert" },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }
 

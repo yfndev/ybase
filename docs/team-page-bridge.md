@@ -29,7 +29,6 @@ ybase modelliert bereits:
 Die bestehende API für veröffentlichte Stellenanzeigen zeigt bereits das
 geeignete Integrationsmuster:
 
-- serverseitiger Bearer-Token,
 - versionierter Read-Endpunkt unter `/api/v1`,
 - explizite Projektion und Transformation der internen Daten in einen
   öffentlichen DTO,
@@ -56,7 +55,7 @@ werden.
 
 ## Architekturentscheidung
 
-### Empfohlen: Pull-Feed mit Cache und gezielter Invalidierung
+### Empfohlen: öffentlicher Pull-Feed mit kurzem Cache
 
 ```text
 P&C bearbeitet ybase
@@ -65,27 +64,25 @@ P&C bearbeitet ybase
 ybase MongoDB
         |
         | GET /api/v1/team-directory
-        | Authorization: Bearer <read-only token>
         v
 yfn-landing Server
         |
-        | Next.js Data Cache, z. B. 5 Minuten
+        | Next.js Data Cache, maximal 5 Minuten
         v
 Team-Seite
-
-Nach erfolgreicher Änderung in ybase:
-ybase --signierter Revalidate-Request--> yfn-landing --revalidateTag--> frische Daten
 ```
 
-Die Landingpage liest den Feed ausschließlich serverseitig. Das gemeinsame
-Secret wird einmalig in beiden Deployments als Umgebungsvariable konfiguriert
-und gelangt weder in den Browser noch in das gerenderte HTML.
+Der Feed enthält ausschließlich Daten, die anschließend ohnehin öffentlich auf
+der Team-Seite erscheinen. Deshalb benötigt er kein zusätzliches Secret. Die
+Landingpage liest ihn serverseitig und aktualisiert den Cache spätestens nach
+fünf Minuten.
 
 Vorteile:
 
 - keine zweite editierbare Kopie des Team-Bestands,
 - keine Payload-Upserts, Konflikte oder verwaisten Datensätze,
-- Änderungen sind nach Cache-Invalidierung nahezu sofort sichtbar,
+- nur zwei Umgebungsvariablen über beide Deployments,
+- Änderungen sind spätestens nach fünf Minuten sichtbar,
 - die Landingpage kann bei einer kurzen ybase-Störung den letzten erfolgreichen
   Cache-Stand weiter ausliefern,
 - Payload bleibt für Content zuständig, ybase für Organisationsdaten.
@@ -149,8 +146,8 @@ Wichtige Regeln:
 
 - Alle Mitglieder mit `memberStatus === "active"` werden automatisch
   synchronisiert.
-- `onboarding` und `offboarded` werden nicht synchronisiert. Der Account eines
-  offboardeten Mitglieds bleibt bis zur späteren Löschung bestehen.
+- Mitglieder mit dem Status „Im Onboarding“ oder „Inaktiv“ werden nicht
+  synchronisiert. Ihr Account bleibt bis zur späteren Löschung bestehen.
 - Ein archiviertes Department oder Team erscheint nicht im Feed.
 - Der Feed enthält niemals E-Mail, Telefon, Bankdaten, interne Rolle,
   Bewerbungs-ID oder Onboarding-Daten.
@@ -172,7 +169,6 @@ Endpunkt:
 
 ```http
 GET /api/v1/team-directory
-Authorization: Bearer ybase_team_<secret>
 ```
 
 Beispiel:
@@ -225,9 +221,9 @@ neue Version.
 
 Zusätzliche HTTP-Eigenschaften:
 
-- mindestens 32 Zeichen langes, gemeinsames Bearer-Secret ausschließlich in
-  serverseitigen Umgebungsvariablen,
-- konstante Zeit beim Secret-Vergleich,
+- Organisation über `YFN_TEAM_DIRECTORY_ORGANIZATION_ID` fest begrenzen,
+- ausschließlich bereits öffentliche DTO-Felder ausgeben,
+- öffentliche Cache-Header setzen,
 - `ETag` aus `revision` unterstützen,
 - kurze Timeouts auf der Landingpage,
 - strukturierte Fehler ohne interne Daten,
@@ -254,50 +250,28 @@ Zusätzliche HTTP-Eigenschaften:
 - Leere Teams standardmäßig nicht ausgeben.
 - Unit-Tests für Filterung, Sortierung, Archivierung und Datenschutz ergänzen.
 
-### 3. Authentifizierung
+### 3. Organisations-Scope
 
-- In ybase `YFN_LANDING_TEAM_DIRECTORY_TOKEN` und
-  `YFN_LANDING_TEAM_DIRECTORY_ORGANIZATION_ID` serverseitig konfigurieren.
-- Dasselbe Secret in yfn-landing als `YBASE_TEAM_DIRECTORY_TOKEN`
-  konfigurieren.
-- Keine Datenbank-Collection, API zur Token-Verwaltung oder
-  Administrationsoberfläche anlegen.
-- Änderungen am Secret erfolgen ausschließlich über Deployment-Konfiguration
-  und einen anschließenden Neustart beider Dienste.
+- In ybase ausschließlich `YFN_TEAM_DIRECTORY_ORGANIZATION_ID` konfigurieren.
+- Der Endpunkt liefert nur das öffentliche Read-Modell dieser Organisation.
+- Keine Token, Datenbank-Collection oder Administrationsoberfläche anlegen.
 
-### 4. Cache-Invalidierung
+### 4. Aktualisierung
 
-Nach erfolgreichen Mutationen an:
-
-- öffentlichem Mitgliedsprofil,
-- Mitgliedsstatus,
-- Teamzuordnung oder Position,
-- Teamname/Archivstatus/Sortierung,
-- Departmentname/Archivstatus/Sortierung
-
-wird ein signierter Revalidate-Request an yfn-landing gesendet.
-
-Die Datenbankänderung darf nicht zurückgerollt werden, wenn die Invalidierung
-fehlschlägt. Stattdessen:
-
-- Fehler loggen,
-- wenige Male mit Backoff wiederholen,
-- als Sicherheitsnetz bleibt die zeitbasierte Revalidierung aktiv.
-
-Für den MVP kann die Bridge zunächst nur mit einer kurzen zeitbasierten
-Revalidierung starten; der Webhook folgt anschließend.
+- yfn-landing cached den Feed für maximal fünf Minuten.
+- Es gibt keinen Webhook, kein Revalidate-Secret und keinen zusätzlichen
+  Betriebszustand.
+- Bei einer kurzen ybase-Störung bleibt der letzte erfolgreiche Cache-Stand
+  verfügbar.
 
 ## Änderungen in yfn-landing
 
 ### 1. Server-only Client
 
-- `YBASE_TEAM_DIRECTORY_URL` und `YBASE_TEAM_DIRECTORY_TOKEN` als
-  Server-Umgebungsvariablen einführen.
+- Nur `YBASE_TEAM_DIRECTORY_URL` als Server-Umgebungsvariable einführen.
 - Einen typisierten Client mit Schema-Validierung, Timeout und aussagekräftigem
   Logging implementieren.
-- Fetch über einen dedizierten Next.js Cache-Tag, zum Beispiel
-  `ybase-team-directory`.
-- Secrets niemals über `NEXT_PUBLIC_*` konfigurieren.
+- Fetch mit fünf Minuten zeitbasierter Revalidierung cachen.
 
 ### 2. Payload-Block trennen
 
@@ -333,13 +307,6 @@ ybase-Department-IDs als Schlüssel gespeichert.
 - Ohne vorhandenen Cache eine kontrollierte, beobachtbare Fehlerdarstellung
   rendern; keine leere Team-Seite als scheinbar erfolgreicher Zustand.
 
-### 4. Revalidate-Endpunkt
-
-- Internen POST-Endpunkt anlegen.
-- Request per HMAC oder starkem getrennten Secret verifizieren.
-- Cache-Tag und betroffenen Team-Seitenpfad invalidieren.
-- Wiederholte Events idempotent behandeln.
-
 ## Migration und Rollout
 
 ### Phase 0 – Daten- und Produktentscheidungen
@@ -364,7 +331,7 @@ dass die öffentliche Seite bereits umgestellt ist.
 
 ### Phase 2 – Feed und Landing-Integration
 
-- Umgebungsbasiertes Shared Secret und v1-Feed implementieren.
+- Öffentlichen, organisationsgebundenen v1-Feed implementieren.
 - Server-Client und ybase-Modus in yfn-landing implementieren.
 - Contract-, Integrations- und Rendering-Tests ergänzen.
 - In Staging mit Produktionskopie der Struktur testen.
@@ -384,30 +351,28 @@ Ergebnis: Die Team-Seite kann kontrolliert zwischen manuell und ybase wechseln.
 
 - Manuelle Personen-, Team- und Department-Felder aus dem Block entfernen.
 - Veraltete Payload-Daten per Migration löschen.
-- Cache-Invalidierungs-Webhook aktivieren.
-- Betriebsdokumentation für Secret-Wechsel und Störungen ergänzen.
+- Betriebsdokumentation für Feed-Störungen ergänzen.
 
 ## Tests und Abnahmekriterien
 
 ### ybase
 
 - Alle aktiven Mitglieder werden ausgegeben.
-- Inaktivieren oder Archivieren entfernt ein Mitglied aus dem Feed.
+- Inaktivieren entfernt ein Mitglied aus dem Feed.
 - Archivierte Teams und Departments werden mitsamt Unterelementen entfernt.
 - Eine Umbenennung erscheint ohne Änderung in Payload.
 - Sortierung ist bei identischen Daten deterministisch.
 - Kein sensibles `User`-Feld kann im DTO oder Snapshot erscheinen.
-- Fehlende, zu kurze und ungültige Secrets werden abgelehnt.
+- Eine fehlende Organisationskonfiguration liefert einen kontrollierten Fehler.
 
 ### yfn-landing
 
 - Feed-Daten werden korrekt in Vorstand, Departments, Teams und Mitglieder
   gerendert.
 - Rollen und Leads werden korrekt dargestellt.
-- Der Token ist in keinem Client-Bundle enthalten.
 - Ein Timeout zerstört keinen vorhandenen Cache-Stand.
 - Schemafehler werden geloggt und nicht still als leeres Team interpretiert.
-- Revalidate-Requests aktualisieren die Seite; ungültige Signaturen nicht.
+- Der Feed wird spätestens nach fünf Minuten neu geladen.
 - Die bisherige Team-Seite bleibt während der Migration als Rollback verfügbar.
 
 ### Ende-zu-Ende
@@ -417,7 +382,7 @@ Der Cutover ist erfolgreich, wenn eine berechtigte Person in ybase:
 1. einen Teamnamen ändert,
 2. ein Mitglied einem anderen Team zuordnet,
 3. dessen öffentliche Rolle ändert,
-4. ein Mitglied archiviert,
+4. ein Mitglied inaktiv setzt,
 
 und alle Änderungen ohne Payload-Edit innerhalb des vereinbarten
 Aktualisierungsfensters korrekt auf der öffentlichen Team-Seite erscheinen.
@@ -425,11 +390,11 @@ Aktualisierungsfensters korrekt auf der öffentlichen Team-Seite erscheinen.
 ## Empfohlene Arbeitspakete
 
 1. **ybase Public-Team-Modell und UI**
-2. **ybase Team-Directory v1 Feed und Env-Authentifizierung**
+2. **ybase Team-Directory v1 Feed**
 3. **yfn-landing Server-Client und Schema**
 4. **OrgaStructure ybase-Modus und Rollenanzeige**
 5. **Datenmigration, Preview und Cutover**
-6. **Webhook, Monitoring und Entfernung des manuellen Modus**
+6. **Monitoring und Entfernung des manuellen Modus**
 
 Die Pakete 1 und 3 können nach Festlegung des Feed-Vertrags parallel begonnen
 werden. Der Cutover erfolgt erst, wenn Feed, UI und Datenmigration gemeinsam
@@ -437,20 +402,12 @@ abgenommen sind.
 
 ## Inbetriebnahme
 
-1. Ein zufälliges Secret mit mindestens 32 Zeichen erzeugen und in ybase als
-   `YFN_LANDING_TEAM_DIRECTORY_TOKEN` sowie in yfn-landing als
-   `YBASE_TEAM_DIRECTORY_TOKEN` hinterlegen.
-2. In ybase die ID der YFN-Organisation als
-   `YFN_LANDING_TEAM_DIRECTORY_ORGANIZATION_ID` hinterlegen.
-3. In yfn-landing `YBASE_TEAM_DIRECTORY_URL` auf den produktiven
+1. In ybase die ID der YFN-Organisation als
+   `YFN_TEAM_DIRECTORY_ORGANIZATION_ID` hinterlegen.
+2. In yfn-landing `YBASE_TEAM_DIRECTORY_URL` auf den produktiven
    `/api/v1/team-directory`-Endpunkt setzen.
-4. Ein separates zufälliges Secret in yfn-landing als
-   `YBASE_REVALIDATE_SECRET` und in ybase als
-   `YFN_LANDING_REVALIDATE_SECRET` hinterlegen.
-5. In ybase `YFN_LANDING_REVALIDATE_URL` auf
-   `https://<landing-domain>/api/revalidate/team-directory` setzen.
-6. In ybase für alle aktiven Mitglieder Team, Position und optionale
+3. In ybase für alle aktiven Mitglieder Team, Position und optionale
    Darstellungsdaten vollständig pflegen.
-7. yfn-landing deployen, im Payload-Block **Orga Struktur** die Datenquelle
+4. yfn-landing deployen, im Payload-Block **Orga Struktur** die Datenquelle
    **Automatisch aus ybase** wählen und die Seite veröffentlichen.
-8. Rollenänderung, Teamwechsel und Archivierung einmal Ende-zu-Ende prüfen.
+5. Rollenänderung, Teamwechsel und Inaktivierung einmal Ende-zu-Ende prüfen.

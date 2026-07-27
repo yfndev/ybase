@@ -6,7 +6,6 @@ import { requirePermission } from "../../auth/session";
 import { departments, teams } from "../../db/collections";
 import { newId } from "../../db/ids";
 import { addLog } from "../logs";
-import { scheduleTeamDirectoryRevalidation } from "../teamDirectory/revalidate";
 
 const teamFieldsSchema = z.object({
   name: z.string().trim().min(1),
@@ -62,7 +61,6 @@ export async function updateTeam(input: {
     ...(websiteSortOrder === undefined ? {} : { websiteSortOrder }),
   };
   await (await teams()).updateOne({ _id: teamId }, { $set: changes });
-  scheduleTeamDirectoryRevalidation();
   await addLog(user.organizationId, user._id, "team.update", teamId, name);
 }
 
@@ -83,7 +81,6 @@ async function setArchived(
   const id = z.string().parse(teamId);
   const team = await requireOwnedTeam(id, user.organizationId);
   await (await teams()).updateOne({ _id: id }, { $set: { isArchived } });
-  scheduleTeamDirectoryRevalidation();
   await addLog(user.organizationId, user._id, action, id, team.name);
 }
 

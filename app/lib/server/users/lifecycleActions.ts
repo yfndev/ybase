@@ -3,7 +3,6 @@
 import { z } from "zod";
 import { users } from "../../db/collections";
 import { addLog } from "../logs";
-import { scheduleTeamDirectoryRevalidation } from "../teamDirectory/revalidate";
 import { loadManagedMember, requireActiveOrganizationTeam } from "./access";
 import { memberStatusPatch, teamOnboardingPatch } from "./memberLifecycle";
 
@@ -41,7 +40,6 @@ export async function setMemberStatus(input: {
 
   const patch = memberStatusPatch(target.memberStatus, status, Date.now());
   await (await users()).updateOne({ _id: target._id }, { $set: patch });
-  scheduleTeamDirectoryRevalidation();
   await addLog(
     currentUser.organizationId,
     currentUser._id,

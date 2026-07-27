@@ -4,7 +4,6 @@ import { z } from "zod";
 import { users } from "../../db/collections";
 import type { PublicTeamProfile } from "../../db/types";
 import { addLog } from "../logs";
-import { scheduleTeamDirectoryRevalidation } from "../teamDirectory/revalidate";
 import { loadManagedMember } from "./access";
 
 const optionalText = z
@@ -48,7 +47,6 @@ export async function updatePublicTeamProfile(
   await (
     await users()
   ).updateOne({ _id: target._id }, { $set: { publicTeamProfile } });
-  scheduleTeamDirectoryRevalidation();
   await addLog(
     currentUser.organizationId,
     currentUser._id,
