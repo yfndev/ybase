@@ -1,7 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Inbox } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Inbox } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -23,8 +22,6 @@ interface Props {
   ownersById: Map<string, User>;
   isLoading: boolean;
   showJobPosting: boolean;
-  sortDirection: "asc" | "desc";
-  onSort: () => void;
   onSelect: (application: ApplicationWithFiles) => void;
 }
 
@@ -33,8 +30,6 @@ export function ApplicationsTable({
   ownersById,
   isLoading,
   showJobPosting,
-  sortDirection,
-  onSort,
   onSelect,
 }: Props) {
   if (!isLoading && applications.length === 0) {
@@ -57,13 +52,8 @@ export function ApplicationsTable({
             <TableHead className="pl-4">Bewerber:in</TableHead>
             {showJobPosting ? <TableHead>Ausschreibung</TableHead> : null}
             <TableHead>Status</TableHead>
-            <TableHead>Verantwortlich</TableHead>
-            <TableHead className="pr-4">
-              <Button variant="ghost" size="sm" onClick={onSort}>
-                Eingang
-                {sortDirection === "desc" ? <ArrowDown /> : <ArrowUp />}
-              </Button>
-            </TableHead>
+            <TableHead>Zuständig</TableHead>
+            <TableHead className="pr-4">Eingang</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
