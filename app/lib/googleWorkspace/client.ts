@@ -43,18 +43,28 @@ function credentials(): ServiceAccountCredentials {
   }
 }
 
+function delegatedAdminEmail(): string {
+  const email = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL?.trim().toLowerCase();
+  if (!email) {
+    throw new Error("Google-Workspace-Admin ist nicht konfiguriert");
+  }
+  return email;
+}
+
 async function accessToken(): Promise<string> {
   if (cachedToken && cachedToken.expiresAt > Date.now() + 60_000) {
     return cachedToken.accessToken;
   }
 
   const account = credentials();
+  const delegatedAdmin = delegatedAdminEmail();
   const tokenUri = account.token_uri ?? "https://oauth2.googleapis.com/token";
   const issuedAt = Math.floor(Date.now() / 1_000);
   const header = encode(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const payload = encode(
     JSON.stringify({
       iss: account.client_email,
+      sub: delegatedAdmin,
       scope: DIRECTORY_SCOPE,
       aud: tokenUri,
       iat: issuedAt,
@@ -78,13 +88,19 @@ async function accessToken(): Promise<string> {
     }),
     signal: AbortSignal.timeout(10_000),
   });
-  if (!response.ok) {
-    throw new Error("Google-Workspace-Authentifizierung fehlgeschlagen");
-  }
-  const data = (await response.json()) as {
+  const data = (await response.json().catch(() => ({}))) as {
     access_token?: string;
     expires_in?: number;
+    error?: string;
   };
+  if (!response.ok) {
+    if (data.error === "unauthorized_client") {
+      throw new Error(
+        "Google-Workspace-Domaindelegierung ist nicht autorisiert",
+      );
+    }
+    throw new Error("Google-Workspace-Authentifizierung fehlgeschlagen");
+  }
   if (!data.access_token) {
     throw new Error("Google hat kein Zugriffstoken zurückgegeben");
   }
