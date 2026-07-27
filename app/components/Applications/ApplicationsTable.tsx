@@ -52,7 +52,9 @@ export function ApplicationsTable({
             <TableHead className="pl-4">Bewerber:in</TableHead>
             {showJobPosting ? <TableHead>Ausschreibung</TableHead> : null}
             <TableHead>Status</TableHead>
-            <TableHead>Zuständig</TableHead>
+            <TableHead>
+              {showJobPosting ? "Zuständig" : "Letzte Aktivität"}
+            </TableHead>
             <TableHead className="pr-4">Eingang</TableHead>
           </TableRow>
         </TableHeader>
@@ -103,9 +105,17 @@ export function ApplicationsTable({
                 <TableCell>
                   <ApplicationStatusBadge status={application.status} />
                 </TableCell>
-                <TableCell className="max-w-56 truncate">
-                  {responsibilityLabel}
-                </TableCell>
+                {showJobPosting ? (
+                  <TableCell className="max-w-56 truncate">
+                    {responsibilityLabel}
+                  </TableCell>
+                ) : (
+                  <TableCell className="text-muted-foreground">
+                    {DATE_FORMAT.format(
+                      application.updatedAt ?? application.submittedAt,
+                    )}
+                  </TableCell>
+                )}
                 <TableCell className="pr-4 text-muted-foreground">
                   {DATE_FORMAT.format(application.submittedAt)}
                 </TableCell>
