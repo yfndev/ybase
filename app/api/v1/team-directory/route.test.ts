@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("@/lib/server/teamDirectory/feed", () => ({
-  getTeamDirectoryV1: vi.fn(),
+  getTeamDirectory: vi.fn(),
 }));
 
-import { getTeamDirectoryV1 } from "@/lib/server/teamDirectory/feed";
+import { getTeamDirectory } from "@/lib/server/teamDirectory/feed";
 import { GET } from "./route";
 
 beforeEach(() => {
@@ -24,11 +24,11 @@ test("GET reports missing organization configuration", async () => {
 
   expect(response.status).toBe(503);
   expect(response.headers.get("cache-control")).toBe("no-store");
-  expect(getTeamDirectoryV1).not.toHaveBeenCalled();
+  expect(getTeamDirectory).not.toHaveBeenCalled();
 });
 
 test("GET returns the versioned feed and revision ETag", async () => {
-  vi.mocked(getTeamDirectoryV1).mockResolvedValue({
+  vi.mocked(getTeamDirectory).mockResolvedValue({
     version: "v1",
     generatedAt: "2026-07-27T12:00:00.000Z",
     revision: "revision-1",
@@ -42,11 +42,11 @@ test("GET returns the versioned feed and revision ETag", async () => {
   expect(response.status).toBe(200);
   expect(response.headers.get("etag")).toBe('"revision-1"');
   expect(response.headers.get("cache-control")).toContain("public");
-  expect(getTeamDirectoryV1).toHaveBeenCalledWith("org-1");
+  expect(getTeamDirectory).toHaveBeenCalledWith("org-1");
 });
 
 test("GET returns 304 when the feed revision is unchanged", async () => {
-  vi.mocked(getTeamDirectoryV1).mockResolvedValue({
+  vi.mocked(getTeamDirectory).mockResolvedValue({
     version: "v1",
     generatedAt: "2026-07-27T12:00:00.000Z",
     revision: "revision-1",

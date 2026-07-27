@@ -1,4 +1,4 @@
-import { getTeamDirectoryV1 } from "@/lib/server/teamDirectory/feed";
+import { getTeamDirectory } from "@/lib/server/teamDirectory/feed";
 
 export const runtime = "nodejs";
 
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const feed = await getTeamDirectoryV1(organizationId);
+  const feed = await getTeamDirectory(organizationId);
   const etag = `"${feed.revision}"`;
   if (request.headers.get("if-none-match") === etag) {
     return new Response(null, {

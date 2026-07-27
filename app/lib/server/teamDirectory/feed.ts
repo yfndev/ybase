@@ -2,10 +2,10 @@ import { createHash } from "node:crypto";
 import { departments, teams, users } from "../../db/collections";
 import type { Department, Team, User } from "../../db/types";
 import type {
-  TeamDirectoryDataV1,
-  TeamDirectoryDepartmentV1,
-  TeamDirectoryFeedV1,
-  TeamDirectoryMemberV1,
+  TeamDirectoryData,
+  TeamDirectoryDepartment,
+  TeamDirectoryFeed,
+  TeamDirectoryMember,
 } from "./types";
 
 type DirectoryUser = Pick<
@@ -35,7 +35,7 @@ function namespacedId(
 function memberDto(
   user: DirectoryUser,
   organizationId: string,
-): TeamDirectoryMemberV1 {
+): TeamDirectoryMember {
   return {
     id: namespacedId(organizationId, "member", user._id),
     name: profileName(user),
@@ -43,9 +43,9 @@ function memberDto(
   };
 }
 
-export async function getTeamDirectoryV1(
+export async function getTeamDirectory(
   organizationId: string,
-): Promise<TeamDirectoryFeedV1> {
+): Promise<TeamDirectoryFeed> {
   const [departmentDocs, teamDocs, memberDocs] = await Promise.all([
     (await departments()).find({ organizationId, isArchived: false }).toArray(),
     (await teams()).find({ organizationId, isArchived: false }).toArray(),
@@ -79,7 +79,7 @@ export async function getTeamDirectoryV1(
   const teamsByDepartment = groupTeams(activeTeams);
   const membersByTeam = groupMembers(eligibleMembers);
 
-  const data: TeamDirectoryDataV1 = {
+  const data: TeamDirectoryData = {
     departments: departmentDocs
       .map((department) =>
         departmentDto(
@@ -132,7 +132,7 @@ function departmentDto(
   departmentTeams: Team[],
   membersByTeam: Map<string, DirectoryUser[]>,
   organizationId: string,
-): TeamDirectoryDepartmentV1 {
+): TeamDirectoryDepartment {
   return {
     id: namespacedId(organizationId, "department", department._id),
     name: department.name,

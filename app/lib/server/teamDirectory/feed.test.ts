@@ -3,7 +3,7 @@ import { departments, teams, users } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { User } from "../../db/types";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
-import { getTeamDirectoryV1 } from "./feed";
+import { getTeamDirectory } from "./feed";
 
 const organizationId = "org-team-directory";
 
@@ -87,7 +87,7 @@ test("returns active members directly from their ybase profiles", async () => {
     }),
   ]);
 
-  const feed = await getTeamDirectoryV1(organizationId);
+  const feed = await getTeamDirectory(organizationId);
 
   expect(feed.version).toBe("v1");
   expect(feed.revision).toHaveLength(64);
@@ -116,7 +116,7 @@ test("omits incomplete profiles and teams without public members", async () => {
     }),
   );
 
-  const feed = await getTeamDirectoryV1(organizationId);
+  const feed = await getTeamDirectory(organizationId);
 
   expect(feed.data).toEqual({ departments: [] });
 });

@@ -1,28 +1,28 @@
-export interface TeamDirectoryMemberV1 {
+export interface TeamDirectoryMember {
   id: string;
   name: string;
   role: string;
 }
 
-export interface TeamDirectoryTeamV1 {
+export interface TeamDirectoryTeam {
   id: string;
   name: string;
-  members: TeamDirectoryMemberV1[];
+  members: TeamDirectoryMember[];
 }
 
-export interface TeamDirectoryDepartmentV1 {
+export interface TeamDirectoryDepartment {
   id: string;
   name: string;
-  teams: TeamDirectoryTeamV1[];
+  teams: TeamDirectoryTeam[];
 }
 
-export interface TeamDirectoryDataV1 {
-  departments: TeamDirectoryDepartmentV1[];
+export interface TeamDirectoryData {
+  departments: TeamDirectoryDepartment[];
 }
 
-export interface TeamDirectoryFeedV1 {
+export interface TeamDirectoryFeed {
   version: "v1";
   generatedAt: string;
   revision: string;
-  data: TeamDirectoryDataV1;
+  data: TeamDirectoryData;
 }
