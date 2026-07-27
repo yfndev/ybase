@@ -5,9 +5,9 @@ import {
   tallyWebhookEvents,
 } from "../../db/collections";
 import { newId } from "../../db/ids";
+import { ensureIndexes } from "../../db/indexes";
 import type { JobPosting } from "../../db/types";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
-import { ensureIndexes } from "../../db/indexes";
 import { ingestTallySubmission } from "./ingest";
 import { tallyWebhookSchema } from "./tallyPayload";
 
@@ -20,6 +20,7 @@ function buildPayload(input: {
   submissionId: string;
   jobPostingId?: string;
   email?: string;
+  phone?: string | null;
   formId?: string;
   files?: Array<Record<string, unknown>>;
 }) {
@@ -32,13 +33,15 @@ function buildPayload(input: {
       type: "TEXTAREA",
       value: "Ich will helfen",
     },
-    {
+  ];
+  if (input.phone !== null) {
+    fields.push({
       key: "q-phone",
       label: "Telefon",
       type: "INPUT_PHONE_NUMBER",
-      value: "+49123456789",
-    },
-  ];
+      value: input.phone ?? "+49123456789",
+    });
+  }
   if (input.jobPostingId !== undefined) {
     fields.unshift({
       key: "hf",
@@ -102,7 +105,7 @@ beforeEach(async () => {
   await ensureIndexes();
   orgA = newId();
   postingA = await insertPosting(orgA);
-  postingA2 = await insertPosting(orgA);
+  postingA2 = await insertPosting(orgA, { tallyFormId: "form-2" });
 });
 
 test("creates a received application scoped to the posting org with a snapshot", async () => {
@@ -131,16 +134,19 @@ test("creates a received application scoped to the posting org with a snapshot",
   });
   const stored = await (
     await applications()
-  ).findOne({ jobPostingId: postingA });
+  ).findOne({
+    jobPostingId: postingA,
+  });
   expect(stored?.status).toBe("received");
   expect(stored?.organizationId).toBe(orgA);
   expect(stored?.applicantEmailNormalized).toBe("max@example.com");
+  expect(stored?.applicantPhone).toBe("+49123456789");
   expect(stored?.applicantName).toBe("Max Mustermann");
   expect(stored?.withdrawalTokenHash).toMatch(/^[a-f0-9]{64}$/);
   expect(stored?.withdrawalTokenHash).not.toBe(
     outcome.status === "created" ? outcome.withdrawalToken : undefined,
   );
-  expect(stored?.fields).toHaveLength(5);
+  expect(stored?.fields).toHaveLength(6);
   expect(stored?.files).toEqual([
     expect.objectContaining({
       fileName: "cv.pdf",
@@ -151,21 +157,32 @@ test("creates a received application scoped to the posting org with a snapshot",
   expect(stored?.fields.find((field) => field.key === "q-file")?.value).toEqual(
     ["cv.pdf"],
   );
-  expect(stored).not.toHaveProperty("applicantPhone");
-  expect(stored?.fields.some((field) => field.type.includes("PHONE"))).toBe(
-    false,
-  );
-  expect(JSON.stringify(stored)).not.toContain("+49123456789");
+  expect(
+    stored?.fields.find((field) => field.type.includes("PHONE"))?.value,
+  ).toBe("+49123456789");
+  expect(JSON.stringify(stored)).toContain("+49123456789");
 });
 
-test("ignores a submission without the hidden job posting id", async () => {
+test("resolves the posting from the Tally form when the hidden id is missing", async () => {
   const outcome = await ingestTallySubmission(
     buildPayload({ eventId: "e1", submissionId: "s1", email: "a@b.de" }),
   );
-  expect(outcome).toEqual({
-    status: "ignored",
-    reason: "missing-job-posting-id",
-  });
+  expect(outcome.status).toBe("created");
+  expect(
+    await (await applications()).countDocuments({ jobPostingId: postingA }),
+  ).toBe(1);
+});
+
+test("ignores a submission without a known posting id or Tally form", async () => {
+  const outcome = await ingestTallySubmission(
+    buildPayload({
+      eventId: "e1",
+      submissionId: "s1",
+      email: "a@b.de",
+      formId: "unknown-form",
+    }),
+  );
+  expect(outcome).toEqual({ status: "ignored", reason: "unknown-tally-form" });
   expect(await (await applications()).countDocuments()).toBe(0);
 });
 
@@ -203,6 +220,20 @@ test("ignores a submission without an email", async () => {
     buildPayload({ eventId: "e1", submissionId: "s1", jobPostingId: postingA }),
   );
   expect(outcome).toEqual({ status: "ignored", reason: "missing-email" });
+  expect(await (await applications()).countDocuments()).toBe(0);
+});
+
+test("ignores a submission without a phone number", async () => {
+  const outcome = await ingestTallySubmission(
+    buildPayload({
+      eventId: "e1",
+      submissionId: "s1",
+      jobPostingId: postingA,
+      email: "a@b.de",
+      phone: null,
+    }),
+  );
+  expect(outcome).toEqual({ status: "ignored", reason: "missing-phone" });
   expect(await (await applications()).countDocuments()).toBe(0);
 });
 
@@ -369,6 +400,7 @@ test("lets the same email apply to a different posting", async () => {
       submissionId: "s2",
       jobPostingId: postingA2,
       email: "a@b.de",
+      formId: "form-2",
     }),
   );
 

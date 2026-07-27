@@ -1,30 +1,30 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import { useApplications } from "@/lib/client/applications/hooks/useApplications";
 import { useMembers } from "@/lib/client/members/hooks/useMembers";
 import type { ApplicationWithFiles } from "@/lib/db/types";
-import { useMemo, useState } from "react";
-import { ApplicationDrawer } from "./ApplicationDrawer";
+import { ApplicationsTable } from "./ApplicationsTable";
+import { ApplicationsToolbar } from "./ApplicationsToolbar";
 import {
   ALL_APPLICATIONS,
   type ApplicationFilters,
   filterApplications,
 } from "./applicationTable";
-import { ApplicationsTable } from "./ApplicationsTable";
-import { ApplicationsToolbar } from "./ApplicationsToolbar";
 
 interface Props {
   jobPostingId?: string;
 }
 
 export function ApplicationsPanel({ jobPostingId }: Props) {
-  const { applications, isLoading, refetch } = useApplications(jobPostingId);
+  const router = useRouter();
+  const { applications, isLoading } = useApplications(jobPostingId);
   const { members } = useMembers();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filters, setFilters] = useState<ApplicationFilters>({
     search: "",
     status: ALL_APPLICATIONS,
-    ownerId: ALL_APPLICATIONS,
+    ownerIds: [],
     sortDirection: "desc",
   });
   const owners = useMemo(
@@ -36,9 +36,6 @@ export function ApplicationsPanel({ jobPostingId }: Props) {
     [members],
   );
   const visibleApplications = filterApplications(applications, filters);
-  const selectedApplication = applications.find(
-    (application) => application._id === selectedId,
-  );
 
   return (
     <div className="space-y-4">
@@ -62,19 +59,9 @@ export function ApplicationsPanel({ jobPostingId }: Props) {
           }))
         }
         onSelect={(application: ApplicationWithFiles) =>
-          setSelectedId(application._id)
+          router.push(`/applications/${application._id}`)
         }
       />
-      {selectedApplication ? (
-        <ApplicationDrawer
-          key={`${selectedApplication._id}-${selectedApplication.updatedAt ?? 0}-${selectedApplication.status}`}
-          application={selectedApplication}
-          owners={owners}
-          ownersById={ownersById}
-          onClose={() => setSelectedId(null)}
-          onFilesChanged={refetch}
-        />
-      ) : null}
     </div>
   );
 }

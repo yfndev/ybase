@@ -10,9 +10,9 @@ vi.mock("../tally/config", () => ({ loadTallyFormConfig: vi.fn() }));
 import { requirePermission } from "../../auth/session";
 import { jobPostings, logs } from "../../db/collections";
 import { newId } from "../../db/ids";
+import type { JobPosting } from "../../db/types";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
-import type { JobPosting } from "../../db/types";
 import { createConfiguredTallyClient } from "../tally/client";
 import { loadTallyFormConfig } from "../tally/config";
 import { generateTallyForm } from "./tallyForm";
@@ -28,19 +28,76 @@ const emailBlock = {
   groupType: "INPUT_EMAIL",
 };
 
+const phoneBlock = {
+  uuid: "phone-uuid",
+  type: "INPUT_PHONE_NUMBER",
+  groupUuid: "phone-group",
+  groupType: "INPUT_PHONE_NUMBER",
+  payload: { isRequired: false },
+};
+
+const formTitleBlock = {
+  uuid: "title-uuid",
+  type: "FORM_TITLE",
+  groupUuid: "title-group",
+  groupType: "FORM_TITLE",
+  payload: { title: "VORLAGE", html: "VORLAGE" },
+};
+
+const roleHeadingBlock = {
+  uuid: "role-heading-uuid",
+  type: "HEADING_2",
+  groupUuid: "role-heading-group",
+  groupType: "HEADING_2",
+  payload: { safeHTMLSchema: [["Deine Stelle: XXX"]] },
+};
+
+const specificQuestionLabelBlock = {
+  uuid: "specific-question-label-uuid",
+  type: "LABEL",
+  groupUuid: "specific-question-label-group",
+  groupType: "LABEL",
+  payload: { safeHTMLSchema: [["Spezifische Frage 1"]] },
+};
+
+const specificQuestionInputBlock = {
+  uuid: "specific-question-input-uuid",
+  type: "TEXTAREA",
+  groupUuid: "specific-question-input-group",
+  groupType: "TEXTAREA",
+  payload: { isRequired: true, placeholder: "5 - 8 Zeilen" },
+};
+
+const nextSectionBlock = {
+  uuid: "next-section-uuid",
+  type: "HEADING_2",
+  groupUuid: "next-section-group",
+  groupType: "HEADING_2",
+  payload: { safeHTMLSchema: [["Entrepreneurial Mindset"]] },
+};
+
 function fakeClient(overrides: Record<string, unknown> = {}) {
   return {
     getForm: vi.fn(async () => ({
       id: "tpl",
       status: "PUBLISHED",
       workspaceId: "ws",
-      blocks: [emailBlock],
+      blocks: [
+        formTitleBlock,
+        emailBlock,
+        phoneBlock,
+        roleHeadingBlock,
+        specificQuestionLabelBlock,
+        specificQuestionInputBlock,
+        nextSectionBlock,
+      ],
       settings: {},
     })),
     createForm: vi.fn(async () => ({ id: "form-1" })),
     updateForm: vi.fn(async () => {}),
     publishForm: vi.fn(async () => {}),
     createWebhook: vi.fn(async () => ({ id: "wh-1" })),
+    updateWebhook: vi.fn(async () => {}),
     ...overrides,
   };
 }
@@ -113,20 +170,146 @@ test("creates, configures, publishes and stores the tally ids", async () => {
   expect(posting?.tallyClosed).toBe(false);
   expect(posting?.tallyFormError).toBeUndefined();
   expect(client.createForm).toHaveBeenCalledTimes(1);
+  expect(client.createForm).toHaveBeenCalledWith(
+    expect.objectContaining({
+      blocks: expect.arrayContaining([
+        expect.objectContaining({
+          type: "FORM_TITLE",
+          payload: expect.objectContaining({
+            title:
+              "Baue das Young Founders Network mit auf: Bewerbung als Vorstand",
+            safeHTMLSchema: [
+              [
+                "Baue das Young Founders Network mit auf: Bewerbung als Vorstand",
+              ],
+            ],
+          }),
+        }),
+        expect.objectContaining({
+          type: "HEADING_2",
+          payload: expect.objectContaining({
+            safeHTMLSchema: [["Deine Stelle: Vorstand"]],
+          }),
+        }),
+        expect.objectContaining({
+          type: "LABEL",
+          payload: expect.objectContaining({
+            safeHTMLSchema: [["Was reizt dich besonders an dieser Rolle?"]],
+          }),
+        }),
+        expect.objectContaining({
+          type: "INPUT_PHONE_NUMBER",
+          payload: expect.objectContaining({ isRequired: true }),
+        }),
+      ]),
+    }),
+  );
   expect(client.publishForm).toHaveBeenCalledTimes(1);
   expect(client.updateForm).toHaveBeenCalledWith(
     "form-1",
     expect.objectContaining({
+      name: "Baue das Young Founders Network mit auf: Bewerbung als Vorstand",
       settings: { uniqueSubmissionKey: "email-uuid", isClosed: false },
     }),
   );
   const publishLog = await (
     await logs()
-  ).findOne({ entityId: id, action: "jobPosting.tally.publish" });
+  ).findOne({
+    entityId: id,
+    action: "jobPosting.tally.publish",
+  });
   expect(publishLog).toMatchObject({
     details: "Manuell",
     userId: userA,
     _creationTime: expect.any(Number),
+  });
+});
+
+test("syncs posting content and exact role questions into Tally", async () => {
+  const client = useClient(fakeClient());
+  const id = await insertDraft(orgA, {
+    shortText: "Gestalte unsere technische Plattform.",
+    description: "<p>Du entwickelst YBase weiter.</p>",
+    tasks: "<ul><li>Architektur gestalten</li></ul>",
+    requirements: "<p>Erfahrung mit TypeScript</p>",
+    timeCommitment: "5 Stunden pro Woche",
+    location: "Remote",
+    deadline: "2026-08-31",
+    applicationQuestions: ["Welche Architektur hast du zuletzt gestaltet?"],
+  });
+
+  await expect(generateTallyForm({ jobPostingId: id })).resolves.toEqual({
+    ok: true,
+  });
+
+  const updateFormCalls = client.updateForm.mock.calls as unknown as Array<
+    [string, { blocks?: unknown }]
+  >;
+  const patch = updateFormCalls[0]?.[1];
+  const serialized = JSON.stringify(patch?.blocks);
+  expect(serialized).toContain("Über die Rolle");
+  expect(serialized).toContain("Du entwickelst YBase weiter.");
+  expect(serialized).toContain("Aufgaben");
+  expect(serialized).toContain("Anforderungen");
+  expect(serialized).toContain("Rahmenbedingungen");
+  expect(serialized).toContain("Welche Architektur hast du zuletzt gestaltet?");
+  expect(serialized).not.toContain("Spezifische Frage");
+});
+
+test("publishing syncs the title and preserves other manual Tally changes", async () => {
+  const customTitle = {
+    ...formTitleBlock,
+    payload: { title: "Mein eigener Titel", html: "Mein eigener Titel" },
+  };
+  const customText = {
+    uuid: "custom-text",
+    type: "TEXT",
+    groupUuid: "custom-text-group",
+    groupType: "TEXT",
+    payload: { text: "Manuell ergänzt" },
+  };
+  const client = useClient(
+    fakeClient({
+      getForm: vi.fn(async () => ({
+        id: "form-existing",
+        status: "DRAFT",
+        workspaceId: "ws",
+        blocks: [customTitle, customText, emailBlock, phoneBlock],
+        settings: {},
+      })),
+    }),
+  );
+  const id = await insertDraft(orgA, {
+    tallyFormId: "form-existing",
+    tallyWebhookId: "wh-existing",
+  });
+
+  await expect(generateTallyForm({ jobPostingId: id })).resolves.toEqual({
+    ok: true,
+  });
+
+  expect(client.createForm).not.toHaveBeenCalled();
+  expect(client.updateForm).toHaveBeenCalledWith(
+    "form-existing",
+    expect.objectContaining({
+      name: "Baue das Young Founders Network mit auf: Bewerbung als Vorstand",
+      blocks: expect.arrayContaining([
+        expect.objectContaining({
+          type: "FORM_TITLE",
+          payload: expect.objectContaining({
+            title:
+              "Baue das Young Founders Network mit auf: Bewerbung als Vorstand",
+          }),
+        }),
+        customText,
+      ]),
+    }),
+  );
+  expect(client.publishForm).toHaveBeenCalledWith("form-existing");
+  expect(client.updateWebhook).toHaveBeenCalledWith("wh-existing", {
+    formId: "form-existing",
+    url: "https://ybase.test/api/tally/webhook",
+    signingSecret: "secret",
   });
 });
 
@@ -173,6 +356,7 @@ test("keeps a repairable draft when the template has no email field", async () =
         status: "PUBLISHED",
         workspaceId: "ws",
         blocks: [
+          phoneBlock,
           {
             uuid: "u",
             type: "INPUT_TEXT",

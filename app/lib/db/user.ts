@@ -21,6 +21,7 @@ export interface User {
   accountHolder?: string;
   teamId?: string;
   positionTitle?: string;
+  applicationId?: string;
   memberStatus: MemberStatus;
   teamOnboardingStatus: TeamOnboardingStatus;
   registeredAt?: number;

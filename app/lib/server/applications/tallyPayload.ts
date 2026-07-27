@@ -1,17 +1,28 @@
 import { z } from "zod";
-import type {
-  ApplicationField,
-  ApplicationFieldValue,
-} from "../../db/application";
+import type { ApplicationField } from "../../db/application";
 import { JOB_POSTING_HIDDEN_FIELD } from "../../tally/formTemplate";
+import {
+  normalizeTallyFieldValue,
+  tallyCheckboxOptionKeys,
+} from "./tallyFieldValues";
 import { extractFiles, type ParsedApplicationFile } from "./tallyFiles";
 
-const fieldSchema = z.object({
-  key: z.string(),
-  label: z.string().nullish(),
-  type: z.string(),
-  value: z.unknown(),
+const optionSchema = z.object({
+  id: z.string(),
+  text: z.string(),
 });
+
+const fieldSchema = z
+  .object({
+    key: z.string(),
+    label: z.string().nullish(),
+    type: z.string(),
+    value: z.unknown(),
+    options: z.array(optionSchema).optional(),
+    rows: z.array(optionSchema).optional(),
+    columns: z.array(optionSchema).optional(),
+  })
+  .passthrough();
 
 export const tallyWebhookSchema = z.object({
   eventId: z.string().min(1),
@@ -33,6 +44,7 @@ export interface ParsedSubmission {
   jobPostingId: string | null;
   email: string | null;
   emailNormalized: string | null;
+  phone: string | null;
   name?: string;
   fields: ApplicationField[];
   files: ParsedApplicationFile[];
@@ -42,35 +54,11 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-function toFieldValue(value: unknown): ApplicationFieldValue {
-  if (value === null || value === undefined) return null;
-  if (
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  ) {
-    return value;
-  }
-  if (Array.isArray(value)) return value.map(toFieldValue);
-  if (typeof value === "object") {
-    const snapshot: { [key: string]: ApplicationFieldValue } = {};
-    for (const [key, item] of Object.entries(value)) {
-      snapshot[key] = toFieldValue(item);
-    }
-    return snapshot;
-  }
-  return String(value);
-}
-
 function isHiddenJobPostingField(field: TallyField): boolean {
   return (
     (field.label ?? "").trim().toLowerCase() ===
     JOB_POSTING_HIDDEN_FIELD.toLowerCase()
   );
-}
-
-function isPhoneField(field: TallyField): boolean {
-  return field.type.toUpperCase().includes("PHONE");
 }
 
 function pickString(value: unknown): string | undefined {
@@ -115,28 +103,26 @@ export function parseTallySubmission(
   const jobPostingId =
     pickString(allFields.find(isHiddenJobPostingField)?.value) ?? null;
   const email = pickString(findByType(allFields, "EMAIL")?.value) ?? null;
+  const phone = pickString(findByType(allFields, "PHONE")?.value) ?? null;
   const files = extractFiles(allFields);
+  const redundantCheckboxFields = tallyCheckboxOptionKeys(allFields);
 
   const fields: ApplicationField[] = allFields
     .filter((field) => !isHiddenJobPostingField(field))
     .filter((field) => field.type.toUpperCase() !== "HIDDEN_FIELDS")
-    .filter((field) => !isPhoneField(field))
+    .filter((field) => !redundantCheckboxFields.has(field.key))
     .map((field) => ({
       key: field.key,
       label: field.label ?? "",
       type: field.type,
-      value:
-        field.type.toUpperCase() === "FILE_UPLOAD"
-          ? files
-              .filter((file) => file.fieldKey === field.key)
-              .map((file) => file.fileName)
-          : toFieldValue(field.value),
+      value: normalizeTallyFieldValue(field, files),
     }));
 
   return {
     jobPostingId,
     email,
     emailNormalized: email ? normalizeEmail(email) : null,
+    phone,
     name: extractName(allFields),
     fields,
     files,

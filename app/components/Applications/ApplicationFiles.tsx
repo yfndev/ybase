@@ -1,10 +1,10 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import type { ApplicationFileView } from "@/lib/db/types";
 import { Download, FileText, LoaderCircle, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { Button } from "@/components/ui/button";
+import type { ApplicationFileView } from "@/lib/db/types";
 import { formatFileSize } from "./applicationPresentation";
 
 const FILE_STATUS = {
@@ -27,7 +27,7 @@ function FileRow({
   const status = FILE_STATUS[file.status];
   const busy = file.status === "pending" || file.status === "importing";
   return (
-    <li className="rounded-lg border p-3">
+    <li className="border p-3">
       <div className="flex flex-wrap items-center gap-3">
         <FileText className="size-4 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1">
@@ -76,6 +76,8 @@ export function ApplicationFiles({
 }) {
   const [retryingFileId, setRetryingFileId] = useState<string | null>(null);
 
+  if (files.length === 0) return null;
+
   async function retryFile(fileId: string) {
     setRetryingFileId(fileId);
     try {
@@ -93,24 +95,18 @@ export function ApplicationFiles({
   }
 
   return (
-    <section className="space-y-3">
-      <h3 className="text-sm font-semibold">Anhänge</h3>
-      {files.length > 0 ? (
-        <ul className="space-y-2">
-          {files.map((file) => (
-            <FileRow
-              key={file._id}
-              file={file}
-              retrying={retryingFileId === file._id}
-              onRetry={retryFile}
-            />
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          Keine Anhänge vorhanden.
-        </p>
-      )}
+    <section className="space-y-3 border-t pt-5">
+      <h3 className="text-xl font-semibold">Anhänge</h3>
+      <ul className="space-y-2">
+        {files.map((file) => (
+          <FileRow
+            key={file._id}
+            file={file}
+            retrying={retryingFileId === file._id}
+            onRetry={retryFile}
+          />
+        ))}
+      </ul>
     </section>
   );
 }

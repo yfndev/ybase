@@ -13,15 +13,7 @@ export default async function ApplicationsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Bewerbungen" />
-      <section className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold">Alle Bewerbungen</h2>
-          <p className="text-sm text-muted-foreground">
-            Alle eingegangenen Bewerbungen ausschreibungsübergreifend.
-          </p>
-        </div>
-        <ApplicationsPanel />
-      </section>
+      <ApplicationsPanel />
     </div>
   );
 }

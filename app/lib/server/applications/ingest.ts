@@ -41,24 +41,20 @@ export async function ingestTallySubmission(
   if (seen) return outcomeFromEvent(seen);
 
   const parsed = parseTallySubmission(payload);
-  if (!parsed.jobPostingId) {
-    await recordWebhookEvent(payload, "ignored", {
-      reason: "missing-job-posting-id",
-    });
-    return { status: "ignored", reason: "missing-job-posting-id" };
-  }
+  const postingCollection = await jobPostings();
+  const posting = parsed.jobPostingId
+    ? await postingCollection.findOne({ _id: parsed.jobPostingId })
+    : await postingCollection.findOne({ tallyFormId: payload.data.formId });
 
-  const posting = await (
-    await jobPostings()
-  ).findOne({
-    _id: parsed.jobPostingId,
-  });
   if (!posting) {
+    const reason = parsed.jobPostingId
+      ? "unknown-job-posting"
+      : "unknown-tally-form";
     await recordWebhookEvent(payload, "ignored", {
-      reason: "unknown-job-posting",
-      jobPostingId: parsed.jobPostingId,
+      reason,
+      jobPostingId: parsed.jobPostingId ?? undefined,
     });
-    return { status: "ignored", reason: "unknown-job-posting" };
+    return { status: "ignored", reason };
   }
 
   if (posting.tallyFormId !== payload.data.formId) {
@@ -93,6 +89,14 @@ export async function ingestTallySubmission(
     });
     return { status: "ignored", reason: "missing-email" };
   }
+  if (!parsed.phone) {
+    await recordWebhookEvent(payload, "ignored", {
+      reason: "missing-phone",
+      jobPostingId: posting._id,
+      organizationId: posting.organizationId,
+    });
+    return { status: "ignored", reason: "missing-phone" };
+  }
 
   const withdrawal = createApplicationWithdrawalToken();
 
@@ -105,6 +109,7 @@ export async function ingestTallySubmission(
     applicantName: parsed.name,
     applicantEmail: parsed.email,
     applicantEmailNormalized: parsed.emailNormalized,
+    applicantPhone: parsed.phone,
     fields: parsed.fields,
     files: parsed.files.map(createApplicationFile),
     tallyEventId: payload.eventId,

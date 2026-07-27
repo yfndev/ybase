@@ -8,6 +8,7 @@ import { newId } from "../../db/ids";
 import { addLog } from "../logs";
 import { requireOwnedJobPosting } from "./access";
 import { sanitizeRichText } from "./sanitize";
+import { provisionTallyFormDraft } from "./tallyFormProvisioning";
 
 const optionalText = z.string().trim().optional();
 
@@ -23,6 +24,7 @@ const contentSchema = z.object({
   isRemote: z.boolean().optional(),
   deadline: optionalText,
   contactUserIds: z.array(z.string().trim().min(1)).max(20).optional(),
+  applicationQuestions: z.array(z.string().trim().max(500)).max(3).optional(),
 });
 
 type Content = z.infer<typeof contentSchema>;
@@ -40,6 +42,13 @@ function toDocumentFields(content: Content, contactUserIds: string[]) {
     isRemote: content.isRemote ?? false,
     deadline: content.deadline ?? "",
     contactUserIds,
+    ...(content.applicationQuestions === undefined
+      ? {}
+      : {
+          applicationQuestions: content.applicationQuestions
+            .map((question) => question.trim())
+            .filter(Boolean),
+        }),
   };
 }
 
@@ -69,6 +78,8 @@ export async function createJobPostingDraft(input: {
     createdBy: user._id,
   });
   await addLog(user.organizationId, user._id, "jobPosting.create", _id, title);
+  const posting = await (await jobPostings()).findOne({ _id });
+  if (posting) await provisionTallyFormDraft(posting, user);
   return _id;
 }
 
@@ -80,16 +91,17 @@ export async function updateJobPosting(
     .object({ jobPostingId: z.string(), ...contentSchema.shape })
     .parse(input);
 
-  await requireOwnedJobPosting(jobPostingId, user.organizationId);
+  const posting = await requireOwnedJobPosting(
+    jobPostingId,
+    user.organizationId,
+  );
   await requireActiveTeam(content.teamId, user.organizationId);
   const contactUserIds = [...new Set(content.contactUserIds ?? [])];
   await requireContactMembers(contactUserIds, user.organizationId);
+  const documentFields = toDocumentFields(content, contactUserIds);
   await (
     await jobPostings()
-  ).updateOne(
-    { _id: jobPostingId },
-    { $set: toDocumentFields(content, contactUserIds) },
-  );
+  ).updateOne({ _id: jobPostingId }, { $set: documentFields });
   await addLog(
     user.organizationId,
     user._id,
@@ -97,6 +109,17 @@ export async function updateJobPosting(
     jobPostingId,
     content.title,
   );
+  if (posting.status === "draft" || posting.tallyFormId) {
+    const tallyResult = await provisionTallyFormDraft(
+      { ...posting, ...documentFields },
+      user,
+    );
+    if (!tallyResult.ok) {
+      throw new Error(
+        `Ausschreibung gespeichert, Tally-Synchronisierung fehlgeschlagen: ${tallyResult.error}`,
+      );
+    }
+  }
 }
 
 async function requireContactMembers(

@@ -4,6 +4,9 @@ vi.mock("../../auth/session", () => ({
   requireUser: vi.fn(),
   requirePermission: vi.fn(),
 }));
+vi.mock("./tallyFormProvisioning", () => ({
+  provisionTallyFormDraft: vi.fn(async () => ({ ok: true, formId: "form-1" })),
+}));
 
 import { requirePermission, requireUser } from "../../auth/session";
 import { departments, jobPostings, teams, users } from "../../db/collections";
@@ -13,6 +16,7 @@ import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { createJobPostingDraft, updateJobPosting } from "./actions";
 import { getJobPostingById, getJobPostings } from "./data";
+import { provisionTallyFormDraft } from "./tallyFormProvisioning";
 
 let orgA: string;
 let orgB: string;
@@ -105,6 +109,10 @@ test("createJobPostingDraft stores a draft scoped to the org without a departmen
   expect(list[0]).toMatchObject({ _id: id, title: "Vorstand", teamId: teamA });
   expect(list[0].status).toBe("draft");
   expect(list[0]).not.toHaveProperty("departmentId");
+  expect(provisionTallyFormDraft).toHaveBeenCalledWith(
+    expect.objectContaining({ _id: id, title: "Vorstand", status: "draft" }),
+    expect.objectContaining({ _id: userA, organizationId: orgA }),
+  );
 });
 
 test("createJobPostingDraft rejects an archived team", async () => {
@@ -137,18 +145,61 @@ test("updateJobPosting sanitizes rich text before storing", async () => {
   expect(posting.tasks).toBe("<p>Aufgabe</p>");
   expect(posting.tasks).not.toContain("iframe");
   expect(posting.requirements).not.toContain("javascript");
+  expect(provisionTallyFormDraft).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      _id: id,
+      title: "T",
+      description: "<p>Hallo</p>",
+    }),
+    expect.objectContaining({ _id: userA, organizationId: orgA }),
+  );
 });
 
 test("updateJobPosting can edit content while published", async () => {
   const id = await createJobPostingDraft({ title: "Alt", teamId: teamA });
   await (
     await jobPostings()
-  ).updateOne({ _id: id }, { $set: { status: "published" } });
+  ).updateOne(
+    { _id: id },
+    { $set: { status: "published", tallyFormId: "form-1" } },
+  );
   await updateJobPosting({ jobPostingId: id, title: "Neu", teamId: teamA });
 
   const posting = await getJobPostingById(id);
   expect(posting.title).toBe("Neu");
   expect(posting.status).toBe("published");
+  expect(provisionTallyFormDraft).toHaveBeenCalledTimes(2);
+  expect(provisionTallyFormDraft).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      _id: id,
+      title: "Neu",
+      status: "published",
+      tallyFormId: "form-1",
+    }),
+    expect.objectContaining({ _id: userA, organizationId: orgA }),
+  );
+});
+
+test("stores the exact application questions and forwards them to Tally", async () => {
+  const id = await createJobPostingDraft({ title: "T", teamId: teamA });
+  const applicationQuestions = [
+    "Welche Systeme hast du skaliert?",
+    "Wie führst du ein technisches Team?",
+  ];
+
+  await updateJobPosting({
+    jobPostingId: id,
+    title: "T",
+    teamId: teamA,
+    applicationQuestions,
+  });
+
+  const posting = await getJobPostingById(id);
+  expect(posting.applicationQuestions).toEqual(applicationQuestions);
+  expect(provisionTallyFormDraft).toHaveBeenLastCalledWith(
+    expect.objectContaining({ _id: id, applicationQuestions }),
+    expect.objectContaining({ _id: userA, organizationId: orgA }),
+  );
 });
 
 test("updateJobPosting stores unique organization members as contacts", async () => {

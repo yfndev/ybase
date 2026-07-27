@@ -1,4 +1,5 @@
 import type { JobPosting } from "@/lib/db/types";
+import { jobPostingApplicationQuestions } from "./applicationQuestions";
 
 export interface JobPostingFormValues {
   title: string;
@@ -12,6 +13,7 @@ export interface JobPostingFormValues {
   isRemote: boolean;
   deadline: string;
   contactUserIds: string[];
+  applicationQuestions: string[];
 }
 
 export function toJobPostingForm(posting: JobPosting): JobPostingFormValues {
@@ -27,5 +29,8 @@ export function toJobPostingForm(posting: JobPosting): JobPostingFormValues {
     isRemote: posting.isRemote ?? false,
     deadline: posting.deadline ?? "",
     contactUserIds: posting.contactUserIds ?? [],
+    applicationQuestions: jobPostingApplicationQuestions(
+      posting.applicationQuestions,
+    ),
   };
 }
