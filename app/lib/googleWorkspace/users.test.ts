@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import {
   provisionWorkspaceUser,
   type WorkspaceDirectory,
@@ -12,6 +12,8 @@ const input = {
   givenName: "Alex",
   familyName: "Beispiel",
 };
+
+afterEach(() => vi.unstubAllEnvs());
 
 function directory(overrides: Partial<WorkspaceDirectory> = {}) {
   const created: WorkspaceUser = {
@@ -82,5 +84,13 @@ describe("provisionWorkspaceUser", () => {
       "bereits vergeben",
     );
     expect(workspace.resetPassword).not.toHaveBeenCalled();
+  });
+
+  test("reports a missing Workspace configuration", async () => {
+    vi.stubEnv("GOOGLE_WORKSPACE_SERVICE_ACCOUNT_JSON_BASE64", "");
+
+    await expect(provisionWorkspaceUser(input)).rejects.toThrow(
+      "Google-Workspace-Integration ist nicht konfiguriert",
+    );
   });
 });

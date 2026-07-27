@@ -70,6 +70,7 @@ function WorkspaceEmailField({
           type="button"
           variant="outline"
           size="icon"
+          className="h-auto"
           disabled={isSending}
           aria-label={
             isUnlocked ? "YFN-E-Mail sperren" : "YFN-E-Mail bearbeiten"
@@ -77,9 +78,9 @@ function WorkspaceEmailField({
           onClick={() => setIsUnlocked((value) => !value)}
         >
           {isUnlocked ? (
-            <Lock aria-hidden="true" />
+            <Lock className="size-5" aria-hidden="true" />
           ) : (
-            <Unlock aria-hidden="true" />
+            <Unlock className="size-5" aria-hidden="true" />
           )}
         </Button>
       </div>
@@ -103,9 +104,9 @@ export function ApplicationDecisionDialog({
           <DialogTitle>
             {accepts ? "Zusage senden" : "Absage versenden"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className={accepts ? "sr-only" : undefined}>
             {accepts
-              ? "Prüfe die YFN-E-Mail. Das Workspace-Konto wird vor dem Versand erstellt."
+              ? "Zusage mit neuer YFN-E-Mail senden."
               : "Prüfe Betreff und Nachricht. Der Status ändert sich erst nach dem Versand."}
           </DialogDescription>
         </DialogHeader>

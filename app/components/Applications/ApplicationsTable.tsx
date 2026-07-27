@@ -1,6 +1,6 @@
 "use client";
 
-import { Inbox } from "lucide-react";
+import { Inbox, LoaderCircle } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -22,6 +22,7 @@ interface Props {
   ownersById: Map<string, User>;
   isLoading: boolean;
   showJobPosting: boolean;
+  pendingApplicationId?: string;
   onSelect: (application: ApplicationWithFiles) => void;
 }
 
@@ -30,6 +31,7 @@ export function ApplicationsTable({
   ownersById,
   isLoading,
   showJobPosting,
+  pendingApplicationId,
   onSelect,
 }: Props) {
   if (!isLoading && applications.length === 0) {
@@ -60,6 +62,7 @@ export function ApplicationsTable({
         </TableHeader>
         <TableBody>
           {applications.map((application) => {
+            const isOpening = pendingApplicationId === application._id;
             const identity =
               application.status === "withdrawn"
                 ? "Anonymisierte Bewerbung"
@@ -79,19 +82,32 @@ export function ApplicationsTable({
             return (
               <TableRow
                 key={application._id}
-                className="cursor-pointer"
-                onClick={() => onSelect(application)}
+                className="cursor-pointer aria-busy:cursor-wait aria-busy:bg-muted/50"
+                onClick={() => {
+                  if (!isOpening) onSelect(application);
+                }}
+                aria-busy={isOpening}
               >
                 <TableCell className="pl-4">
                   <button
                     type="button"
-                    className="block font-medium outline-none hover:underline focus-visible:underline"
+                    className="flex items-center gap-2 font-medium outline-none hover:underline focus-visible:underline"
                     onClick={(e) => {
                       e.stopPropagation();
                       onSelect(application);
                     }}
+                    disabled={isOpening}
                   >
                     {identity}
+                    {isOpening ? (
+                      <>
+                        <LoaderCircle
+                          className="size-3.5 animate-spin text-muted-foreground"
+                          aria-hidden="true"
+                        />
+                        <span className="sr-only">wird geöffnet</span>
+                      </>
+                    ) : null}
                   </button>
                   {application.applicantEmail ? (
                     <p className="text-xs text-muted-foreground">

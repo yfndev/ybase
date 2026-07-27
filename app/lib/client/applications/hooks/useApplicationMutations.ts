@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { sendApplicationDecision } from "@/lib/server/applications/decision";
+import { submitApplicationDecision } from "@/lib/server/applications/decisionAction";
 import { updateApplicationManagement } from "@/lib/server/applications/management";
 import {
   setApplicationOnboardingCompleted,
@@ -22,7 +22,12 @@ export function useApplicationMutations() {
       onSuccess: invalidate,
     }),
     sendDecision: useMutation({
-      mutationFn: sendApplicationDecision,
+      mutationFn: async (
+        input: Parameters<typeof submitApplicationDecision>[0],
+      ) => {
+        const result = await submitApplicationDecision(input);
+        if (!result.ok) throw new Error(result.error);
+      },
       onSuccess: invalidate,
     }),
     setYfnEmail: useMutation({
