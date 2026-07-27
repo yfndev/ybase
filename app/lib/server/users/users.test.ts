@@ -164,6 +164,12 @@ test("setMemberStatus requires completed onboarding before approval", async () =
 
 test("setMemberStatus approves a fully onboarded member", async () => {
   await setTeamOnboardingStatus({ userId: memberA, status: "completed" });
+  await seedTeam("team-1", orgA);
+  await updateMemberProfile({
+    userId: memberA,
+    teamId: "team-1",
+    positionTitle: "Teammitglied",
+  });
   await setMemberStatus({ userId: memberA, status: "active" });
   const updated = await (await users()).findOne({ _id: memberA });
   expect(updated?.memberStatus).toBe("active");
@@ -172,8 +178,22 @@ test("setMemberStatus approves a fully onboarded member", async () => {
   expect(log?.entityId).toBe(memberA);
 });
 
+test("setMemberStatus requires complete team settings before activation", async () => {
+  await setTeamOnboardingStatus({ userId: memberA, status: "completed" });
+
+  await expect(
+    setMemberStatus({ userId: memberA, status: "active" }),
+  ).rejects.toThrow("einen Namen, ein aktives Team und eine Position");
+});
+
 test("completed onboarding stays locked after member approval", async () => {
   await setTeamOnboardingStatus({ userId: memberA, status: "completed" });
+  await seedTeam("team-1", orgA);
+  await updateMemberProfile({
+    userId: memberA,
+    teamId: "team-1",
+    positionTitle: "Teammitglied",
+  });
   await setMemberStatus({ userId: memberA, status: "active" });
 
   await expect(
