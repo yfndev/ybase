@@ -51,10 +51,10 @@ export function ApplicationReview({
       <PageHeader title={displayName} showBackButton />
 
       <main
-        className="min-w-0 space-y-8 min-[1200px]:h-[calc(100svh-11.75rem)] min-[1200px]:overflow-y-auto min-[1200px]:overscroll-contain min-[1200px]:pr-4 min-[1200px]:[scrollbar-gutter:stable] [&>section:first-of-type]:border-t-0 [&>section:first-of-type]:pt-0"
+        className="min-w-0 space-y-8 min-[1280px]:h-[calc(100svh-11.75rem)] min-[1280px]:overflow-y-auto min-[1280px]:overscroll-contain min-[1280px]:pr-4 min-[1280px]:[scrollbar-gutter:stable] [&>section:first-of-type]:border-t-0 [&>section:first-of-type]:pt-0"
         aria-label="Bewerbungsinformationen"
       >
-        <div className="min-[1200px]:hidden [&>section]:border-t-0 [&>section]:pt-0">
+        <div className="min-[1280px]:hidden [&>section]:border-t-0 [&>section]:pt-0">
           <ApplicationDetails application={application} />
         </div>
         <ApplicationAnswers title="Antworten" fields={answerFields} />
@@ -73,7 +73,7 @@ export function ApplicationReview({
           />
         }
       >
-        <div className="hidden min-[1200px]:block">
+        <div className="hidden min-[1280px]:block">
           <ApplicationDetails application={application} />
         </div>
         {!withdrawn ? (
