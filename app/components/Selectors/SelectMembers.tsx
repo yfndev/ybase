@@ -16,8 +16,11 @@ interface Props {
   members: User[];
   value: string[];
   isLoading?: boolean;
+  disabled?: boolean;
   onValueChange: (value: string[]) => void;
   maxSelected?: number;
+  placeholder?: string;
+  searchPlaceholder?: string;
 }
 
 function memberName(member: User): string {
@@ -80,8 +83,11 @@ export function SelectMembers({
   members,
   value,
   isLoading,
+  disabled,
   onValueChange,
   maxSelected = 20,
+  placeholder = "Ansprechpartner auswählen",
+  searchPlaceholder = "Name oder E-Mail suchen",
 }: Props) {
   const options = useMemo<MemberOption[]>(
     () =>
@@ -108,11 +114,12 @@ export function SelectMembers({
       options={options}
       value={value}
       onValueChange={onValueChange}
-      placeholder="Ansprechpartner auswählen"
-      searchPlaceholder="Name oder E-Mail suchen"
+      placeholder={placeholder}
+      searchPlaceholder={searchPlaceholder}
       emptyMessage="Keine passenden Mitglieder gefunden."
       loadingMessage="Mitglieder werden geladen …"
       isLoading={isLoading}
+      disabled={disabled}
       maxSelected={maxSelected}
       renderOption={renderMemberOption}
       renderValue={renderSelectedMembers}

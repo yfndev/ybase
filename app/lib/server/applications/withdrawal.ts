@@ -1,6 +1,6 @@
-import { applications, tallyWebhookEvents } from "../../db/collections";
-import type { ApplicationHistoryEntry } from "../../db/types";
+import { applications, tallyWebhookEvents, users } from "../../db/collections";
 import { newId } from "../../db/ids";
+import type { ApplicationHistoryEntry } from "../../db/types";
 import { deleteObject } from "../../s3/storage";
 import { addLog } from "../logs";
 import { applicationFileStorageKey } from "./fileStorage";
@@ -64,10 +64,17 @@ export async function withdrawApplicationByToken(
       },
       $unset: {
         applicantName: "",
-        ownerId: "",
-        internalNotes: "",
-        interviewAt: "",
+        applicantPhone: "",
+        ownerIds: "",
         withdrawalTokenHash: "",
+        yfnEmail: "",
+        yfnEmailNormalized: "",
+        onboardingUserId: "",
+        onboardingLinkedAt: "",
+        onboardingLinkError: "",
+        onboardingCompletedAt: "",
+        onboardingCompletedBy: "",
+        cleanupEligibleAt: "",
       },
     },
   );
@@ -87,6 +94,10 @@ export async function withdrawApplicationByToken(
   await Promise.all([
     ...cleanup,
     (await tallyWebhookEvents()).deleteMany({ applicationId: application._id }),
+    (await users()).updateMany(
+      { applicationId: application._id },
+      { $unset: { applicationId: "" } },
+    ),
   ]);
   await addLog(
     application.organizationId,

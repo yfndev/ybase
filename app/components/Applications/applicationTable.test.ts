@@ -4,7 +4,6 @@ import {
   ALL_APPLICATIONS,
   type ApplicationFilters,
   filterApplications,
-  UNASSIGNED_APPLICATIONS,
 } from "./applicationTable";
 
 function application(
@@ -18,14 +17,10 @@ function application(
     jobPostingTitle: "Fundraising",
     status: "received",
     applicantEmail: "alex@example.com",
-    applicantEmailNormalized: "alex@example.com",
     fields: [],
     files: [],
-    tallyEventId: "event-1",
-    tallySubmissionId: "submission-1",
-    tallyResponseId: "response-1",
-    tallyFormId: "form-1",
     submittedAt: 1,
+    ownerIds: [],
     ...overrides,
   };
 }
@@ -33,7 +28,7 @@ function application(
 const filters: ApplicationFilters = {
   search: "",
   status: ALL_APPLICATIONS,
-  ownerId: ALL_APPLICATIONS,
+  ownerIds: [],
   sortDirection: "desc",
 };
 
@@ -47,7 +42,6 @@ describe("filterApplications", () => {
     const newer = application({
       _id: "newer",
       applicantEmail: "kim@example.com",
-      applicantEmailNormalized: "kim@example.com",
       jobPostingTitle: "Kommunikation",
       submittedAt: 20,
     });
@@ -63,20 +57,25 @@ describe("filterApplications", () => {
     ).toEqual([newer]);
   });
 
-  test("filters status and unassigned applications", () => {
+  test("filters status and multiple responsible people", () => {
     const unassigned = application({ _id: "open", status: "review" });
-    const assigned = application({
-      _id: "owned",
+    const firstAssigned = application({
+      _id: "owned-1",
       status: "review",
-      ownerId: "user-1",
+      ownerIds: ["user-1", "user-3"],
+    });
+    const secondAssigned = application({
+      _id: "owned-2",
+      status: "review",
+      ownerIds: ["user-2"],
     });
 
     expect(
-      filterApplications([unassigned, assigned], {
+      filterApplications([unassigned, firstAssigned, secondAssigned], {
         ...filters,
         status: "review",
-        ownerId: UNASSIGNED_APPLICATIONS,
+        ownerIds: ["user-1", "user-2"],
       }),
-    ).toEqual([unassigned]);
+    ).toEqual([firstAssigned, secondAssigned]);
   });
 });

@@ -16,6 +16,7 @@ export interface JobPosting {
   isRemote?: boolean;
   deadline?: string;
   contactUserIds?: string[];
+  applicationQuestions?: string[];
   createdBy: string;
   tallyFormId?: string;
   tallyWebhookId?: string;

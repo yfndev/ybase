@@ -132,10 +132,9 @@ We're building a tool to support NGOs by making budgeting as easy as possible.
 ```bash
 pnpm vitest run              # Unit & integration tests
 pnpm vitest run --coverage   # Test coverage report
-pnpm exec playwright test    # E2E tests
 ```
 
-GitHub Actions runs both test suites on every push and PR.
+GitHub Actions runs the test suite on every push and PR.
 
 ---
 

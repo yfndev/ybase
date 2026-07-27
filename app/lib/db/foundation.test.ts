@@ -2,8 +2,9 @@ import { expect, test } from "vitest";
 import { ensureAppUser } from "../auth/provisioning";
 import { setupTestDatabase } from "../test/setupTestDatabase";
 import { getDb } from "./client";
-import { organizations } from "./collections";
+import { applications, jobPostings, logs, organizations } from "./collections";
 import { newId } from "./ids";
+import type { Application } from "./types";
 
 setupTestDatabase();
 
@@ -71,3 +72,123 @@ test("ensureAppUser leaves organizationId unset when no org matches the domain",
   expect(user.organizationId).toBeUndefined();
   expect(user.role).toBeUndefined();
 });
+
+test("links an accepted application on the first matching login", async () => {
+  const organizationId = newId();
+  const teamId = newId();
+  const postingId = newId();
+  const applicationId = newId();
+  await (
+    await organizations()
+  ).insertOne({
+    _id: organizationId,
+    _creationTime: Date.now(),
+    name: "YFN",
+    domain: "youngfounders.network",
+    createdBy: "seed",
+  });
+  await (
+    await jobPostings()
+  ).insertOne({
+    _id: postingId,
+    _creationTime: Date.now(),
+    organizationId,
+    teamId,
+    status: "published",
+    title: "People Lead",
+    createdBy: "seed",
+  });
+  await insertAcceptedApplication({
+    _id: applicationId,
+    organizationId,
+    jobPostingId: postingId,
+  });
+
+  const user = await ensureAppUser({
+    email: "alex@youngfounders.network",
+    name: "Alex",
+  });
+
+  expect(user).toMatchObject({
+    applicationId,
+    organizationId,
+    teamId,
+    positionTitle: "People Lead",
+    memberStatus: "onboarding",
+    teamOnboardingStatus: "not_started",
+  });
+  expect(
+    await (await applications()).findOne({ _id: applicationId }),
+  ).toMatchObject({
+    onboardingUserId: user._id,
+    cleanupEligibleAt: expect.any(Number),
+  });
+  expect(
+    await (await logs()).findOne({ entityId: applicationId }),
+  ).toMatchObject({ action: "application.onboarding_linked" });
+});
+
+test("does not auto-resolve ambiguous application matches", async () => {
+  const organizationId = newId();
+  const postingId = newId();
+  await (
+    await organizations()
+  ).insertOne({
+    _id: organizationId,
+    _creationTime: Date.now(),
+    name: "YFN",
+    domain: "youngfounders.network",
+    createdBy: "seed",
+  });
+  await (
+    await jobPostings()
+  ).insertOne({
+    _id: postingId,
+    _creationTime: Date.now(),
+    organizationId,
+    teamId: newId(),
+    status: "published",
+    title: "People Lead",
+    createdBy: "seed",
+  });
+  await insertAcceptedApplication({ organizationId, jobPostingId: postingId });
+  await insertAcceptedApplication({ organizationId, jobPostingId: postingId });
+
+  const user = await ensureAppUser({
+    email: "alex@youngfounders.network",
+  });
+
+  expect(user.applicationId).toBeUndefined();
+  expect(
+    await (
+      await applications()
+    ).countDocuments({
+      onboardingLinkError: { $exists: true },
+    }),
+  ).toBe(2);
+});
+
+async function insertAcceptedApplication(
+  overrides: Pick<Application, "organizationId" | "jobPostingId"> &
+    Partial<Application>,
+): Promise<void> {
+  await (
+    await applications()
+  ).insertOne({
+    _id: newId(),
+    _creationTime: Date.now(),
+    status: "accepted",
+    applicantEmail: "private@example.com",
+    applicantEmailNormalized: `private-${newId()}@example.com`,
+    fields: [],
+    files: [],
+    tallyEventId: newId(),
+    tallySubmissionId: newId(),
+    tallyResponseId: newId(),
+    tallyFormId: "form-1",
+    yfnEmail: "alex@youngfounders.network",
+    yfnEmailNormalized: "alex@youngfounders.network",
+    submittedAt: Date.now(),
+    ...overrides,
+  });
+}

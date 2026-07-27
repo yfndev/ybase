@@ -20,7 +20,7 @@ export function ApplicationStatusBadge({
   return (
     <Badge
       variant="outline"
-      className={cn("rounded-full", STATUS_STYLES[status])}
+      className={cn("px-3 py-1 text-sm font-medium", STATUS_STYLES[status])}
     >
       {APPLICATION_STATUS_LABELS[status]}
     </Badge>

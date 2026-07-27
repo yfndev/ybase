@@ -37,12 +37,42 @@ function payload() {
           type: "INPUT_PHONE_NUMBER",
           value: "+491234",
         },
-        { key: "q5", label: "Skills", type: "CHECKBOXES", value: ["a", "b"] },
+        {
+          key: "q5",
+          label: "Wie viele Stunden kannst du pro Woche investieren?",
+          type: "CHECKBOXES",
+          value: ["44dd9142-3ba6-470f-b69a-6ba1b9bf5234", "b"],
+          options: [
+            {
+              id: "44dd9142-3ba6-470f-b69a-6ba1b9bf5234",
+              text: "Zwischen 4 und 8 Stunden",
+            },
+            { id: "b", text: "Kommunikation" },
+          ],
+        },
+        {
+          key: "q5_44dd9142-3ba6-470f-b69a-6ba1b9bf5234",
+          label:
+            "Wie viele Stunden kannst du pro Woche investieren? (Zwischen 4 und 8 Stunden)",
+          type: "CHECKBOXES",
+          value: true,
+        },
+        {
+          key: "q5_b",
+          label: "Skills (Kommunikation)",
+          type: "CHECKBOXES",
+          value: true,
+        },
         {
           key: "q6",
           label: "Verfügbarkeit",
           type: "MATRIX",
           value: { monday: ["morning", "evening"] },
+          rows: [{ id: "monday", text: "Montag" }],
+          columns: [
+            { id: "morning", text: "Morgens" },
+            { id: "evening", text: "Abends" },
+          ],
         },
         {
           key: "q7",
@@ -55,6 +85,36 @@ function payload() {
               url: "https://storage.tally.so/private/cv.pdf?token=secret",
               mimeType: "application/pdf",
               size: 1234,
+            },
+          ],
+        },
+        {
+          key: "q8",
+          label: "Prioritäten",
+          type: "RANKING",
+          value: ["impact", "learning"],
+          options: [
+            { id: "learning", text: "Lernen" },
+            { id: "impact", text: "Wirkung" },
+          ],
+        },
+        {
+          key: "q9",
+          label: "Einwilligung",
+          type: "CHECKBOXES",
+          value: true,
+        },
+        {
+          key: "q10",
+          label: "Unterschrift",
+          type: "SIGNATURE",
+          value: [
+            {
+              id: "signature-1",
+              name: "private-signature.png",
+              url: "https://storage.tally.so/private/signature.png?token=secret",
+              mimeType: "image/png",
+              size: 400,
             },
           ],
         },
@@ -73,29 +133,48 @@ test("normalizes the applicant email", () => {
   expect(parsed.emailNormalized).toBe("max@example.com");
 });
 
+test("extracts the required applicant phone number", () => {
+  expect(parseTallySubmission(payload()).phone).toBe("+491234");
+});
+
 test("derives name from first and last name fields", () => {
   const parsed = parseTallySubmission(payload());
   expect(parsed.name).toBe("Max Mustermann");
 });
 
-test("snapshot keeps typed answers but drops hidden and phone fields", () => {
+test("normalizes every structured field and drops only hidden metadata", () => {
   const parsed = parseTallySubmission(payload());
-  expect(parsed.fields).toHaveLength(6);
+  expect(parsed.fields).toHaveLength(10);
   expect(parsed.fields.some((field) => field.label === "jobPostingId")).toBe(
     false,
   );
-  expect(parsed.fields.some((field) => field.type.includes("PHONE"))).toBe(
-    false,
+  expect(parsed.fields.find((field) => field.key === "q4")?.value).toBe(
+    "+491234",
   );
   const skills = parsed.fields.find((field) => field.key === "q5");
-  expect(skills?.value).toEqual(["a", "b"]);
+  expect(skills?.value).toEqual(["Zwischen 4 und 8 Stunden", "Kommunikation"]);
+  expect(
+    parsed.fields.some(
+      (field) => field.key === "q5_44dd9142-3ba6-470f-b69a-6ba1b9bf5234",
+    ),
+  ).toBe(false);
+  expect(parsed.fields.some((field) => field.key === "q5_b")).toBe(false);
   expect(parsed.fields.find((field) => field.key === "q6")?.value).toEqual({
-    monday: ["morning", "evening"],
+    Montag: ["Morgens", "Abends"],
   });
   expect(parsed.fields.find((field) => field.key === "q7")?.value).toEqual([
     "cv.pdf",
   ]);
+  expect(parsed.fields.find((field) => field.key === "q8")?.value).toEqual([
+    "Wirkung",
+    "Lernen",
+  ]);
+  expect(parsed.fields.find((field) => field.key === "q9")?.value).toBe(true);
+  expect(parsed.fields.find((field) => field.key === "q10")?.value).toBe(
+    "Vorhanden",
+  );
   expect(JSON.stringify(parsed.fields)).not.toContain("token=secret");
+  expect(JSON.stringify(parsed.fields)).not.toContain("private-signature.png");
 });
 
 test("extracts file metadata separately from the answer snapshot", () => {
@@ -130,4 +209,68 @@ test("returns null identity when the hidden field or email is absent", () => {
   expect(parsed.jobPostingId).toBeNull();
   expect(parsed.email).toBeNull();
   expect(parsed.emailNormalized).toBeNull();
+  expect(parsed.phone).toBeNull();
+});
+
+test.each(["MULTIPLE_CHOICE", "DROPDOWN", "MULTI_SELECT"])(
+  "resolves option labels for %s",
+  (type) => {
+    const parsed = parseTallySubmission(
+      tallyWebhookSchema.parse({
+        eventId: `evt-${type}`,
+        eventType: "FORM_RESPONSE",
+        data: {
+          responseId: `res-${type}`,
+          submissionId: `sub-${type}`,
+          formId: "form-1",
+          fields: [
+            {
+              key: "choice",
+              label: "Auswahl",
+              type,
+              value: ["option-2", "option-1"],
+              options: [
+                { id: "option-1", text: "Erste Option" },
+                { id: "option-2", text: "Zweite Option" },
+              ],
+            },
+          ],
+        },
+      }),
+    );
+
+    expect(parsed.fields[0]?.value).toEqual(["Zweite Option", "Erste Option"]);
+  },
+);
+
+test.each([
+  ["CALCULATED_FIELDS", 20],
+  ["INPUT_TEXT", "Kurze Antwort"],
+  ["INPUT_NUMBER", 10],
+  ["INPUT_EMAIL", "max@example.com"],
+  ["INPUT_PHONE_NUMBER", "+491234"],
+  ["INPUT_LINK", "https://example.com"],
+  ["INPUT_DATE", "2026-07-26"],
+  ["INPUT_TIME", "12:30"],
+  ["TEXTAREA", "Lange Antwort"],
+  ["PAYMENT", "EUR"],
+  ["RATING", 4],
+  ["LINEAR_SCALE", 7],
+  ["CSAT", 5],
+  ["NPS", 9],
+] as const)("keeps the typed value for %s", (type, value) => {
+  const parsed = parseTallySubmission(
+    tallyWebhookSchema.parse({
+      eventId: `evt-${type}`,
+      eventType: "FORM_RESPONSE",
+      data: {
+        responseId: `res-${type}`,
+        submissionId: `sub-${type}`,
+        formId: "form-1",
+        fields: [{ key: "field", label: "Feld", type, value }],
+      },
+    }),
+  );
+
+  expect(parsed.fields[0]?.value).toBe(value);
 });

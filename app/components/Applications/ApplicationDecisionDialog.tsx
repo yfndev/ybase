@@ -1,5 +1,6 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { ApplicationDecision } from "@/lib/applications/decisionEmail";
-import { Loader2 } from "lucide-react";
 
 export interface ApplicationDecisionDraft {
   decision: ApplicationDecision;
@@ -43,7 +43,7 @@ export function ApplicationDecisionDialog({
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>
-            {accepts ? "Zusage versenden" : "Absage versenden"}
+            {accepts ? "Zusage senden" : "Absage versenden"}
           </DialogTitle>
           <DialogDescription>
             Prüfe Betreff und Nachricht. Der Status ändert sich erst, wenn Brevo
@@ -80,11 +80,17 @@ export function ApplicationDecisionDialog({
           </div>
         ) : null}
         <DialogFooter>
-          <Button variant="outline" disabled={isSending} onClick={onClose}>
+          <Button
+            size="member"
+            variant="outline"
+            disabled={isSending}
+            onClick={onClose}
+          >
             Abbrechen
           </Button>
           <Button
             variant={accepts ? "primary" : "destructive"}
+            size="member"
             disabled={
               isSending || !draft?.subject.trim() || !draft.message.trim()
             }

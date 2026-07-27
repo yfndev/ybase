@@ -1,7 +1,11 @@
 "use client";
 
-import { PageHeader } from "@/components/Layout/PageHeader";
+import { Loader2, Save } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import toast from "react-hot-toast";
 import { DeleteJobPostingDialog } from "@/components/JobPostings/DeleteJobPostingDialog";
+import { PageHeader } from "@/components/Layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useJobPostingMutations } from "@/lib/client/jobPostings/hooks/useJobPostingMutations";
 import type { JobPosting } from "@/lib/db/types";
@@ -9,13 +13,11 @@ import {
   type JobPostingFormValues,
   toJobPostingForm,
 } from "@/lib/jobPostings/form";
-import { Loader2, Save, Send, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import toast from "react-hot-toast";
 import { JobPostingApplications } from "./JobPostingApplications";
 import { JobPostingBasicFields } from "./JobPostingBasicFields";
 import { JobPostingContentFields } from "./JobPostingContentFields";
+import { JobPostingDraftActions } from "./JobPostingDraftActions";
+import { JobPostingMoreMenu } from "./JobPostingMoreMenu";
 import { JobPostingStatusActions } from "./JobPostingStatusActions";
 
 export function JobPostingForm({ posting }: { posting: JobPosting }) {
@@ -48,8 +50,10 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
     try {
       await update.mutateAsync({ jobPostingId: posting._id, ...values });
       toast.success("Ausschreibung gespeichert");
-    } catch {
-      toast.error("Fehler beim Speichern");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Fehler beim Speichern",
+      );
     } finally {
       setActiveAction(null);
     }
@@ -63,6 +67,7 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
       await update.mutateAsync({ jobPostingId: posting._id, ...values });
       await generateForm.mutateAsync({ jobPostingId: posting._id });
       toast.success("Ausschreibung veröffentlicht");
+      router.refresh();
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Fehler beim Veröffentlichen",
@@ -97,51 +102,40 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
         backUrl="/recruiting"
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {posting.status === "draft" ? null : (
-          <JobPostingStatusActions posting={posting} />
-        )}
-        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-          <Button
-            variant="outline"
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-            onClick={() => setDeleteDialogOpen(true)}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <JobPostingStatusActions posting={posting} />
+        {posting.status === "draft" ? (
+          <JobPostingDraftActions
+            posting={posting}
+            activeAction={activeAction}
             disabled={isBusy}
-          >
-            <Trash2 className="size-4" />
-            Ausschreibung löschen
-          </Button>
-          <Button
-            variant={posting.status === "draft" ? "outline" : "primary"}
-            onClick={handleSave}
-            disabled={isBusy}
-            aria-busy={activeAction === "save"}
-          >
-            {activeAction === "save" ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Save className="size-4" />
-            )}
-            {posting.status === "draft" ? "Entwurf speichern" : "Speichern"}
-          </Button>
-          {posting.status === "draft" ? (
+            onSave={handleSave}
+            onPublish={handlePublish}
+            onDelete={() => setDeleteDialogOpen(true)}
+          />
+        ) : (
+          <div className="ml-auto grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
             <Button
               variant="primary"
-              onClick={handlePublish}
+              className="min-w-0"
+              onClick={handleSave}
               disabled={isBusy}
-              aria-busy={activeAction === "publish"}
+              aria-busy={activeAction === "save"}
             >
-              {activeAction === "publish" ? (
+              {activeAction === "save" ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
-                <Send className="size-4" />
+                <Save className="size-4" />
               )}
-              {posting.tallyFormError
-                ? "Speichern & erneut veröffentlichen"
-                : "Veröffentlichen"}
+              Speichern
             </Button>
-          ) : null}
-        </div>
+            <JobPostingMoreMenu
+              posting={posting}
+              disabled={isBusy}
+              onDelete={() => setDeleteDialogOpen(true)}
+            />
+          </div>
+        )}
       </div>
 
       {posting.status === "draft" ? null : (

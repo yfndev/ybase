@@ -71,6 +71,7 @@ export interface Application {
   applicantName?: string;
   applicantEmail: string;
   applicantEmailNormalized: string;
+  applicantPhone?: string;
   fields: ApplicationField[];
   files: ApplicationFile[];
   tallyEventId: string;
@@ -78,18 +79,38 @@ export interface Application {
   tallyResponseId: string;
   tallyFormId: string;
   withdrawalTokenHash?: string;
+  yfnEmail?: string;
+  yfnEmailNormalized?: string;
+  onboardingUserId?: string;
+  onboardingLinkedAt?: number;
+  onboardingLinkError?: string;
+  onboardingCompletedAt?: number;
+  onboardingCompletedBy?: string;
+  cleanupEligibleAt?: number;
   submittedAt: number;
   withdrawnAt?: number;
-  ownerId?: string;
-  internalNotes?: string;
-  interviewAt?: number;
+  ownerIds?: string[];
   updatedAt?: number;
   history?: ApplicationHistoryEntry[];
 }
 
-export type ApplicationWithFiles = Omit<Application, "files"> & {
+export type ApplicationWithFiles = Omit<
+  Application,
+  | "files"
+  | "ownerIds"
+  | "applicantEmailNormalized"
+  | "tallyEventId"
+  | "tallySubmissionId"
+  | "tallyResponseId"
+  | "tallyFormId"
+  | "withdrawalTokenHash"
+  | "yfnEmailNormalized"
+  | "onboardingCompletedBy"
+  | "cleanupEligibleAt"
+> & {
   files: ApplicationFileView[];
   jobPostingTitle: string;
+  ownerIds: string[];
 };
 
 export type TallyWebhookEventStatus = "processed" | "duplicate" | "ignored";

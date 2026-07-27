@@ -17,10 +17,25 @@ function toApplicationView(
   application: Application,
   jobPostingTitle: string,
 ): ApplicationWithFiles {
+  const {
+    applicantEmailNormalized: _applicantEmailNormalized,
+    files,
+    tallyEventId: _tallyEventId,
+    tallySubmissionId: _tallySubmissionId,
+    tallyResponseId: _tallyResponseId,
+    tallyFormId: _tallyFormId,
+    withdrawalTokenHash: _withdrawalTokenHash,
+    yfnEmailNormalized: _yfnEmailNormalized,
+    onboardingCompletedBy: _onboardingCompletedBy,
+    cleanupEligibleAt: _cleanupEligibleAt,
+    ownerIds,
+    ...visibleApplication
+  } = application;
   return {
-    ...application,
+    ...visibleApplication,
     jobPostingTitle,
-    files: (application.files ?? []).map(
+    ownerIds: ownerIds ?? [],
+    files: files.map(
       ({ sourceUrl: _sourceUrl, storageKey: _storageKey, ...file }) => file,
     ),
   };
@@ -46,6 +61,22 @@ export async function getApplications(): Promise<ApplicationWithFiles[]> {
       application,
       titles.get(application.jobPostingId) ?? "Unbekannte Ausschreibung",
     ),
+  );
+}
+
+export async function getApplication(
+  applicationId: string,
+): Promise<ApplicationWithFiles> {
+  const { user, application } = await loadOwnedApplication(applicationId);
+  const posting = await (
+    await jobPostings()
+  ).findOne({
+    _id: application.jobPostingId,
+    organizationId: user.organizationId,
+  });
+  return toApplicationView(
+    application,
+    posting?.title ?? "Unbekannte Ausschreibung",
   );
 }
 
@@ -89,16 +120,15 @@ export async function queueApplicationFileRetry(
 
 export async function updateApplicationManagement(input: {
   applicationId: string;
-  ownerId: string | null;
-  internalNotes: string;
-  interviewAt: number | null;
+  ownerIds: string[];
 }): Promise<void> {
   const parsed = z
     .object({
       applicationId: z.string().min(1),
-      ownerId: z.string().min(1).nullable(),
-      internalNotes: z.string().max(10_000),
-      interviewAt: z.number().int().positive().nullable(),
+      ownerIds: z
+        .array(z.string().min(1))
+        .max(20)
+        .transform((ownerIds) => [...new Set(ownerIds)]),
     })
     .parse(input);
   const { user, application } = await loadOwnedApplication(
@@ -110,49 +140,34 @@ export async function updateApplicationManagement(input: {
     );
   }
 
-  if (parsed.ownerId) {
-    const owner = await (
+  if (parsed.ownerIds.length > 0) {
+    const availableOwners = await (
       await users()
-    ).findOne({
-      _id: parsed.ownerId,
+    ).countDocuments({
+      _id: { $in: parsed.ownerIds },
       organizationId: user.organizationId,
       memberStatus: { $ne: "offboarded" },
     });
-    if (!owner) throw new Error("Verantwortliche Person nicht verfügbar");
+    if (availableOwners !== parsed.ownerIds.length) {
+      throw new Error(
+        "Mindestens eine verantwortliche Person ist nicht verfügbar",
+      );
+    }
   }
 
-  const nextNotes = parsed.internalNotes.trim();
-  const details: string[] = [];
-  if ((application.ownerId ?? null) !== parsed.ownerId) {
-    details.push("Verantwortung geändert");
+  const currentOwnerIds = application.ownerIds ?? [];
+  if (
+    currentOwnerIds.length === parsed.ownerIds.length &&
+    currentOwnerIds.every((ownerId) => parsed.ownerIds.includes(ownerId))
+  ) {
+    return;
   }
-  if ((application.internalNotes ?? "") !== nextNotes) {
-    details.push("Interne Notizen aktualisiert");
-  }
-  if ((application.interviewAt ?? null) !== parsed.interviewAt) {
-    details.push(
-      parsed.interviewAt
-        ? "Interviewtermin aktualisiert"
-        : "Interviewtermin entfernt",
-    );
-  }
-  if (details.length === 0) return;
 
   const entry = createApplicationHistoryEntry(
     user._id,
     "management_updated",
-    details.join(" · "),
+    "Verantwortliche geändert",
   );
-  const set: Partial<Application> = {
-    internalNotes: nextNotes,
-    updatedAt: entry.timestamp,
-  };
-  const unset: Record<string, ""> = {};
-  if (parsed.ownerId) set.ownerId = parsed.ownerId;
-  else unset.ownerId = "";
-  if (parsed.interviewAt) set.interviewAt = parsed.interviewAt;
-  else unset.interviewAt = "";
-
   const result = await (
     await applications()
   ).updateOne(
@@ -161,7 +176,13 @@ export async function updateApplicationManagement(input: {
       organizationId: user.organizationId,
       status: { $ne: "withdrawn" },
     },
-    { $set: set, $unset: unset, $push: { history: entry } },
+    {
+      $set: {
+        ownerIds: parsed.ownerIds,
+        updatedAt: entry.timestamp,
+      },
+      $push: { history: entry },
+    },
   );
   if (result.matchedCount !== 1) throw new Error("Bewerbung nicht gefunden");
   await addLog(
@@ -169,6 +190,6 @@ export async function updateApplicationManagement(input: {
     user._id,
     "application.management_update",
     application._id,
-    details.join(", "),
+    entry.details,
   );
 }

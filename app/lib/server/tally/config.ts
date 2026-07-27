@@ -1,3 +1,8 @@
+import {
+  TALLY_RECRUITING_TEMPLATE_FORM_ID,
+  TALLY_RECRUITING_WORKSPACE_ID,
+} from "../../tally/constants";
+
 type TallyEnvironment = {
   [key: string]: string | undefined;
 };
@@ -9,17 +14,38 @@ export interface TallyFormConfig {
   webhookSigningSecret: string;
 }
 
+function deployedWebhookUrl(env: TallyEnvironment): string | undefined {
+  const configuredAppUrl = (env.NEXT_PUBLIC_APP_URL ?? env.AUTH_URL)?.trim();
+  if (!configuredAppUrl) return undefined;
+
+  try {
+    const appUrl = new URL(configuredAppUrl);
+    if (
+      appUrl.protocol !== "https:" ||
+      ["localhost", "127.0.0.1", "::1"].includes(appUrl.hostname)
+    ) {
+      return undefined;
+    }
+    return new URL("/api/webhooks/tally", appUrl).toString();
+  } catch {
+    return undefined;
+  }
+}
+
 export function loadTallyFormConfig(
   env: TallyEnvironment = process.env,
 ): TallyFormConfig {
-  const workspaceId = env.TALLY_WORKSPACE_ID?.trim();
-  const templateFormId = env.TALLY_TEMPLATE_FORM_ID?.trim();
-  const webhookUrl = env.TALLY_WEBHOOK_URL?.trim();
+  const webhookUrl = deployedWebhookUrl(env) ?? env.TALLY_WEBHOOK_URL?.trim();
   const webhookSigningSecret = env.TALLY_WEBHOOK_SIGNING_SECRET?.trim();
-  if (!workspaceId || !templateFormId || !webhookUrl || !webhookSigningSecret) {
+  if (!webhookUrl || !webhookSigningSecret) {
     throw new Error("Tally-Formularkonfiguration ist unvollständig");
   }
-  return { workspaceId, templateFormId, webhookUrl, webhookSigningSecret };
+  return {
+    workspaceId: TALLY_RECRUITING_WORKSPACE_ID,
+    templateFormId: TALLY_RECRUITING_TEMPLATE_FORM_ID,
+    webhookUrl,
+    webhookSigningSecret,
+  };
 }
 
 export function loadTallyWebhookSecret(

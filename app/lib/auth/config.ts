@@ -1,7 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
-import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
-import { isTestMode } from "./environment";
 import { ensureAppUser } from "./provisioning";
 import { normalizeOptionalUserRole } from "./roles";
 
@@ -10,8 +8,6 @@ const ALLOWED_EMAIL_DOMAIN = "youngfounders.network";
 function isAllowedEmail(email: string | null | undefined): boolean {
   return Boolean(email?.toLowerCase().endsWith(`@${ALLOWED_EMAIL_DOMAIN}`));
 }
-
-const isTestLoginEnabled = isTestMode();
 
 const google = Google({
   authorization: {
@@ -35,32 +31,12 @@ const google = Google({
   },
 });
 
-const testProvider = Credentials({
-  id: "testing",
-  name: "Testing",
-  credentials: { email: {}, name: {} },
-  authorize(credentials) {
-    if (!isTestLoginEnabled) return null;
-    const email = (credentials?.email as string | undefined)
-      ?.trim()
-      .toLowerCase();
-    if (!email) return null;
-    return {
-      id: email,
-      email,
-      name:
-        (credentials?.name as string | undefined)?.trim() || "Test User",
-    };
-  },
-});
-
 export const authConfig = {
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
-  providers: isTestLoginEnabled ? [testProvider] : [google],
+  providers: [google],
   callbacks: {
     signIn({ user }) {
-      if (isTestLoginEnabled) return true;
       return isAllowedEmail(user.email);
     },
     async jwt({ token, user }) {
