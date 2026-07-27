@@ -6,6 +6,7 @@ import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { getTeamDirectory } from "./feed";
 
 const organizationId = "org-team-directory";
+const publicOrigin = "https://ybase.example";
 
 setupTestDatabase();
 
@@ -70,6 +71,8 @@ test("returns active members directly from their ybase profiles", async () => {
     member({
       _id: "member-visible",
       name: "Ada Beispiel",
+      profileImageStorageKey: "profile-image",
+      publicProfileCompletedAt: 100,
     }),
     member({
       _id: "member-defaults",
@@ -87,7 +90,7 @@ test("returns active members directly from their ybase profiles", async () => {
     }),
   ]);
 
-  const feed = await getTeamDirectory(organizationId);
+  const feed = await getTeamDirectory(organizationId, publicOrigin);
 
   expect(feed.version).toBe("v1");
   expect(feed.revision).toHaveLength(64);
@@ -97,6 +100,7 @@ test("returns active members directly from their ybase profiles", async () => {
       id: `ybase:${organizationId}:member:member-visible`,
       name: "Ada Beispiel",
       role: "People Lead",
+      imageUrl: `${publicOrigin}/api/v1/team-directory/images/member-visible`,
     },
     {
       id: `ybase:${organizationId}:member:member-defaults`,
@@ -116,7 +120,7 @@ test("omits incomplete profiles and teams without public members", async () => {
     }),
   );
 
-  const feed = await getTeamDirectory(organizationId);
+  const feed = await getTeamDirectory(organizationId, publicOrigin);
 
   expect(feed.data).toEqual({ departments: [] });
 });

@@ -2,6 +2,7 @@ export interface TeamDirectoryMember {
   id: string;
   name: string;
   role: string;
+  imageUrl?: string;
 }
 
 export interface TeamDirectoryTeam {

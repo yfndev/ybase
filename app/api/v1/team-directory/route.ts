@@ -7,16 +7,19 @@ const RESPONSE_HEADERS = {
 };
 
 export async function GET(request: Request) {
-  const organizationId =
-    process.env.YFN_TEAM_DIRECTORY_ORGANIZATION_ID?.trim();
-  if (!organizationId) {
+  const organizationId = process.env.YFN_TEAM_DIRECTORY_ORGANIZATION_ID?.trim();
+  const publicOrigin = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(
+    /\/+$/,
+    "",
+  );
+  if (!organizationId || !publicOrigin) {
     return Response.json(
       { error: "Team-Directory ist nicht konfiguriert" },
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }
 
-  const feed = await getTeamDirectory(organizationId);
+  const feed = await getTeamDirectory(organizationId, publicOrigin);
   const etag = `"${feed.revision}"`;
   if (request.headers.get("if-none-match") === etag) {
     return new Response(null, {

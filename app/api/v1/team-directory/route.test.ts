@@ -10,6 +10,7 @@ import { GET } from "./route";
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv("YFN_TEAM_DIRECTORY_ORGANIZATION_ID", "org-1");
+  vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://ybase.example/");
 });
 
 afterEach(() => {
@@ -42,7 +43,10 @@ test("GET returns the versioned feed and revision ETag", async () => {
   expect(response.status).toBe(200);
   expect(response.headers.get("etag")).toBe('"revision-1"');
   expect(response.headers.get("cache-control")).toContain("public");
-  expect(getTeamDirectory).toHaveBeenCalledWith("org-1");
+  expect(getTeamDirectory).toHaveBeenCalledWith(
+    "org-1",
+    "https://ybase.example",
+  );
 });
 
 test("GET returns 304 when the feed revision is unchanged", async () => {
