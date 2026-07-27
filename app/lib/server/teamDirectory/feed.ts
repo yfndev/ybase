@@ -62,7 +62,6 @@ function boardDto(
     name: publicName(user),
     role: board.role,
     isChair: board.isChair,
-    icon: board.icon,
     sortOrder: board.sortOrder,
   };
 }

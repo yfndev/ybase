@@ -1,15 +1,6 @@
 export type UserRole = "admin" | "finance" | "people_culture" | "member";
 export type MemberStatus = "onboarding" | "active" | "offboarded";
 export type TeamOnboardingStatus = "not_started" | "in_progress" | "completed";
-export type PublicTeamIcon =
-  | "education"
-  | "partnerships"
-  | "marketing"
-  | "community"
-  | "operations"
-  | "tech"
-  | "growth"
-  | "network";
 
 export interface PublicTeamProfile {
   isPublished: boolean;
@@ -20,7 +11,6 @@ export interface PublicTeamProfile {
   board?: {
     role: string;
     isChair: boolean;
-    icon: PublicTeamIcon;
     sortOrder: number;
   };
 }

@@ -1,5 +1,3 @@
-import type { PublicTeamIcon } from "../../db/types";
-
 export interface TeamDirectoryMemberV1 {
   id: string;
   name: string;
@@ -13,7 +11,6 @@ export interface TeamDirectoryBoardMemberV1 {
   name: string;
   role: string;
   isChair: boolean;
-  icon: PublicTeamIcon;
   sortOrder: number;
 }
 

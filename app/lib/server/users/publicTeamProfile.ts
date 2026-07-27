@@ -7,17 +7,6 @@ import { addLog } from "../logs";
 import { scheduleTeamDirectoryRevalidation } from "../teamDirectory/revalidate";
 import { loadManagedMember, requireActiveOrganizationTeam } from "./access";
 
-const iconSchema = z.enum([
-  "education",
-  "partnerships",
-  "marketing",
-  "community",
-  "operations",
-  "tech",
-  "growth",
-  "network",
-]);
-
 const optionalText = z
   .string()
   .trim()
@@ -36,7 +25,6 @@ const publicTeamProfileSchema = z.object({
     .object({
       role: z.string().trim().min(1).max(100),
       isChair: z.boolean(),
-      icon: iconSchema,
       sortOrder: z.number().int().min(0).max(9999),
     })
     .optional(),

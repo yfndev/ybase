@@ -47,7 +47,7 @@ Die Organisationsstruktur liegt aktuell direkt im Payload-Seitenblock
 - `board.members` wird separat gepflegt.
 
 Das aktuelle Frontend benötigt für normale Mitglieder nur Name und Lead-Status.
-Für den Vorstand benötigt es Ressort, Name, Vorsitz-Status und Icon.
+Für den Vorstand benötigt es Ressort, Name und Vorsitz-Status.
 
 Die Landingpage bindet an anderer Stelle bereits öffentliche Community-Profile
 von `member.youngfounders.network` ein. Diese Profile sind fachlich nicht der
@@ -123,7 +123,6 @@ interface PublicTeamProfile {
   board?: {
     role: string;
     isChair: boolean;
-    icon: OrgaStructureIcon;
     sortOrder: number;
   };
 }
@@ -189,7 +188,6 @@ Beispiel:
         "name": "Erika Beispiel",
         "role": "Tech",
         "isChair": false,
-        "icon": "tech",
         "sortOrder": 20
       }
     ],
@@ -305,7 +303,7 @@ Der `orgaStructure`-Block behält redaktionelle Felder:
 - Titel und Highlight,
 - Gruppenbild,
 - Abschnittsüberschriften,
-- optional Layout-Einstellungen wie Spaltenzahl oder Icons.
+- optional Layout-Einstellungen wie die Spaltenzahl.
 
 Die Arrays für Vorstand, Departments, Teams und Mitglieder werden im
 `ybase`-Modus nicht mehr redaktionell gepflegt. Für die Migration kann ein

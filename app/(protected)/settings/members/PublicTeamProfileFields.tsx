@@ -1,20 +1,7 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { PublicTeamIcon } from "@/lib/db/types";
-import { LabeledSelect } from "./LabeledSelect";
 import type { MemberDrawerFormState } from "./useMemberDrawerForm";
-
-const ICON_OPTIONS = [
-  { value: "education", label: "Education" },
-  { value: "partnerships", label: "Partnerships" },
-  { value: "marketing", label: "Marketing" },
-  { value: "community", label: "Community" },
-  { value: "operations", label: "Operations" },
-  { value: "tech", label: "Tech" },
-  { value: "growth", label: "Growth" },
-  { value: "network", label: "Network" },
-];
 
 function numberValue(value: string): number {
   const parsed = Number(value);
@@ -116,15 +103,6 @@ export function PublicTeamProfileFields({
               placeholder="z. B. Tech"
             />
           </div>
-          <LabeledSelect
-            id="member-board-icon"
-            label="Icon"
-            value={form.boardIcon}
-            onValueChange={(value) =>
-              form.setBoardIcon(value as PublicTeamIcon)
-            }
-            options={ICON_OPTIONS}
-          />
           <div className="flex items-center gap-3">
             <Checkbox
               id="member-board-chair"

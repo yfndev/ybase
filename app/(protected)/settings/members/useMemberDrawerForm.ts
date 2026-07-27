@@ -54,9 +54,6 @@ export function useMemberDrawerForm({
   const [boardIsChair, setBoardIsChair] = useState(
     publicProfile?.board?.isChair ?? false,
   );
-  const [boardIcon, setBoardIcon] = useState(
-    publicProfile?.board?.icon ?? "network",
-  );
   const [boardSortOrder, setBoardSortOrder] = useState(
     publicProfile?.board?.sortOrder ?? 100,
   );
@@ -120,7 +117,6 @@ export function useMemberDrawerForm({
           ? {
               role: boardRole.trim(),
               isChair: boardIsChair,
-              icon: boardIcon,
               sortOrder: boardSortOrder,
             }
           : undefined,
@@ -177,8 +173,6 @@ export function useMemberDrawerForm({
     setBoardRole,
     boardIsChair,
     setBoardIsChair,
-    boardIcon,
-    setBoardIcon,
     boardSortOrder,
     setBoardSortOrder,
     teamOptions,

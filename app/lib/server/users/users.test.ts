@@ -269,7 +269,6 @@ test("updatePublicTeamProfile publishes only complete active profiles", async ()
     board: {
       role: "Operations",
       isChair: false,
-      icon: "operations",
       sortOrder: 10,
     },
   });
@@ -282,7 +281,6 @@ test("updatePublicTeamProfile publishes only complete active profiles", async ()
     board: {
       role: "Operations",
       isChair: false,
-      icon: "operations",
       sortOrder: 10,
     },
   });

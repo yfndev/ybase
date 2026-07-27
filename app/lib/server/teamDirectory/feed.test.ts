@@ -79,7 +79,6 @@ test("returns only active explicitly published members", async () => {
         board: {
           role: "Operations",
           isChair: true,
-          icon: "operations",
           sortOrder: 5,
         },
       },
@@ -114,7 +113,6 @@ test("returns only active explicitly published members", async () => {
         board: {
           role: "Operations",
           isChair: false,
-          icon: "operations",
           sortOrder: 1,
         },
       },
@@ -141,7 +139,6 @@ test("returns only active explicitly published members", async () => {
       name: "Ada Beispiel",
       role: "Operations",
       isChair: true,
-      icon: "operations",
       sortOrder: 5,
     },
   ]);
