@@ -4,9 +4,6 @@ const mocks = vi.hoisted(() => ({
   ensureAppUser: vi.fn(),
 }));
 
-vi.mock("./environment", () => ({
-  isTestMode: () => false,
-}));
 vi.mock("./provisioning", () => ({
   ensureAppUser: mocks.ensureAppUser,
 }));

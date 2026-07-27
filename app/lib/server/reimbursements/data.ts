@@ -1,4 +1,3 @@
-import { isTestMode } from "../../auth/environment";
 import { hasPermission, USER_PERMISSIONS } from "../../auth/roles";
 import { requireUser } from "../../auth/session";
 import {
@@ -72,9 +71,6 @@ export async function getReceipts(reimbursementId: string): Promise<Receipt[]> {
 export async function getFileUrl(storageId: string): Promise<string> {
   const user = await requireUser();
   await requireFileAccess(storageId, user);
-  if (isTestMode()) {
-    return "data:image/gif;base64,R0lGODlhAQABAAAAACw=";
-  }
   return presignDownload(storageId);
 }
 
@@ -83,12 +79,6 @@ export async function getFileInfo(
 ): Promise<{ url: string; contentType: string }> {
   const user = await requireUser();
   await requireFileAccess(storageId, user);
-  if (isTestMode()) {
-    return {
-      url: "data:image/gif;base64,R0lGODlhAQABAAAAACw=",
-      contentType: "image/gif",
-    };
-  }
   return getDownloadInfo(storageId);
 }
 

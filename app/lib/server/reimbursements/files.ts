@@ -1,6 +1,5 @@
 "use server";
 
-import { isTestMode } from "../../auth/environment";
 import { requireUser } from "../../auth/session";
 import { presignUpload } from "../../s3/storage";
 import { getOrganization } from "../organizations/data";
@@ -24,9 +23,7 @@ export async function generateUploadUrl(
   contentType?: string,
 ): Promise<{ key: string; url: string }> {
   const user = await requireUser();
-  const upload = isTestMode()
-    ? { key: crypto.randomUUID(), url: "/api/test/upload" }
-    : await presignUpload(contentType);
+  const upload = await presignUpload(contentType);
   await registerPendingUpload(upload.key, {
     organizationId: user.organizationId,
     userId: user._id,

@@ -1,9 +1,7 @@
 import { spawn } from "node:child_process";
 import dotenv from "dotenv";
-import { MongoMemoryServer } from "mongodb-memory-server";
 
 const env = { ...process.env };
-const hasExplicitMongoUri = Boolean(env.MONGODB_URI);
 const nodeEnv = env.NODE_ENV ?? "development";
 const envFiles = [
   `.env.${nodeEnv}.local`,
@@ -34,22 +32,19 @@ function withoutPortArguments(args) {
 }
 
 const nextArgs = withoutPortArguments(process.argv.slice(2));
-let mongo;
 
 const localUrl = "http://localhost:3000";
-if (!env.AUTH_URL && !env.NEXTAUTH_URL) env.AUTH_URL = localUrl;
-if (!env.NEXT_PUBLIC_APP_URL) env.NEXT_PUBLIC_APP_URL = localUrl;
+env.AUTH_URL = localUrl;
+env.NEXT_PUBLIC_APP_URL = localUrl;
 
-const shouldStartTemporaryDatabase =
-  !env.MONGODB_URI || (env.IS_TEST === "true" && !hasExplicitMongoUri);
-
-if (shouldStartTemporaryDatabase) {
-  const dbName = env.MONGODB_DB ?? "ybase_dev";
-  console.info(`Starting temporary database "${dbName}".`);
-  mongo = await MongoMemoryServer.create({ instance: { dbName } });
-  env.MONGODB_URI = mongo.getUri();
-  env.MONGODB_DB = dbName;
+const developmentDatabaseName = "ybase-stage";
+if (!env.MONGODB_URI) {
+  throw new Error("MONGODB_URI is required for local development");
 }
+env.MONGODB_DB = developmentDatabaseName;
+console.info(
+  `Using persistent development database "${developmentDatabaseName}".`,
+);
 
 const next = spawn(
   "pnpm",
@@ -62,31 +57,21 @@ const next = spawn(
 
 let stopping = false;
 
-async function stopMongo() {
-  if (!mongo) return;
-  const instance = mongo;
-  mongo = undefined;
-  await instance.stop();
-}
-
-async function stop(signal) {
+function stop(signal) {
   if (stopping) return;
   stopping = true;
   next.kill(signal);
-  await stopMongo();
 }
 
-process.once("SIGHUP", () => void stop("SIGHUP"));
-process.once("SIGINT", () => void stop("SIGINT"));
-process.once("SIGTERM", () => void stop("SIGTERM"));
+process.once("SIGHUP", () => stop("SIGHUP"));
+process.once("SIGINT", () => stop("SIGINT"));
+process.once("SIGTERM", () => stop("SIGTERM"));
 
-next.once("error", async (error) => {
+next.once("error", (error) => {
   console.error("Failed to start the Next.js development server.", error);
-  await stopMongo();
   process.exitCode = 1;
 });
 
-next.once("exit", async (code) => {
-  await stopMongo();
+next.once("exit", (code) => {
   process.exit(code ?? 1);
 });
