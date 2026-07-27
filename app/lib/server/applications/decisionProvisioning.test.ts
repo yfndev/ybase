@@ -15,6 +15,7 @@ import { provisionWorkspaceUser } from "../../googleWorkspace/users";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { sendApplicationDecision } from "./decision";
+import { submitApplicationDecision } from "./decisionAction";
 import { reserveWorkspaceProvisioning } from "./workspaceProvisioning";
 
 setupTestDatabase();
@@ -133,4 +134,21 @@ test("validates the YBase URL before creating an account", async () => {
     }),
   ).rejects.toThrow("YBase-URL");
   expect(provisionWorkspaceUser).not.toHaveBeenCalled();
+});
+
+test("returns expected failures without a masked server action error", async () => {
+  vi.stubEnv("NEXT_PUBLIC_APP_URL", "");
+
+  await expect(
+    submitApplicationDecision({
+      applicationId,
+      decision: "accepted",
+      yfnEmail: "alex@youngfounders.network",
+      subject: "Zusage",
+      message: "Willkommen!",
+    }),
+  ).resolves.toEqual({
+    ok: false,
+    error: "YBase-URL ist nicht konfiguriert",
+  });
 });

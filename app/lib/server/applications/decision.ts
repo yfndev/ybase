@@ -1,67 +1,28 @@
 "use server";
 
-import { z } from "zod";
-import { appendWorkspaceAccessDetails } from "../../applications/decisionEmail";
 import { APPLICATION_STATUS_LABELS } from "../../applications/status";
+import type { ApplicationDecision } from "../../applications/decisionEmail";
 import { isApplicationStatusTransitionAllowed } from "../../applications/transitions";
 import { applications, jobPostings } from "../../db/collections";
-import { sendMail } from "../../email/brevo";
-import { BREVO_TEMPLATE_IDS } from "../../email/templates";
-import { provisionWorkspaceUser } from "../../googleWorkspace/users";
-import { YFN_ORGANIZATION } from "../../organization";
+import type { Application } from "../../db/types";
 import { addLog } from "../logs";
 import { loadOwnedApplication } from "./access";
-import { createApplicationHistoryEntry } from "./history";
+import { prepareAcceptance, sendDecisionEmail } from "./decisionDelivery";
 import {
-  recordWorkspaceDeliveryFailure,
-  recordWorkspaceProvisioned,
-  recordWorkspaceProvisioningFailure,
-  reserveWorkspaceProvisioning,
-  workspaceApplicantName,
-  ybaseLoginUrl,
-} from "./workspaceProvisioning";
-
-const messageSchema = {
-  applicationId: z.string().min(1),
-  subject: z.string().trim().min(1).max(200),
-  message: z.string().trim().min(1).max(10_000),
-};
-
-const inputSchema = z.discriminatedUnion("decision", [
-  z.object({
-    ...messageSchema,
-    decision: z.literal("accepted"),
-    yfnEmail: z.string().trim().email().max(320),
-  }),
-  z.object({
-    ...messageSchema,
-    decision: z.literal("rejected"),
-  }),
-]);
-
-const templateIds = {
-  accepted: BREVO_TEMPLATE_IDS.APPLICATION_ACCEPTED,
-  rejected: BREVO_TEMPLATE_IDS.APPLICATION_REJECTED,
-};
+  applicationDecisionInputSchema,
+  type ApplicationDecisionInput,
+  type ParsedApplicationDecision,
+} from "./decisionInput";
+import { createApplicationHistoryEntry } from "./history";
 
 export async function sendApplicationDecision(
-  input: z.input<typeof inputSchema>,
+  input: ApplicationDecisionInput,
 ): Promise<void> {
-  const parsed = inputSchema.parse(input);
+  const decision = applicationDecisionInputSchema.parse(input);
   const { user, application } = await loadOwnedApplication(
-    parsed.applicationId,
+    decision.applicationId,
   );
-  if (
-    !isApplicationStatusTransitionAllowed(application.status, parsed.decision)
-  ) {
-    throw new Error("Dieser Statuswechsel ist nicht zulässig");
-  }
-  const isProvisioning =
-    application.workspaceProvisioningStatus === "pending" ||
-    application.workspaceProvisioningStatus === "provisioned";
-  if (parsed.decision === "rejected" && isProvisioning) {
-    throw new Error("Das Workspace-Konto wird bereits eingerichtet");
-  }
+  assertDecisionAllowed(application, decision.decision);
 
   const posting = await (
     await jobPostings()
@@ -71,106 +32,85 @@ export async function sendApplicationDecision(
   });
   if (!posting) throw new Error("Ausschreibung nicht gefunden");
 
-  let message = parsed.message;
-  let workspaceUserId: string | undefined;
-  if (parsed.decision === "accepted") {
-    const loginUrl = ybaseLoginUrl();
-    const reservation = await reserveWorkspaceProvisioning({
-      application,
-      organizationDomain: YFN_ORGANIZATION.domain,
-      yfnEmail: parsed.yfnEmail,
-    });
-    try {
-      const account = await provisionWorkspaceUser({
-        applicationId: application._id,
-        existingUserId: reservation.existingWorkspaceUserId,
-        primaryEmail: reservation.yfnEmail,
-        recoveryEmail: application.applicantEmail,
-        ...workspaceApplicantName(application),
-      });
-      workspaceUserId = account.userId;
-      await recordWorkspaceProvisioned({
-        applicationId: application._id,
-        organizationId: user.organizationId,
-        workspaceUserId,
-      });
-      message = appendWorkspaceAccessDetails({
-        message,
-        primaryEmail: account.primaryEmail,
-        temporaryPassword: account.temporaryPassword,
-        loginUrl,
-      });
-    } catch (error) {
-      await recordWorkspaceProvisioningFailure({
-        applicationId: application._id,
-        organizationId: user.organizationId,
-        error,
-      });
-      throw error;
-    }
-  }
+  const prepared =
+    decision.decision === "accepted"
+      ? await prepareAcceptance({
+          application,
+          organizationId: user.organizationId,
+          message: decision.message,
+          yfnEmail: decision.yfnEmail,
+        })
+      : { message: decision.message, workspaceUserId: undefined };
 
-  let delivery: Awaited<ReturnType<typeof sendMail>>;
-  try {
-    delivery = await sendMail({
-      to: [
-        { email: application.applicantEmail, name: application.applicantName },
-      ],
-      templateId: templateIds[parsed.decision],
-      subject: parsed.subject,
-      params: {
-        applicantName: application.applicantName ?? "",
-        jobTitle: posting.title,
-        organizationName: YFN_ORGANIZATION.name,
-        message,
-      },
-      tags: ["ybase", "application", `application-${parsed.decision}`],
-    });
-  } catch (error) {
-    if (workspaceUserId) {
-      await recordWorkspaceDeliveryFailure({
-        applicationId: application._id,
-        organizationId: user.organizationId,
-      });
-    }
-    throw error;
-  }
-  if (delivery.status !== "sent") {
-    if (workspaceUserId) {
-      await recordWorkspaceDeliveryFailure({
-        applicationId: application._id,
-        organizationId: user.organizationId,
-      });
-    }
-    throw new Error("E-Mail konnte nicht versendet werden");
-  }
+  await sendDecisionEmail({
+    application,
+    decision: decision.decision,
+    jobTitle: posting.title,
+    message: prepared.message,
+    organizationId: user.organizationId,
+    subject: decision.subject,
+    workspaceUserId: prepared.workspaceUserId,
+  });
+  await persistDecision({
+    application,
+    decision,
+    userId: user._id,
+    organizationId: user.organizationId,
+    workspaceUserId: prepared.workspaceUserId,
+  });
+}
 
+function assertDecisionAllowed(
+  application: Application,
+  decision: ApplicationDecision,
+): void {
+  if (!isApplicationStatusTransitionAllowed(application.status, decision)) {
+    throw new Error("Dieser Statuswechsel ist nicht zulässig");
+  }
+  const isProvisioning =
+    application.workspaceProvisioningStatus === "pending" ||
+    application.workspaceProvisioningStatus === "provisioned";
+  if (decision === "rejected" && isProvisioning) {
+    throw new Error("Das Workspace-Konto wird bereits eingerichtet");
+  }
+}
+
+async function persistDecision(input: {
+  application: Application;
+  decision: ParsedApplicationDecision;
+  organizationId: string;
+  userId: string;
+  workspaceUserId?: string;
+}): Promise<void> {
   const entry = createApplicationHistoryEntry(
-    user._id,
+    input.userId,
     "status_changed",
-    `${APPLICATION_STATUS_LABELS[application.status]} → ${APPLICATION_STATUS_LABELS[parsed.decision]}`,
-    { fromStatus: application.status, toStatus: parsed.decision },
+    `${APPLICATION_STATUS_LABELS[input.application.status]} → ${APPLICATION_STATUS_LABELS[input.decision.decision]}`,
+    {
+      fromStatus: input.application.status,
+      toStatus: input.decision.decision,
+    },
   );
   const result = await (
     await applications()
   ).updateOne(
     {
-      _id: application._id,
-      organizationId: user.organizationId,
-      status: application.status,
-      ...(workspaceUserId
+      _id: input.application._id,
+      organizationId: input.organizationId,
+      status: input.application.status,
+      ...(input.workspaceUserId
         ? { workspaceProvisioningStatus: "provisioned" }
         : {}),
     },
     {
       $set: {
-        status: parsed.decision,
+        status: input.decision.decision,
         updatedAt: entry.timestamp,
-        ...(workspaceUserId
+        ...(input.workspaceUserId
           ? { workspaceProvisioningStatus: "invited" as const }
           : {}),
       },
-      ...(workspaceUserId
+      ...(input.workspaceUserId
         ? { $unset: { workspaceProvisioningError: "" } }
         : {}),
       $push: { history: entry },
@@ -179,20 +119,21 @@ export async function sendApplicationDecision(
   if (result.modifiedCount !== 1) {
     throw new Error("Bewerbung wurde zwischenzeitlich geändert");
   }
+
   await addLog(
-    user.organizationId,
-    user._id,
+    input.organizationId,
+    input.userId,
     "application.status_change",
-    application._id,
+    input.application._id,
     entry.details,
   );
-  if (workspaceUserId && parsed.decision === "accepted") {
+  if (input.workspaceUserId && input.decision.decision === "accepted") {
     await addLog(
-      user.organizationId,
-      user._id,
+      input.organizationId,
+      input.userId,
       "application.workspace_provisioned",
-      application._id,
-      parsed.yfnEmail,
+      input.application._id,
+      input.decision.yfnEmail,
     );
   }
 }
