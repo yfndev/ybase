@@ -3,7 +3,6 @@ export type MemberStatus = "onboarding" | "active" | "offboarded";
 export type TeamOnboardingStatus = "not_started" | "in_progress" | "completed";
 
 export interface PublicTeamProfile {
-  isPublished: boolean;
   displayName?: string;
   role?: string;
   isTeamLead: boolean;

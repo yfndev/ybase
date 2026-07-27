@@ -18,8 +18,8 @@ interface Option<T extends string> {
 
 export const MEMBER_STATUS_OPTIONS: Option<MemberStatus>[] = [
   { value: "onboarding", label: "Im Onboarding" },
-  { value: "active", label: "Freigegeben" },
-  { value: "offboarded", label: "Ausgeschieden" },
+  { value: "active", label: "Aktiv" },
+  { value: "offboarded", label: "Inaktiv / archiviert" },
 ];
 
 export const TEAM_ONBOARDING_OPTIONS: Option<TeamOnboardingStatus>[] = [

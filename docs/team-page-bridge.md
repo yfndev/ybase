@@ -107,15 +107,14 @@ weiterverwendet werden:
 
 - `User.teamId`: primäres Team,
 - `User.positionTitle`: öffentlich dargestellte Rolle,
-- `User.memberStatus`: nur `active` ist grundsätzlich veröffentlichbar,
+- `User.memberStatus`: nur `active` wird synchronisiert,
 - `Department.isArchived` und `Team.isArchived`: archivierte Einheiten werden
   nicht veröffentlicht.
 
-Ergänzt werden sollten explizite Veröffentlichungsfelder:
+Ergänzt werden sollten explizite Darstellungsfelder:
 
 ```ts
 interface PublicTeamProfile {
-  isPublished: boolean;
   displayName?: string;
   role?: string;
   isTeamLead: boolean;
@@ -128,10 +127,10 @@ interface PublicTeamProfile {
 }
 ```
 
-Das Profil kann in Phase 1 als eingebettetes Feld am `User` liegen. Es trennt
-öffentliche Freigaben von Login-, Finance- und P&C-Daten. `displayName` und
-`role` sind optionale öffentliche Overrides; ohne Override werden `name` und
-`positionTitle` verwendet.
+Das Profil kann in Phase 1 als eingebettetes Feld am `User` liegen. Es enthält
+ausschließlich Darstellungsangaben und keine Login-, Finance- oder P&C-Daten.
+`displayName` und `role` sind optionale Overrides; ohne Override werden `name`
+und `positionTitle` verwendet.
 
 Diese pragmatische Ablage setzt voraus, dass jedes offizielle Teammitglied ein
 ybase-`User`-Profil besitzt. Falls ybase künftig Vereinsmitglieder schon vor
@@ -147,14 +146,15 @@ Team.websiteSortOrder: number
 
 Wichtige Regeln:
 
-- `isPublished` ist standardmäßig `false` (Opt-in).
-- Veröffentlichbar ist nur, wer `memberStatus === "active"` ist.
+- Alle Mitglieder mit `memberStatus === "active"` werden automatisch
+  synchronisiert.
+- `onboarding` und `offboarded` werden nicht synchronisiert. Der Account eines
+  offboardeten Mitglieds bleibt bis zur späteren Löschung bestehen.
 - Ein archiviertes Department oder Team erscheint nicht im Feed.
 - Der Feed enthält niemals E-Mail, Telefon, Bankdaten, interne Rolle,
   Bewerbungs-ID oder Onboarding-Daten.
-- Ein fehlender Name, ein fehlendes aktives Team oder eine fehlende öffentliche
-  Rolle verhindert die Veröffentlichung und wird in ybase als
-  Validierungsfehler angezeigt.
+- Die Aktivierung setzt Name, aktives Team und Position voraus. So besitzt jedes
+  aktive Mitglied die für den Feed erforderlichen Stammdaten.
 - Eine Vorstandsrolle kann zusätzlich zur normalen Teamzuordnung bestehen.
 
 ### Spätere Erweiterung
@@ -342,7 +342,7 @@ ybase-Department-IDs als Schlüssel gespeichert.
 
 - Festlegen, ob `positionTitle` automatisch die öffentliche Rolle ist oder
   explizit freigegeben/überschrieben werden muss.
-- Festlegen, wer `isPublished`, Lead-, Board- und Sortierfelder bearbeiten darf.
+- Festlegen, wer Lead-, Board- und Sortierfelder bearbeiten darf.
 - Datenschutzfreigabe für die Namensveröffentlichung dokumentieren.
 - Klären, ob leere Teams sichtbar sein sollen.
 - Prüfen, ob wirklich jedes zu veröffentlichende Vereinsmitglied bereits ein

@@ -22,26 +22,12 @@ export function PublicTeamProfileFields({
   return (
     <fieldset className="grid gap-4 border-t pt-5">
       <legend className="pr-3 text-sm font-semibold">
-        Öffentliche Team-Seite
+        Darstellung auf der Team-Seite
       </legend>
-      <div className="flex items-start gap-3">
-        <Checkbox
-          id="member-public-published"
-          checked={form.isPublished}
-          onCheckedChange={(checked) => form.setIsPublished(checked === true)}
-        />
-        <Label
-          htmlFor="member-public-published"
-          className="grid gap-0.5 text-sm"
-        >
-          <span className="font-medium">
-            Auf der Team-Seite veröffentlichen
-          </span>
-          <span className="text-muted-foreground">
-            Es werden ausschließlich die hier freigegebenen Angaben übertragen.
-          </span>
-        </Label>
-      </div>
+      <p className="text-muted-foreground text-sm">
+        Aktive Mitglieder werden automatisch synchronisiert. Für inaktive oder
+        archivierte Mitglieder endet die Synchronisierung.
+      </p>
       <div className="grid gap-1.5">
         <Label htmlFor="member-public-name">Öffentlicher Name</Label>
         <Input

@@ -18,7 +18,6 @@ export async function ensureIndexes(): Promise<void> {
       key: {
         organizationId: 1,
         memberStatus: 1,
-        "publicTeamProfile.isPublished": 1,
       },
     },
   ]);

@@ -65,7 +65,7 @@ beforeEach(async () => {
   ]);
 });
 
-test("returns only active explicitly published members", async () => {
+test("returns all active members with optional team page settings", async () => {
   await (
     await users()
   ).insertMany([
@@ -73,7 +73,6 @@ test("returns only active explicitly published members", async () => {
       _id: "member-visible",
       name: "Ada Beispiel",
       publicTeamProfile: {
-        isPublished: true,
         isTeamLead: true,
         sortOrder: 10,
         board: {
@@ -84,20 +83,14 @@ test("returns only active explicitly published members", async () => {
       },
     }),
     member({
-      _id: "member-private",
-      name: "Private Person",
-      publicTeamProfile: {
-        isPublished: false,
-        isTeamLead: false,
-        sortOrder: 1,
-      },
+      _id: "member-defaults",
+      name: "Default Person",
     }),
     member({
       _id: "member-offboarded",
       name: "Former Person",
       memberStatus: "offboarded",
       publicTeamProfile: {
-        isPublished: true,
         isTeamLead: false,
         sortOrder: 1,
       },
@@ -107,7 +100,6 @@ test("returns only active explicitly published members", async () => {
       name: "Archived Team Person",
       teamId: "team-archived",
       publicTeamProfile: {
-        isPublished: true,
         isTeamLead: false,
         sortOrder: 1,
         board: {
@@ -132,6 +124,13 @@ test("returns only active explicitly published members", async () => {
       isLead: true,
       sortOrder: 10,
     },
+    {
+      id: `ybase:${organizationId}:member:member-defaults`,
+      name: "Default Person",
+      role: "People Lead",
+      isLead: false,
+      sortOrder: 100,
+    },
   ]);
   expect(feed.data.board).toEqual([
     {
@@ -152,7 +151,6 @@ test("omits incomplete profiles and teams without public members", async () => {
       _id: "member-without-role",
       positionTitle: undefined,
       publicTeamProfile: {
-        isPublished: true,
         isTeamLead: false,
         sortOrder: 100,
       },

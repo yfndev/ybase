@@ -165,6 +165,12 @@ test("setMemberStatus requires completed onboarding before approval", async () =
 
 test("setMemberStatus approves a fully onboarded member", async () => {
   await setTeamOnboardingStatus({ userId: memberA, status: "completed" });
+  await seedTeam("team-1", orgA);
+  await updateMemberProfile({
+    userId: memberA,
+    teamId: "team-1",
+    positionTitle: "Teammitglied",
+  });
   await setMemberStatus({ userId: memberA, status: "active" });
   const updated = await (await users()).findOne({ _id: memberA });
   expect(updated?.memberStatus).toBe("active");
@@ -173,8 +179,22 @@ test("setMemberStatus approves a fully onboarded member", async () => {
   expect(log?.entityId).toBe(memberA);
 });
 
+test("setMemberStatus requires complete team settings before activation", async () => {
+  await setTeamOnboardingStatus({ userId: memberA, status: "completed" });
+
+  await expect(
+    setMemberStatus({ userId: memberA, status: "active" }),
+  ).rejects.toThrow("einen Namen, ein aktives Team und eine Position");
+});
+
 test("completed onboarding stays locked after member approval", async () => {
   await setTeamOnboardingStatus({ userId: memberA, status: "completed" });
+  await seedTeam("team-1", orgA);
+  await updateMemberProfile({
+    userId: memberA,
+    teamId: "team-1",
+    positionTitle: "Teammitglied",
+  });
   await setMemberStatus({ userId: memberA, status: "active" });
 
   await expect(
@@ -246,24 +266,9 @@ test("updateMemberProfile rejects an archived team", async () => {
   ).rejects.toThrow("Team nicht verfügbar");
 });
 
-test("updatePublicTeamProfile publishes only complete active profiles", async () => {
-  await seedTeam("team-1", orgA);
-  await (
-    await users()
-  ).updateOne(
-    { _id: memberA },
-    {
-      $set: {
-        memberStatus: "active",
-        teamId: "team-1",
-        positionTitle: "People Lead",
-      },
-    },
-  );
-
+test("updatePublicTeamProfile stores team page settings", async () => {
   await updatePublicTeamProfile({
     userId: memberA,
-    isPublished: true,
     isTeamLead: true,
     sortOrder: 20,
     board: {
@@ -275,7 +280,6 @@ test("updatePublicTeamProfile publishes only complete active profiles", async ()
 
   const updated = await (await users()).findOne({ _id: memberA });
   expect(updated?.publicTeamProfile).toEqual({
-    isPublished: true,
     isTeamLead: true,
     sortOrder: 20,
     board: {
@@ -284,18 +288,6 @@ test("updatePublicTeamProfile publishes only complete active profiles", async ()
       sortOrder: 10,
     },
   });
-});
-
-test("updatePublicTeamProfile rejects publishing onboarding members", async () => {
-  await expect(
-    updatePublicTeamProfile({
-      userId: memberA,
-      isPublished: true,
-      role: "People Lead",
-      isTeamLead: false,
-      sortOrder: 100,
-    }),
-  ).rejects.toThrow("Nur aktive Mitglieder");
 });
 
 test("listMembers keeps offboarded profiles visible", async () => {

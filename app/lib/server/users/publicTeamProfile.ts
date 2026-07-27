@@ -5,7 +5,7 @@ import { users } from "../../db/collections";
 import type { PublicTeamProfile } from "../../db/types";
 import { addLog } from "../logs";
 import { scheduleTeamDirectoryRevalidation } from "../teamDirectory/revalidate";
-import { loadManagedMember, requireActiveOrganizationTeam } from "./access";
+import { loadManagedMember } from "./access";
 
 const optionalText = z
   .string()
@@ -16,7 +16,6 @@ const optionalText = z
 
 const publicTeamProfileSchema = z.object({
   userId: z.string(),
-  isPublished: z.boolean(),
   displayName: optionalText,
   role: optionalText,
   isTeamLead: z.boolean(),
@@ -38,28 +37,7 @@ export async function updatePublicTeamProfile(
   const parsed = publicTeamProfileSchema.parse(input);
   const { currentUser, target } = await loadManagedMember(parsed.userId);
 
-  if (parsed.isPublished) {
-    if (target.memberStatus !== "active") {
-      throw new Error("Nur aktive Mitglieder können veröffentlicht werden.");
-    }
-    if (!target.teamId) {
-      throw new Error("Für die Veröffentlichung ist ein Team erforderlich.");
-    }
-    await requireActiveOrganizationTeam(
-      target.teamId,
-      currentUser.organizationId,
-    );
-    const name = parsed.displayName ?? target.name?.trim();
-    const role = parsed.role ?? target.positionTitle?.trim();
-    if (!name || !role) {
-      throw new Error(
-        "Für die Veröffentlichung sind öffentlicher Name und Rolle erforderlich.",
-      );
-    }
-  }
-
   const publicTeamProfile: PublicTeamProfile = {
-    isPublished: parsed.isPublished,
     isTeamLead: parsed.isTeamLead,
     sortOrder: parsed.sortOrder,
     ...(parsed.displayName ? { displayName: parsed.displayName } : {}),
@@ -76,6 +54,6 @@ export async function updatePublicTeamProfile(
     currentUser._id,
     "member.public_team_profile_update",
     target._id,
-    parsed.isPublished ? "veröffentlicht" : "nicht veröffentlicht",
+    "Darstellung auf der Team-Seite aktualisiert",
   );
 }

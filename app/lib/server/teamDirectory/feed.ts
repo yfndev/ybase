@@ -76,7 +76,6 @@ export async function getTeamDirectoryV1(
       .find({
         organizationId,
         memberStatus: "active",
-        "publicTeamProfile.isPublished": true,
       })
       .project<DirectoryUser>({
         _id: 1,

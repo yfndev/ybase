@@ -34,9 +34,6 @@ export function useMemberDrawerForm({
   );
   const [role, setRole] = useState<UserRole>(member.role ?? "member");
   const publicProfile = member.publicTeamProfile;
-  const [isPublished, setIsPublished] = useState(
-    publicProfile?.isPublished ?? false,
-  );
   const [publicDisplayName, setPublicDisplayName] = useState(
     publicProfile?.displayName ?? "",
   );
@@ -108,7 +105,6 @@ export function useMemberDrawerForm({
 
       const nextPublicProfile = {
         userId: member._id,
-        isPublished,
         displayName: publicDisplayName.trim() || undefined,
         role: publicRole.trim() || undefined,
         isTeamLead,
@@ -123,7 +119,6 @@ export function useMemberDrawerForm({
       };
       const currentPublicProfile = {
         userId: member._id,
-        isPublished: publicProfile?.isPublished ?? false,
         displayName: publicProfile?.displayName,
         role: publicProfile?.role,
         isTeamLead: publicProfile?.isTeamLead ?? false,
@@ -157,8 +152,6 @@ export function useMemberDrawerForm({
     setOnboarding,
     role,
     setRole,
-    isPublished,
-    setIsPublished,
     publicDisplayName,
     setPublicDisplayName,
     publicRole,
