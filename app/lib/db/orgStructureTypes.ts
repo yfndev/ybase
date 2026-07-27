@@ -5,7 +5,6 @@ export interface Department {
   organizationId: string;
   isArchived: boolean;
   createdBy: string;
-  websiteSortOrder?: number;
 }
 
 export interface Team {
@@ -16,5 +15,4 @@ export interface Team {
   organizationId: string;
   isArchived: boolean;
   createdBy: string;
-  websiteSortOrder?: number;
 }

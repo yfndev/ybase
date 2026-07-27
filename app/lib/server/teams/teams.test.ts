@@ -105,19 +105,13 @@ test("createTeam rejects a department from another org", async () => {
   ).rejects.toThrow("Department nicht verfügbar");
 });
 
-test("updateTeam changes name, department and website order", async () => {
+test("updateTeam changes name and department", async () => {
   const id = await createTeam({ name: "Alt", departmentId: departmentA });
   const otherDept = await insertDepartment(orgA);
-  await updateTeam({
-    teamId: id,
-    name: "Neu",
-    departmentId: otherDept,
-    websiteSortOrder: 30,
-  });
+  await updateTeam({ teamId: id, name: "Neu", departmentId: otherDept });
   expect((await getActiveTeams())[0]).toMatchObject({
     name: "Neu",
     departmentId: otherDept,
-    websiteSortOrder: 30,
   });
 });
 

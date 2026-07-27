@@ -19,7 +19,6 @@ import { listMembers } from "./data";
 import { setMemberStatus, setTeamOnboardingStatus } from "./lifecycleActions";
 import { addUserToOrganization } from "./membership";
 import { updateBankDetails, updateMemberProfile } from "./profile";
-import { updatePublicTeamProfile } from "./publicTeamProfile";
 import { updateUserRole } from "./roles";
 
 let orgA: string;
@@ -264,30 +263,6 @@ test("updateMemberProfile rejects an archived team", async () => {
   await expect(
     updateMemberProfile({ userId: memberA, teamId: "team-archived" }),
   ).rejects.toThrow("Team nicht verfügbar");
-});
-
-test("updatePublicTeamProfile stores team page settings", async () => {
-  await updatePublicTeamProfile({
-    userId: memberA,
-    isTeamLead: true,
-    sortOrder: 20,
-    board: {
-      role: "Operations",
-      isChair: false,
-      sortOrder: 10,
-    },
-  });
-
-  const updated = await (await users()).findOne({ _id: memberA });
-  expect(updated?.publicTeamProfile).toEqual({
-    isTeamLead: true,
-    sortOrder: 20,
-    board: {
-      role: "Operations",
-      isChair: false,
-      sortOrder: 10,
-    },
-  });
 });
 
 test("listMembers keeps offboarded profiles visible", async () => {

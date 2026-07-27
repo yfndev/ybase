@@ -32,7 +32,7 @@ test("GET returns the versioned feed and revision ETag", async () => {
     version: "v1",
     generatedAt: "2026-07-27T12:00:00.000Z",
     revision: "revision-1",
-    data: { board: [], departments: [] },
+    data: { departments: [] },
   });
 
   const response = await GET(
@@ -50,7 +50,7 @@ test("GET returns 304 when the feed revision is unchanged", async () => {
     version: "v1",
     generatedAt: "2026-07-27T12:00:00.000Z",
     revision: "revision-1",
-    data: { board: [], departments: [] },
+    data: { departments: [] },
   });
 
   const response = await GET(

@@ -21,7 +21,6 @@ export function useMemberDrawerForm({
 }: MemberDrawerProps) {
   const {
     updateProfile,
-    updatePublicProfile,
     setStatus: setStatusMutation,
     setOnboarding: setOnboardingMutation,
     updateRole,
@@ -33,27 +32,6 @@ export function useMemberDrawerForm({
     member.teamOnboardingStatus,
   );
   const [role, setRole] = useState<UserRole>(member.role ?? "member");
-  const publicProfile = member.publicTeamProfile;
-  const [publicDisplayName, setPublicDisplayName] = useState(
-    publicProfile?.displayName ?? "",
-  );
-  const [publicRole, setPublicRole] = useState(publicProfile?.role ?? "");
-  const [isTeamLead, setIsTeamLead] = useState(
-    publicProfile?.isTeamLead ?? false,
-  );
-  const [publicSortOrder, setPublicSortOrder] = useState(
-    publicProfile?.sortOrder ?? 100,
-  );
-  const [isBoardMember, setIsBoardMember] = useState(
-    Boolean(publicProfile?.board),
-  );
-  const [boardRole, setBoardRole] = useState(publicProfile?.board?.role ?? "");
-  const [boardIsChair, setBoardIsChair] = useState(
-    publicProfile?.board?.isChair ?? false,
-  );
-  const [boardSortOrder, setBoardSortOrder] = useState(
-    publicProfile?.board?.sortOrder ?? 100,
-  );
 
   const activeTeams = teams.filter((team) => !team.isArchived);
   const teamOptions = activeTeams.map((team) => ({
@@ -66,7 +44,6 @@ export function useMemberDrawerForm({
     : undefined;
   const isSaving =
     updateProfile.isPending ||
-    updatePublicProfile.isPending ||
     setStatusMutation.isPending ||
     setOnboardingMutation.isPending ||
     updateRole.isPending;
@@ -103,35 +80,6 @@ export function useMemberDrawerForm({
         await updateRole.mutateAsync({ userId: member._id, role });
       }
 
-      const nextPublicProfile = {
-        userId: member._id,
-        displayName: publicDisplayName.trim() || undefined,
-        role: publicRole.trim() || undefined,
-        isTeamLead,
-        sortOrder: publicSortOrder,
-        board: isBoardMember
-          ? {
-              role: boardRole.trim(),
-              isChair: boardIsChair,
-              sortOrder: boardSortOrder,
-            }
-          : undefined,
-      };
-      const currentPublicProfile = {
-        userId: member._id,
-        displayName: publicProfile?.displayName,
-        role: publicProfile?.role,
-        isTeamLead: publicProfile?.isTeamLead ?? false,
-        sortOrder: publicProfile?.sortOrder ?? 100,
-        board: publicProfile?.board,
-      };
-      if (
-        JSON.stringify(nextPublicProfile) !==
-        JSON.stringify(currentPublicProfile)
-      ) {
-        await updatePublicProfile.mutateAsync(nextPublicProfile);
-      }
-
       toast.success("Teammitglied aktualisiert");
       onClose();
     } catch (error) {
@@ -152,22 +100,6 @@ export function useMemberDrawerForm({
     setOnboarding,
     role,
     setRole,
-    publicDisplayName,
-    setPublicDisplayName,
-    publicRole,
-    setPublicRole,
-    isTeamLead,
-    setIsTeamLead,
-    publicSortOrder,
-    setPublicSortOrder,
-    isBoardMember,
-    setIsBoardMember,
-    boardRole,
-    setBoardRole,
-    boardIsChair,
-    setBoardIsChair,
-    boardSortOrder,
-    setBoardSortOrder,
     teamOptions,
     department,
     canEditRoles,

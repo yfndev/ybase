@@ -77,17 +77,10 @@ test("createDepartment + getActiveDepartments stay scoped to the caller's org", 
   expect(list.map((d) => d.name)).toEqual(["Marketing"]);
 });
 
-test("updateDepartment changes name and website order", async () => {
+test("updateDepartment renames the department", async () => {
   const id = await createDepartment({ name: "Alt" });
-  await updateDepartment({
-    departmentId: id,
-    name: "Neu",
-    websiteSortOrder: 20,
-  });
-  expect((await getActiveDepartments())[0]).toMatchObject({
-    name: "Neu",
-    websiteSortOrder: 20,
-  });
+  await updateDepartment({ departmentId: id, name: "Neu" });
+  expect((await getActiveDepartments())[0]).toMatchObject({ name: "Neu" });
 });
 
 test("archive moves a department out of the active list and back", async () => {

@@ -2,18 +2,6 @@ export type UserRole = "admin" | "finance" | "people_culture" | "member";
 export type MemberStatus = "onboarding" | "active" | "offboarded";
 export type TeamOnboardingStatus = "not_started" | "in_progress" | "completed";
 
-export interface PublicTeamProfile {
-  displayName?: string;
-  role?: string;
-  isTeamLead: boolean;
-  sortOrder: number;
-  board?: {
-    role: string;
-    isChair: boolean;
-    sortOrder: number;
-  };
-}
-
 export interface User {
   _id: string;
   _creationTime: number;
@@ -40,5 +28,4 @@ export interface User {
   onboardedAt?: number;
   teamOnboardedAt?: number;
   offboardedAt?: number;
-  publicTeamProfile?: PublicTeamProfile;
 }

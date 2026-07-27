@@ -10,10 +10,8 @@ export function DepartmentRow({
   department,
   isEditing,
   editName,
-  editOrder,
   isArchiving,
   onEditNameChange,
-  onEditOrderChange,
   onStartEdit,
   onCancelEdit,
   onUpdate,
@@ -22,10 +20,8 @@ export function DepartmentRow({
   department: Department;
   isEditing: boolean;
   editName: string;
-  editOrder: number;
   isArchiving: boolean;
   onEditNameChange: (value: string) => void;
-  onEditOrderChange: (value: number) => void;
   onStartEdit: () => void;
   onCancelEdit: () => void;
   onUpdate: () => void;
@@ -51,22 +47,6 @@ export function DepartmentRow({
           </button>
         )}
       </TableCell>
-      <TableCell>
-        {isEditing ? (
-          <Input
-            aria-label="Website-Sortierung"
-            type="number"
-            min={0}
-            max={9999}
-            value={editOrder}
-            onChange={(event) => onEditOrderChange(event.target.valueAsNumber)}
-          />
-        ) : (
-          <span className="text-muted-foreground">
-            {department.websiteSortOrder ?? 100}
-          </span>
-        )}
-      </TableCell>
       <TableCell className="pr-6">
         <div className="flex items-center justify-end gap-1">
           {isEditing ? (
@@ -77,12 +57,7 @@ export function DepartmentRow({
                 className="h-8 w-8"
                 title="Speichern"
                 aria-label="Speichern"
-                disabled={
-                  !editName.trim() ||
-                  !Number.isInteger(editOrder) ||
-                  editOrder < 0 ||
-                  editOrder > 9999
-                }
+                disabled={!editName.trim()}
                 onClick={onUpdate}
               >
                 <Check className="h-4 w-4" />

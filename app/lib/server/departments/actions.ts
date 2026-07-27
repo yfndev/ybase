@@ -8,7 +8,6 @@ import { newId } from "../../db/ids";
 import { addLog } from "../logs";
 
 const nameSchema = z.object({ name: z.string().trim().min(1) });
-const sortOrderSchema = z.number().int().min(0).max(9999);
 
 export async function createDepartment(input: {
   name: string;
@@ -26,7 +25,6 @@ export async function createDepartment(input: {
     organizationId: user.organizationId,
     isArchived: false,
     createdBy: user._id,
-    websiteSortOrder: 100,
   });
   await addLog(user.organizationId, user._id, "department.create", _id, name);
   return _id;
@@ -35,25 +33,16 @@ export async function createDepartment(input: {
 export async function updateDepartment(input: {
   departmentId: string;
   name: string;
-  websiteSortOrder?: number;
 }): Promise<void> {
   const user = await requirePermission(USER_PERMISSIONS.organizationStructure);
-  const { departmentId, name, websiteSortOrder } = z
-    .object({
-      departmentId: z.string(),
-      websiteSortOrder: sortOrderSchema.optional(),
-      ...nameSchema.shape,
-    })
+  const { departmentId, name } = z
+    .object({ departmentId: z.string(), ...nameSchema.shape })
     .parse(input);
 
   await requireOwnedDepartment(departmentId, user.organizationId);
-  const changes = {
-    name,
-    ...(websiteSortOrder === undefined ? {} : { websiteSortOrder }),
-  };
   await (
     await departments()
-  ).updateOne({ _id: departmentId }, { $set: changes });
+  ).updateOne({ _id: departmentId }, { $set: { name } });
   await addLog(
     user.organizationId,
     user._id,

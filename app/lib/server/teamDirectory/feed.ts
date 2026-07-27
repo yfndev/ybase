@@ -2,7 +2,6 @@ import { createHash } from "node:crypto";
 import { departments, teams, users } from "../../db/collections";
 import type { Department, Team, User } from "../../db/types";
 import type {
-  TeamDirectoryBoardMemberV1,
   TeamDirectoryDataV1,
   TeamDirectoryDepartmentV1,
   TeamDirectoryFeedV1,
@@ -11,23 +10,18 @@ import type {
 
 type DirectoryUser = Pick<
   User,
-  "_id" | "name" | "teamId" | "positionTitle" | "publicTeamProfile"
+  "_id" | "name" | "teamId" | "positionTitle"
 >;
 
-const byOrderAndName = (
-  left: { sortOrder: number; name: string },
-  right: { sortOrder: number; name: string },
-) =>
-  left.sortOrder - right.sortOrder || left.name.localeCompare(right.name, "de");
+const byName = (left: { name: string }, right: { name: string }) =>
+  left.name.localeCompare(right.name, "de");
 
-function publicName(user: DirectoryUser): string {
-  return user.publicTeamProfile?.displayName?.trim() || user.name?.trim() || "";
+function profileName(user: DirectoryUser): string {
+  return user.name?.trim() ?? "";
 }
 
-function publicRole(user: DirectoryUser): string {
-  return (
-    user.publicTeamProfile?.role?.trim() || user.positionTitle?.trim() || ""
-  );
+function profileRole(user: DirectoryUser): string {
+  return user.positionTitle?.trim() ?? "";
 }
 
 function namespacedId(
@@ -44,25 +38,8 @@ function memberDto(
 ): TeamDirectoryMemberV1 {
   return {
     id: namespacedId(organizationId, "member", user._id),
-    name: publicName(user),
-    role: publicRole(user),
-    isLead: user.publicTeamProfile?.isTeamLead ?? false,
-    sortOrder: user.publicTeamProfile?.sortOrder ?? 100,
-  };
-}
-
-function boardDto(
-  user: DirectoryUser,
-  organizationId: string,
-): TeamDirectoryBoardMemberV1 | null {
-  const board = user.publicTeamProfile?.board;
-  if (!board) return null;
-  return {
-    id: namespacedId(organizationId, "member", user._id),
-    name: publicName(user),
-    role: board.role,
-    isChair: board.isChair,
-    sortOrder: board.sortOrder,
+    name: profileName(user),
+    role: profileRole(user),
   };
 }
 
@@ -82,7 +59,6 @@ export async function getTeamDirectoryV1(
         name: 1,
         teamId: 1,
         positionTitle: 1,
-        publicTeamProfile: 1,
       })
       .toArray(),
   ]);
@@ -97,19 +73,13 @@ export async function getTeamDirectoryV1(
   const eligibleMembers = memberDocs.filter(
     (member) =>
       Boolean(member.teamId && activeTeamIds.has(member.teamId)) &&
-      Boolean(publicName(member)) &&
-      Boolean(publicRole(member)),
+      Boolean(profileName(member)) &&
+      Boolean(profileRole(member)),
   );
   const teamsByDepartment = groupTeams(activeTeams);
   const membersByTeam = groupMembers(eligibleMembers);
 
   const data: TeamDirectoryDataV1 = {
-    board: eligibleMembers
-      .flatMap((member) => {
-        const item = boardDto(member, organizationId);
-        return item ? [item] : [];
-      })
-      .sort(byOrderAndName),
     departments: departmentDocs
       .map((department) =>
         departmentDto(
@@ -120,7 +90,7 @@ export async function getTeamDirectoryV1(
         ),
       )
       .filter((department) => department.teams.length > 0)
-      .sort(byOrderAndName),
+      .sort(byName),
   };
   const revision = createHash("sha256")
     .update(JSON.stringify(data))
@@ -166,17 +136,15 @@ function departmentDto(
   return {
     id: namespacedId(organizationId, "department", department._id),
     name: department.name,
-    sortOrder: department.websiteSortOrder ?? 100,
     teams: departmentTeams
       .map((team) => ({
         id: namespacedId(organizationId, "team", team._id),
         name: team.name,
-        sortOrder: team.websiteSortOrder ?? 100,
         members: (membersByTeam.get(team._id) ?? [])
           .map((member) => memberDto(member, organizationId))
-          .sort(byOrderAndName),
+          .sort(byName),
       }))
       .filter((team) => team.members.length > 0)
-      .sort(byOrderAndName),
+      .sort(byName),
   };
 }
