@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { requireAuthenticatedUser } from "../../auth/session";
 import { users } from "../../db/collections";
+import { profileImageUploadDirectory } from "../../s3/keys";
 import {
   getObjectBuffer,
   getObjectSize,
@@ -47,7 +48,10 @@ export async function generateProfileImageUpload(
     throw new Error("Bitte verwende ein JPEG- oder PNG-Bild");
   }
 
-  const upload = await presignUpload(contentType);
+  const upload = await presignUpload(
+    contentType,
+    profileImageUploadDirectory(user._id),
+  );
   await registerPendingUpload(upload.key, {
     organizationId: user.organizationId,
     userId: user._id,

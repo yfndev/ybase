@@ -1,6 +1,11 @@
 "use server";
 
 import { requireUser } from "../../auth/session";
+import {
+  type ReimbursementDocumentType,
+  type ReimbursementStorageType,
+  reimbursementUploadDirectory,
+} from "../../s3/keys";
 import { presignUpload } from "../../s3/storage";
 import { getOrganization } from "../organizations/data";
 import { getProjectById } from "../projects/data";
@@ -21,9 +26,21 @@ export type ReimbursementPdfData = {
 
 export async function generateUploadUrl(
   contentType?: string,
+  reimbursementType?: ReimbursementStorageType,
+  documentType?: ReimbursementDocumentType,
 ): Promise<{ key: string; url: string }> {
   const user = await requireUser();
-  const upload = await presignUpload(contentType);
+  if (!reimbursementType || !documentType) {
+    throw new Error("Upload context is required");
+  }
+  const upload = await presignUpload(
+    contentType,
+    reimbursementUploadDirectory(
+      reimbursementType,
+      user.organizationId,
+      documentType,
+    ),
+  );
   await registerPendingUpload(upload.key, {
     organizationId: user.organizationId,
     userId: user._id,

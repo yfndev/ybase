@@ -38,6 +38,7 @@ import {
   deleteObject,
   getDownloadInfo,
   presignDownload,
+  presignUpload,
 } from "../../s3/storage";
 import {
   createTestActor,
@@ -45,7 +46,11 @@ import {
   insertTestProject,
 } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
-import { submitPublicSignature } from "../signatures/public";
+import { createToken } from "../signatures/actions";
+import {
+  createPublicSignatureUpload,
+  submitPublicSignature,
+} from "../signatures/public";
 import {
   claimPendingUploads,
   registerPendingUpload,
@@ -60,8 +65,11 @@ import {
   sendSubmissionReceivedEmail,
   sendSubmissionRequestedEmail,
 } from "./email";
-import { getReimbursementPdfData } from "./files";
-import { getPublicReimbursementFileUrl } from "./public";
+import { generateUploadUrl, getReimbursementPdfData } from "./files";
+import {
+  createPublicReimbursementUpload,
+  getPublicReimbursementFileUrl,
+} from "./public";
 import { submitPublicReimbursement } from "./publicSubmission";
 import { approve, decline, markAsPaid, requestChanges } from "./review";
 import { createReimbursementLink, getPendingSharedLinks } from "./sharing";
@@ -152,6 +160,43 @@ function reimbursementInput() {
     ],
   };
 }
+
+test("creates reimbursement uploads below their typed storage directory", async () => {
+  await generateUploadUrl("application/pdf", "travel", "receipt");
+
+  expect(presignUpload).toHaveBeenCalledWith(
+    "application/pdf",
+    `reimbursements/travel/${orgA}/receipts`,
+  );
+});
+
+test("creates shared expense uploads below their document directory", async () => {
+  const id = await createReimbursementLink({
+    projectId: projectA,
+    type: "expense",
+  });
+
+  await createPublicReimbursementUpload(id, "image/png", "signature");
+
+  expect(presignUpload).toHaveBeenCalledWith(
+    "image/png",
+    `reimbursements/expense/${orgA}/signatures`,
+  );
+});
+
+test("keeps the reimbursement type for mobile signature uploads", async () => {
+  const token = await createToken("travel");
+
+  await createPublicSignatureUpload(token, "image/png");
+
+  expect(presignUpload).toHaveBeenCalledWith(
+    "image/png",
+    `reimbursements/travel/${orgA}/signatures`,
+  );
+  expect(
+    await (await signatureTokens()).findOne({ token }),
+  ).toMatchObject({ reimbursementType: "travel" });
+});
 
 async function completeMobileSignature(storageKey: string): Promise<void> {
   const tokenId = newId();

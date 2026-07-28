@@ -14,7 +14,7 @@ export async function postJson(url: string, body: unknown) {
 
 export async function uploadViaPresign(
   url: string,
-  body: { contentType: string },
+  body: { contentType: string } & Record<string, unknown>,
   file: Blob,
 ): Promise<string> {
   const { key, url: putUrl } = await postJson(url, body);

@@ -96,7 +96,8 @@ export function useReimbursementForm(id: string) {
       );
 
   const generateUploadUrl = useCallback(
-    (contentType: string) => reimbursementUploadUrl(id, contentType),
+    (contentType: string) =>
+      reimbursementUploadUrl(id, contentType, "receipt"),
     [id],
   );
   const getFileUrl = useCallback(
@@ -107,7 +108,7 @@ export function useReimbursementForm(id: string) {
     (blob: Blob) =>
       uploadViaPresign(
         `/api/public/reimbursement/${id}/upload-url`,
-        { contentType: "image/png" },
+        { contentType: "image/png", documentType: "signature" },
         blob,
       ),
     [id],
