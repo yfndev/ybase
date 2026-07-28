@@ -1,5 +1,5 @@
 import { requirePermission } from "../../auth/session";
-import { teams, users } from "../../db/collections";
+import { departments, teams, users } from "../../db/collections";
 
 export async function loadManagedMember(userId: string) {
   const currentUser = await requirePermission("manage_members");
@@ -23,4 +23,19 @@ export async function requireActiveOrganizationTeam(
   });
   if (!team) throw new Error("Team nicht verfügbar");
   return team;
+}
+
+export async function requireActiveOrganizationDepartment(
+  departmentId: string,
+  organizationId: string,
+) {
+  const department = await (
+    await departments()
+  ).findOne({
+    _id: departmentId,
+    organizationId,
+    isArchived: false,
+  });
+  if (!department) throw new Error("Department nicht verfügbar");
+  return department;
 }

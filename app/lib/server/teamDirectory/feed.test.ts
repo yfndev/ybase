@@ -71,17 +71,32 @@ test("returns active members directly from their ybase profiles", async () => {
     member({
       _id: "member-visible",
       name: "Ada Beispiel",
+      isTeamLead: true,
       profileImageStorageKey: "profile-image",
       publicProfileCompletedAt: 100,
     }),
     member({
+      _id: "member-board",
+      name: "Board Person",
+      teamId: undefined,
+      boardMembership: {
+        departmentId: "department-operations",
+        isChair: true,
+      },
+    }),
+    member({
       _id: "member-defaults",
-      name: "Default Person",
+      name: "Aaron Default",
     }),
     member({
       _id: "member-offboarded",
       name: "Former Person",
+      teamId: undefined,
       memberStatus: "offboarded",
+      boardMembership: {
+        departmentId: "department-operations",
+        isChair: false,
+      },
     }),
     member({
       _id: "member-archived-team",
@@ -94,35 +109,53 @@ test("returns active members directly from their ybase profiles", async () => {
 
   expect(feed.version).toBe("v1");
   expect(feed.revision).toHaveLength(64);
+  expect(feed.data.board).toEqual([
+    {
+      id: `ybase:${organizationId}:member:member-board`,
+      departmentId: `ybase:${organizationId}:department:department-operations`,
+      name: "Board Person",
+      role: "Operations",
+      isChair: true,
+    },
+  ]);
   expect(feed.data.departments).toHaveLength(1);
   expect(feed.data.departments[0]?.teams[0]?.members).toEqual([
     {
       id: `ybase:${organizationId}:member:member-visible`,
       name: "Ada Beispiel",
-      role: "People Lead",
+      role: "Lead",
+      isLead: true,
       imageUrl: `${publicOrigin}/api/v1/team-directory/images/member-visible`,
     },
     {
       id: `ybase:${organizationId}:member:member-defaults`,
-      name: "Default Person",
-      role: "People Lead",
+      name: "Aaron Default",
+      role: "",
+      isLead: false,
     },
   ]);
 });
 
-test("omits incomplete profiles and teams without public members", async () => {
+test("includes members without a position", async () => {
   await (
     await users()
   ).insertOne(
     member({
-      _id: "member-without-role",
+      _id: "member-without-position",
       positionTitle: undefined,
     }),
   );
 
   const feed = await getTeamDirectory(organizationId, publicOrigin);
 
-  expect(feed.data).toEqual({ departments: [] });
+  expect(feed.data.departments[0]?.teams[0]?.members).toEqual([
+    {
+      id: `ybase:${organizationId}:member:member-without-position`,
+      name: "Test Member",
+      role: "",
+      isLead: false,
+    },
+  ]);
 });
 
 function member(

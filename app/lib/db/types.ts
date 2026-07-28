@@ -16,6 +16,7 @@ export type { CostType, MealAllowance, MealAllowanceLine } from "./travelTypes";
 export type { SignatureToken } from "./signature";
 export type { UploadContextType, UploadOwnership } from "./upload";
 export type {
+  BoardMembership,
   MemberStatus,
   ProfileImageSource,
   TeamOnboardingStatus,

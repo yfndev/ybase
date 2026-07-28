@@ -173,7 +173,6 @@ export function MembersClient({
 
       {selectedMember && (
         <MemberDrawer
-          key={selectedMember._id}
           member={selectedMember}
           teams={teams}
           departments={departments}

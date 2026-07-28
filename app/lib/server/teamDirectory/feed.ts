@@ -1,33 +1,20 @@
 import { createHash } from "node:crypto";
 import { departments, teams, users } from "../../db/collections";
-import type { Department, Team, User } from "../../db/types";
+import type { Department, Team } from "../../db/types";
+import {
+  boardMemberDto,
+  byBoardRole,
+  byLeadAndName,
+  byName,
+  type DirectoryUser,
+  memberDto,
+  profileName,
+} from "./memberMappers";
 import type {
   TeamDirectoryData,
   TeamDirectoryDepartment,
   TeamDirectoryFeed,
-  TeamDirectoryMember,
 } from "./types";
-
-type DirectoryUser = Pick<
-  User,
-  | "_id"
-  | "name"
-  | "teamId"
-  | "positionTitle"
-  | "profileImageStorageKey"
-  | "publicProfileCompletedAt"
->;
-
-const byName = (left: { name: string }, right: { name: string }) =>
-  left.name.localeCompare(right.name, "de");
-
-function profileName(user: DirectoryUser): string {
-  return user.name?.trim() ?? "";
-}
-
-function profileRole(user: DirectoryUser): string {
-  return user.positionTitle?.trim() ?? "";
-}
 
 function namespacedId(
   organizationId: string,
@@ -35,23 +22,6 @@ function namespacedId(
   id: string,
 ): string {
   return `ybase:${organizationId}:${entity}:${id}`;
-}
-
-function memberDto(
-  user: DirectoryUser,
-  organizationId: string,
-  publicOrigin: string,
-): TeamDirectoryMember {
-  return {
-    id: namespacedId(organizationId, "member", user._id),
-    name: profileName(user),
-    role: profileRole(user),
-    ...(user.profileImageStorageKey && user.publicProfileCompletedAt
-      ? {
-          imageUrl: `${publicOrigin}/api/v1/team-directory/images/${encodeURIComponent(user._id)}`,
-        }
-      : {}),
-  };
 }
 
 export async function getTeamDirectory(
@@ -70,7 +40,8 @@ export async function getTeamDirectory(
         _id: 1,
         name: 1,
         teamId: 1,
-        positionTitle: 1,
+        isTeamLead: 1,
+        boardMembership: 1,
         profileImageStorageKey: 1,
         publicProfileCompletedAt: 1,
       })
@@ -87,13 +58,24 @@ export async function getTeamDirectory(
   const eligibleMembers = memberDocs.filter(
     (member) =>
       Boolean(member.teamId && activeTeamIds.has(member.teamId)) &&
-      Boolean(profileName(member)) &&
-      Boolean(profileRole(member)),
+      Boolean(profileName(member)),
   );
   const teamsByDepartment = groupTeams(activeTeams);
   const membersByTeam = groupMembers(eligibleMembers);
 
   const data: TeamDirectoryData = {
+    board: memberDocs
+      .flatMap((member) => {
+        const boardMember = boardMemberDto(
+          member,
+          organizationId,
+          member.boardMembership
+            ? activeDepartments.get(member.boardMembership.departmentId)
+            : undefined,
+        );
+        return boardMember ? [boardMember] : [];
+      })
+      .sort(byBoardRole),
     departments: departmentDocs
       .map((department) =>
         departmentDto(
@@ -158,7 +140,7 @@ function departmentDto(
         name: team.name,
         members: (membersByTeam.get(team._id) ?? [])
           .map((member) => memberDto(member, organizationId, publicOrigin))
-          .sort(byName),
+          .sort(byLeadAndName),
       }))
       .filter((team) => team.members.length > 0)
       .sort(byName),

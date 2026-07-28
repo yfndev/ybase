@@ -1,18 +1,31 @@
 "use client";
 
 import { DetailDrawer } from "@/components/Layout/DetailDrawer";
+import type { User } from "@/lib/db/types";
+import { useState } from "react";
 import type { MemberDrawerProps } from "./MemberDrawer.types";
 import { MemberDrawerPanel } from "./MemberDrawerPanel";
 import { useMemberDrawerForm } from "./useMemberDrawerForm";
 
-export function MemberDrawer(props: MemberDrawerProps) {
-  const { member, onClose } = props;
-  const form = useMemberDrawerForm(props);
-  const displayName =
+function memberDisplayName(member: User) {
+  return (
     member.name ||
     [member.firstName, member.lastName].filter(Boolean).join(" ") ||
-    "Teammitglied";
-  const content = (
+    "Teammitglied"
+  );
+}
+
+function MemberDrawerForm({
+  onSavingChange,
+  ...props
+}: MemberDrawerProps & {
+  onSavingChange: (isSaving: boolean) => void;
+}) {
+  const { member, onClose } = props;
+  const form = useMemberDrawerForm(props, onSavingChange);
+  const displayName = memberDisplayName(member);
+
+  return (
     <MemberDrawerPanel
       member={member}
       displayName={displayName}
@@ -20,6 +33,12 @@ export function MemberDrawer(props: MemberDrawerProps) {
       onClose={onClose}
     />
   );
+}
+
+export function MemberDrawer(props: MemberDrawerProps) {
+  const { member, onClose } = props;
+  const [isSaving, setIsSaving] = useState(false);
+  const displayName = memberDisplayName(member);
 
   return (
     <DetailDrawer
@@ -27,9 +46,13 @@ export function MemberDrawer(props: MemberDrawerProps) {
       description={`Teammitglied ${displayName} bearbeiten`}
       ariaLabel={`Teammitglied ${displayName} bearbeiten`}
       onClose={onClose}
-      closeDisabled={form.isSaving}
+      closeDisabled={isSaving}
     >
-      {content}
+      <MemberDrawerForm
+        key={member._id}
+        {...props}
+        onSavingChange={setIsSaving}
+      />
     </DetailDrawer>
   );
 }

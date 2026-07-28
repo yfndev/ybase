@@ -2,7 +2,16 @@ export interface TeamDirectoryMember {
   id: string;
   name: string;
   role: string;
+  isLead: boolean;
   imageUrl?: string;
+}
+
+export interface TeamDirectoryBoardMember {
+  id: string;
+  departmentId: string;
+  name: string;
+  role: string;
+  isChair: boolean;
 }
 
 export interface TeamDirectoryTeam {
@@ -18,6 +27,7 @@ export interface TeamDirectoryDepartment {
 }
 
 export interface TeamDirectoryData {
+  board: TeamDirectoryBoardMember[];
   departments: TeamDirectoryDepartment[];
 }
 

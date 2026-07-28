@@ -3,6 +3,11 @@ export type MemberStatus = "onboarding" | "active" | "inactive" | "offboarded";
 export type TeamOnboardingStatus = "not_started" | "in_progress" | "completed";
 export type ProfileImageSource = "google" | "upload";
 
+export interface BoardMembership {
+  departmentId: string;
+  isChair: boolean;
+}
+
 export interface User {
   _id: string;
   _creationTime: number;
@@ -30,6 +35,8 @@ export interface User {
   accountHolder?: string;
   teamId?: string;
   positionTitle?: string;
+  isTeamLead?: boolean;
+  boardMembership?: BoardMembership;
   applicationId?: string;
   memberStatus: MemberStatus;
   teamOnboardingStatus: TeamOnboardingStatus;
