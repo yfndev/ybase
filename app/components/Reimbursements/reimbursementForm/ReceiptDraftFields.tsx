@@ -135,6 +135,7 @@ export function ReceiptDraftFields({
         <ReceiptUpload
           onUploadComplete={(id) => setDraft({ ...draft, file: id })}
           storageId={draft.file || undefined}
+          reimbursementType="expense"
         />
       </div>
 

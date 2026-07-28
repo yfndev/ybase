@@ -6,14 +6,20 @@ import toast from "react-hot-toast";
 import SignaturePad from "react-signature-canvas";
 import { Button } from "@/components/ui/button";
 import { useSignatureResize } from "@/lib/hooks/useSignatureResize";
+import type { ReimbursementStorageType } from "@/lib/s3/keys";
 import { generateUploadUrl } from "@/lib/server/reimbursements/files";
 
 type Props = {
   onUploadComplete: (key: string) => void;
   uploadSignature?: (blob: Blob) => Promise<string>;
+  reimbursementType?: ReimbursementStorageType;
 };
 
-export function SignatureCanvas({ onUploadComplete, uploadSignature }: Props) {
+export function SignatureCanvas({
+  onUploadComplete,
+  uploadSignature,
+  reimbursementType,
+}: Props) {
   const padRef = useRef<SignaturePad>(null);
   const [uploading, setUploading] = useState(false);
   useSignatureResize(padRef);
@@ -33,7 +39,14 @@ export function SignatureCanvas({ onUploadComplete, uploadSignature }: Props) {
       if (uploadSignature) {
         onUploadComplete(await uploadSignature(blob));
       } else {
-        const { key, url } = await generateUploadUrl("image/png");
+        if (!reimbursementType) {
+          throw new Error("Upload context is required");
+        }
+        const { key, url } = await generateUploadUrl(
+          "image/png",
+          reimbursementType,
+          "signature",
+        );
         const response = await fetch(url, {
           method: "PUT",
           headers: { "Content-Type": "image/png" },

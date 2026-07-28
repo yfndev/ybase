@@ -70,9 +70,14 @@ export async function validateReimbursementLink(
   }
 }
 
-export function reimbursementUploadUrl(id: string, contentType: string) {
+export function reimbursementUploadUrl(
+  id: string,
+  contentType: string,
+  documentType: "receipt" | "signature",
+) {
   return postJson(`/api/public/reimbursement/${id}/upload-url`, {
     contentType,
+    documentType,
   }) as Promise<{ key: string; url: string }>;
 }
 

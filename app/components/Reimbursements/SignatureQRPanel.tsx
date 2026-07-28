@@ -6,14 +6,17 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { signStatus } from "@/(public)/_lib/signatures";
 import { Button } from "@/components/ui/button";
+import type { ReimbursementStorageType } from "@/lib/s3/keys";
 import { createToken } from "@/lib/server/signatures/actions";
 
 const POLL_INTERVAL_MS = 2000;
 
 export function SignatureQRPanel({
   onSignatureComplete,
+  reimbursementType,
 }: {
   onSignatureComplete: (key: string) => void;
+  reimbursementType: ReimbursementStorageType;
 }) {
   const [token, setToken] = useState<string | null>(null);
   const [tokenFailed, setTokenFailed] = useState(false);
@@ -23,7 +26,7 @@ export function SignatureQRPanel({
 
   useEffect(() => {
     let active = true;
-    createToken()
+    createToken(reimbursementType)
       .then((value) => {
         if (active) setToken(value);
       })
@@ -33,7 +36,7 @@ export function SignatureQRPanel({
     return () => {
       active = false;
     };
-  }, []);
+  }, [reimbursementType]);
 
   useEffect(() => {
     if (!token) return;

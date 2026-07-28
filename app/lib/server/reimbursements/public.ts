@@ -5,6 +5,10 @@ import {
   travelDetails,
 } from "../../db/collections";
 import { YFN_ORGANIZATION } from "../../organization";
+import {
+  type ReimbursementDocumentType,
+  reimbursementUploadDirectory,
+} from "../../s3/keys";
 import { presignDownload, presignUpload } from "../../s3/storage";
 import { contextOwnsUpload, registerPendingUpload } from "../uploads/ownership";
 
@@ -69,9 +73,18 @@ export async function getPublicReimbursement(id: string) {
 export async function createPublicReimbursementUpload(
   id: string,
   contentType?: string,
+  documentType?: ReimbursementDocumentType,
 ) {
   const doc = await requireOpenSharedReimbursement(id);
-  const upload = await presignUpload(contentType);
+  if (!documentType) throw new Error("Upload context is required");
+  const upload = await presignUpload(
+    contentType,
+    reimbursementUploadDirectory(
+      doc.type,
+      doc.organizationId,
+      documentType,
+    ),
+  );
   const result = await (
     await reimbursements()
   ).updateOne(

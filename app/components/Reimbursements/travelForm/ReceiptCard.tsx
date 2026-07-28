@@ -169,6 +169,7 @@ export function ReceiptCard({
             <ReceiptUpload
               onUploadComplete={(id) => onUpdate({ fileStorageId: id })}
               storageId={receipt.fileStorageId || undefined}
+              reimbursementType="travel"
             />
           </div>
         )}

@@ -3,6 +3,7 @@
 import { CheckCircle2, PenLine, RotateCcw, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import type { ReimbursementStorageType } from "@/lib/s3/keys";
 import { getFileUrlAction } from "@/lib/server/reimbursements/files";
 import { SignatureCanvas } from "./SignatureCanvas";
 import { SignatureQRPanel } from "./SignatureQRPanel";
@@ -14,6 +15,7 @@ interface Props {
   getFileUrl?: (storageId: string) => Promise<string | null>;
   onClear?: () => void;
   allowMobileHandoff?: boolean;
+  reimbursementType?: ReimbursementStorageType;
 }
 
 export function SignatureField({
@@ -23,6 +25,7 @@ export function SignatureField({
   getFileUrl = getFileUrlAction,
   onClear,
   allowMobileHandoff = true,
+  reimbursementType,
 }: Props) {
   const [mode, setMode] = useState<"direct" | "mobile">("direct");
 
@@ -65,9 +68,15 @@ export function SignatureField({
         <SignatureCanvas
           onUploadComplete={onSignatureComplete}
           uploadSignature={uploadSignature}
+          reimbursementType={reimbursementType}
         />
       ) : (
-        <SignatureQRPanel onSignatureComplete={onSignatureComplete} />
+        reimbursementType && (
+          <SignatureQRPanel
+            onSignatureComplete={onSignatureComplete}
+            reimbursementType={reimbursementType}
+          />
+        )
       )}
     </div>
   );

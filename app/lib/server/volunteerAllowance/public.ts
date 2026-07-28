@@ -1,6 +1,7 @@
 import type { z } from "zod";
 import { projects, volunteerAllowance } from "../../db/collections";
 import { YFN_ORGANIZATION } from "../../organization";
+import { reimbursementUploadDirectory } from "../../s3/keys";
 import { presignUpload } from "../../s3/storage";
 import type { volunteerAllowanceSubmissionSchema } from "../../volunteerAllowance/schemas";
 import { addLog } from "../logs";
@@ -79,7 +80,14 @@ export async function createPublicAllowanceUpload(
   contentType?: string,
 ) {
   const doc = await requireOpenSharedAllowance(id);
-  const upload = await presignUpload(contentType);
+  const upload = await presignUpload(
+    contentType,
+    reimbursementUploadDirectory(
+      "volunteer-allowance",
+      doc.organizationId,
+      "signature",
+    ),
+  );
   const result = await (
     await volunteerAllowance()
   ).updateOne(
