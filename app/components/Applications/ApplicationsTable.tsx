@@ -1,6 +1,6 @@
 "use client";
 
-import { Inbox, LoaderCircle } from "lucide-react";
+import { Inbox } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ApplicationWithFiles, User } from "@/lib/db/types";
 import { ApplicationStatusBadge } from "./ApplicationStatusBadge";
 
@@ -16,13 +17,62 @@ const DATE_FORMAT = new Intl.DateTimeFormat("de-DE", {
   dateStyle: "medium",
   timeStyle: "short",
 });
+const SKELETON_ROWS = ["one", "two", "three", "four", "five"];
+
+function ApplicationsTableSkeleton({
+  showJobPosting,
+}: {
+  showJobPosting: boolean;
+}) {
+  return (
+    <div className="overflow-hidden rounded-md border" aria-busy="true">
+      <span className="sr-only">Bewerbungen werden geladen</span>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="pl-4">Bewerber:in</TableHead>
+            {showJobPosting ? <TableHead>Ausschreibung</TableHead> : null}
+            <TableHead>Status</TableHead>
+            <TableHead>
+              {showJobPosting ? "Zuständig" : "Letzte Aktivität"}
+            </TableHead>
+            <TableHead className="pr-4">Eingang</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {SKELETON_ROWS.map((row) => (
+            <TableRow key={row}>
+              <TableCell className="space-y-2 pl-4">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-44" />
+              </TableCell>
+              {showJobPosting ? (
+                <TableCell>
+                  <Skeleton className="h-4 w-36" />
+                </TableCell>
+              ) : null}
+              <TableCell>
+                <Skeleton className="h-7 w-24 rounded-full" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-28" />
+              </TableCell>
+              <TableCell className="pr-4">
+                <Skeleton className="h-4 w-28" />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
 
 interface Props {
   applications: ApplicationWithFiles[];
   ownersById: Map<string, User>;
   isLoading: boolean;
   showJobPosting: boolean;
-  pendingApplicationId?: string;
   onSelect: (application: ApplicationWithFiles) => void;
 }
 
@@ -31,10 +81,13 @@ export function ApplicationsTable({
   ownersById,
   isLoading,
   showJobPosting,
-  pendingApplicationId,
   onSelect,
 }: Props) {
-  if (!isLoading && applications.length === 0) {
+  if (isLoading) {
+    return <ApplicationsTableSkeleton showJobPosting={showJobPosting} />;
+  }
+
+  if (applications.length === 0) {
     return (
       <div className="rounded-md border py-12 text-center">
         <Inbox className="mx-auto size-10 text-muted-foreground" />
@@ -62,7 +115,6 @@ export function ApplicationsTable({
         </TableHeader>
         <TableBody>
           {applications.map((application) => {
-            const isOpening = pendingApplicationId === application._id;
             const identity =
               application.status === "withdrawn"
                 ? "Anonymisierte Bewerbung"
@@ -82,11 +134,8 @@ export function ApplicationsTable({
             return (
               <TableRow
                 key={application._id}
-                className="cursor-pointer aria-busy:cursor-wait aria-busy:bg-muted/50"
-                onClick={() => {
-                  if (!isOpening) onSelect(application);
-                }}
-                aria-busy={isOpening}
+                className="cursor-pointer"
+                onClick={() => onSelect(application)}
               >
                 <TableCell className="pl-4">
                   <button
@@ -96,18 +145,8 @@ export function ApplicationsTable({
                       e.stopPropagation();
                       onSelect(application);
                     }}
-                    disabled={isOpening}
                   >
                     {identity}
-                    {isOpening ? (
-                      <>
-                        <LoaderCircle
-                          className="size-3.5 animate-spin text-muted-foreground"
-                          aria-hidden="true"
-                        />
-                        <span className="sr-only">wird geöffnet</span>
-                      </>
-                    ) : null}
                   </button>
                   {application.applicantEmail ? (
                     <p className="text-xs text-muted-foreground">
@@ -119,7 +158,7 @@ export function ApplicationsTable({
                   <TableCell>{application.jobPostingTitle}</TableCell>
                 ) : null}
                 <TableCell>
-                  <ApplicationStatusBadge status={application.status} />
+                  <ApplicationStatusBadge application={application} />
                 </TableCell>
                 {showJobPosting ? (
                   <TableCell className="max-w-56 truncate">

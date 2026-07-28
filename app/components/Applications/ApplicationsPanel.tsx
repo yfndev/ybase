@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState } from "react";
 import { useApplications } from "@/lib/client/applications/hooks/useApplications";
 import { useMembers } from "@/lib/client/members/hooks/useMembers";
 import type { ApplicationWithFiles } from "@/lib/db/types";
@@ -21,8 +21,6 @@ export function ApplicationsPanel({ jobPostingId }: Props) {
   const router = useRouter();
   const { applications, isLoading } = useApplications(jobPostingId);
   const { members } = useMembers();
-  const [pendingApplicationId, setPendingApplicationId] = useState<string>();
-  const [isNavigating, startNavigation] = useTransition();
   const [filters, setFilters] = useState<ApplicationFilters>({
     search: "",
     status: ALL_APPLICATIONS,
@@ -54,15 +52,9 @@ export function ApplicationsPanel({ jobPostingId }: Props) {
         ownersById={ownersById}
         isLoading={isLoading}
         showJobPosting={!jobPostingId}
-        pendingApplicationId={
-          isNavigating ? pendingApplicationId : undefined
+        onSelect={(application: ApplicationWithFiles) =>
+          router.push(`/applications/${application._id}`)
         }
-        onSelect={(application: ApplicationWithFiles) => {
-          setPendingApplicationId(application._id);
-          startNavigation(() => {
-            router.push(`/applications/${application._id}`);
-          });
-        }}
       />
     </div>
   );

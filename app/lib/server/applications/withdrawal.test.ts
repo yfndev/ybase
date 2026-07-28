@@ -76,6 +76,8 @@ beforeEach(async () => {
     workspaceProvisionedAt: Date.now(),
     onboardingUserId,
     onboardingLinkedAt: Date.now(),
+    onboardingStartedAt: Date.now(),
+    onboardingStartedBy: onboardingUserId,
     onboardingCompletedAt: Date.now(),
     onboardingCompletedBy: newId(),
     cleanupEligibleAt: Date.now(),
@@ -131,6 +133,8 @@ test("anonymizes personal data, locks the application and removes files", async 
   expect(stored).not.toHaveProperty("workspaceUserId");
   expect(stored).not.toHaveProperty("workspaceProvisioningStatus");
   expect(stored).not.toHaveProperty("onboardingUserId");
+  expect(stored).not.toHaveProperty("onboardingStartedAt");
+  expect(stored).not.toHaveProperty("onboardingStartedBy");
   expect(stored).not.toHaveProperty("onboardingCompletedAt");
   expect(stored).not.toHaveProperty("onboardingCompletedBy");
   expect(JSON.stringify(stored)).not.toMatch(

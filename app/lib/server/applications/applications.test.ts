@@ -128,6 +128,8 @@ test("loads one application without internal identifiers", async () => {
       $set: {
         ownerIds: [ownerId],
         withdrawalTokenHash: "secret-withdrawal-hash",
+        onboardingStartedBy: actorId,
+        onboardingCompletedBy: actorId,
         fields: [
           {
             key: "phone-in-fields",
@@ -153,6 +155,8 @@ test("loads one application without internal identifiers", async () => {
   expect(application).not.toHaveProperty("tallyResponseId");
   expect(application).not.toHaveProperty("tallyFormId");
   expect(application).not.toHaveProperty("withdrawalTokenHash");
+  expect(application).not.toHaveProperty("onboardingStartedBy");
+  expect(application).not.toHaveProperty("onboardingCompletedBy");
 });
 
 test("stores multiple responsible people and an internal history entry", async () => {

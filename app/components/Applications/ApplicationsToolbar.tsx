@@ -9,13 +9,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { APPLICATION_STATUS_LABELS } from "@/lib/applications/status";
-import type { ApplicationStatus, User } from "@/lib/db/types";
+import {
+  APPLICATION_DISPLAY_STATUS_LABELS,
+  type ApplicationDisplayStatus,
+} from "@/lib/applications/status";
+import type { User } from "@/lib/db/types";
 import { cn } from "@/lib/utils";
 import { ALL_APPLICATIONS, type ApplicationFilters } from "./applicationTable";
 
-const STATUSES = Object.entries(APPLICATION_STATUS_LABELS) as [
-  ApplicationStatus,
+const STATUSES = Object.entries(APPLICATION_DISPLAY_STATUS_LABELS) as [
+  ApplicationDisplayStatus,
   string,
 ][];
 

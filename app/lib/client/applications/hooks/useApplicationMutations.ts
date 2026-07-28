@@ -2,8 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { submitApplicationDecision } from "@/lib/server/applications/decisionAction";
 import { updateApplicationManagement } from "@/lib/server/applications/management";
 import {
+  startApplicationOnboarding,
   setApplicationOnboardingCompleted,
-  setApplicationYfnEmail,
 } from "@/lib/server/applications/onboarding";
 import { setApplicationStatus } from "@/lib/server/applications/status";
 
@@ -30,8 +30,8 @@ export function useApplicationMutations() {
       },
       onSuccess: invalidate,
     }),
-    setYfnEmail: useMutation({
-      mutationFn: setApplicationYfnEmail,
+    startOnboarding: useMutation({
+      mutationFn: startApplicationOnboarding,
       onSuccess: invalidate,
     }),
     setOnboardingCompleted: useMutation({
