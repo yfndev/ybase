@@ -208,6 +208,12 @@ test("setMemberStatus offboards a member and stamps the offboarding time", async
   expect(typeof updated?.offboardedAt).toBe("number");
 });
 
+test("setMemberStatus marks a member as inactive", async () => {
+  await setMemberStatus({ userId: memberA, status: "inactive" });
+  const updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.memberStatus).toBe("inactive");
+});
+
 test("setMemberStatus cannot touch a user from another org", async () => {
   await expect(
     setMemberStatus({ userId: memberB, status: "offboarded" }),

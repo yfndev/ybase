@@ -15,6 +15,7 @@ export interface NavItem {
   name: string;
   url: string;
   icon: LucideIcon;
+  activeUrls?: string[];
 }
 
 export function MainNav({
@@ -43,9 +44,9 @@ export function MainNav({
               asChild
               tooltip={item.name}
               className="h-10 px-3 font-medium text-sidebar-foreground/75 data-[active=true]:text-sidebar-foreground"
-              isActive={
-                pathname === item.url || pathname.startsWith(`${item.url}/`)
-              }
+              isActive={[item.url, ...(item.activeUrls ?? [])].some(
+                (url) => pathname === url || pathname.startsWith(`${url}/`),
+              )}
             >
               <Link href={item.url}>
                 <item.icon />

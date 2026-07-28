@@ -6,8 +6,8 @@ import { ApplicationAnswers } from "@/components/Applications/ApplicationAnswers
 import { ApplicationDetails } from "@/components/Applications/ApplicationDetails";
 import { ApplicationFiles } from "@/components/Applications/ApplicationFiles";
 import { ApplicationHistory } from "@/components/Applications/ApplicationHistory";
+import { ApplicationMainStatus } from "@/components/Applications/ApplicationMainStatus";
 import { ApplicationManagement } from "@/components/Applications/ApplicationManagement";
-import { ApplicationOnboarding } from "@/components/Applications/ApplicationOnboarding";
 import { ApplicationReviewSidebar } from "@/components/Applications/ApplicationReviewSidebar";
 import { isApplicantIdentityField } from "@/components/Applications/applicationPresentation";
 import { PageHeader } from "@/components/Layout/PageHeader";
@@ -18,10 +18,12 @@ export function ApplicationReview({
   initialApplication,
   members,
   organizationDomain,
+  backUrl,
 }: {
   initialApplication: ApplicationWithFiles;
   members: User[];
   organizationDomain: string;
+  backUrl: string;
 }) {
   const { application, refetch } = useApplication(
     initialApplication._id,
@@ -48,7 +50,7 @@ export function ApplicationReview({
 
   return (
     <div className="w-full space-y-6">
-      <PageHeader title={displayName} showBackButton />
+      <PageHeader title={displayName} showBackButton backUrl={backUrl} />
 
       <main
         className="min-w-0 space-y-8 min-[1280px]:h-[calc(100svh-11.75rem)] min-[1280px]:overflow-y-auto min-[1280px]:overscroll-contain min-[1280px]:pr-4 min-[1280px]:[scrollbar-gutter:stable] [&>section:first-of-type]:border-t-0 [&>section:first-of-type]:pt-0"
@@ -76,20 +78,15 @@ export function ApplicationReview({
         <div className="hidden min-[1280px]:block">
           <ApplicationDetails application={application} />
         </div>
+        <div>
+          <ApplicationMainStatus status={application.status} />
+        </div>
         {!withdrawn ? (
           <div>
             <ApplicationManagement
               key={`management-${revisionKey}`}
               application={application}
               owners={owners}
-            />
-          </div>
-        ) : null}
-        {application.status === "accepted" ? (
-          <div>
-            <ApplicationOnboarding
-              key={`onboarding-${revisionKey}`}
-              application={application}
             />
           </div>
         ) : null}

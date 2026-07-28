@@ -1,20 +1,16 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { MemberStageBadge } from "@/components/Members/MemberStageBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SheetFooter } from "@/components/ui/sheet";
 import type { TeamOnboardingStatus, User, UserRole } from "@/lib/db/types";
 import { getInitials } from "@/lib/formatters/getInitials";
+import { memberStageForStatus } from "@/lib/members/stages";
 import { Loader2 } from "lucide-react";
 import { LabeledSelect } from "./LabeledSelect";
 import { MemberStatusField } from "./MemberStatusField";
-import {
-  memberStatusLabel,
-  memberStatusVariant,
-  ROLE_OPTIONS,
-  TEAM_ONBOARDING_OPTIONS,
-} from "./memberLabels";
+import { ROLE_OPTIONS, TEAM_ONBOARDING_OPTIONS } from "./memberLabels";
 import type { MemberDrawerFormState } from "./useMemberDrawerForm";
 
 interface Props {
@@ -50,9 +46,10 @@ export function MemberDrawerPanel({
           <p className="text-muted-foreground max-w-full truncate text-base">
             {member.email || "Keine E-Mail hinterlegt"}
           </p>
-          <Badge className="mt-1" variant={memberStatusVariant(form.status)}>
-            {memberStatusLabel(form.status)}
-          </Badge>
+          <MemberStageBadge
+            className="mt-1"
+            stage={memberStageForStatus(form.status)}
+          />
         </div>
       </div>
 

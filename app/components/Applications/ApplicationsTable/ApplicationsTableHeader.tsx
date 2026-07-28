@@ -9,8 +9,9 @@ export function ApplicationsTableHeader({
     <TableHeader>
       <TableRow>
         <TableHead className="pl-4">Bewerber:in</TableHead>
-        {showJobPosting ? <TableHead>Ausschreibung</TableHead> : null}
+        <TableHead>E-Mail</TableHead>
         <TableHead>Status</TableHead>
+        {showJobPosting ? <TableHead>Ausschreibung</TableHead> : null}
         <TableHead>
           {showJobPosting ? "Zuständig" : "Letzte Aktivität"}
         </TableHead>

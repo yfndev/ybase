@@ -7,8 +7,7 @@ import {
   Megaphone,
   Network,
   ScrollText,
-  UserRoundSearch,
-  UserCog,
+  UsersRound,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -49,12 +48,6 @@ const ADMINISTRATION_NAV_ITEMS: ProtectedNavItem[] = [
     permission: USER_PERMISSIONS.organizationStructure,
   },
   {
-    name: "Team",
-    url: "/settings/members",
-    icon: UserCog,
-    permission: USER_PERMISSIONS.members,
-  },
-  {
     name: "Projekte",
     url: "/settings/projects",
     icon: FolderKanban,
@@ -77,9 +70,10 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       ? [
           { name: "Ausschreibungen", url: "/recruiting", icon: Megaphone },
           {
-            name: "Bewerbungen",
-            url: "/applications",
-            icon: UserRoundSearch,
+            name: "Mitglieder",
+            url: "/members",
+            activeUrls: ["/applications"],
+            icon: UsersRound,
           },
         ]
       : []),

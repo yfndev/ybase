@@ -3,10 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 
 import { fetchMembers } from "../requests/fetchMembers";
 
-export function useMembers() {
+export function useMembers(enabled = true) {
   const result = useQuery<User[]>({
     queryKey: ["members"],
     queryFn: fetchMembers,
+    enabled,
   });
 
   return { members: result.data ?? [], isLoading: result.isLoading };

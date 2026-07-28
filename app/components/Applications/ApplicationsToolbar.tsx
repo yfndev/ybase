@@ -26,6 +26,7 @@ interface Props {
   filters: ApplicationFilters;
   owners: User[];
   showOwnerFilter: boolean;
+  showStatusFilter?: boolean;
   onChange: (patch: Partial<ApplicationFilters>) => void;
 }
 
@@ -33,6 +34,7 @@ export function ApplicationsToolbar({
   filters,
   owners,
   showOwnerFilter,
+  showStatusFilter = true,
   onChange,
 }: Props) {
   const ownerOptions = owners.map((owner) => ({
@@ -46,9 +48,11 @@ export function ApplicationsToolbar({
     <div
       className={cn(
         "grid gap-2",
-        showOwnerFilter
+        showOwnerFilter && showStatusFilter
           ? "md:grid-cols-[minmax(0,1fr)_minmax(8rem,11rem)_minmax(9rem,13rem)_minmax(10rem,12rem)]"
-          : "md:grid-cols-[minmax(0,1fr)_minmax(9rem,12rem)_minmax(10rem,12rem)]",
+          : showOwnerFilter || showStatusFilter
+            ? "md:grid-cols-[minmax(0,1fr)_minmax(9rem,13rem)_minmax(10rem,12rem)]"
+            : "md:grid-cols-[minmax(0,1fr)_minmax(10rem,12rem)]",
       )}
     >
       <Input
@@ -58,24 +62,26 @@ export function ApplicationsToolbar({
         aria-label="Bewerbungen durchsuchen"
         className="w-full"
       />
-      <Select
-        value={filters.status}
-        onValueChange={(status) =>
-          onChange({ status: status as ApplicationFilters["status"] })
-        }
-      >
-        <SelectTrigger aria-label="Status filtern" className="w-full">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ALL_APPLICATIONS}>Alle Status</SelectItem>
-          {STATUSES.map(([value, label]) => (
-            <SelectItem key={value} value={value}>
-              {label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {showStatusFilter ? (
+        <Select
+          value={filters.status}
+          onValueChange={(status) =>
+            onChange({ status: status as ApplicationFilters["status"] })
+          }
+        >
+          <SelectTrigger aria-label="Status filtern" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_APPLICATIONS}>Alle Status</SelectItem>
+            {STATUSES.map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : null}
       {showOwnerFilter ? (
         <MultiSelect
           value={filters.ownerIds}

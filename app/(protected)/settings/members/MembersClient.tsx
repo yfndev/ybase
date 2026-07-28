@@ -1,23 +1,46 @@
 "use client";
 
+import { ApplicationsPanel } from "@/components/Applications/ApplicationsPanel";
 import { PageHeader } from "@/components/Layout/PageHeader";
+import { useApplications } from "@/lib/client/applications/hooks/useApplications";
 import { useDepartments } from "@/lib/client/departments/hooks/useDepartments";
 import { useMembers } from "@/lib/client/members/hooks/useMembers";
 import { useTeams } from "@/lib/client/teams/hooks/useTeams";
-import type { User } from "@/lib/db/types";
+import type { ApplicationWithFiles, User } from "@/lib/db/types";
 import { useIsAdmin } from "@/lib/hooks/useCurrentUserRole";
+import {
+  applicationsForStage,
+  MEMBER_STATUS_BY_STAGE,
+  memberStageCounts,
+  membersForStage,
+  type MemberStage,
+} from "@/lib/members/stages";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { AcceptedApplicantDrawer } from "./AcceptedApplicantDrawer";
 import { ALL, filterMembers, type MemberFilters } from "./filterMembers";
 import { MemberDrawer } from "./MemberDrawer";
+import { MemberStageTabs } from "./MemberStageTabs";
 import { MembersTable } from "./MembersTable";
 import { MembersToolbar } from "./MembersToolbar";
+import {
+  APPLICATION_STAGE_EMPTY_TEXT,
+  MEMBER_STAGE_EMPTY_TEXT,
+} from "./memberStagePresentation";
 
-export function MembersClient() {
-  const { members, isLoading } = useMembers();
+export function MembersClient({
+  initialStage = "application",
+}: {
+  initialStage?: MemberStage;
+}) {
+  const router = useRouter();
+  const { applications, isLoading: applicationsLoading } = useApplications();
+  const { members, isLoading: membersLoading } = useMembers();
   const { teams } = useTeams();
   const { departments } = useDepartments();
   const isAdmin = useIsAdmin();
 
+  const [stage, setStage] = useState<MemberStage>(initialStage);
   const [filters, setFilters] = useState<MemberFilters>({
     status: "active",
     departmentId: ALL,
@@ -25,6 +48,8 @@ export function MembersClient() {
     search: "",
   });
   const [selectedMember, setSelectedMember] = useState<User | null>(null);
+  const [selectedAcceptedApplication, setSelectedAcceptedApplication] =
+    useState<ApplicationWithFiles | null>(null);
 
   const teamsById = useMemo(
     () => new Map(teams.map((team) => [team._id, team])),
@@ -35,33 +60,116 @@ export function MembersClient() {
       new Map(departments.map((department) => [department._id, department])),
     [departments],
   );
+  const memberStatusesById = useMemo(
+    () => new Map(members.map((member) => [member._id, member.memberStatus])),
+    [members],
+  );
+  const counts = useMemo(
+    () => memberStageCounts(applications, members),
+    [applications, members],
+  );
+  const stagedApplications = useMemo(
+    () => applicationsForStage(applications, stage, memberStatusesById),
+    [applications, memberStatusesById, stage],
+  );
+  const stagedMembers = useMemo(
+    () => membersForStage(members, stage),
+    [members, stage],
+  );
+  const memberStatus = MEMBER_STATUS_BY_STAGE[stage];
+  const visibleMembers = memberStatus
+    ? filterMembers(
+        stagedMembers,
+        { ...filters, status: memberStatus },
+        teamsById,
+      )
+    : [];
+  const showsApplications = [
+    "application",
+    "interview",
+    "onboarding",
+    "archived",
+  ].includes(stage);
+  const showsMembers = memberStatus !== undefined;
 
-  const visibleMembers = filterMembers(members, filters, teamsById);
   const adminCount = members.filter((member) => member.role === "admin").length;
+  const selectedApplicationEmptyText = showsApplications
+    ? APPLICATION_STAGE_EMPTY_TEXT[stage]
+    : undefined;
+  const selectedMemberEmptyText = showsMembers
+    ? MEMBER_STAGE_EMPTY_TEXT[stage]
+    : undefined;
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Team" />
+      <PageHeader title="Mitglieder" />
 
-      <MembersToolbar
-        filters={filters}
-        departments={departments}
-        teams={teams}
-        onStatusChange={(status) => setFilters((prev) => ({ ...prev, status }))}
-        onSearchChange={(search) => setFilters((prev) => ({ ...prev, search }))}
-        onDepartmentChange={(departmentId) =>
-          setFilters((prev) => ({ ...prev, departmentId, teamId: ALL }))
-        }
-        onTeamChange={(teamId) => setFilters((prev) => ({ ...prev, teamId }))}
+      <MemberStageTabs
+        stage={stage}
+        counts={counts}
+        isLoading={applicationsLoading || membersLoading}
+        onChange={(nextStage) => {
+          setStage(nextStage);
+          setSelectedMember(null);
+          setSelectedAcceptedApplication(null);
+          router.replace(`/members?stage=${nextStage}`, { scroll: false });
+        }}
       />
 
-      <MembersTable
-        members={visibleMembers}
-        isLoading={isLoading}
-        teamsById={teamsById}
-        departmentsById={departmentsById}
-        onSelect={setSelectedMember}
-      />
+      {showsApplications && selectedApplicationEmptyText ? (
+        <ApplicationsPanel
+          applications={stagedApplications}
+          members={members}
+          isLoading={applicationsLoading || membersLoading}
+          showStatusFilter={false}
+          stage={stage}
+          detailBackUrl={`/members?stage=${stage}`}
+          emptyTitle={selectedApplicationEmptyText.title}
+          emptyDescription={selectedApplicationEmptyText.description}
+          onSelect={
+            stage === "onboarding"
+              ? (application) => {
+                  const member = members.find(
+                    (entry) =>
+                      entry._id === application.onboardingUserId ||
+                      entry.applicationId === application._id,
+                  );
+                  setSelectedAcceptedApplication(member ? null : application);
+                  setSelectedMember(member ?? null);
+                }
+              : undefined
+          }
+        />
+      ) : null}
+
+      {showsMembers && selectedMemberEmptyText ? (
+        <section className="space-y-4">
+          <MembersToolbar
+            filters={{ ...filters, status: memberStatus }}
+            departments={departments}
+            teams={teams}
+            onSearchChange={(search) =>
+              setFilters((prev) => ({ ...prev, search }))
+            }
+            onDepartmentChange={(departmentId) =>
+              setFilters((prev) => ({ ...prev, departmentId, teamId: ALL }))
+            }
+            onTeamChange={(teamId) =>
+              setFilters((prev) => ({ ...prev, teamId }))
+            }
+          />
+
+          <MembersTable
+            members={visibleMembers}
+            isLoading={membersLoading}
+            teamsById={teamsById}
+            departmentsById={departmentsById}
+            emptyTitle={selectedMemberEmptyText.title}
+            emptyDescription={selectedMemberEmptyText.description}
+            onSelect={setSelectedMember}
+          />
+        </section>
+      ) : null}
 
       {selectedMember && (
         <MemberDrawer
@@ -74,6 +182,12 @@ export function MembersClient() {
           onClose={() => setSelectedMember(null)}
         />
       )}
+      {selectedAcceptedApplication ? (
+        <AcceptedApplicantDrawer
+          application={selectedAcceptedApplication}
+          onClose={() => setSelectedAcceptedApplication(null)}
+        />
+      ) : null}
     </div>
   );
 }
