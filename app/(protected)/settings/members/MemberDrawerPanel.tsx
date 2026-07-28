@@ -7,6 +7,7 @@ import { SheetFooter } from "@/components/ui/sheet";
 import type { TeamOnboardingStatus, User, UserRole } from "@/lib/db/types";
 import { getInitials } from "@/lib/formatters/getInitials";
 import { memberStageForStatus } from "@/lib/members/stages";
+import { profileAvatarUrl } from "@/lib/profile/avatar";
 import { Loader2 } from "lucide-react";
 import { LabeledSelect } from "./LabeledSelect";
 import { MemberStatusField } from "./MemberStatusField";
@@ -31,7 +32,7 @@ export function MemberDrawerPanel({
       <div className="flex flex-row items-center gap-5 px-6 pt-8 pb-6 text-left">
         <Avatar className="size-24">
           <AvatarImage
-            src={member.image}
+            src={profileAvatarUrl(member)}
             alt={`Profilbild von ${displayName}`}
             className="object-cover"
           />

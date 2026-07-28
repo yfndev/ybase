@@ -12,6 +12,7 @@ export async function ensureIndexes(): Promise<void> {
 
   await db.collection("users").createIndexes([
     { key: { email: 1 }, unique: true, sparse: true },
+    { key: { googleWorkspaceUserId: 1 }, unique: true, sparse: true },
     { key: { applicationId: 1 }, unique: true, sparse: true },
     { key: { organizationId: 1 } },
     {

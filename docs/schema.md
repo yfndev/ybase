@@ -44,6 +44,7 @@ erDiagram
         string _id
         string organizationId
         string email
+        string googleWorkspaceUserId
         string role
         string teamId
         string positionTitle

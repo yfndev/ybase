@@ -22,6 +22,7 @@ export interface User {
   isAnonymous?: boolean;
   firstName?: string;
   lastName?: string;
+  googleWorkspaceUserId?: string;
   organizationId?: string;
   role?: UserRole;
   iban?: string;

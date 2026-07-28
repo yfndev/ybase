@@ -19,18 +19,27 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signOutWithPostHog } from "@/lib/posthog-client";
+import { profileAvatarUrl } from "@/lib/profile/avatar";
 
 type NavUserData = {
+  id: string;
   name?: string | null;
   email?: string | null;
   image?: string | null;
+  profileImageStorageKey?: string;
+  publicProfileCompletedAt?: number;
 };
 
 function UserAvatar({ user }: { user: NavUserData }) {
   return (
     <Avatar className="size-9 rounded-full group-data-[collapsible=icon]:size-8">
       <AvatarImage
-        src={user.image ?? undefined}
+        src={profileAvatarUrl({
+          _id: user.id,
+          image: user.image ?? undefined,
+          profileImageStorageKey: user.profileImageStorageKey,
+          publicProfileCompletedAt: user.publicProfileCompletedAt,
+        })}
         alt={user.name ?? ""}
         referrerPolicy="no-referrer"
       />

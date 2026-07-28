@@ -2,10 +2,10 @@ import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 import { YFN_ORGANIZATION } from "../organization";
 import { getGooglePhotoIsDefault } from "./googlePeople";
-import { ensureAppUser } from "./provisioning";
+import { ensureAppUser, isLinkedWorkspaceUser } from "./provisioning";
 import { normalizeOptionalUserRole } from "./roles";
 
-function isAllowedEmail(email: string | null | undefined): boolean {
+function isYfnEmail(email: string | null | undefined): boolean {
   return Boolean(email?.toLowerCase().endsWith(`@${YFN_ORGANIZATION.domain}`));
 }
 
@@ -14,9 +14,6 @@ const google = Google({
     params: { prompt: "select_account", hd: YFN_ORGANIZATION.domain },
   },
   profile(profile) {
-    if (!isAllowedEmail(profile.email)) {
-      throw new Error("Nur youngfounders.network-Konten sind zugelassen");
-    }
     return {
       id: profile.sub,
       email: profile.email,
@@ -36,8 +33,11 @@ export const authConfig = {
   pages: { signIn: "/login" },
   providers: [google],
   callbacks: {
-    signIn({ user }) {
-      return isAllowedEmail(user.email);
+    async signIn({ user, account }) {
+      if (isYfnEmail(user.email)) return true;
+      const googleWorkspaceUserId =
+        account?.provider === "google" ? account.providerAccountId : undefined;
+      return isLinkedWorkspaceUser(googleWorkspaceUserId);
     },
     async jwt({ token, user, account }) {
       const email = user?.email ?? (token.email as string | undefined);
@@ -48,6 +48,10 @@ export const authConfig = {
             : undefined;
         const appUser = await ensureAppUser({
           email,
+          googleWorkspaceUserId:
+            account?.provider === "google"
+              ? account.providerAccountId
+              : undefined,
           name: user?.name ?? (token.name as string | undefined),
           image: user?.image ?? undefined,
           firstName: user?.firstName,
@@ -58,6 +62,8 @@ export const authConfig = {
         token.organizationId = appUser.organizationId;
         token.role = appUser.role;
         token.email = appUser.email;
+        token.profileImageStorageKey = appUser.profileImageStorageKey;
+        token.publicProfileCompletedAt = appUser.publicProfileCompletedAt;
       }
       return token;
     },
@@ -68,6 +74,11 @@ export const authConfig = {
           | string
           | undefined;
         session.user.role = normalizeOptionalUserRole(token.role);
+        session.user.profileImageStorageKey = token.profileImageStorageKey as
+          | string
+          | undefined;
+        session.user.publicProfileCompletedAt =
+          token.publicProfileCompletedAt as number | undefined;
       }
       return session;
     },
