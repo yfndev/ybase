@@ -3,19 +3,14 @@ import { beforeEach, expect, test, vi } from "vitest";
 vi.mock("../../auth/session", () => ({ requirePermission: vi.fn() }));
 
 import { requirePermission } from "../../auth/session";
-import {
-  applications,
-  jobPostings,
-  logs,
-  organizations,
-} from "../../db/collections";
+import { applications, logs } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { Application } from "../../db/types";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import {
+  startApplicationOnboarding,
   setApplicationOnboardingCompleted,
-  setApplicationYfnEmail,
 } from "./onboarding";
 
 setupTestDatabase();
@@ -34,26 +29,6 @@ beforeEach(async () => {
   vi.mocked(requirePermission).mockResolvedValue(
     createTestActor({ _id: actorId, organizationId }),
   );
-  await (
-    await organizations()
-  ).insertOne({
-    _id: organizationId,
-    _creationTime: Date.now(),
-    name: "YFN",
-    domain: "youngfounders.network",
-    createdBy: newId(),
-  });
-  await (
-    await jobPostings()
-  ).insertOne({
-    _id: postingId,
-    _creationTime: Date.now(),
-    organizationId,
-    teamId: newId(),
-    status: "published",
-    title: "People Lead",
-    createdBy: newId(),
-  });
   await insertApplication();
 });
 
@@ -81,33 +56,64 @@ async function insertApplication(
   });
 }
 
-test("stores a normalized YFN email on an accepted application", async () => {
-  await setApplicationYfnEmail({
-    applicationId,
-    yfnEmail: "  Alex@YoungFounders.Network ",
-  });
+test("starts onboarding after the YBase profile was linked", async () => {
+  await (
+    await applications()
+  ).updateOne({ _id: applicationId }, { $set: { onboardingUserId: newId() } });
+
+  await startApplicationOnboarding({ applicationId });
 
   expect(
     await (await applications()).findOne({ _id: applicationId }),
   ).toMatchObject({
-    yfnEmail: "alex@youngfounders.network",
-    yfnEmailNormalized: "alex@youngfounders.network",
-    history: [
-      expect.objectContaining({
-        details: "YFN-E-Mail für das Onboarding hinterlegt",
-      }),
-    ],
+    onboardingStartedAt: expect.any(Number),
+    onboardingStartedBy: actorId,
+    history: expect.arrayContaining([
+      expect.objectContaining({ details: "Onboarding gestartet" }),
+    ]),
   });
   expect(
-    await (await logs()).findOne({ entityId: applicationId }),
-  ).toMatchObject({ action: "application.yfn_email_set" });
+    await (
+      await logs()
+    ).findOne({
+      entityId: applicationId,
+      action: "application.onboarding_started",
+    }),
+  ).not.toBeNull();
 });
 
-test("marks onboarding as completed", async () => {
-  await setApplicationYfnEmail({
-    applicationId,
-    yfnEmail: "alex@youngfounders.network",
-  });
+test("requires a linked YBase profile before starting onboarding", async () => {
+  await expect(startApplicationOnboarding({ applicationId })).rejects.toThrow(
+    "bei YBase registriert",
+  );
+});
+
+test("requires an accepted application before starting onboarding", async () => {
+  await (
+    await applications()
+  ).updateOne(
+    { _id: applicationId },
+    { $set: { status: "review", onboardingUserId: newId() } },
+  );
+
+  await expect(startApplicationOnboarding({ applicationId })).rejects.toThrow(
+    "nur nach einer Zusage",
+  );
+});
+
+test("marks started onboarding as completed", async () => {
+  await (
+    await applications()
+  ).updateOne(
+    { _id: applicationId },
+    {
+      $set: {
+        onboardingUserId: newId(),
+        onboardingStartedAt: Date.now(),
+        onboardingStartedBy: actorId,
+      },
+    },
+  );
 
   await setApplicationOnboardingCompleted({
     applicationId,
@@ -119,7 +125,7 @@ test("marks onboarding as completed", async () => {
     onboardingCompletedAt: expect.any(Number),
     onboardingCompletedBy: actorId,
     history: expect.arrayContaining([
-      expect.objectContaining({ details: "Onboarding beendet" }),
+      expect.objectContaining({ details: "Onboarding abgeschlossen" }),
     ]),
   });
   expect(
@@ -132,13 +138,13 @@ test("marks onboarding as completed", async () => {
   ).not.toBeNull();
 });
 
-test("requires the configured YFN email before completing onboarding", async () => {
+test("requires onboarding to be started before completing it", async () => {
   await expect(
     setApplicationOnboardingCompleted({
       applicationId,
       completed: true,
     }),
-  ).rejects.toThrow("YFN-E-Mail");
+  ).rejects.toThrow("Starte zuerst das Onboarding");
 });
 
 test("reopens a previously completed onboarding", async () => {
@@ -148,8 +154,9 @@ test("reopens a previously completed onboarding", async () => {
     { _id: applicationId },
     {
       $set: {
-        yfnEmail: "alex@youngfounders.network",
-        yfnEmailNormalized: "alex@youngfounders.network",
+        onboardingUserId: newId(),
+        onboardingStartedAt: Date.now(),
+        onboardingStartedBy: actorId,
         onboardingCompletedAt: Date.now(),
         onboardingCompletedBy: actorId,
       },
@@ -165,70 +172,4 @@ test("reopens a previously completed onboarding", async () => {
   expect(stored).not.toHaveProperty("onboardingCompletedAt");
   expect(stored).not.toHaveProperty("onboardingCompletedBy");
   expect(stored?.history?.at(-1)?.details).toBe("Onboarding wieder geöffnet");
-});
-
-test("rejects an email outside the organization domain", async () => {
-  await expect(
-    setApplicationYfnEmail({
-      applicationId,
-      yfnEmail: "alex@example.com",
-    }),
-  ).rejects.toThrow("@youngfounders.network");
-});
-
-test("rejects an email assigned to another application", async () => {
-  await insertApplication({
-    _id: newId(),
-    yfnEmail: "alex@youngfounders.network",
-    yfnEmailNormalized: "alex@youngfounders.network",
-  });
-
-  await expect(
-    setApplicationYfnEmail({
-      applicationId,
-      yfnEmail: "alex@youngfounders.network",
-    }),
-  ).rejects.toThrow("bereits einer Bewerbung zugeordnet");
-});
-
-test("rejects a YFN email before the application is accepted", async () => {
-  await (
-    await applications()
-  ).updateOne({ _id: applicationId }, { $set: { status: "review" } });
-
-  await expect(
-    setApplicationYfnEmail({
-      applicationId,
-      yfnEmail: "alex@youngfounders.network",
-    }),
-  ).rejects.toThrow("nur nach einer Zusage");
-});
-
-test("does not change the email after the profile was linked", async () => {
-  await (
-    await applications()
-  ).updateOne({ _id: applicationId }, { $set: { onboardingUserId: newId() } });
-
-  await expect(
-    setApplicationYfnEmail({
-      applicationId,
-      yfnEmail: "alex@youngfounders.network",
-    }),
-  ).rejects.toThrow("bereits mit einem Profil verknüpft");
-});
-
-test("does not change the email of a provisioned Workspace account", async () => {
-  await (
-    await applications()
-  ).updateOne(
-    { _id: applicationId },
-    { $set: { workspaceUserId: "google-1" } },
-  );
-
-  await expect(
-    setApplicationYfnEmail({
-      applicationId,
-      yfnEmail: "other@youngfounders.network",
-    }),
-  ).rejects.toThrow("Workspace-Kontos");
 });

@@ -87,6 +87,8 @@ export async function withdrawApplicationByToken(
         onboardingUserId: "",
         onboardingLinkedAt: "",
         onboardingLinkError: "",
+        onboardingStartedAt: "",
+        onboardingStartedBy: "",
         onboardingCompletedAt: "",
         onboardingCompletedBy: "",
         cleanupEligibleAt: "",

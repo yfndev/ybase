@@ -1,9 +1,13 @@
-import type { ApplicationStatus, ApplicationWithFiles } from "@/lib/db/types";
+import {
+  type ApplicationDisplayStatus,
+  getApplicationDisplayStatus,
+} from "../../lib/applications/status";
+import type { ApplicationWithFiles } from "@/lib/db/types";
 
 export const ALL_APPLICATIONS = "__all__";
 export interface ApplicationFilters {
   search: string;
-  status: ApplicationStatus | typeof ALL_APPLICATIONS;
+  status: ApplicationDisplayStatus | typeof ALL_APPLICATIONS;
   ownerIds: string[];
   sortDirection: "asc" | "desc";
 }
@@ -23,7 +27,7 @@ export function filterApplications(
       ].some((value) => value?.toLocaleLowerCase("de").includes(search));
     const matchesStatus =
       filters.status === ALL_APPLICATIONS ||
-      application.status === filters.status;
+      getApplicationDisplayStatus(application) === filters.status;
     const matchesOwner =
       filters.ownerIds.length === 0 ||
       application.ownerIds.some((ownerId) =>

@@ -95,6 +95,8 @@ export interface Application {
   onboardingUserId?: string;
   onboardingLinkedAt?: number;
   onboardingLinkError?: string;
+  onboardingStartedAt?: number;
+  onboardingStartedBy?: string;
   onboardingCompletedAt?: number;
   onboardingCompletedBy?: string;
   cleanupEligibleAt?: number;
@@ -118,6 +120,7 @@ export type ApplicationWithFiles = Omit<
   | "yfnEmailNormalized"
   | "workspaceUserId"
   | "onboardingCompletedBy"
+  | "onboardingStartedBy"
   | "cleanupEligibleAt"
 > & {
   files: ApplicationFileView[];

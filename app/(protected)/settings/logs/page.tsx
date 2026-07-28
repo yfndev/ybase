@@ -49,6 +49,10 @@ const ACTION_LABELS: Record<string, string> = {
   "application.received": "Bewerbung eingegangen",
   "application.management_update": "Bewerbung aktualisiert",
   "application.status_change": "Bewerbungsstatus geändert",
+  "application.onboarding_linked": "YBase-Registrierung verknüpft",
+  "application.onboarding_started": "Onboarding gestartet",
+  "application.onboarding_completed": "Onboarding abgeschlossen",
+  "application.onboarding_reopened": "Onboarding wieder geöffnet",
 };
 
 export default async function LogsPage() {

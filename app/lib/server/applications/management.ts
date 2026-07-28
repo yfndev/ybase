@@ -27,6 +27,7 @@ function toApplicationView(
     withdrawalTokenHash: _withdrawalTokenHash,
     yfnEmailNormalized: _yfnEmailNormalized,
     workspaceUserId: _workspaceUserId,
+    onboardingStartedBy: _onboardingStartedBy,
     onboardingCompletedBy: _onboardingCompletedBy,
     cleanupEligibleAt: _cleanupEligibleAt,
     ownerIds,
