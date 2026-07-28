@@ -21,6 +21,9 @@ test("member status without a target timestamp only updates the status", () => {
   expect(memberStatusPatch("active", "onboarding", NOW)).toEqual({
     memberStatus: "onboarding",
   });
+  expect(memberStatusPatch("active", "inactive", NOW)).toEqual({
+    memberStatus: "inactive",
+  });
 });
 
 test("re-applying the same member status does not stamp a timestamp", () => {

@@ -1,5 +1,5 @@
 export type UserRole = "admin" | "finance" | "people_culture" | "member";
-export type MemberStatus = "onboarding" | "active" | "offboarded";
+export type MemberStatus = "onboarding" | "active" | "inactive" | "offboarded";
 export type TeamOnboardingStatus = "not_started" | "in_progress" | "completed";
 export type ProfileImageSource = "google" | "upload";
 

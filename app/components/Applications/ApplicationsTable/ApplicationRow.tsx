@@ -1,5 +1,7 @@
 import { TableCell, TableRow } from "@/components/ui/table";
+import { MemberStageBadge } from "@/components/Members/MemberStageBadge";
 import type { ApplicationWithFiles, User } from "@/lib/db/types";
+import type { MemberStage } from "@/lib/members/stages";
 import { ApplicationStatusBadge } from "../ApplicationStatusBadge";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("de-DE", {
@@ -11,17 +13,19 @@ export function ApplicationRow({
   application,
   ownersById,
   showJobPosting,
+  stage,
   onSelect,
 }: {
   application: ApplicationWithFiles;
   ownersById: Map<string, User>;
   showJobPosting: boolean;
+  stage?: MemberStage;
   onSelect: (application: ApplicationWithFiles) => void;
 }) {
   const identity =
     application.status === "withdrawn"
       ? "Anonymisierte Bewerbung"
-      : application.applicantName || application.applicantEmail;
+      : application.applicantName || "Unbekannte Bewerbung";
   const responsiblePeople = application.ownerIds.flatMap((ownerId) => {
     const owner = ownersById.get(ownerId);
     return owner ? [owner] : [];
@@ -46,18 +50,20 @@ export function ApplicationRow({
         >
           {identity}
         </button>
-        {application.applicantEmail ? (
-          <p className="text-xs text-muted-foreground">
-            {application.applicantEmail}
-          </p>
-        ) : null}
+      </TableCell>
+      <TableCell className="text-muted-foreground">
+        {application.applicantEmail || "—"}
+      </TableCell>
+      <TableCell>
+        {stage ? (
+          <MemberStageBadge stage={stage} />
+        ) : (
+          <ApplicationStatusBadge application={application} />
+        )}
       </TableCell>
       {showJobPosting ? (
         <TableCell>{application.jobPostingTitle}</TableCell>
       ) : null}
-      <TableCell>
-        <ApplicationStatusBadge application={application} />
-      </TableCell>
       {showJobPosting ? (
         <TableCell className="max-w-56 truncate">
           {responsibilityLabel}

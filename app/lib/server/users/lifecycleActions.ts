@@ -2,11 +2,17 @@
 
 import { z } from "zod";
 import { users } from "../../db/collections";
+import type { MemberStatus } from "../../db/types";
 import { addLog } from "../logs";
 import { loadManagedMember, requireActiveOrganizationTeam } from "./access";
 import { memberStatusPatch, teamOnboardingPatch } from "./memberLifecycle";
 
-const memberStatusSchema = z.enum(["onboarding", "active", "offboarded"]);
+const memberStatusSchema = z.enum([
+  "onboarding",
+  "active",
+  "inactive",
+  "offboarded",
+]);
 const teamOnboardingSchema = z.enum([
   "not_started",
   "in_progress",
@@ -15,7 +21,7 @@ const teamOnboardingSchema = z.enum([
 
 export async function setMemberStatus(input: {
   userId: string;
-  status: "onboarding" | "active" | "offboarded";
+  status: MemberStatus;
 }): Promise<void> {
   const { userId, status } = z
     .object({ userId: z.string(), status: memberStatusSchema })
@@ -27,7 +33,11 @@ export async function setMemberStatus(input: {
     );
   }
   if (status === "active") {
-    if (!target.teamId || !target.name?.trim() || !target.positionTitle?.trim()) {
+    if (
+      !target.teamId ||
+      !target.name?.trim() ||
+      !target.positionTitle?.trim()
+    ) {
       throw new Error(
         "Aktive Mitglieder benötigen einen Namen, ein aktives Team und eine Position.",
       );
