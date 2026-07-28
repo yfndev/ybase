@@ -24,7 +24,7 @@ export function MemberStatusField({ status, onboarding, onChange }: Props) {
       options={options}
       hint={
         isApprovalAllowed
-          ? "Aktive Mitglieder werden automatisch auf der Team-Seite synchronisiert."
+          ? undefined
           : "Die Aktivierung ist erst möglich, wenn alle Onboarding-Aufgaben abgeschlossen sind."
       }
     />

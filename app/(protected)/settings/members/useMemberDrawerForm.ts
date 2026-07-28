@@ -11,14 +11,17 @@ import type { MemberDrawerProps } from "./MemberDrawer.types";
 const LAST_ADMIN_MESSAGE =
   "Der letzte Admin kann nicht entfernt werden. Mindestens ein Admin ist erforderlich.";
 
-export function useMemberDrawerForm({
-  member,
-  teams,
-  departments,
-  canEditRoles,
-  adminCount,
-  onClose,
-}: MemberDrawerProps) {
+export function useMemberDrawerForm(
+  {
+    member,
+    teams,
+    departments,
+    canEditRoles,
+    adminCount,
+    onClose,
+  }: MemberDrawerProps,
+  onSavingChange: (isSaving: boolean) => void,
+) {
   const {
     updateProfile,
     setStatus: setStatusMutation,
@@ -49,6 +52,8 @@ export function useMemberDrawerForm({
     updateRole.isPending;
 
   const handleSave = async () => {
+    onSavingChange(true);
+
     try {
       const profile: {
         userId: string;
@@ -86,6 +91,8 @@ export function useMemberDrawerForm({
       toast.error(
         error instanceof Error ? error.message : "Fehler beim Speichern",
       );
+    } finally {
+      onSavingChange(false);
     }
   };
 
