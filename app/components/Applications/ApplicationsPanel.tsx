@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { useApplications } from "@/lib/client/applications/hooks/useApplications";
 import { useMembers } from "@/lib/client/members/hooks/useMembers";
 import type { ApplicationWithFiles } from "@/lib/db/types";
-import { ApplicationsTable } from "./ApplicationsTable";
+import { ApplicationsTable } from "./ApplicationsTable/ApplicationsTable";
 import { ApplicationsToolbar } from "./ApplicationsToolbar";
 import {
   ALL_APPLICATIONS,
