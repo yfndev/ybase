@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { User } from "@/lib/db/types";
 import { getInitials } from "@/lib/formatters/getInitials";
+import { profileAvatarUrl } from "@/lib/profile/avatar";
 import { MultiSelect, type MultiSelectOption } from "./MultiSelect";
 
 interface MemberOption extends MultiSelectOption {
@@ -32,7 +33,7 @@ function renderMemberOption(option: MemberOption) {
   return (
     <span className="flex min-w-0 items-center gap-3">
       <Avatar className="size-8">
-        <AvatarImage src={member.image} alt="" />
+        <AvatarImage src={profileAvatarUrl(member)} alt="" />
         <AvatarFallback className="text-xs font-semibold">
           {getInitials(member.name, member.email)}
         </AvatarFallback>
@@ -61,7 +62,7 @@ function renderSelectedMembers(options: MemberOption[], selectedCount: number) {
               key={member._id}
               className="size-7 border-2 border-background"
             >
-              <AvatarImage src={member.image} alt="" />
+              <AvatarImage src={profileAvatarUrl(member)} alt="" />
               <AvatarFallback className="text-[10px] font-semibold">
                 {getInitials(member.name, member.email)}
               </AvatarFallback>

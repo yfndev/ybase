@@ -6,6 +6,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import type { Department, Team, User } from "@/lib/db/types";
 import { getInitials } from "@/lib/formatters/getInitials";
 import { memberStageForStatus } from "@/lib/members/stages";
+import { profileAvatarUrl } from "@/lib/profile/avatar";
 
 interface Props {
   member: User;
@@ -30,7 +31,7 @@ export function MemberRow({
         <div className="flex items-center gap-2">
           <Avatar className="size-8">
             <AvatarImage
-              src={member.image}
+              src={profileAvatarUrl(member)}
               alt={`Profilbild von ${displayName}`}
               className="object-cover"
             />
