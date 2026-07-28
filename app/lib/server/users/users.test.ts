@@ -11,7 +11,13 @@ import {
   requireRole,
   requireUser,
 } from "../../auth/session";
-import { logs, organizations, teams, users } from "../../db/collections";
+import {
+  departments,
+  logs,
+  organizations,
+  teams,
+  users,
+} from "../../db/collections";
 import { newId } from "../../db/ids";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
@@ -168,7 +174,6 @@ test("setMemberStatus approves a fully onboarded member", async () => {
   await updateMemberProfile({
     userId: memberA,
     teamId: "team-1",
-    positionTitle: "Teammitglied",
   });
   await setMemberStatus({ userId: memberA, status: "active" });
   const updated = await (await users()).findOne({ _id: memberA });
@@ -178,12 +183,27 @@ test("setMemberStatus approves a fully onboarded member", async () => {
   expect(log?.entityId).toBe(memberA);
 });
 
-test("setMemberStatus requires complete team settings before activation", async () => {
+test("setMemberStatus requires a team assignment before activation", async () => {
   await setTeamOnboardingStatus({ userId: memberA, status: "completed" });
 
   await expect(
     setMemberStatus({ userId: memberA, status: "active" }),
-  ).rejects.toThrow("einen Namen, ein aktives Team und eine Position");
+  ).rejects.toThrow("ein aktives Team");
+});
+
+test("setMemberStatus activates a board member without a team", async () => {
+  await setTeamOnboardingStatus({ userId: memberA, status: "completed" });
+  const departmentId = await seedDepartment(orgA);
+  await updateMemberProfile({
+    userId: memberA,
+    boardMembership: { departmentId, isChair: true },
+  });
+
+  await setMemberStatus({ userId: memberA, status: "active" });
+
+  const updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.memberStatus).toBe("active");
+  expect(updated?.teamId).toBeUndefined();
 });
 
 test("completed onboarding stays locked after member approval", async () => {
@@ -245,16 +265,99 @@ async function seedTeam(
   });
 }
 
-test("updateMemberProfile assigns an active team and position title", async () => {
+async function seedDepartment(
+  organizationId: string,
+  isArchived = false,
+): Promise<string> {
+  const departmentId = newId();
+  await (
+    await departments()
+  ).insertOne({
+    _id: departmentId,
+    _creationTime: Date.now(),
+    name: "Operations",
+    organizationId,
+    isArchived,
+    createdBy: adminA,
+  });
+  return departmentId;
+}
+
+test("updateMemberProfile assigns a team and can clear an optional position", async () => {
   await seedTeam("team-1", orgA);
   await updateMemberProfile({
     userId: memberA,
     teamId: "team-1",
     positionTitle: "Treasurer",
+    isTeamLead: true,
   });
   const updated = await (await users()).findOne({ _id: memberA });
   expect(updated?.teamId).toBe("team-1");
   expect(updated?.positionTitle).toBe("Treasurer");
+  expect(updated?.isTeamLead).toBe(true);
+
+  await updateMemberProfile({
+    userId: memberA,
+    positionTitle: null,
+  });
+  const cleared = await (await users()).findOne({ _id: memberA });
+  expect(cleared?.positionTitle).toBeUndefined();
+});
+
+test("updateMemberProfile assigns and removes a board membership", async () => {
+  await seedTeam("team-1", orgA);
+  await updateMemberProfile({
+    userId: memberA,
+    teamId: "team-1",
+    isTeamLead: true,
+  });
+  const departmentId = await seedDepartment(orgA);
+  await updateMemberProfile({
+    userId: memberA,
+    boardMembership: { departmentId, isChair: true },
+  });
+  const assigned = await (await users()).findOne({ _id: memberA });
+  expect(assigned?.boardMembership).toEqual({
+    departmentId,
+    isChair: true,
+  });
+  expect(assigned?.teamId).toBeUndefined();
+  expect(assigned?.isTeamLead).toBe(false);
+
+  await updateMemberProfile({
+    userId: memberA,
+    teamId: "team-1",
+    boardMembership: null,
+  });
+  const removed = await (await users()).findOne({ _id: memberA });
+  expect(removed).not.toHaveProperty("boardMembership");
+  expect(removed?.teamId).toBe("team-1");
+});
+
+test("updateMemberProfile rejects an unavailable board department", async () => {
+  const foreignDepartmentId = await seedDepartment(orgB);
+  await expect(
+    updateMemberProfile({
+      userId: memberA,
+      boardMembership: {
+        departmentId: foreignDepartmentId,
+        isChair: false,
+      },
+    }),
+  ).rejects.toThrow("Department nicht verfügbar");
+});
+
+test("updateMemberProfile prevents a board member from joining a team", async () => {
+  const departmentId = await seedDepartment(orgA);
+  await updateMemberProfile({
+    userId: memberA,
+    boardMembership: { departmentId, isChair: false },
+  });
+  await seedTeam("team-1", orgA);
+
+  await expect(
+    updateMemberProfile({ userId: memberA, teamId: "team-1" }),
+  ).rejects.toThrow("einem Department statt einem Team");
 });
 
 test("updateMemberProfile rejects a team from another org", async () => {

@@ -48,9 +48,19 @@ erDiagram
         string role
         string teamId
         string positionTitle
+        boolean isTeamLead
+        object boardMembership
         string applicationId
         string memberStatus
         string teamOnboardingStatus
+    }
+
+    teams {
+        string _id
+        string organizationId
+        string departmentId
+        string name
+        boolean isArchived
     }
 
     projects {

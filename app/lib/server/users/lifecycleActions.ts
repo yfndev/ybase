@@ -4,7 +4,11 @@ import { z } from "zod";
 import { users } from "../../db/collections";
 import type { MemberStatus } from "../../db/types";
 import { addLog } from "../logs";
-import { loadManagedMember, requireActiveOrganizationTeam } from "./access";
+import {
+  loadManagedMember,
+  requireActiveOrganizationDepartment,
+  requireActiveOrganizationTeam,
+} from "./access";
 import { memberStatusPatch, teamOnboardingPatch } from "./memberLifecycle";
 
 const memberStatusSchema = z.enum([
@@ -33,19 +37,30 @@ export async function setMemberStatus(input: {
     );
   }
   if (status === "active") {
-    if (
-      !target.teamId ||
-      !target.name?.trim() ||
-      !target.positionTitle?.trim()
-    ) {
-      throw new Error(
-        "Aktive Mitglieder benötigen einen Namen, ein aktives Team und eine Position.",
+    if (!target.name?.trim()) {
+      throw new Error("Aktive Mitglieder benötigen einen Namen.");
+    }
+    if (target.boardMembership) {
+      if (target.teamId) {
+        throw new Error(
+          "Vorstandsmitglieder dürfen keinem Team direkt zugeordnet sein.",
+        );
+      }
+      await requireActiveOrganizationDepartment(
+        target.boardMembership.departmentId,
+        currentUser.organizationId,
+      );
+    } else {
+      if (!target.teamId) {
+        throw new Error(
+          "Aktive Mitglieder benötigen ein aktives Team oder ein Vorstands-Department.",
+        );
+      }
+      await requireActiveOrganizationTeam(
+        target.teamId,
+        currentUser.organizationId,
       );
     }
-    await requireActiveOrganizationTeam(
-      target.teamId,
-      currentUser.organizationId,
-    );
   }
 
   const patch = memberStatusPatch(target.memberStatus, status, Date.now());

@@ -35,11 +35,28 @@ export function useMemberDrawerForm(
     member.teamOnboardingStatus,
   );
   const [role, setRole] = useState<UserRole>(member.role ?? "member");
+  const [isTeamLead, setIsTeamLead] = useState(member.isTeamLead ?? false);
+  const [isBoardMember, setIsBoardMember] = useState(
+    member.boardMembership !== undefined,
+  );
+  const [boardDepartmentId, setBoardDepartmentId] = useState(
+    member.boardMembership?.departmentId ?? "",
+  );
+  const [boardIsChair, setBoardIsChair] = useState(
+    member.boardMembership?.isChair ?? false,
+  );
 
   const activeTeams = teams.filter((team) => !team.isArchived);
+  const activeDepartments = departments.filter(
+    (department) => !department.isArchived,
+  );
   const teamOptions = activeTeams.map((team) => ({
     value: team._id,
     label: team.name,
+  }));
+  const departmentOptions = activeDepartments.map((department) => ({
+    value: department._id,
+    label: department.name,
   }));
   const selectedTeam = activeTeams.find((team) => team._id === teamId);
   const department = selectedTeam
@@ -55,17 +72,57 @@ export function useMemberDrawerForm(
     onSavingChange(true);
 
     try {
+      if (isBoardMember && !boardDepartmentId) {
+        toast.error("Bitte wähle ein Department aus.");
+        return;
+      }
+      if (!isBoardMember && status === "active" && !teamId) {
+        toast.error("Bitte wähle ein Team aus.");
+        return;
+      }
+
       const profile: {
         userId: string;
-        teamId?: string;
-        positionTitle?: string;
+        teamId?: string | null;
+        positionTitle?: string | null;
+        isTeamLead?: boolean;
+        boardMembership?: {
+          departmentId: string;
+          isChair: boolean;
+        } | null;
       } = { userId: member._id };
-      if (teamId && teamId !== member.teamId) profile.teamId = teamId;
+      if (isBoardMember) {
+        if (member.teamId) profile.teamId = null;
+      } else if (teamId && teamId !== member.teamId) {
+        profile.teamId = teamId;
+      }
       const trimmed = position.trim();
-      if (trimmed && trimmed !== member.positionTitle)
-        profile.positionTitle = trimmed;
-      if (profile.teamId || profile.positionTitle)
+      const currentPosition = member.positionTitle?.trim() ?? "";
+      if (trimmed !== currentPosition) {
+        profile.positionTitle = trimmed || null;
+      }
+      const nextIsTeamLead = isBoardMember ? false : isTeamLead;
+      if (nextIsTeamLead !== (member.isTeamLead ?? false)) {
+        profile.isTeamLead = nextIsTeamLead;
+      }
+      const nextBoardMembership = isBoardMember
+        ? { departmentId: boardDepartmentId, isChair: boardIsChair }
+        : null;
+      const currentBoardMembership = member.boardMembership ?? null;
+      if (
+        JSON.stringify(nextBoardMembership) !==
+        JSON.stringify(currentBoardMembership)
+      ) {
+        profile.boardMembership = nextBoardMembership;
+      }
+      if (
+        profile.teamId ||
+        profile.positionTitle !== undefined ||
+        profile.isTeamLead !== undefined ||
+        profile.boardMembership !== undefined
+      ) {
         await updateProfile.mutateAsync(profile);
+      }
 
       if (onboarding !== member.teamOnboardingStatus)
         await setOnboardingMutation.mutateAsync({
@@ -107,7 +164,16 @@ export function useMemberDrawerForm(
     setOnboarding,
     role,
     setRole,
+    isTeamLead,
+    setIsTeamLead,
+    isBoardMember,
+    setIsBoardMember,
+    boardDepartmentId,
+    setBoardDepartmentId,
+    boardIsChair,
+    setBoardIsChair,
     teamOptions,
+    departmentOptions,
     department,
     canEditRoles,
     isSaving,

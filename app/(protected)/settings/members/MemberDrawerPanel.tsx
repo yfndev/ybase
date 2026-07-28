@@ -12,6 +12,7 @@ import { Loader2 } from "lucide-react";
 import { LabeledSelect } from "./LabeledSelect";
 import { MemberStatusField } from "./MemberStatusField";
 import { ROLE_OPTIONS, TEAM_ONBOARDING_OPTIONS } from "./memberLabels";
+import { PublicOrganizationFields } from "./PublicOrganizationFields";
 import type { MemberDrawerFormState } from "./useMemberDrawerForm";
 
 interface Props {
@@ -55,17 +56,9 @@ export function MemberDrawerPanel({
       </div>
 
       <div className="flex flex-1 flex-col gap-4 px-6">
-        <LabeledSelect
-          id="member-team"
-          label="Team"
-          value={form.teamId}
-          onValueChange={form.setTeamId}
-          options={form.teamOptions}
-          placeholder="Team wählen"
-          hint={`Department: ${form.department?.name ?? "—"}`}
-        />
+        <PublicOrganizationFields form={form} />
         <div className="grid gap-1.5">
-          <Label htmlFor="member-position">Position</Label>
+          <Label htmlFor="member-position">Position (optional)</Label>
           <Input
             id="member-position"
             value={form.position}
@@ -90,7 +83,7 @@ export function MemberDrawerPanel({
         />
         <LabeledSelect
           id="member-role"
-          label="Rolle"
+          label="Berechtigungen"
           value={form.role}
           onValueChange={(value) => form.setRole(value as UserRole)}
           options={ROLE_OPTIONS}
