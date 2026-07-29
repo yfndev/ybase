@@ -15,6 +15,14 @@ interface Props {
   onSelect: (member: User) => void;
 }
 
+function positionLabel(member: User, teams: Team[]): string {
+  if (member.boardMembership?.isChair) return "Vorsitz";
+  if (member.boardMembership) return "Vorstand";
+  if (teams.length > 0 && teams.every((team) => team.isChapter)) return "—";
+  if (member.isTeamLead || member.isSecondaryTeamLead) return "Lead";
+  return member.positionTitle || "—";
+}
+
 export function MemberRow({
   member,
   teamsById,
@@ -22,7 +30,29 @@ export function MemberRow({
   onSelect,
 }: Props) {
   const team = member.teamId ? teamsById.get(member.teamId) : undefined;
-  const department = team ? departmentsById.get(team.departmentId) : undefined;
+  const secondaryTeam = member.secondaryTeamId
+    ? teamsById.get(member.secondaryTeamId)
+    : undefined;
+  const boardDepartment = member.boardMembership
+    ? departmentsById.get(member.boardMembership.departmentId)
+    : undefined;
+  const teamDepartments = [team, secondaryTeam].flatMap((entry) => {
+    const department = entry
+      ? departmentsById.get(entry.departmentId)
+      : undefined;
+    return department ? [department.name] : [];
+  });
+  const departmentLabel =
+    boardDepartment?.name ?? ([...new Set(teamDepartments)].join(", ") || "—");
+  const teamLabel = member.boardMembership
+    ? "Vorstand"
+    : [team, secondaryTeam]
+        .flatMap((entry) => (entry ? [entry.name] : []))
+        .join(", ") || "—";
+  const position = positionLabel(
+    member,
+    [team, secondaryTeam].filter((entry) => entry !== undefined),
+  );
   const displayName = member.name || "Unbekanntes Mitglied";
 
   return (
@@ -57,9 +87,9 @@ export function MemberRow({
       <TableCell>
         <MemberStageBadge stage={memberStageForStatus(member.memberStatus)} />
       </TableCell>
-      <TableCell>{department?.name ?? "—"}</TableCell>
-      <TableCell>{team?.name ?? "—"}</TableCell>
-      <TableCell className="pr-4">{member.positionTitle || "—"}</TableCell>
+      <TableCell>{departmentLabel}</TableCell>
+      <TableCell>{teamLabel}</TableCell>
+      <TableCell className="pr-4">{position}</TableCell>
     </TableRow>
   );
 }

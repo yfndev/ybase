@@ -29,7 +29,11 @@ export function TeamsSection() {
   const [createOpen, setCreateOpen] = useState(false);
   const [archivedOpen, setArchivedOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValues, setEditValues] = useState({ name: "", departmentId: "" });
+  const [editValues, setEditValues] = useState({
+    name: "",
+    departmentId: "",
+    isChapter: false,
+  });
 
   const departmentNames = useMemo(() => {
     const map = new Map<string, string>();
@@ -46,11 +50,11 @@ export function TeamsSection() {
 
   const handleUpdate = async (teamId: string) => {
     const name = editValues.name.trim();
-    const { departmentId } = editValues;
+    const { departmentId, isChapter } = editValues;
     setEditingId(null);
     if (!name || !departmentId) return;
     try {
-      await update.mutateAsync({ teamId, name, departmentId });
+      await update.mutateAsync({ teamId, name, departmentId, isChapter });
       toast.success("Team aktualisiert");
     } catch {
       toast.error("Fehler beim Aktualisieren");
@@ -108,6 +112,7 @@ export function TeamsSection() {
                   </div>
                 </TableHead>
                 <TableHead>Department</TableHead>
+                <TableHead>Chapter</TableHead>
                 <TableHead className="w-px" />
               </TableRow>
             </TableHeader>
@@ -129,6 +134,7 @@ export function TeamsSection() {
                     setEditValues({
                       name: team.name,
                       departmentId: team.departmentId,
+                      isChapter: team.isChapter ?? false,
                     });
                   }}
                   onCancelEdit={() => setEditingId(null)}

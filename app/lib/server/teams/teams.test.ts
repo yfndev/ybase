@@ -6,7 +6,7 @@ vi.mock("../../auth/session", () => ({
 }));
 
 import { requirePermission, requireUser } from "../../auth/session";
-import { departments, organizations, teams } from "../../db/collections";
+import { departments, organizations, teams, users } from "../../db/collections";
 import { newId } from "../../db/ids";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
@@ -72,7 +72,11 @@ beforeEach(async () => {
 });
 
 test("createTeam links to a department and stays scoped to the org", async () => {
-  await createTeam({ name: "Team A1", departmentId: departmentA });
+  await createTeam({
+    name: "Team A1",
+    departmentId: departmentA,
+    isChapter: true,
+  });
   const foreignDept = await insertDepartment(orgB);
   await (
     await teams()
@@ -89,6 +93,7 @@ test("createTeam links to a department and stays scoped to the org", async () =>
   const list = await getActiveTeams();
   expect(list.map((t) => t.name)).toEqual(["Team A1"]);
   expect(list[0].departmentId).toBe(departmentA);
+  expect(list[0].isChapter).toBe(true);
 });
 
 test("createTeam rejects an archived department", async () => {
@@ -108,11 +113,61 @@ test("createTeam rejects a department from another org", async () => {
 test("updateTeam changes name and department", async () => {
   const id = await createTeam({ name: "Alt", departmentId: departmentA });
   const otherDept = await insertDepartment(orgA);
-  await updateTeam({ teamId: id, name: "Neu", departmentId: otherDept });
+  await updateTeam({
+    teamId: id,
+    name: "Neu",
+    departmentId: otherDept,
+    isChapter: true,
+  });
   expect((await getActiveTeams())[0]).toMatchObject({
     name: "Neu",
     departmentId: otherDept,
+    isChapter: true,
   });
+});
+
+test("marking a team as chapter removes its lead assignments", async () => {
+  const id = await createTeam({ name: "Chapter", departmentId: departmentA });
+  const primaryMemberId = newId();
+  const secondaryMemberId = newId();
+  await (
+    await users()
+  ).insertMany([
+    {
+      _id: primaryMemberId,
+      _creationTime: Date.now(),
+      name: "Primary Chapter Member",
+      organizationId: orgA,
+      teamId: id,
+      isTeamLead: true,
+      memberStatus: "active",
+      teamOnboardingStatus: "completed",
+    },
+    {
+      _id: secondaryMemberId,
+      _creationTime: Date.now(),
+      name: "Secondary Chapter Member",
+      organizationId: orgA,
+      secondaryTeamId: id,
+      isSecondaryTeamLead: true,
+      memberStatus: "active",
+      teamOnboardingStatus: "completed",
+    },
+  ]);
+
+  await updateTeam({
+    teamId: id,
+    name: "Chapter",
+    departmentId: departmentA,
+    isChapter: true,
+  });
+
+  const primaryMember = await (await users()).findOne({ _id: primaryMemberId });
+  const secondaryMember = await (
+    await users()
+  ).findOne({ _id: secondaryMemberId });
+  expect(primaryMember?.isTeamLead).toBe(false);
+  expect(secondaryMember?.isSecondaryTeamLead).toBe(false);
 });
 
 test("archive moves a team out of the active list and back", async () => {

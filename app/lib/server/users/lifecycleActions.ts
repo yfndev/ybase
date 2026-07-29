@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { users } from "../../db/collections";
-import type { MemberStatus } from "../../db/types";
+import type { MemberStatus, Team } from "../../db/types";
 import { addLog } from "../logs";
 import {
   loadManagedMember,
@@ -41,7 +41,12 @@ export async function setMemberStatus(input: {
       throw new Error("Aktive Mitglieder benötigen einen Namen.");
     }
     if (target.boardMembership) {
-      if (target.teamId) {
+      if (
+        target.teamId ||
+        target.secondaryTeamId ||
+        target.isTeamLead ||
+        target.isSecondaryTeamLead
+      ) {
         throw new Error(
           "Vorstandsmitglieder dürfen keinem Team direkt zugeordnet sein.",
         );
@@ -56,10 +61,37 @@ export async function setMemberStatus(input: {
           "Aktive Mitglieder benötigen ein aktives Team oder ein Vorstands-Department.",
         );
       }
-      await requireActiveOrganizationTeam(
+      const team = await requireActiveOrganizationTeam(
         target.teamId,
         currentUser.organizationId,
       );
+      if (team.isChapter && target.isTeamLead) {
+        throw new Error("Chapter haben keine Lead-Position.");
+      }
+      let secondaryTeam: Team | undefined;
+      if (target.secondaryTeamId) {
+        if (target.secondaryTeamId === target.teamId) {
+          throw new Error(
+            "Hauptteam und weiteres Team müssen unterschiedlich sein.",
+          );
+        }
+        secondaryTeam = await requireActiveOrganizationTeam(
+          target.secondaryTeamId,
+          currentUser.organizationId,
+        );
+        if (secondaryTeam.isChapter && target.isSecondaryTeamLead) {
+          throw new Error("Chapter haben keine Lead-Position.");
+        }
+      } else if (target.isSecondaryTeamLead) {
+        throw new Error("Ein Lead benötigt ein zugeordnetes weiteres Team.");
+      }
+      if (
+        target.positionTitle &&
+        team.isChapter &&
+        (!secondaryTeam || secondaryTeam.isChapter)
+      ) {
+        throw new Error("Chapter haben keine allgemeine Position.");
+      }
     }
   }
 

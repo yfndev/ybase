@@ -13,9 +13,16 @@ Organigramm veröffentlicht. Eine optionale `boardMembership` ordnet ein
 Vorstandsmitglied direkt einem aktiven Department zu. Vorstandsmitglieder sind
 keinem Team innerhalb dieses Departments zugeordnet.
 
-`isTeamLead` markiert Mitglieder, die im jeweiligen Team hervorgehoben werden.
-Für bestehende Consumer enthält `role` bei diesen Mitgliedern zusätzlich
-`"Lead"` und ist für alle anderen Mitglieder leer.
+Ein optionales `secondaryTeamId` veröffentlicht dieselbe Person zusätzlich als
+Mitglied eines zweiten Teams. `isTeamLead` markiert die Person im Hauptteam aus
+`teamId` als Lead, `isSecondaryTeamLead` unabhängig davon im weiteren Team aus
+`secondaryTeamId`. Für bestehende Consumer enthält `role` bei diesen
+Mitgliedschaften zusätzlich `"Lead"` und ist für alle anderen Mitgliedschaften
+leer.
+
+Teams mit `isChapter: true` werden als Chapter veröffentlicht. Chapter führen
+weder Lead- noch allgemeine Positionen und stehen innerhalb ihres Departments
+nach den übrigen Teams.
 
 Interne Berechtigungsrollen wie `admin`, `finance` oder `people_culture` werden
 nicht veröffentlicht.
@@ -58,6 +65,7 @@ Lead-Hervorhebung. Weitere Positionen werden nicht dargestellt.
           {
             "id": "ybase:org:team:team",
             "name": "Startup in School",
+            "isChapter": false,
             "members": [
               {
                 "id": "ybase:org:member:user",

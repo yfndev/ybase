@@ -47,8 +47,10 @@ erDiagram
         string googleWorkspaceUserId
         string role
         string teamId
+        string secondaryTeamId
         string positionTitle
         boolean isTeamLead
+        boolean isSecondaryTeamLead
         object boardMembership
         string applicationId
         string memberStatus
@@ -60,6 +62,7 @@ erDiagram
         string organizationId
         string departmentId
         string name
+        boolean isChapter
         boolean isArchived
     }
 

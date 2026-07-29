@@ -34,8 +34,10 @@ export interface User {
   bic?: string;
   accountHolder?: string;
   teamId?: string;
+  secondaryTeamId?: string;
   positionTitle?: string;
   isTeamLead?: boolean;
+  isSecondaryTeamLead?: boolean;
   boardMembership?: BoardMembership;
   applicationId?: string;
   memberStatus: MemberStatus;

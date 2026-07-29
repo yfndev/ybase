@@ -23,7 +23,11 @@ test("POST creates a team through a stable HTTP endpoint", async () => {
     new Request("http://localhost/api/teams", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: "People & Culture", departmentId: "ops" }),
+      body: JSON.stringify({
+        name: "People & Culture",
+        departmentId: "ops",
+        isChapter: true,
+      }),
     }),
   );
 
@@ -32,6 +36,7 @@ test("POST creates a team through a stable HTTP endpoint", async () => {
   expect(createTeam).toHaveBeenCalledWith({
     name: "People & Culture",
     departmentId: "ops",
+    isChapter: true,
   });
 });
 

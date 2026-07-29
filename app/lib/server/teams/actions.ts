@@ -3,21 +3,27 @@
 import { z } from "zod";
 import { USER_PERMISSIONS } from "../../auth/roles";
 import { requirePermission } from "../../auth/session";
-import { departments, teams } from "../../db/collections";
+import { departments, teams, users } from "../../db/collections";
 import { newId } from "../../db/ids";
 import { addLog } from "../logs";
 
 const teamFieldsSchema = z.object({
   name: z.string().trim().min(1),
   departmentId: z.string().trim().min(1),
+  isChapter: z.boolean().optional(),
 });
 
 export async function createTeam(input: {
   name: string;
   departmentId: string;
+  isChapter?: boolean;
 }): Promise<string> {
   const user = await requirePermission(USER_PERMISSIONS.organizationStructure);
-  const { name, departmentId } = teamFieldsSchema.parse(input);
+  const {
+    name,
+    departmentId,
+    isChapter = false,
+  } = teamFieldsSchema.parse(input);
   await requireActiveDepartment(departmentId, user.organizationId);
 
   const _id = newId();
@@ -29,6 +35,7 @@ export async function createTeam(input: {
     name,
     departmentId,
     organizationId: user.organizationId,
+    isChapter,
     isArchived: false,
     createdBy: user._id,
   });
@@ -40,9 +47,10 @@ export async function updateTeam(input: {
   teamId: string;
   name: string;
   departmentId: string;
+  isChapter?: boolean;
 }): Promise<void> {
   const user = await requirePermission(USER_PERMISSIONS.organizationStructure);
-  const { teamId, name, departmentId } = z
+  const { teamId, name, departmentId, isChapter } = z
     .object({ teamId: z.string(), ...teamFieldsSchema.shape })
     .parse(input);
 
@@ -50,7 +58,28 @@ export async function updateTeam(input: {
   await requireActiveDepartment(departmentId, user.organizationId);
   await (
     await teams()
-  ).updateOne({ _id: teamId }, { $set: { name, departmentId } });
+  ).updateOne(
+    { _id: teamId },
+    {
+      $set: {
+        name,
+        departmentId,
+        ...(isChapter !== undefined ? { isChapter } : {}),
+      },
+    },
+  );
+  if (isChapter) {
+    await Promise.all([
+      (await users()).updateMany(
+        { organizationId: user.organizationId, teamId },
+        { $set: { isTeamLead: false } },
+      ),
+      (await users()).updateMany(
+        { organizationId: user.organizationId, secondaryTeamId: teamId },
+        { $set: { isSecondaryTeamLead: false } },
+      ),
+    ]);
+  }
   await addLog(user.organizationId, user._id, "team.update", teamId, name);
 }
 

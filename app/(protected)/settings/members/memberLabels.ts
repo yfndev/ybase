@@ -1,8 +1,4 @@
-import type {
-  MemberStatus,
-  TeamOnboardingStatus,
-  UserRole,
-} from "@/lib/db/types";
+import type { MemberStatus, UserRole } from "@/lib/db/types";
 
 interface Option<T extends string> {
   value: T;
@@ -14,12 +10,6 @@ export const MEMBER_STATUS_OPTIONS: Option<MemberStatus>[] = [
   { value: "active", label: "Vereinsmitglied" },
   { value: "inactive", label: "Inaktiv" },
   { value: "offboarded", label: "Offboarded" },
-];
-
-export const TEAM_ONBOARDING_OPTIONS: Option<TeamOnboardingStatus>[] = [
-  { value: "not_started", label: "Nicht begonnen" },
-  { value: "in_progress", label: "In Bearbeitung" },
-  { value: "completed", label: "Abgeschlossen" },
 ];
 
 export const ROLE_OPTIONS: Option<UserRole>[] = [
