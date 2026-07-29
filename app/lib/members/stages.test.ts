@@ -54,7 +54,6 @@ describe("member lifecycle stages", () => {
   const members = [
     member("onboarding-member", "onboarding"),
     member("active-member", "active"),
-    member("inactive-member", "inactive"),
     member("planned-member", "offboarding_planned"),
     member("offboarding-member", "offboarding"),
     member("archived-member", "archived"),
@@ -104,9 +103,6 @@ describe("member lifecycle stages", () => {
 
   test("keeps offboarding phases separate and maps legacy records to archive", () => {
     expect(
-      membersForStage(members, "inactive").map((entry) => entry._id),
-    ).toEqual(["inactive-member"]);
-    expect(
       membersForStage(members, "offboarding_planned").map((entry) => entry._id),
     ).toEqual(["planned-member"]);
     expect(
@@ -123,7 +119,6 @@ describe("member lifecycle stages", () => {
       interview: 1,
       onboarding: 2,
       active: 1,
-      inactive: 1,
       offboarding_planned: 1,
       offboarding: 1,
       archived: 2,

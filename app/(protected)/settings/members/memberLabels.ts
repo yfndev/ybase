@@ -14,7 +14,6 @@ const MEMBER_STATUS_OPTIONS: Option<MemberStatus>[] = [
   { value: "active", label: "Vereinsmitglied" },
   { value: "offboarding_planned", label: "Offboarding vorgemerkt" },
   { value: "offboarding", label: "Offboarding" },
-  { value: "inactive", label: "Inaktiv" },
   { value: "archived", label: "Archiviert" },
 ];
 

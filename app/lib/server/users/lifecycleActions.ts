@@ -15,7 +15,6 @@ import { memberStatusPatch, teamOnboardingPatch } from "./memberLifecycle";
 const memberStatusSchema = z.enum([
   "onboarding",
   "active",
-  "inactive",
   "offboarding_planned",
   "offboarding",
   "archived",

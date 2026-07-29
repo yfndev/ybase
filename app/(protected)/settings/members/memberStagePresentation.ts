@@ -28,10 +28,6 @@ export const MEMBER_STAGE_EMPTY_TEXT: Partial<Record<MemberStage, EmptyText>> =
       title: "Keine Vereinsmitglieder gefunden",
       description: "Passe Suche oder Filter an, um Mitglieder anzuzeigen.",
     },
-    inactive: {
-      title: "Keine inaktiven Mitglieder",
-      description: "Vorübergehend inaktive Mitglieder erscheinen hier.",
-    },
     offboarding_planned: {
       title: "Kein Offboarding vorgemerkt",
       description:

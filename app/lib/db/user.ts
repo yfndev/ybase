@@ -2,7 +2,6 @@ export type UserRole = "admin" | "finance" | "people_culture" | "member";
 export type MemberStatus =
   | "onboarding"
   | "active"
-  | "inactive"
   | "offboarding_planned"
   | "offboarding"
   | "archived"

@@ -7,7 +7,6 @@ describe("memberStatusOptions", () => {
       "active",
       "offboarding_planned",
       "offboarding",
-      "inactive",
       "archived",
     ]);
   });
@@ -19,7 +18,6 @@ describe("memberStatusOptions", () => {
         "active",
         "offboarding_planned",
         "offboarding",
-        "inactive",
         "archived",
       ],
     );
