@@ -11,7 +11,6 @@ export const MEMBER_STAGE_OPTIONS = [
   { value: "active", label: "Vereinsmitglied" },
   { value: "offboarding_planned", label: "Offboarding vorgemerkt" },
   { value: "offboarding", label: "Offboarding" },
-  { value: "inactive", label: "Inaktiv" },
   { value: "archived", label: "Archiviert" },
 ] as const;
 
@@ -47,7 +46,6 @@ const MEMBER_STATUSES_BY_STAGE: Partial<
   Record<MemberStage, readonly MemberStatus[]>
 > = {
   active: ["active"],
-  inactive: ["inactive"],
   offboarding_planned: ["offboarding_planned"],
   offboarding: ["offboarding"],
   archived: ["archived", "offboarded"],

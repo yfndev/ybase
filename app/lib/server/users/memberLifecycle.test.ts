@@ -31,12 +31,9 @@ test("archiving a member records the completion timestamp", () => {
   });
 });
 
-test("member status without a target timestamp only updates the status", () => {
+test("returning to onboarding only updates the status", () => {
   expect(memberStatusPatch("active", "onboarding", NOW)).toEqual({
     memberStatus: "onboarding",
-  });
-  expect(memberStatusPatch("active", "inactive", NOW)).toEqual({
-    memberStatus: "inactive",
   });
 });
 
