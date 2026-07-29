@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SheetFooter } from "@/components/ui/sheet";
-import type { TeamOnboardingStatus, User, UserRole } from "@/lib/db/types";
+import type { User, UserRole } from "@/lib/db/types";
 import { getInitials } from "@/lib/formatters/getInitials";
 import { memberStageForStatus } from "@/lib/members/stages";
 import { profileAvatarUrl } from "@/lib/profile/avatar";
 import { Loader2 } from "lucide-react";
 import { LabeledSelect } from "./LabeledSelect";
 import { MemberStatusField } from "./MemberStatusField";
-import { ROLE_OPTIONS, TEAM_ONBOARDING_OPTIONS } from "./memberLabels";
+import { ROLE_OPTIONS } from "./memberLabels";
 import { PublicOrganizationFields } from "./PublicOrganizationFields";
 import type { MemberDrawerFormState } from "./useMemberDrawerForm";
 
@@ -68,18 +68,8 @@ export function MemberDrawerPanel({
         </div>
         <MemberStatusField
           status={form.status}
-          onboarding={form.onboarding}
+          onboarding={member.teamOnboardingStatus}
           onChange={form.setStatus}
-        />
-        <LabeledSelect
-          id="member-onboarding"
-          label="Onboarding-Aufgaben"
-          value={form.onboarding}
-          onValueChange={(value) =>
-            form.setOnboarding(value as TeamOnboardingStatus)
-          }
-          options={TEAM_ONBOARDING_OPTIONS}
-          disabled={member.memberStatus === "active"}
         />
         <LabeledSelect
           id="member-role"
