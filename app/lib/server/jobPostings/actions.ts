@@ -14,6 +14,7 @@ import { provisionTallyFormDraft } from "./tallyFormProvisioning";
 const optionalText = z.string().trim().optional();
 const DEFAULT_SHORT_TEXT =
   "Baue mit uns die größte Community für junge (angehende) Gründer:innen im deutschsprachigen Raum auf.";
+const DEFAULT_REQUIREMENTS = "<ul><li>Alter (&lt;25 Jahre)</li></ul>";
 
 const contentSchema = z.object({
   title: z.string().trim().min(1),
@@ -79,6 +80,7 @@ export async function createJobPostingDraft(input: {
     status: "draft",
     title,
     shortText: DEFAULT_SHORT_TEXT,
+    requirements: DEFAULT_REQUIREMENTS,
     createdBy: user._id,
   });
   await addLog(user.organizationId, user._id, "jobPosting.create", _id, title);
