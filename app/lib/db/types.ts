@@ -1,6 +1,10 @@
 export type * from "./application";
 export type { JobFeedToken } from "./jobFeedToken";
-export type { JobPosting, JobPostingStatus } from "./jobPosting";
+export type {
+  JobPosting,
+  JobPostingStatus,
+  JobPostingUrgency,
+} from "./jobPosting";
 export type { Log } from "./log";
 export type { Organization } from "./organization";
 export type { Department, Team } from "./orgStructureTypes";
