@@ -10,8 +10,8 @@ import type { ApplicationWithFiles, User } from "@/lib/db/types";
 import { useIsAdmin } from "@/lib/hooks/useCurrentUserRole";
 import {
   applicationsForStage,
-  MEMBER_STATUS_BY_STAGE,
   memberStageCounts,
+  memberStatusesForStage,
   membersForStage,
   type MemberStage,
 } from "@/lib/members/stages";
@@ -76,11 +76,11 @@ export function MembersClient({
     () => membersForStage(members, stage),
     [members, stage],
   );
-  const memberStatus = MEMBER_STATUS_BY_STAGE[stage];
-  const visibleMembers = memberStatus
+  const memberStatuses = memberStatusesForStage(stage);
+  const visibleMembers = memberStatuses.length
     ? filterMembers(
         stagedMembers,
-        { ...filters, status: memberStatus },
+        { ...filters, status: memberStatuses },
         teamsById,
       )
     : [];
@@ -90,15 +90,11 @@ export function MembersClient({
     "onboarding",
     "archived",
   ].includes(stage);
-  const showsMembers = memberStatus !== undefined;
+  const showsMembers = memberStatuses.length > 0;
 
   const adminCount = members.filter((member) => member.role === "admin").length;
-  const selectedApplicationEmptyText = showsApplications
-    ? APPLICATION_STAGE_EMPTY_TEXT[stage]
-    : undefined;
-  const selectedMemberEmptyText = showsMembers
-    ? MEMBER_STAGE_EMPTY_TEXT[stage]
-    : undefined;
+  const selectedApplicationEmptyText = APPLICATION_STAGE_EMPTY_TEXT[stage];
+  const selectedMemberEmptyText = MEMBER_STAGE_EMPTY_TEXT[stage];
 
   return (
     <div className="space-y-6">
@@ -117,35 +113,43 @@ export function MembersClient({
       />
 
       {showsApplications && selectedApplicationEmptyText ? (
-        <ApplicationsPanel
-          applications={stagedApplications}
-          members={members}
-          isLoading={applicationsLoading || membersLoading}
-          showStatusFilter={false}
-          stage={stage}
-          detailBackUrl={`/members?stage=${stage}`}
-          emptyTitle={selectedApplicationEmptyText.title}
-          emptyDescription={selectedApplicationEmptyText.description}
-          onSelect={
-            stage === "onboarding"
-              ? (application) => {
-                  const member = members.find(
-                    (entry) =>
-                      entry._id === application.onboardingUserId ||
-                      entry.applicationId === application._id,
-                  );
-                  setSelectedAcceptedApplication(member ? null : application);
-                  setSelectedMember(member ?? null);
-                }
-              : undefined
-          }
-        />
+        <section className={stage === "archived" ? "space-y-4" : undefined}>
+          {stage === "archived" ? (
+            <h2 className="text-lg font-semibold">Archivierte Bewerbungen</h2>
+          ) : null}
+          <ApplicationsPanel
+            applications={stagedApplications}
+            members={members}
+            isLoading={applicationsLoading || membersLoading}
+            showStatusFilter={false}
+            stage={stage}
+            detailBackUrl={`/members?stage=${stage}`}
+            emptyTitle={selectedApplicationEmptyText.title}
+            emptyDescription={selectedApplicationEmptyText.description}
+            onSelect={
+              stage === "onboarding"
+                ? (application) => {
+                    const member = members.find(
+                      (entry) =>
+                        entry._id === application.onboardingUserId ||
+                        entry.applicationId === application._id,
+                    );
+                    setSelectedAcceptedApplication(member ? null : application);
+                    setSelectedMember(member ?? null);
+                  }
+                : undefined
+            }
+          />
+        </section>
       ) : null}
 
       {showsMembers && selectedMemberEmptyText ? (
         <section className="space-y-4">
+          {stage === "archived" ? (
+            <h2 className="text-lg font-semibold">Archivierte Mitglieder</h2>
+          ) : null}
           <MembersToolbar
-            filters={{ ...filters, status: memberStatus }}
+            filters={{ ...filters, status: memberStatuses }}
             departments={departments}
             teams={teams}
             onSearchChange={(search) =>

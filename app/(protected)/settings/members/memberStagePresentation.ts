@@ -36,9 +36,18 @@ export const MEMBER_STAGE_EMPTY_TEXT: Partial<Record<MemberStage, EmptyText>> =
       title: "Keine inaktiven Mitglieder",
       description: "Vorübergehend inaktive Mitglieder erscheinen hier.",
     },
-    offboarded: {
-      title: "Keine offboardeten Mitglieder",
+    offboarding_planned: {
+      title: "Kein Offboarding vorgemerkt",
       description:
-        "Ausgetretene und vollständig offboardete Mitglieder erscheinen hier.",
+        "Intern für ein kommendes Offboarding vorgemerkte Mitglieder erscheinen hier.",
+    },
+    offboarding: {
+      title: "Kein laufendes Offboarding",
+      description:
+        "Mitglieder im offiziellen Offboarding-Prozess erscheinen hier.",
+    },
+    archived: {
+      title: "Keine archivierten Mitglieder",
+      description: "Vollständig offboardete Mitglieder erscheinen hier.",
     },
   };

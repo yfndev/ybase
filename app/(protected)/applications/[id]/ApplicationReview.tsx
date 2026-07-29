@@ -13,6 +13,7 @@ import { isApplicantIdentityField } from "@/components/Applications/applicationP
 import { PageHeader } from "@/components/Layout/PageHeader";
 import { useApplication } from "@/lib/client/applications/hooks/useApplication";
 import type { ApplicationWithFiles, User } from "@/lib/db/types";
+import { isUnavailableMemberStatus } from "@/lib/members/status";
 
 export function ApplicationReview({
   initialApplication,
@@ -30,7 +31,10 @@ export function ApplicationReview({
     initialApplication,
   );
   const owners = useMemo(
-    () => members.filter((member) => member.memberStatus !== "offboarded"),
+    () =>
+      members.filter(
+        (member) => !isUnavailableMemberStatus(member.memberStatus),
+      ),
     [members],
   );
   const ownersById = useMemo(

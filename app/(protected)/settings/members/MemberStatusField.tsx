@@ -2,6 +2,14 @@ import type { MemberStatus, TeamOnboardingStatus } from "@/lib/db/types";
 import { LabeledSelect } from "./LabeledSelect";
 import { MEMBER_STATUS_OPTIONS } from "./memberLabels";
 
+const STATUS_HINTS: Partial<Record<MemberStatus, string>> = {
+  offboarding_planned:
+    "Interne Vormerkung: Die Person bleibt aktiv und wird darüber noch nicht informiert.",
+  offboarding:
+    "Das Gespräch hat stattgefunden. Der ybase-Zugriff wird gesperrt, während People & Culture Zugänge entfernt.",
+  archived: "Das Offboarding ist vollständig abgeschlossen.",
+};
+
 interface Props {
   status: MemberStatus;
   onboarding: TeamOnboardingStatus;
@@ -23,9 +31,9 @@ export function MemberStatusField({ status, onboarding, onChange }: Props) {
       onValueChange={(value) => onChange(value as MemberStatus)}
       options={options}
       hint={
-        isApprovalAllowed
-          ? undefined
-          : "Die Aktivierung ist erst möglich, wenn alle Onboarding-Aufgaben abgeschlossen sind."
+        !isApprovalAllowed
+          ? "Die Aktivierung ist erst möglich, wenn alle Onboarding-Aufgaben abgeschlossen sind."
+          : STATUS_HINTS[status]
       }
     />
   );

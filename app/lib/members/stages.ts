@@ -10,7 +10,8 @@ export const MEMBER_STAGE_OPTIONS = [
   { value: "onboarding", label: "Onboarding" },
   { value: "active", label: "Vereinsmitglied" },
   { value: "inactive", label: "Inaktiv" },
-  { value: "offboarded", label: "Offboarded" },
+  { value: "offboarding_planned", label: "Offboarding vorgemerkt" },
+  { value: "offboarding", label: "Offboarding" },
   { value: "archived", label: "Archiviert" },
 ] as const;
 
@@ -31,7 +32,7 @@ export function memberStageLabel(stage: MemberStage): string {
 }
 
 export function memberStageForStatus(status: MemberStatus): MemberStage {
-  return status;
+  return status === "offboarded" ? "archived" : status;
 }
 
 const APPLICATION_STAGE_STATUSES: Record<
@@ -43,13 +44,21 @@ const APPLICATION_STAGE_STATUSES: Record<
   archived: ["rejected", "withdrawn"],
 };
 
-export const MEMBER_STATUS_BY_STAGE: Partial<
-  Record<MemberStage, MemberStatus>
+const MEMBER_STATUSES_BY_STAGE: Partial<
+  Record<MemberStage, readonly MemberStatus[]>
 > = {
-  active: "active",
-  inactive: "inactive",
-  offboarded: "offboarded",
+  active: ["active"],
+  inactive: ["inactive"],
+  offboarding_planned: ["offboarding_planned"],
+  offboarding: ["offboarding"],
+  archived: ["archived", "offboarded"],
 };
+
+export function memberStatusesForStage(
+  stage: MemberStage,
+): readonly MemberStatus[] {
+  return MEMBER_STATUSES_BY_STAGE[stage] ?? [];
+}
 
 export function applicationsForStage(
   applications: ApplicationWithFiles[],
@@ -76,10 +85,8 @@ export function applicationsForStage(
 }
 
 export function membersForStage(members: User[], stage: MemberStage): User[] {
-  const status = MEMBER_STATUS_BY_STAGE[stage];
-  return status
-    ? members.filter((member) => member.memberStatus === status)
-    : [];
+  const statuses = memberStatusesForStage(stage);
+  return members.filter((member) => statuses.includes(member.memberStatus));
 }
 
 export function memberStageCounts(

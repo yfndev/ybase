@@ -1,5 +1,6 @@
 import { users } from "../db/collections";
 import type { UserRole } from "../db/types";
+import { isUnavailableMemberStatus } from "../members/status";
 import { auth } from "./index";
 import {
   hasRoleAccess,
@@ -22,7 +23,9 @@ export async function requireAuthenticatedUser() {
 export async function requireUser() {
   const user = await requireAuthenticatedUser();
   if (!user.organizationId) throw new Error("User has no organization");
-  if (user.memberStatus === "offboarded") throw new Error("User is offboarded");
+  if (isUnavailableMemberStatus(user.memberStatus)) {
+    throw new Error("User is offboarding or archived");
+  }
   if (user.memberStatus === "onboarding") {
     throw new Error("Member is awaiting approval");
   }

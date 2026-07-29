@@ -10,10 +10,24 @@ test("activating a member records the onboarding timestamp", () => {
   });
 });
 
-test("offboarding a member records the offboarding timestamp", () => {
-  expect(memberStatusPatch("active", "offboarded", NOW)).toEqual({
-    memberStatus: "offboarded",
-    offboardedAt: NOW,
+test("planning an offboarding records the internal timestamp", () => {
+  expect(memberStatusPatch("active", "offboarding_planned", NOW)).toEqual({
+    memberStatus: "offboarding_planned",
+    offboardingPlannedAt: NOW,
+  });
+});
+
+test("starting an offboarding records the official timestamp", () => {
+  expect(memberStatusPatch("offboarding_planned", "offboarding", NOW)).toEqual({
+    memberStatus: "offboarding",
+    offboardingStartedAt: NOW,
+  });
+});
+
+test("archiving a member records the completion timestamp", () => {
+  expect(memberStatusPatch("offboarding", "archived", NOW)).toEqual({
+    memberStatus: "archived",
+    archivedAt: NOW,
   });
 });
 

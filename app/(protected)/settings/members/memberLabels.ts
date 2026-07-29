@@ -9,7 +9,9 @@ export const MEMBER_STATUS_OPTIONS: Option<MemberStatus>[] = [
   { value: "onboarding", label: "Onboarding" },
   { value: "active", label: "Vereinsmitglied" },
   { value: "inactive", label: "Inaktiv" },
-  { value: "offboarded", label: "Offboarded" },
+  { value: "offboarding_planned", label: "Offboarding vorgemerkt" },
+  { value: "offboarding", label: "Offboarding" },
+  { value: "archived", label: "Archiviert" },
 ];
 
 export const ROLE_OPTIONS: Option<UserRole>[] = [

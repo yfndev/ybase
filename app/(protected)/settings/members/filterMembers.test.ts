@@ -47,7 +47,7 @@ const ben = member({
 const cara = member({
   _id: "cara",
   name: "Cara Care",
-  memberStatus: "offboarded",
+  memberStatus: "archived",
 });
 const everyone = [anna, ben, cara];
 
@@ -68,6 +68,16 @@ test("filters by membership status tab", () => {
     teamsById,
   );
   expect(onboarding.map((entry) => entry._id)).toEqual(["ben"]);
+
+  const currentAndArchived = filterMembers(
+    everyone,
+    { ...baseFilters, status: ["active", "archived"] },
+    teamsById,
+  );
+  expect(currentAndArchived.map((entry) => entry._id)).toEqual([
+    "anna",
+    "cara",
+  ]);
 });
 
 test("filters by department derived from the member's team", () => {

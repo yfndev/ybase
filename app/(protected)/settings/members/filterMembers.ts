@@ -3,7 +3,7 @@ import type { MemberStatus, Team, User } from "@/lib/db/types";
 export const ALL = "all";
 
 export interface MemberFilters {
-  status: MemberStatus;
+  status: MemberStatus | readonly MemberStatus[];
   departmentId: string;
   teamId: string;
   search: string;
@@ -39,8 +39,11 @@ export function filterMembers(
   filters: MemberFilters,
   teamsById: Map<string, Team>,
 ): User[] {
+  const statuses = Array.isArray(filters.status)
+    ? filters.status
+    : [filters.status];
   return members.filter((member) => {
-    if (member.memberStatus !== filters.status) return false;
+    if (!statuses.includes(member.memberStatus)) return false;
     if (
       filters.departmentId !== ALL &&
       !departmentIdsOf(member, teamsById).includes(filters.departmentId)

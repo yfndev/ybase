@@ -1,7 +1,14 @@
 import type { MemberStatus, TeamOnboardingStatus, User } from "../../db/types";
 
 type MemberStatusPatch = Partial<
-  Pick<User, "memberStatus" | "onboardedAt" | "offboardedAt">
+  Pick<
+    User,
+    | "memberStatus"
+    | "onboardedAt"
+    | "offboardingPlannedAt"
+    | "offboardingStartedAt"
+    | "archivedAt"
+  >
 >;
 
 type TeamOnboardingPatch = Partial<
@@ -16,7 +23,9 @@ export function memberStatusPatch(
   const patch: MemberStatusPatch = { memberStatus: next };
   if (next === current) return patch;
   if (next === "active") patch.onboardedAt = now;
-  if (next === "offboarded") patch.offboardedAt = now;
+  if (next === "offboarding_planned") patch.offboardingPlannedAt = now;
+  if (next === "offboarding") patch.offboardingStartedAt = now;
+  if (next === "archived" || next === "offboarded") patch.archivedAt = now;
   return patch;
 }
 

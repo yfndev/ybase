@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { departments, teams, users } from "../../db/collections";
 import type { Department, Team } from "../../db/types";
+import { PUBLIC_MEMBER_STATUSES } from "../../members/status";
 import {
   boardMemberDto,
   byBoardRole,
@@ -34,7 +35,7 @@ export async function getTeamDirectory(
     (await users())
       .find({
         organizationId,
-        memberStatus: "active",
+        memberStatus: { $in: [...PUBLIC_MEMBER_STATUSES] },
       })
       .project<DirectoryUser>({
         _id: 1,
