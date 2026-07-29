@@ -232,6 +232,7 @@ test("syncs posting content and exact role questions into Tally", async () => {
     description: "<p>Du entwickelst YBase weiter.</p>",
     tasks: "<ul><li>Architektur gestalten</li></ul>",
     requirements: "<p>Erfahrung mit TypeScript</p>",
+    benefits: "<ul><li>Zugang zur YFN Community</li></ul>",
     timeCommitment: "5 Stunden pro Woche",
     location: "Remote",
     deadline: "2026-08-31",
@@ -251,6 +252,8 @@ test("syncs posting content and exact role questions into Tally", async () => {
   expect(serialized).toContain("Du entwickelst YBase weiter.");
   expect(serialized).toContain("Aufgaben");
   expect(serialized).toContain("Anforderungen");
+  expect(serialized).toContain("Benefits");
+  expect(serialized).toContain("Zugang zur YFN Community");
   expect(serialized).toContain("Rahmenbedingungen");
   expect(serialized).toContain("Welche Architektur hast du zuletzt gestaltet?");
   expect(serialized).not.toContain("Spezifische Frage");

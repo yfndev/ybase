@@ -5,6 +5,7 @@ import { USER_PERMISSIONS } from "../../auth/roles";
 import { requirePermission } from "../../auth/session";
 import { jobPostings, teams, users } from "../../db/collections";
 import { newId } from "../../db/ids";
+import { DEFAULT_JOB_POSTING_BENEFITS } from "../../jobPostings/benefits";
 import { UNAVAILABLE_MEMBER_STATUSES } from "../../members/status";
 import { addLog } from "../logs";
 import { requireOwnedJobPosting } from "./access";
@@ -22,6 +23,7 @@ const contentSchema = z.object({
   description: optionalText,
   tasks: optionalText,
   requirements: optionalText,
+  benefits: optionalText,
   timeCommitment: optionalText,
   location: optionalText,
   isRemote: z.boolean().optional(),
@@ -40,6 +42,7 @@ function toDocumentFields(content: Content, contactUserIds: string[]) {
     description: sanitizeRichText(content.description),
     tasks: sanitizeRichText(content.tasks),
     requirements: sanitizeRichText(content.requirements),
+    benefits: sanitizeRichText(content.benefits),
     timeCommitment: content.timeCommitment ?? "",
     location: content.location ?? "",
     isRemote: content.isRemote ?? false,
@@ -79,6 +82,7 @@ export async function createJobPostingDraft(input: {
     status: "draft",
     title,
     shortText: DEFAULT_SHORT_TEXT,
+    benefits: DEFAULT_JOB_POSTING_BENEFITS,
     createdBy: user._id,
   });
   await addLog(user.organizationId, user._id, "jobPosting.create", _id, title);

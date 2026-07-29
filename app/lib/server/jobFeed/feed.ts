@@ -1,6 +1,7 @@
 import { departments, jobPostings, teams, users } from "../../db/collections";
 import type { JobPosting, User } from "../../db/types";
 import { berlinToday } from "../../jobPostings/deadline";
+import { DEFAULT_JOB_POSTING_BENEFITS } from "../../jobPostings/benefits";
 import { UNAVAILABLE_MEMBER_STATUSES } from "../../members/status";
 import { YFN_ORGANIZATION } from "../../organization";
 
@@ -15,6 +16,7 @@ export interface JobFeedItemV1 {
     description: string;
     tasks: string;
     requirements: string;
+    benefits: string;
   };
   team: string;
   department: string;
@@ -61,6 +63,7 @@ export async function getJobFeedV1(
           description: 1,
           tasks: 1,
           requirements: 1,
+          benefits: 1,
           teamId: 1,
           timeCommitment: 1,
           location: 1,
@@ -138,6 +141,7 @@ function toFeedItem(
       description: posting.description ?? "",
       tasks: posting.tasks ?? "",
       requirements: posting.requirements ?? "",
+      benefits: posting.benefits ?? DEFAULT_JOB_POSTING_BENEFITS,
     },
     team: team?.name ?? "",
     department: department?.name ?? "",

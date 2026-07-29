@@ -43,6 +43,14 @@ export function JobPostingContentFields({ values, onChange }: Props) {
           onChange={(requirements) => onChange({ requirements })}
         />
       </div>
+      <div className="flex flex-col gap-2">
+        <Label>Benefits</Label>
+        <RichTextEditor
+          ariaLabel="Benefits"
+          value={values.benefits}
+          onChange={(benefits) => onChange({ benefits })}
+        />
+      </div>
 
       <section className="space-y-4 border-t pt-6">
         <div className="space-y-1">

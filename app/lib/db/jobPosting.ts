@@ -11,6 +11,7 @@ export interface JobPosting {
   description?: string;
   tasks?: string;
   requirements?: string;
+  benefits?: string;
   timeCommitment?: string;
   location?: string;
   isRemote?: boolean;

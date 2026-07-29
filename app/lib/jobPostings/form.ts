@@ -1,5 +1,6 @@
 import type { JobPosting } from "@/lib/db/types";
 import { jobPostingApplicationQuestions } from "./applicationQuestions";
+import { DEFAULT_JOB_POSTING_BENEFITS } from "./benefits";
 
 export interface JobPostingFormValues {
   title: string;
@@ -8,6 +9,7 @@ export interface JobPostingFormValues {
   description: string;
   tasks: string;
   requirements: string;
+  benefits: string;
   timeCommitment: string;
   location: string;
   isRemote: boolean;
@@ -24,6 +26,7 @@ export function toJobPostingForm(posting: JobPosting): JobPostingFormValues {
     description: posting.description ?? "",
     tasks: posting.tasks ?? "",
     requirements: posting.requirements ?? "",
+    benefits: posting.benefits ?? DEFAULT_JOB_POSTING_BENEFITS,
     timeCommitment: posting.timeCommitment ?? "",
     location: posting.location ?? "",
     isRemote: posting.isRemote ?? false,
