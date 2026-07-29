@@ -15,7 +15,6 @@ import {
   membersForStage,
   type MemberStage,
 } from "@/lib/members/stages";
-import { PlaneTakeoff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { AcceptedApplicantDrawer } from "./AcceptedApplicantDrawer";
@@ -171,13 +170,8 @@ export function MembersClient({
             departmentsById={departmentsById}
             emptyTitle={selectedMemberEmptyText.title}
             emptyDescription={selectedMemberEmptyText.description}
-            emptyIcon={
-              stage === "offboarding_planned" && stagedMembers.length === 0 ? (
-                <PlaneTakeoff
-                  aria-hidden="true"
-                  className="mx-auto h-12 w-12 text-muted-foreground"
-                />
-              ) : undefined
+            isDepartureEmptyState={
+              stage === "offboarding_planned" && stagedMembers.length === 0
             }
             onSelect={setSelectedMember}
           />
