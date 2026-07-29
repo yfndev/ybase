@@ -36,9 +36,12 @@ export function ApplicationsTable({
   if (applications.length === 0) {
     return (
       <div className="rounded-md border py-12 text-center">
-        <Inbox className="mx-auto size-10 text-muted-foreground" />
-        <h3 className="mt-3 font-semibold">{emptyTitle}</h3>
-        <p className="mt-1 text-sm text-muted-foreground">{emptyDescription}</p>
+        <Inbox
+          aria-hidden="true"
+          className="mx-auto size-12 text-muted-foreground"
+        />
+        <h3 className="mt-4 text-lg font-semibold">{emptyTitle}</h3>
+        <p className="mt-2 text-muted-foreground">{emptyDescription}</p>
       </div>
     );
   }
