@@ -20,9 +20,9 @@ export function JobPostingContentFields({ values, onChange }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2">
-        <Label>Beschreibung</Label>
+        <Label>Beschreibung der Stelle</Label>
         <RichTextEditor
-          ariaLabel="Beschreibung"
+          ariaLabel="Beschreibung der Stelle"
           value={values.description}
           onChange={(description) => onChange({ description })}
         />
