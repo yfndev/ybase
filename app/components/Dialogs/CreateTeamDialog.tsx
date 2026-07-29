@@ -29,6 +29,11 @@ export function CreateTeamDialog({ open, onOpenChange }: Props) {
   const [name, setName] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [isChapter, setIsChapter] = useState(false);
+  const communityDepartmentId = departments.find(
+    (department) =>
+      department.name.trim().toLocaleLowerCase("de-DE") === "community",
+  )?._id;
+  const showChapterOption = departmentId === communityDepartmentId;
 
   const reset = () => {
     setName("");
@@ -49,7 +54,7 @@ export function CreateTeamDialog({ open, onOpenChange }: Props) {
       await create.mutateAsync({
         name: name.trim(),
         departmentId,
-        isChapter,
+        isChapter: showChapterOption && isChapter,
       });
       toast.success("Team erstellt");
       reset();
@@ -88,17 +93,24 @@ export function CreateTeamDialog({ open, onOpenChange }: Props) {
                 id="team-department"
                 departments={departments}
                 value={departmentId || undefined}
-                onValueChange={setDepartmentId}
+                onValueChange={(value) => {
+                  setDepartmentId(value);
+                  if (value !== communityDepartmentId) {
+                    setIsChapter(false);
+                  }
+                }}
               />
             </div>
-            <div className="flex items-center gap-3">
-              <Checkbox
-                id="team-chapter"
-                checked={isChapter}
-                onCheckedChange={(checked) => setIsChapter(checked === true)}
-              />
-              <Label htmlFor="team-chapter">Chapter</Label>
-            </div>
+            {showChapterOption ? (
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="team-chapter"
+                  checked={isChapter}
+                  onCheckedChange={(checked) => setIsChapter(checked === true)}
+                />
+                <Label htmlFor="team-chapter">Chapter</Label>
+              </div>
+            ) : null}
             <DialogFooter>
               <Button
                 type="submit"
