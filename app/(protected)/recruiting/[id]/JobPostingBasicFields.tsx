@@ -1,5 +1,6 @@
 "use client";
 
+import { SelectJobPostingUrgency } from "@/components/Selectors/SelectJobPostingUrgency";
 import { SelectMembers } from "@/components/Selectors/SelectMembers";
 import { SelectTeam } from "@/components/Selectors/SelectTeam";
 import { Input } from "@/components/ui/input";
@@ -58,7 +59,15 @@ export function JobPostingBasicFields({ values, onChange }: Props) {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="jp-urgency">Dringlichkeit</Label>
+          <SelectJobPostingUrgency
+            id="jp-urgency"
+            value={values.urgency}
+            onValueChange={(urgency) => onChange({ urgency })}
+          />
+        </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="jp-time">Zeitaufwand</Label>
           <Input

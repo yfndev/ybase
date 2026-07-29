@@ -110,6 +110,7 @@ test("createJobPostingDraft stores a draft scoped to the org without a departmen
     _id: id,
     title: "Vorstand",
     teamId: teamA,
+    urgency: "normal",
     shortText:
       "Baue mit uns die größte Community für junge (angehende) Gründer:innen im deutschsprachigen Raum auf.",
     requirements: "<ul><li>Alter (&lt;25 Jahre)</li></ul>",
@@ -120,6 +121,19 @@ test("createJobPostingDraft stores a draft scoped to the org without a departmen
     expect.objectContaining({ _id: id, title: "Vorstand", status: "draft" }),
     expect.objectContaining({ _id: userA, organizationId: orgA }),
   );
+});
+
+test("createJobPostingDraft stores urgent postings", async () => {
+  const id = await createJobPostingDraft({
+    title: "Dringende Unterstützung",
+    teamId: teamA,
+    urgency: "urgent",
+  });
+
+  expect(await getJobPostingById(id)).toMatchObject({
+    title: "Dringende Unterstützung",
+    urgency: "urgent",
+  });
 });
 
 test("createJobPostingDraft rejects an archived team", async () => {
@@ -185,6 +199,19 @@ test("updateJobPosting can edit content while published", async () => {
     }),
     expect.objectContaining({ _id: userA, organizationId: orgA }),
   );
+});
+
+test("updateJobPosting changes the urgency", async () => {
+  const id = await createJobPostingDraft({ title: "T", teamId: teamA });
+
+  await updateJobPosting({
+    jobPostingId: id,
+    title: "T",
+    teamId: teamA,
+    urgency: "urgent",
+  });
+
+  expect((await getJobPostingById(id)).urgency).toBe("urgent");
 });
 
 test("stores the exact application questions and forwards them to Tally", async () => {
