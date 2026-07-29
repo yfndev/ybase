@@ -94,6 +94,16 @@ test("returns active members directly from their ybase profiles", async () => {
       boardMembership: {
         departmentId: "department-operations",
         isChair: true,
+        secondaryRole: "Finanzen",
+      },
+    }),
+    member({
+      _id: "member-board-without-secondary-role",
+      name: "Board Person Without Secondary Role",
+      teamId: undefined,
+      boardMembership: {
+        departmentId: "department-operations",
+        isChair: false,
       },
     }),
     member({
@@ -138,6 +148,14 @@ test("returns active members directly from their ybase profiles", async () => {
       name: "Board Person",
       role: "Operations",
       isChair: true,
+      secondaryRole: "Finanzen",
+    },
+    {
+      id: `ybase:${organizationId}:member:member-board-without-secondary-role`,
+      departmentId: `ybase:${organizationId}:department:department-operations`,
+      name: "Board Person Without Secondary Role",
+      role: "Operations",
+      isChair: false,
     },
   ]);
   expect(feed.data.departments).toHaveLength(1);

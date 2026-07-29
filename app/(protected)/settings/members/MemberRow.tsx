@@ -16,8 +16,12 @@ interface Props {
 }
 
 function positionLabel(member: User, teams: Team[]): string {
-  if (member.boardMembership?.isChair) return "Vorsitz";
-  if (member.boardMembership) return "Vorstand";
+  if (member.boardMembership) {
+    const boardRole = member.boardMembership.isChair ? "Vorsitz" : "Vorstand";
+    return member.boardMembership.secondaryRole
+      ? `${boardRole} · ${member.boardMembership.secondaryRole}`
+      : boardRole;
+  }
   if (teams.length > 0 && teams.every((team) => team.isChapter)) return "—";
   if (member.isTeamLead || member.isSecondaryTeamLead) return "Lead";
   return member.positionTitle || "—";

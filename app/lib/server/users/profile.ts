@@ -34,6 +34,7 @@ export async function updateMemberProfile(input: {
   boardMembership?: {
     departmentId: string;
     isChair: boolean;
+    secondaryRole?: string;
   } | null;
 }): Promise<void> {
   const {
@@ -56,6 +57,7 @@ export async function updateMemberProfile(input: {
         .object({
           departmentId: z.string().trim().min(1),
           isChair: z.boolean(),
+          secondaryRole: z.string().trim().min(1).optional(),
         })
         .nullable()
         .optional(),
