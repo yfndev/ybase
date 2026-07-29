@@ -12,6 +12,7 @@ import { requirePermission, requireUser } from "../../auth/session";
 import { departments, jobPostings, teams, users } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { User } from "../../db/types";
+import { DEFAULT_JOB_POSTING_BENEFITS } from "../../jobPostings/benefits";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { createJobPostingDraft, updateJobPosting } from "./actions";
@@ -113,6 +114,7 @@ test("createJobPostingDraft stores a draft scoped to the org without a departmen
     urgency: "normal",
     shortText:
       "Baue mit uns die größte Community für junge (angehende) Gründer:innen im deutschsprachigen Raum auf.",
+    benefits: DEFAULT_JOB_POSTING_BENEFITS,
     requirements: "<ul><li>Alter (&lt;25 Jahre)</li></ul>",
   });
   expect(list[0].status).toBe("draft");
@@ -159,6 +161,7 @@ test("updateJobPosting sanitizes rich text before storing", async () => {
     description: "<p>Hallo</p><script>alert(1)</script>",
     tasks: '<p onclick="evil()">Aufgabe</p><iframe src="x"></iframe>',
     requirements: '<a href="javascript:alert(1)">Link</a>',
+    benefits: "<ul><li>Community</li></ul><script>alert(1)</script>",
   });
 
   const posting = await getJobPostingById(id);
@@ -166,6 +169,7 @@ test("updateJobPosting sanitizes rich text before storing", async () => {
   expect(posting.tasks).toBe("<p>Aufgabe</p>");
   expect(posting.tasks).not.toContain("iframe");
   expect(posting.requirements).not.toContain("javascript");
+  expect(posting.benefits).toBe("<ul><li>Community</li></ul>");
   expect(provisionTallyFormDraft).toHaveBeenLastCalledWith(
     expect.objectContaining({
       _id: id,

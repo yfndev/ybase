@@ -1,5 +1,6 @@
 import sanitizeHtml from "sanitize-html";
 import type { JobPosting } from "../db/types";
+import { DEFAULT_JOB_POSTING_BENEFITS } from "../jobPostings/benefits";
 
 export type JobPostingTallyContent = Pick<
   JobPosting,
@@ -8,6 +9,7 @@ export type JobPostingTallyContent = Pick<
   | "description"
   | "tasks"
   | "requirements"
+  | "benefits"
   | "timeCommitment"
   | "location"
   | "isRemote"
@@ -68,6 +70,12 @@ export function jobPostingSections(
     {
       heading: "Anforderungen",
       text: richTextToPlainText(posting.requirements),
+    },
+    {
+      heading: "Benefits",
+      text: richTextToPlainText(
+        posting.benefits ?? DEFAULT_JOB_POSTING_BENEFITS,
+      ),
     },
     { heading: "Rahmenbedingungen", text: framework },
   ].filter((section) => section.text);
