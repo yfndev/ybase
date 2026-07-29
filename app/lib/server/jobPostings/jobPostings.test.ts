@@ -106,7 +106,13 @@ test("createJobPostingDraft stores a draft scoped to the org without a departmen
 
   const list = await getJobPostings();
   expect(list).toHaveLength(1);
-  expect(list[0]).toMatchObject({ _id: id, title: "Vorstand", teamId: teamA });
+  expect(list[0]).toMatchObject({
+    _id: id,
+    title: "Vorstand",
+    teamId: teamA,
+    shortText:
+      "Baue mit uns die größte Community für junge (angehende) Gründer:innen im deutschsprachigen Raum auf.",
+  });
   expect(list[0].status).toBe("draft");
   expect(list[0]).not.toHaveProperty("departmentId");
   expect(provisionTallyFormDraft).toHaveBeenCalledWith(
