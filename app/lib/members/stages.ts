@@ -9,9 +9,9 @@ export const MEMBER_STAGE_OPTIONS = [
   { value: "interview", label: "Interview" },
   { value: "onboarding", label: "Onboarding" },
   { value: "active", label: "Vereinsmitglied" },
-  { value: "inactive", label: "Inaktiv" },
   { value: "offboarding_planned", label: "Offboarding vorgemerkt" },
   { value: "offboarding", label: "Offboarding" },
+  { value: "inactive", label: "Inaktiv" },
   { value: "archived", label: "Archiviert" },
 ] as const;
 

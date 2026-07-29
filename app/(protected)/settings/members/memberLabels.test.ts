@@ -5,9 +5,9 @@ describe("memberStatusOptions", () => {
   it("offers active members every lifecycle status from Vereinsmitglied onward", () => {
     expect(memberStatusOptions("active").map(({ value }) => value)).toEqual([
       "active",
-      "inactive",
       "offboarding_planned",
       "offboarding",
+      "inactive",
       "archived",
     ]);
   });
@@ -17,9 +17,9 @@ describe("memberStatusOptions", () => {
       [
         "onboarding",
         "active",
-        "inactive",
         "offboarding_planned",
         "offboarding",
+        "inactive",
         "archived",
       ],
     );
