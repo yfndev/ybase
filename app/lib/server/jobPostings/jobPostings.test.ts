@@ -112,6 +112,7 @@ test("createJobPostingDraft stores a draft scoped to the org without a departmen
     teamId: teamA,
     shortText:
       "Baue mit uns die größte Community für junge (angehende) Gründer:innen im deutschsprachigen Raum auf.",
+    requirements: "<ul><li>Alter (&lt;25 Jahre)</li></ul>",
   });
   expect(list[0].status).toBe("draft");
   expect(list[0]).not.toHaveProperty("departmentId");
