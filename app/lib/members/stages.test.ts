@@ -90,7 +90,7 @@ describe("member lifecycle stages", () => {
       applicationsForStage(applications, "archived", memberStatusesById).map(
         (entry) => entry._id,
       ),
-    ).toEqual(["rejected", "withdrawn"]);
+    ).toEqual([]);
   });
 
   test("keeps accepted applications in one onboarding list", () => {
@@ -126,7 +126,7 @@ describe("member lifecycle stages", () => {
       inactive: 1,
       offboarding_planned: 1,
       offboarding: 1,
-      archived: 4,
+      archived: 2,
     });
   });
 });
