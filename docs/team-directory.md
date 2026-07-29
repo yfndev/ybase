@@ -11,7 +11,9 @@ Teamstruktur werden außerdem ein aktives Department, ein aktives Team und ein
 Name vorausgesetzt. Die interne Position ist optional und wird nicht im
 Organigramm veröffentlicht. Eine optionale `boardMembership` ordnet ein
 Vorstandsmitglied direkt einem aktiven Department zu. Vorstandsmitglieder sind
-keinem Team innerhalb dieses Departments zugeordnet.
+keinem Team innerhalb dieses Departments zugeordnet. Die optionale
+`secondaryRole` innerhalb der Vorstandszuordnung wird als Nebenrolle
+veröffentlicht.
 
 Ein optionales `secondaryTeamId` veröffentlicht dieselbe Person zusätzlich als
 Mitglied eines zweiten Teams. `isTeamLead` markiert die Person im Hauptteam aus
@@ -37,8 +39,10 @@ Der Consumer stellt die Ebenen in dieser Reihenfolge dar:
 4. Teammitglieder
 
 Vorstandsmitglieder stehen auf Department-Ebene oberhalb der Teams. Innerhalb
+des Vorstands wird die optionale Position zusätzlich dargestellt. Innerhalb
 eines Teams stehen Leads vor den übrigen Mitgliedern und erhalten eine
-Lead-Hervorhebung. Weitere Positionen werden nicht dargestellt.
+Lead-Hervorhebung. Weitere Positionen von Teammitgliedern werden nicht
+dargestellt.
 
 ## Vertrag
 
@@ -54,7 +58,8 @@ Lead-Hervorhebung. Weitere Positionen werden nicht dargestellt.
         "departmentId": "ybase:org:department:department",
         "name": "Ada Beispiel",
         "role": "Operations",
-        "isChair": true
+        "isChair": true,
+        "secondaryRole": "Finanzen"
       }
     ],
     "departments": [

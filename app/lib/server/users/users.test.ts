@@ -387,17 +387,32 @@ test("updateMemberProfile assigns and removes a board membership", async () => {
   const departmentId = await seedDepartment(orgA);
   await updateMemberProfile({
     userId: memberA,
-    boardMembership: { departmentId, isChair: true },
+    boardMembership: {
+      departmentId,
+      isChair: true,
+      secondaryRole: "  Finanzen  ",
+    },
   });
   const assigned = await (await users()).findOne({ _id: memberA });
   expect(assigned?.boardMembership).toEqual({
     departmentId,
     isChair: true,
+    secondaryRole: "Finanzen",
   });
   expect(assigned?.teamId).toBeUndefined();
   expect(assigned?.secondaryTeamId).toBeUndefined();
   expect(assigned?.isTeamLead).toBe(false);
   expect(assigned?.isSecondaryTeamLead).toBe(false);
+
+  await updateMemberProfile({
+    userId: memberA,
+    boardMembership: { departmentId, isChair: true },
+  });
+  const withoutSecondaryRole = await (await users()).findOne({ _id: memberA });
+  expect(withoutSecondaryRole?.boardMembership).toEqual({
+    departmentId,
+    isChair: true,
+  });
 
   await updateMemberProfile({
     userId: memberA,

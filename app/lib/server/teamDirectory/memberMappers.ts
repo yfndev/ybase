@@ -72,5 +72,8 @@ export function boardMemberDto(
     name,
     role: department.name,
     isChair: boardMembership.isChair,
+    ...(boardMembership.secondaryRole
+      ? { secondaryRole: boardMembership.secondaryRole }
+      : {}),
   };
 }

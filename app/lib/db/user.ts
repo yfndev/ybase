@@ -12,6 +12,7 @@ export type ProfileImageSource = "google" | "upload";
 export interface BoardMembership {
   departmentId: string;
   isChair: boolean;
+  secondaryRole?: string;
 }
 
 export interface User {
