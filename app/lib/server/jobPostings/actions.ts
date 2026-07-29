@@ -4,6 +4,7 @@ import { z } from "zod";
 import { USER_PERMISSIONS } from "../../auth/roles";
 import { requirePermission } from "../../auth/session";
 import { jobPostings, teams, users } from "../../db/collections";
+import type { JobPostingUrgency } from "../../db/types";
 import { newId } from "../../db/ids";
 import { DEFAULT_JOB_POSTING_BENEFITS } from "../../jobPostings/benefits";
 import { UNAVAILABLE_MEMBER_STATUSES } from "../../members/status";
@@ -15,10 +16,12 @@ import { provisionTallyFormDraft } from "./tallyFormProvisioning";
 const optionalText = z.string().trim().optional();
 const DEFAULT_SHORT_TEXT =
   "Baue mit uns die größte Community für junge (angehende) Gründer:innen im deutschsprachigen Raum auf.";
+const DEFAULT_REQUIREMENTS = "<ul><li>Alter (&lt;25 Jahre)</li></ul>";
 
 const contentSchema = z.object({
   title: z.string().trim().min(1),
   teamId: z.string().trim().min(1),
+  urgency: z.enum(["normal", "urgent"]).default("normal"),
   shortText: optionalText,
   description: optionalText,
   tasks: optionalText,
@@ -33,11 +36,13 @@ const contentSchema = z.object({
 });
 
 type Content = z.infer<typeof contentSchema>;
+type ContentInput = z.input<typeof contentSchema>;
 
 function toDocumentFields(content: Content, contactUserIds: string[]) {
   return {
     title: content.title,
     teamId: content.teamId,
+    urgency: content.urgency,
     shortText: content.shortText ?? "",
     description: sanitizeRichText(content.description),
     tasks: sanitizeRichText(content.tasks),
@@ -61,12 +66,14 @@ function toDocumentFields(content: Content, contactUserIds: string[]) {
 export async function createJobPostingDraft(input: {
   title: string;
   teamId: string;
+  urgency?: JobPostingUrgency;
 }): Promise<string> {
   const user = await requirePermission(USER_PERMISSIONS.recruiting);
-  const { title, teamId } = z
+  const { title, teamId, urgency } = z
     .object({
       title: z.string().trim().min(1),
       teamId: z.string().trim().min(1),
+      urgency: z.enum(["normal", "urgent"]).default("normal"),
     })
     .parse(input);
   await requireActiveTeam(teamId, user.organizationId);
@@ -80,9 +87,11 @@ export async function createJobPostingDraft(input: {
     organizationId: user.organizationId,
     teamId,
     status: "draft",
+    urgency,
     title,
     shortText: DEFAULT_SHORT_TEXT,
     benefits: DEFAULT_JOB_POSTING_BENEFITS,
+    requirements: DEFAULT_REQUIREMENTS,
     createdBy: user._id,
   });
   await addLog(user.organizationId, user._id, "jobPosting.create", _id, title);
@@ -92,7 +101,7 @@ export async function createJobPostingDraft(input: {
 }
 
 export async function updateJobPosting(
-  input: { jobPostingId: string } & Content,
+  input: { jobPostingId: string } & ContentInput,
 ): Promise<void> {
   const user = await requirePermission(USER_PERMISSIONS.recruiting);
   const { jobPostingId, ...content } = z

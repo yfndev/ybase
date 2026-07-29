@@ -1,6 +1,7 @@
 "use client";
 
 import { SelectDepartment } from "@/components/Selectors/SelectDepartment";
+import { SelectJobPostingUrgency } from "@/components/Selectors/SelectJobPostingUrgency";
 import { SelectTeam } from "@/components/Selectors/SelectTeam";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { useDepartments } from "@/lib/client/departments/hooks/useDepartments";
 import { useJobPostingMutations } from "@/lib/client/jobPostings/hooks/useJobPostingMutations";
 import { useTeams } from "@/lib/client/teams/hooks/useTeams";
+import type { JobPostingUrgency } from "@/lib/db/types";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -33,6 +35,7 @@ export function CreateJobPostingDialog({ open, onOpenChange }: Props) {
   const [title, setTitle] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [teamId, setTeamId] = useState("");
+  const [urgency, setUrgency] = useState<JobPostingUrgency>("normal");
   const departmentTeams = teams.filter(
     (team) => team.departmentId === departmentId,
   );
@@ -42,6 +45,7 @@ export function CreateJobPostingDialog({ open, onOpenChange }: Props) {
     setTitle("");
     setDepartmentId("");
     setTeamId("");
+    setUrgency("normal");
   };
 
   const handleDepartmentChange = (value: string) => {
@@ -59,7 +63,11 @@ export function CreateJobPostingDialog({ open, onOpenChange }: Props) {
     e.preventDefault();
     if (!title.trim() || !teamId || create.isPending) return;
     try {
-      const id = await create.mutateAsync({ title: title.trim(), teamId });
+      const id = await create.mutateAsync({
+        title: title.trim(),
+        teamId,
+        urgency,
+      });
       toast.success("Entwurf erstellt");
       reset();
       onOpenChange(false);
@@ -119,6 +127,14 @@ export function CreateJobPostingDialog({ open, onOpenChange }: Props) {
                 placeholder="Wonach suchst du?"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="posting-urgency">Dringlichkeit</Label>
+              <SelectJobPostingUrgency
+                id="posting-urgency"
+                value={urgency}
+                onValueChange={setUrgency}
               />
             </div>
             <DialogFooter>

@@ -18,6 +18,8 @@ import { useJobPostingMutations } from "@/lib/client/jobPostings/hooks/useJobPos
 import { useJobPostings } from "@/lib/client/jobPostings/hooks/useJobPostings";
 import { useTeamDirectory } from "@/lib/client/teams/hooks/useTeamDirectory";
 import type { JobPosting } from "@/lib/db/types";
+import { jobPostingUrgency } from "@/lib/jobPostings/urgency";
+import { cn } from "@/lib/utils";
 import { Megaphone, Plus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -93,8 +95,16 @@ export function RecruitingClient() {
               <TableBody>
                 {jobPostings.map((posting) => {
                   const info = lookup.get(posting.teamId);
+                  const isUrgent =
+                    jobPostingUrgency(posting.urgency) === "urgent";
                   return (
-                    <TableRow key={posting._id}>
+                    <TableRow
+                      key={posting._id}
+                      className={cn(
+                        isUrgent &&
+                          "border-l-4 border-l-secondary bg-secondary/[0.06] hover:bg-secondary/10",
+                      )}
+                    >
                       <TableCell className="font-medium">
                         <Link
                           href={`/recruiting/${posting._id}`}
@@ -111,7 +121,9 @@ export function RecruitingClient() {
                       <TableCell className="text-right">
                         <JobPostingActionsMenu
                           posting={posting}
-                          disabled={archive.isPending || deletePosting.isPending}
+                          disabled={
+                            archive.isPending || deletePosting.isPending
+                          }
                           onArchive={() => void handleArchive(posting)}
                           onDelete={() => setPostingToDelete(posting)}
                         />

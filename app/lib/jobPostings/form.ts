@@ -1,10 +1,12 @@
-import type { JobPosting } from "@/lib/db/types";
+import type { JobPosting, JobPostingUrgency } from "@/lib/db/types";
 import { jobPostingApplicationQuestions } from "./applicationQuestions";
 import { DEFAULT_JOB_POSTING_BENEFITS } from "./benefits";
+import { jobPostingUrgency } from "./urgency";
 
 export interface JobPostingFormValues {
   title: string;
   teamId: string;
+  urgency: JobPostingUrgency;
   shortText: string;
   description: string;
   tasks: string;
@@ -22,6 +24,7 @@ export function toJobPostingForm(posting: JobPosting): JobPostingFormValues {
   return {
     title: posting.title,
     teamId: posting.teamId,
+    urgency: jobPostingUrgency(posting.urgency),
     shortText: posting.shortText ?? "",
     description: posting.description ?? "",
     tasks: posting.tasks ?? "",
