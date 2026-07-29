@@ -79,6 +79,22 @@ test("filters by department derived from the member's team", () => {
   expect(result.map((entry) => entry._id)).toEqual(["ben"]);
 });
 
+test("filters board members by their assigned department", () => {
+  const boardMember = member({
+    _id: "board",
+    boardMembership: {
+      departmentId: "dept-ops",
+      isChair: false,
+    },
+  });
+  const result = filterMembers(
+    [boardMember],
+    { ...baseFilters, departmentId: "dept-ops" },
+    teamsById,
+  );
+  expect(result.map((entry) => entry._id)).toEqual(["board"]);
+});
+
 test("filters by team", () => {
   const result = filterMembers(
     everyone,
@@ -86,6 +102,28 @@ test("filters by team", () => {
     teamsById,
   );
   expect(result.map((entry) => entry._id)).toEqual(["anna"]);
+});
+
+test("filters members by their optional second team and department", () => {
+  const chapterMember = member({
+    _id: "chapter-member",
+    teamId: "team-eng",
+    secondaryTeamId: "team-ops",
+    isTeamLead: true,
+  });
+  const byTeam = filterMembers(
+    [chapterMember],
+    { ...baseFilters, teamId: "team-ops" },
+    teamsById,
+  );
+  const byDepartment = filterMembers(
+    [chapterMember],
+    { ...baseFilters, departmentId: "dept-ops" },
+    teamsById,
+  );
+
+  expect(byTeam.map((entry) => entry._id)).toEqual(["chapter-member"]);
+  expect(byDepartment.map((entry) => entry._id)).toEqual(["chapter-member"]);
 });
 
 test("search matches name, email and position case-insensitively", () => {

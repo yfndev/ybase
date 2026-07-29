@@ -41,7 +41,12 @@ export async function setMemberStatus(input: {
       throw new Error("Aktive Mitglieder benötigen einen Namen.");
     }
     if (target.boardMembership) {
-      if (target.teamId) {
+      if (
+        target.teamId ||
+        target.secondaryTeamId ||
+        target.isTeamLead ||
+        target.isSecondaryTeamLead
+      ) {
         throw new Error(
           "Vorstandsmitglieder dürfen keinem Team direkt zugeordnet sein.",
         );
@@ -60,6 +65,19 @@ export async function setMemberStatus(input: {
         target.teamId,
         currentUser.organizationId,
       );
+      if (target.secondaryTeamId) {
+        if (target.secondaryTeamId === target.teamId) {
+          throw new Error(
+            "Hauptteam und weiteres Team müssen unterschiedlich sein.",
+          );
+        }
+        await requireActiveOrganizationTeam(
+          target.secondaryTeamId,
+          currentUser.organizationId,
+        );
+      } else if (target.isSecondaryTeamLead) {
+        throw new Error("Ein Lead benötigt ein zugeordnetes weiteres Team.");
+      }
     }
   }
 

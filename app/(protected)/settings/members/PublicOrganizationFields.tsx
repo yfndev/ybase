@@ -3,6 +3,8 @@ import { Label } from "@/components/ui/label";
 import { LabeledSelect } from "./LabeledSelect";
 import type { MemberDrawerFormState } from "./useMemberDrawerForm";
 
+const NO_SECONDARY_TEAM = "__none__";
+
 export function PublicOrganizationFields({
   form,
 }: {
@@ -46,9 +48,15 @@ export function PublicOrganizationFields({
         <>
           <LabeledSelect
             id="member-team"
-            label="Team"
+            label="Hauptteam"
             value={form.teamId}
-            onValueChange={form.setTeamId}
+            onValueChange={(teamId) => {
+              form.setTeamId(teamId);
+              if (teamId === form.secondaryTeamId) {
+                form.setSecondaryTeamId("");
+                form.setIsSecondaryTeamLead(false);
+              }
+            }}
             options={form.teamOptions}
             placeholder="Team wählen"
             hint={`Department: ${form.department?.name ?? "—"}`}
@@ -61,8 +69,40 @@ export function PublicOrganizationFields({
                 form.setIsTeamLead(checked === true)
               }
             />
-            <Label htmlFor="member-team-lead">Team-Lead</Label>
+            <Label htmlFor="member-team-lead">Lead</Label>
           </div>
+          <LabeledSelect
+            id="member-secondary-team"
+            label="Weiteres Team (optional)"
+            value={form.secondaryTeamId || NO_SECONDARY_TEAM}
+            onValueChange={(teamId) => {
+              const nextTeamId = teamId === NO_SECONDARY_TEAM ? "" : teamId;
+              form.setSecondaryTeamId(nextTeamId);
+              if (!nextTeamId) form.setIsSecondaryTeamLead(false);
+            }}
+            options={[
+              {
+                value: NO_SECONDARY_TEAM,
+                label: "Kein weiteres Team",
+              },
+              ...form.teamOptions.map((option) => ({
+                ...option,
+                disabled: option.value === form.teamId,
+              })),
+            ]}
+          />
+          {form.secondaryTeamId ? (
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="member-secondary-team-lead"
+                checked={form.isSecondaryTeamLead}
+                onCheckedChange={(checked) =>
+                  form.setIsSecondaryTeamLead(checked === true)
+                }
+              />
+              <Label htmlFor="member-secondary-team-lead">Lead</Label>
+            </div>
+          ) : null}
         </>
       )}
     </fieldset>

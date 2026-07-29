@@ -6,7 +6,9 @@ export type DirectoryUser = Pick<
   | "_id"
   | "name"
   | "teamId"
+  | "secondaryTeamId"
   | "isTeamLead"
+  | "isSecondaryTeamLead"
   | "boardMembership"
   | "profileImageStorageKey"
   | "publicProfileCompletedAt"
@@ -40,8 +42,8 @@ export function memberDto(
   user: DirectoryUser,
   organizationId: string,
   publicOrigin: string,
+  isLead: boolean,
 ): TeamDirectoryMember {
-  const isLead = user.isTeamLead ?? false;
   return {
     id: memberId(organizationId, user._id),
     name: profileName(user),

@@ -53,8 +53,17 @@ beforeEach(async () => {
       createdBy: newId(),
     },
     {
-      _id: "team-archived",
+      _id: "team-chapter",
       _creationTime: 3,
+      name: "Chapter Berlin",
+      departmentId: "department-operations",
+      organizationId,
+      isArchived: false,
+      createdBy: newId(),
+    },
+    {
+      _id: "team-archived",
+      _creationTime: 4,
       name: "Archived Team",
       departmentId: "department-operations",
       organizationId,
@@ -71,7 +80,9 @@ test("returns active members directly from their ybase profiles", async () => {
     member({
       _id: "member-visible",
       name: "Ada Beispiel",
+      secondaryTeamId: "team-chapter",
       isTeamLead: true,
+      isSecondaryTeamLead: true,
       profileImageStorageKey: "profile-image",
       publicProfileCompletedAt: 100,
     }),
@@ -119,7 +130,14 @@ test("returns active members directly from their ybase profiles", async () => {
     },
   ]);
   expect(feed.data.departments).toHaveLength(1);
-  expect(feed.data.departments[0]?.teams[0]?.members).toEqual([
+  const directoryTeams = feed.data.departments[0]?.teams ?? [];
+  const primaryTeam = directoryTeams.find(
+    (team) => team.name === "People & Culture",
+  );
+  const chapterTeam = directoryTeams.find(
+    (team) => team.name === "Chapter Berlin",
+  );
+  expect(primaryTeam?.members).toEqual([
     {
       id: `ybase:${organizationId}:member:member-visible`,
       name: "Ada Beispiel",
@@ -132,6 +150,15 @@ test("returns active members directly from their ybase profiles", async () => {
       name: "Aaron Default",
       role: "",
       isLead: false,
+    },
+  ]);
+  expect(chapterTeam?.members).toEqual([
+    {
+      id: `ybase:${organizationId}:member:member-visible`,
+      name: "Ada Beispiel",
+      role: "Lead",
+      isLead: true,
+      imageUrl: `${publicOrigin}/api/v1/team-directory/images/member-visible`,
     },
   ]);
 });

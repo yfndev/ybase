@@ -304,12 +304,48 @@ test("updateMemberProfile assigns a team and can clear an optional position", as
   expect(cleared?.positionTitle).toBeUndefined();
 });
 
-test("updateMemberProfile assigns and removes a board membership", async () => {
+test("updateMemberProfile assigns a different optional second team", async () => {
   await seedTeam("team-1", orgA);
+  await seedTeam("team-chapter", orgA);
   await updateMemberProfile({
     userId: memberA,
     teamId: "team-1",
+    secondaryTeamId: "team-chapter",
     isTeamLead: true,
+    isSecondaryTeamLead: true,
+  });
+
+  const updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.teamId).toBe("team-1");
+  expect(updated?.secondaryTeamId).toBe("team-chapter");
+  expect(updated?.isTeamLead).toBe(true);
+  expect(updated?.isSecondaryTeamLead).toBe(true);
+
+  await expect(
+    updateMemberProfile({
+      userId: memberA,
+      secondaryTeamId: "team-1",
+    }),
+  ).rejects.toThrow("müssen unterschiedlich sein");
+
+  await updateMemberProfile({
+    userId: memberA,
+    secondaryTeamId: null,
+  });
+  const cleared = await (await users()).findOne({ _id: memberA });
+  expect(cleared?.secondaryTeamId).toBeUndefined();
+  expect(cleared?.isSecondaryTeamLead).toBe(false);
+});
+
+test("updateMemberProfile assigns and removes a board membership", async () => {
+  await seedTeam("team-1", orgA);
+  await seedTeam("team-chapter", orgA);
+  await updateMemberProfile({
+    userId: memberA,
+    teamId: "team-1",
+    secondaryTeamId: "team-chapter",
+    isTeamLead: true,
+    isSecondaryTeamLead: true,
   });
   const departmentId = await seedDepartment(orgA);
   await updateMemberProfile({
@@ -322,16 +358,24 @@ test("updateMemberProfile assigns and removes a board membership", async () => {
     isChair: true,
   });
   expect(assigned?.teamId).toBeUndefined();
+  expect(assigned?.secondaryTeamId).toBeUndefined();
   expect(assigned?.isTeamLead).toBe(false);
+  expect(assigned?.isSecondaryTeamLead).toBe(false);
 
   await updateMemberProfile({
     userId: memberA,
     teamId: "team-1",
+    secondaryTeamId: "team-chapter",
+    isTeamLead: true,
+    isSecondaryTeamLead: true,
     boardMembership: null,
   });
   const removed = await (await users()).findOne({ _id: memberA });
   expect(removed).not.toHaveProperty("boardMembership");
   expect(removed?.teamId).toBe("team-1");
+  expect(removed?.secondaryTeamId).toBe("team-chapter");
+  expect(removed?.isTeamLead).toBe(true);
+  expect(removed?.isSecondaryTeamLead).toBe(true);
 });
 
 test("updateMemberProfile rejects an unavailable board department", async () => {
@@ -358,6 +402,18 @@ test("updateMemberProfile prevents a board member from joining a team", async ()
   await expect(
     updateMemberProfile({ userId: memberA, teamId: "team-1" }),
   ).rejects.toThrow("einem Department statt einem Team");
+  await expect(
+    updateMemberProfile({
+      userId: memberA,
+      secondaryTeamId: "team-1",
+    }),
+  ).rejects.toThrow("einem Department statt einem Team");
+  await expect(
+    updateMemberProfile({
+      userId: memberA,
+      isSecondaryTeamLead: true,
+    }),
+  ).rejects.toThrow("einem Department statt einem Team");
 });
 
 test("updateMemberProfile rejects a team from another org", async () => {
@@ -365,12 +421,24 @@ test("updateMemberProfile rejects a team from another org", async () => {
   await expect(
     updateMemberProfile({ userId: memberA, teamId: "team-b" }),
   ).rejects.toThrow("Team nicht verfügbar");
+  await expect(
+    updateMemberProfile({
+      userId: memberA,
+      secondaryTeamId: "team-b",
+    }),
+  ).rejects.toThrow("Team nicht verfügbar");
 });
 
 test("updateMemberProfile rejects an archived team", async () => {
   await seedTeam("team-archived", orgA, true);
   await expect(
     updateMemberProfile({ userId: memberA, teamId: "team-archived" }),
+  ).rejects.toThrow("Team nicht verfügbar");
+  await expect(
+    updateMemberProfile({
+      userId: memberA,
+      secondaryTeamId: "team-archived",
+    }),
   ).rejects.toThrow("Team nicht verfügbar");
 });
 

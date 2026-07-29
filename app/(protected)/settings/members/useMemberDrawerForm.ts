@@ -1,9 +1,5 @@
 import { useMemberMutations } from "@/lib/client/members/hooks/useMemberMutations";
-import type {
-  MemberStatus,
-  TeamOnboardingStatus,
-  UserRole,
-} from "@/lib/db/types";
+import type { MemberStatus, UserRole } from "@/lib/db/types";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import type { MemberDrawerProps } from "./MemberDrawer.types";
@@ -25,17 +21,19 @@ export function useMemberDrawerForm(
   const {
     updateProfile,
     setStatus: setStatusMutation,
-    setOnboarding: setOnboardingMutation,
     updateRole,
   } = useMemberMutations();
   const [teamId, setTeamId] = useState(member.teamId ?? "");
+  const [secondaryTeamId, setSecondaryTeamId] = useState(
+    member.secondaryTeamId ?? "",
+  );
   const [position, setPosition] = useState(member.positionTitle ?? "");
   const [status, setStatus] = useState<MemberStatus>(member.memberStatus);
-  const [onboarding, setOnboarding] = useState<TeamOnboardingStatus>(
-    member.teamOnboardingStatus,
-  );
   const [role, setRole] = useState<UserRole>(member.role ?? "member");
   const [isTeamLead, setIsTeamLead] = useState(member.isTeamLead ?? false);
+  const [isSecondaryTeamLead, setIsSecondaryTeamLead] = useState(
+    member.isSecondaryTeamLead ?? false,
+  );
   const [isBoardMember, setIsBoardMember] = useState(
     member.boardMembership !== undefined,
   );
@@ -65,7 +63,6 @@ export function useMemberDrawerForm(
   const isSaving =
     updateProfile.isPending ||
     setStatusMutation.isPending ||
-    setOnboardingMutation.isPending ||
     updateRole.isPending;
 
   const handleSave = async () => {
@@ -80,12 +77,18 @@ export function useMemberDrawerForm(
         toast.error("Bitte wähle ein Team aus.");
         return;
       }
+      if (teamId && secondaryTeamId === teamId) {
+        toast.error("Hauptteam und weiteres Team müssen unterschiedlich sein.");
+        return;
+      }
 
       const profile: {
         userId: string;
         teamId?: string | null;
+        secondaryTeamId?: string | null;
         positionTitle?: string | null;
         isTeamLead?: boolean;
+        isSecondaryTeamLead?: boolean;
         boardMembership?: {
           departmentId: string;
           isChair: boolean;
@@ -93,8 +96,15 @@ export function useMemberDrawerForm(
       } = { userId: member._id };
       if (isBoardMember) {
         if (member.teamId) profile.teamId = null;
+        if (member.secondaryTeamId) profile.secondaryTeamId = null;
       } else if (teamId && teamId !== member.teamId) {
         profile.teamId = teamId;
+      }
+      if (
+        !isBoardMember &&
+        secondaryTeamId !== (member.secondaryTeamId ?? "")
+      ) {
+        profile.secondaryTeamId = secondaryTeamId || null;
       }
       const trimmed = position.trim();
       const currentPosition = member.positionTitle?.trim() ?? "";
@@ -104,6 +114,11 @@ export function useMemberDrawerForm(
       const nextIsTeamLead = isBoardMember ? false : isTeamLead;
       if (nextIsTeamLead !== (member.isTeamLead ?? false)) {
         profile.isTeamLead = nextIsTeamLead;
+      }
+      const nextIsSecondaryTeamLead =
+        isBoardMember || !secondaryTeamId ? false : isSecondaryTeamLead;
+      if (nextIsSecondaryTeamLead !== (member.isSecondaryTeamLead ?? false)) {
+        profile.isSecondaryTeamLead = nextIsSecondaryTeamLead;
       }
       const nextBoardMembership = isBoardMember
         ? { departmentId: boardDepartmentId, isChair: boardIsChair }
@@ -116,19 +131,16 @@ export function useMemberDrawerForm(
         profile.boardMembership = nextBoardMembership;
       }
       if (
-        profile.teamId ||
+        profile.teamId !== undefined ||
+        profile.secondaryTeamId !== undefined ||
         profile.positionTitle !== undefined ||
         profile.isTeamLead !== undefined ||
+        profile.isSecondaryTeamLead !== undefined ||
         profile.boardMembership !== undefined
       ) {
         await updateProfile.mutateAsync(profile);
       }
 
-      if (onboarding !== member.teamOnboardingStatus)
-        await setOnboardingMutation.mutateAsync({
-          userId: member._id,
-          status: onboarding,
-        });
       if (status !== member.memberStatus)
         await setStatusMutation.mutateAsync({ userId: member._id, status });
 
@@ -156,16 +168,18 @@ export function useMemberDrawerForm(
   return {
     teamId,
     setTeamId,
+    secondaryTeamId,
+    setSecondaryTeamId,
     position,
     setPosition,
     status,
     setStatus,
-    onboarding,
-    setOnboarding,
     role,
     setRole,
     isTeamLead,
     setIsTeamLead,
+    isSecondaryTeamLead,
+    setIsSecondaryTeamLead,
     isBoardMember,
     setIsBoardMember,
     boardDepartmentId,

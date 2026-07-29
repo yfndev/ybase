@@ -9,12 +9,21 @@ export interface MemberFilters {
   search: string;
 }
 
-export function departmentIdOf(
+export function departmentIdsOf(
   member: User,
   teamsById: Map<string, Team>,
-): string | undefined {
-  if (!member.teamId) return undefined;
-  return teamsById.get(member.teamId)?.departmentId;
+): string[] {
+  if (member.boardMembership) return [member.boardMembership.departmentId];
+
+  const departmentIds: string[] = [];
+  for (const teamId of [member.teamId, member.secondaryTeamId]) {
+    if (!teamId) continue;
+    const departmentId = teamsById.get(teamId)?.departmentId;
+    if (departmentId && !departmentIds.includes(departmentId)) {
+      departmentIds.push(departmentId);
+    }
+  }
+  return departmentIds;
 }
 
 function matchesSearch(member: User, search: string): boolean {
@@ -34,10 +43,14 @@ export function filterMembers(
     if (member.memberStatus !== filters.status) return false;
     if (
       filters.departmentId !== ALL &&
-      departmentIdOf(member, teamsById) !== filters.departmentId
+      !departmentIdsOf(member, teamsById).includes(filters.departmentId)
     )
       return false;
-    if (filters.teamId !== ALL && member.teamId !== filters.teamId)
+    if (
+      filters.teamId !== ALL &&
+      member.teamId !== filters.teamId &&
+      member.secondaryTeamId !== filters.teamId
+    )
       return false;
     return matchesSearch(member, filters.search);
   });

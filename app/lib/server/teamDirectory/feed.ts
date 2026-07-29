@@ -40,7 +40,9 @@ export async function getTeamDirectory(
         _id: 1,
         name: 1,
         teamId: 1,
+        secondaryTeamId: 1,
         isTeamLead: 1,
+        isSecondaryTeamLead: 1,
         boardMembership: 1,
         profileImageStorageKey: 1,
         publicProfileCompletedAt: 1,
@@ -57,8 +59,10 @@ export async function getTeamDirectory(
   const activeTeamIds = new Set(activeTeams.map((team) => team._id));
   const eligibleMembers = memberDocs.filter(
     (member) =>
-      Boolean(member.teamId && activeTeamIds.has(member.teamId)) &&
-      Boolean(profileName(member)),
+      Boolean(
+        (member.teamId && activeTeamIds.has(member.teamId)) ||
+        (member.secondaryTeamId && activeTeamIds.has(member.secondaryTeamId)),
+      ) && Boolean(profileName(member)),
   );
   const teamsByDepartment = groupTeams(activeTeams);
   const membersByTeam = groupMembers(eligibleMembers);
@@ -111,15 +115,31 @@ function groupTeams(teamDocs: Team[]): Map<string, Team[]> {
   return result;
 }
 
+interface DirectoryMembership {
+  member: DirectoryUser;
+  isLead: boolean;
+}
+
 function groupMembers(
   memberDocs: DirectoryUser[],
-): Map<string, DirectoryUser[]> {
-  const result = new Map<string, DirectoryUser[]>();
+): Map<string, DirectoryMembership[]> {
+  const result = new Map<string, DirectoryMembership[]>();
   for (const member of memberDocs) {
-    if (!member.teamId) continue;
-    const items = result.get(member.teamId) ?? [];
-    items.push(member);
-    result.set(member.teamId, items);
+    const memberships = [
+      { teamId: member.teamId, isLead: member.isTeamLead ?? false },
+      {
+        teamId: member.secondaryTeamId,
+        isLead: member.isSecondaryTeamLead ?? false,
+      },
+    ];
+    const seenTeamIds = new Set<string>();
+    for (const membership of memberships) {
+      if (!membership.teamId || seenTeamIds.has(membership.teamId)) continue;
+      seenTeamIds.add(membership.teamId);
+      const items = result.get(membership.teamId) ?? [];
+      items.push({ member, isLead: membership.isLead });
+      result.set(membership.teamId, items);
+    }
   }
   return result;
 }
@@ -127,7 +147,7 @@ function groupMembers(
 function departmentDto(
   department: Department,
   departmentTeams: Team[],
-  membersByTeam: Map<string, DirectoryUser[]>,
+  membersByTeam: Map<string, DirectoryMembership[]>,
   organizationId: string,
   publicOrigin: string,
 ): TeamDirectoryDepartment {
@@ -139,7 +159,9 @@ function departmentDto(
         id: namespacedId(organizationId, "team", team._id),
         name: team.name,
         members: (membersByTeam.get(team._id) ?? [])
-          .map((member) => memberDto(member, organizationId, publicOrigin))
+          .map(({ member, isLead }) =>
+            memberDto(member, organizationId, publicOrigin, isLead),
+          )
           .sort(byLeadAndName),
       }))
       .filter((team) => team.members.length > 0)
