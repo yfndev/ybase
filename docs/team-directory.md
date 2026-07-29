@@ -20,6 +20,10 @@ Mitglied eines zweiten Teams. `isTeamLead` markiert die Person im Hauptteam aus
 Mitgliedschaften zusätzlich `"Lead"` und ist für alle anderen Mitgliedschaften
 leer.
 
+Teams mit `isChapter: true` werden als Chapter veröffentlicht. Chapter führen
+weder Lead- noch allgemeine Positionen und stehen innerhalb ihres Departments
+nach den übrigen Teams.
+
 Interne Berechtigungsrollen wie `admin`, `finance` oder `people_culture` werden
 nicht veröffentlicht.
 
@@ -61,6 +65,7 @@ Lead-Hervorhebung. Weitere Positionen werden nicht dargestellt.
           {
             "id": "ybase:org:team:team",
             "name": "Startup in School",
+            "isChapter": false,
             "members": [
               {
                 "id": "ybase:org:member:user",

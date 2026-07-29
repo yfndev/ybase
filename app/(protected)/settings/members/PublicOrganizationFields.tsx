@@ -52,6 +52,9 @@ export function PublicOrganizationFields({
             value={form.teamId}
             onValueChange={(teamId) => {
               form.setTeamId(teamId);
+              if (form.chapterTeamIds.has(teamId)) {
+                form.setIsTeamLead(false);
+              }
               if (teamId === form.secondaryTeamId) {
                 form.setSecondaryTeamId("");
                 form.setIsSecondaryTeamLead(false);
@@ -61,16 +64,18 @@ export function PublicOrganizationFields({
             placeholder="Team wählen"
             hint={`Department: ${form.department?.name ?? "—"}`}
           />
-          <div className="flex items-center gap-3">
-            <Checkbox
-              id="member-team-lead"
-              checked={form.isTeamLead}
-              onCheckedChange={(checked) =>
-                form.setIsTeamLead(checked === true)
-              }
-            />
-            <Label htmlFor="member-team-lead">Lead</Label>
-          </div>
+          {form.teamId && !form.chapterTeamIds.has(form.teamId) ? (
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="member-team-lead"
+                checked={form.isTeamLead}
+                onCheckedChange={(checked) =>
+                  form.setIsTeamLead(checked === true)
+                }
+              />
+              <Label htmlFor="member-team-lead">Lead</Label>
+            </div>
+          ) : null}
           <LabeledSelect
             id="member-secondary-team"
             label="Weiteres Team (optional)"
@@ -78,7 +83,9 @@ export function PublicOrganizationFields({
             onValueChange={(teamId) => {
               const nextTeamId = teamId === NO_SECONDARY_TEAM ? "" : teamId;
               form.setSecondaryTeamId(nextTeamId);
-              if (!nextTeamId) form.setIsSecondaryTeamLead(false);
+              if (!nextTeamId || form.chapterTeamIds.has(nextTeamId)) {
+                form.setIsSecondaryTeamLead(false);
+              }
             }}
             options={[
               {
@@ -91,7 +98,8 @@ export function PublicOrganizationFields({
               })),
             ]}
           />
-          {form.secondaryTeamId ? (
+          {form.secondaryTeamId &&
+          !form.chapterTeamIds.has(form.secondaryTeamId) ? (
             <div className="flex items-center gap-3">
               <Checkbox
                 id="member-secondary-team-lead"

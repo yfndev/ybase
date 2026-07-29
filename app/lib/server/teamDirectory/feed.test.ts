@@ -58,6 +58,7 @@ beforeEach(async () => {
       name: "Chapter Berlin",
       departmentId: "department-operations",
       organizationId,
+      isChapter: true,
       isArchived: false,
       createdBy: newId(),
     },
@@ -131,12 +132,18 @@ test("returns active members directly from their ybase profiles", async () => {
   ]);
   expect(feed.data.departments).toHaveLength(1);
   const directoryTeams = feed.data.departments[0]?.teams ?? [];
+  expect(directoryTeams.map((team) => team.name)).toEqual([
+    "People & Culture",
+    "Chapter Berlin",
+  ]);
   const primaryTeam = directoryTeams.find(
     (team) => team.name === "People & Culture",
   );
   const chapterTeam = directoryTeams.find(
     (team) => team.name === "Chapter Berlin",
   );
+  expect(primaryTeam?.isChapter).toBe(false);
+  expect(chapterTeam?.isChapter).toBe(true);
   expect(primaryTeam?.members).toEqual([
     {
       id: `ybase:${organizationId}:member:member-visible`,
@@ -156,8 +163,8 @@ test("returns active members directly from their ybase profiles", async () => {
     {
       id: `ybase:${organizationId}:member:member-visible`,
       name: "Ada Beispiel",
-      role: "Lead",
-      isLead: true,
+      role: "",
+      isLead: false,
       imageUrl: `${publicOrigin}/api/v1/team-directory/images/member-visible`,
     },
   ]);

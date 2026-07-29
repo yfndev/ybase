@@ -251,6 +251,7 @@ async function seedTeam(
   id: string,
   organizationId: string,
   isArchived = false,
+  isChapter = false,
 ) {
   await (
     await teams()
@@ -260,6 +261,7 @@ async function seedTeam(
     name: id,
     departmentId: "dept-1",
     organizationId,
+    isChapter,
     isArchived,
     createdBy: adminA,
   });
@@ -335,6 +337,25 @@ test("updateMemberProfile assigns a different optional second team", async () =>
   const cleared = await (await users()).findOne({ _id: memberA });
   expect(cleared?.secondaryTeamId).toBeUndefined();
   expect(cleared?.isSecondaryTeamLead).toBe(false);
+});
+
+test("updateMemberProfile rejects positions reserved from chapters", async () => {
+  await seedTeam("team-chapter", orgA, false, true);
+
+  await expect(
+    updateMemberProfile({
+      userId: memberA,
+      teamId: "team-chapter",
+      isTeamLead: true,
+    }),
+  ).rejects.toThrow("keine Lead-Position");
+  await expect(
+    updateMemberProfile({
+      userId: memberA,
+      teamId: "team-chapter",
+      positionTitle: "Regional Lead",
+    }),
+  ).rejects.toThrow("keine allgemeine Position");
 });
 
 test("updateMemberProfile assigns and removes a board membership", async () => {

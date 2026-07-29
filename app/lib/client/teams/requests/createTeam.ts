@@ -1,6 +1,7 @@
 interface CreateTeamInput {
   name: string;
   departmentId: string;
+  isChapter: boolean;
 }
 
 export async function createTeam(input: CreateTeamInput): Promise<string> {

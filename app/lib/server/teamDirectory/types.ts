@@ -17,6 +17,7 @@ export interface TeamDirectoryBoardMember {
 export interface TeamDirectoryTeam {
   id: string;
   name: string;
+  isChapter: boolean;
   members: TeamDirectoryMember[];
 }
 

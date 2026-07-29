@@ -57,15 +57,17 @@ export function MemberDrawerPanel({
 
       <div className="flex flex-1 flex-col gap-4 px-6">
         <PublicOrganizationFields form={form} />
-        <div className="grid gap-1.5">
-          <Label htmlFor="member-position">Position (optional)</Label>
-          <Input
-            id="member-position"
-            value={form.position}
-            onChange={(event) => form.setPosition(event.target.value)}
-            placeholder="z. B. Tech Lead"
-          />
-        </div>
+        {form.isBoardMember || form.hasNonChapterTeam ? (
+          <div className="grid gap-1.5">
+            <Label htmlFor="member-position">Position (optional)</Label>
+            <Input
+              id="member-position"
+              value={form.position}
+              onChange={(event) => form.setPosition(event.target.value)}
+              placeholder="z. B. Tech Lead"
+            />
+          </div>
+        ) : null}
         <MemberStatusField
           status={form.status}
           onboarding={member.teamOnboardingStatus}

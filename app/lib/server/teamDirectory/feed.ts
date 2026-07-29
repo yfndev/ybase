@@ -158,13 +158,23 @@ function departmentDto(
       .map((team) => ({
         id: namespacedId(organizationId, "team", team._id),
         name: team.name,
+        isChapter: team.isChapter ?? false,
         members: (membersByTeam.get(team._id) ?? [])
           .map(({ member, isLead }) =>
-            memberDto(member, organizationId, publicOrigin, isLead),
+            memberDto(
+              member,
+              organizationId,
+              publicOrigin,
+              team.isChapter ? false : isLead,
+            ),
           )
           .sort(byLeadAndName),
       }))
       .filter((team) => team.members.length > 0)
-      .sort(byName),
+      .sort(
+        (left, right) =>
+          Number(left.isChapter) - Number(right.isChapter) ||
+          byName(left, right),
+      ),
   };
 }

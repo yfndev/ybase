@@ -62,6 +62,7 @@ erDiagram
         string organizationId
         string departmentId
         string name
+        boolean isChapter
         boolean isArchived
     }
 

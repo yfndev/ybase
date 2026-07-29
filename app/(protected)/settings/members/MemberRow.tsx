@@ -15,9 +15,10 @@ interface Props {
   onSelect: (member: User) => void;
 }
 
-function positionLabel(member: User): string {
+function positionLabel(member: User, teams: Team[]): string {
   if (member.boardMembership?.isChair) return "Vorsitz";
   if (member.boardMembership) return "Vorstand";
+  if (teams.length > 0 && teams.every((team) => team.isChapter)) return "—";
   if (member.isTeamLead || member.isSecondaryTeamLead) return "Lead";
   return member.positionTitle || "—";
 }
@@ -48,7 +49,10 @@ export function MemberRow({
     : [team, secondaryTeam]
         .flatMap((entry) => (entry ? [entry.name] : []))
         .join(", ") || "—";
-  const position = positionLabel(member);
+  const position = positionLabel(
+    member,
+    [team, secondaryTeam].filter((entry) => entry !== undefined),
+  );
   const displayName = member.name || "Unbekanntes Mitglied";
 
   return (

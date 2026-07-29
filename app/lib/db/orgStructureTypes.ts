@@ -13,6 +13,7 @@ export interface Team {
   name: string;
   departmentId: string;
   organizationId: string;
+  isChapter?: boolean;
   isArchived: boolean;
   createdBy: string;
 }

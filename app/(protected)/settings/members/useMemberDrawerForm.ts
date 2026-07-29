@@ -3,6 +3,7 @@ import type { MemberStatus, UserRole } from "@/lib/db/types";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import type { MemberDrawerProps } from "./MemberDrawer.types";
+import { memberOrganizationState } from "./memberOrganizationState";
 
 const LAST_ADMIN_MESSAGE =
   "Der letzte Admin kann nicht entfernt werden. Mindestens ein Admin ist erforderlich.";
@@ -44,22 +45,13 @@ export function useMemberDrawerForm(
     member.boardMembership?.isChair ?? false,
   );
 
-  const activeTeams = teams.filter((team) => !team.isArchived);
-  const activeDepartments = departments.filter(
-    (department) => !department.isArchived,
-  );
-  const teamOptions = activeTeams.map((team) => ({
-    value: team._id,
-    label: team.name,
-  }));
-  const departmentOptions = activeDepartments.map((department) => ({
-    value: department._id,
-    label: department.name,
-  }));
-  const selectedTeam = activeTeams.find((team) => team._id === teamId);
-  const department = selectedTeam
-    ? departments.find((entry) => entry._id === selectedTeam.departmentId)
-    : undefined;
+  const {
+    teamOptions,
+    departmentOptions,
+    department,
+    chapterTeamIds,
+    hasNonChapterTeam,
+  } = memberOrganizationState(teams, departments, teamId, secondaryTeamId);
   const isSaving =
     updateProfile.isPending ||
     setStatusMutation.isPending ||
@@ -106,7 +98,8 @@ export function useMemberDrawerForm(
       ) {
         profile.secondaryTeamId = secondaryTeamId || null;
       }
-      const trimmed = position.trim();
+      const trimmed =
+        !isBoardMember && !hasNonChapterTeam ? "" : position.trim();
       const currentPosition = member.positionTitle?.trim() ?? "";
       if (trimmed !== currentPosition) {
         profile.positionTitle = trimmed || null;
@@ -189,6 +182,8 @@ export function useMemberDrawerForm(
     teamOptions,
     departmentOptions,
     department,
+    chapterTeamIds,
+    hasNonChapterTeam,
     canEditRoles,
     isSaving,
     handleSave,

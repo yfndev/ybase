@@ -9,7 +9,10 @@ import { createTeam } from "../requests/createTeam";
 export function useTeamMutations() {
   const queryClient = useQueryClient();
   const onSuccess = () =>
-    queryClient.invalidateQueries({ queryKey: ["teams"] });
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["teams"] }),
+      queryClient.invalidateQueries({ queryKey: ["members"] }),
+    ]);
 
   return {
     create: useMutation({ mutationFn: createTeam, onSuccess }),

@@ -95,6 +95,38 @@ export async function updateMemberProfile(input: {
   if (!hasBoardAssignment && nextIsSecondaryTeamLead && !nextSecondaryTeamId) {
     throw new Error("Ein Lead benötigt ein zugeordnetes weiteres Team.");
   }
+  const [nextTeam, nextSecondaryTeam] = hasBoardAssignment
+    ? [undefined, undefined]
+    : await Promise.all([
+        nextTeamId
+          ? requireActiveOrganizationTeam(
+              nextTeamId,
+              currentUser.organizationId,
+            )
+          : undefined,
+        nextSecondaryTeamId
+          ? requireActiveOrganizationTeam(
+              nextSecondaryTeamId,
+              currentUser.organizationId,
+            )
+          : undefined,
+      ]);
+  if (nextIsTeamLead && nextTeam?.isChapter) {
+    throw new Error("Chapter haben keine Lead-Position.");
+  }
+  if (nextIsSecondaryTeamLead && nextSecondaryTeam?.isChapter) {
+    throw new Error("Chapter haben keine Lead-Position.");
+  }
+  const hasNonChapterTeam = [nextTeam, nextSecondaryTeam].some(
+    (team) => team && !team.isChapter,
+  );
+  if (
+    !hasBoardAssignment &&
+    typeof positionTitle === "string" &&
+    !hasNonChapterTeam
+  ) {
+    throw new Error("Chapter haben keine allgemeine Position.");
+  }
 
   const patch: Partial<
     Pick<
@@ -108,14 +140,9 @@ export async function updateMemberProfile(input: {
     >
   > = {};
   if (teamId !== undefined && teamId !== null) {
-    await requireActiveOrganizationTeam(teamId, currentUser.organizationId);
     patch.teamId = teamId;
   }
   if (secondaryTeamId !== undefined && secondaryTeamId !== null) {
-    await requireActiveOrganizationTeam(
-      secondaryTeamId,
-      currentUser.organizationId,
-    );
     patch.secondaryTeamId = secondaryTeamId;
   }
   if (positionTitle !== undefined && positionTitle !== null) {
