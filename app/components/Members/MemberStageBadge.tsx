@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { memberStageLabel, type MemberStage } from "@/lib/members/stages";
 import { cn } from "@/lib/utils";
+import { MemberStageIcon } from "./MemberStageIcon";
 
 const MEMBER_STAGE_BADGE_STYLES: Record<MemberStage, string> = {
   application:
@@ -32,11 +33,12 @@ export function MemberStageBadge({
     <Badge
       variant="outline"
       className={cn(
-        "px-3 py-1 text-sm font-medium",
+        "gap-1.5 px-3 py-1 text-sm font-medium",
         MEMBER_STAGE_BADGE_STYLES[stage],
         className,
       )}
     >
+      <MemberStageIcon stage={stage} />
       {memberStageLabel(stage)}
     </Badge>
   );

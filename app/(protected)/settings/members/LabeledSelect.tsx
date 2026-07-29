@@ -8,13 +8,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { ReactNode } from "react";
 
 interface Props {
   id: string;
   label: string;
   value: string;
   onValueChange: (value: string) => void;
-  options: { value: string; label: string; disabled?: boolean }[];
+  options: {
+    value: string;
+    label: string;
+    icon?: ReactNode;
+    disabled?: boolean;
+  }[];
   placeholder?: string;
   hint?: string;
   disabled?: boolean;
@@ -44,6 +50,7 @@ export function LabeledSelect({
               value={option.value}
               disabled={option.disabled}
             >
+              {option.icon}
               {option.label}
             </SelectItem>
           ))}
