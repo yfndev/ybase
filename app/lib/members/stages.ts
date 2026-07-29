@@ -36,12 +36,11 @@ export function memberStageForStatus(status: MemberStatus): MemberStage {
 }
 
 const APPLICATION_STAGE_STATUSES: Record<
-  Extract<MemberStage, "application" | "interview" | "archived">,
+  Extract<MemberStage, "application" | "interview">,
   readonly ApplicationDisplayStatus[]
 > = {
   application: ["received", "review"],
   interview: ["interview"],
-  archived: ["rejected", "withdrawn"],
 };
 
 const MEMBER_STATUSES_BY_STAGE: Partial<

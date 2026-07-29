@@ -84,12 +84,6 @@ export function MembersClient({
         teamsById,
       )
     : [];
-  const showsApplications = [
-    "application",
-    "interview",
-    "onboarding",
-    "archived",
-  ].includes(stage);
   const showsMembers = memberStatuses.length > 0;
 
   const adminCount = members.filter((member) => member.role === "admin").length;
@@ -112,11 +106,8 @@ export function MembersClient({
         }}
       />
 
-      {showsApplications && selectedApplicationEmptyText ? (
-        <section className={stage === "archived" ? "space-y-4" : undefined}>
-          {stage === "archived" ? (
-            <h2 className="text-lg font-semibold">Archivierte Bewerbungen</h2>
-          ) : null}
+      {selectedApplicationEmptyText ? (
+        <section>
           <ApplicationsPanel
             applications={stagedApplications}
             members={members}

@@ -20,10 +20,6 @@ export const APPLICATION_STAGE_EMPTY_TEXT: Partial<
     title: "Niemand im Onboarding",
     description: "Zugesagte und registrierte neue Mitglieder erscheinen hier.",
   },
-  archived: {
-    title: "Keine archivierten Bewerbungen",
-    description: "Abgelehnte und zurückgezogene Bewerbungen erscheinen hier.",
-  },
 };
 
 export const MEMBER_STAGE_EMPTY_TEXT: Partial<Record<MemberStage, EmptyText>> =
