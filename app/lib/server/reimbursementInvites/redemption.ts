@@ -1,5 +1,10 @@
 import { requireAuthenticatedUser } from "../../auth/session";
 import { reimbursementInvites, users } from "../../db/collections";
+import {
+  isPublicMemberStatus,
+  isUnavailableMemberStatus,
+  UNAVAILABLE_MEMBER_STATUSES,
+} from "../../members/status";
 import { YFN_ORGANIZATION } from "../../organization";
 import { addLog } from "../logs";
 import {
@@ -20,7 +25,7 @@ export async function redeemReimbursementInvite(token: string): Promise<void> {
   if (user.organizationId && user.organizationId !== invite.organizationId) {
     throw new Error("Dein Konto gehört bereits zu einer anderen Organisation");
   }
-  if (user.memberStatus === "offboarded") {
+  if (isUnavailableMemberStatus(user.memberStatus)) {
     throw new Error("Dein Konto wurde deaktiviert");
   }
 
@@ -30,7 +35,7 @@ export async function redeemReimbursementInvite(token: string): Promise<void> {
       `Bitte melde dich mit einem @${YFN_ORGANIZATION.domain}-Konto an`,
     );
   }
-  if (user.memberStatus === "active") return;
+  if (isPublicMemberStatus(user.memberStatus)) return;
 
   const now = Date.now();
   const granted = await (
@@ -38,7 +43,7 @@ export async function redeemReimbursementInvite(token: string): Promise<void> {
   ).updateOne(
     {
       _id: user._id,
-      memberStatus: { $ne: "offboarded" },
+      memberStatus: { $nin: [...UNAVAILABLE_MEMBER_STATUSES] },
       $or: [
         { organizationId: invite.organizationId },
         { organizationId: { $exists: false } },

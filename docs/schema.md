@@ -55,6 +55,9 @@ erDiagram
         string applicationId
         string memberStatus
         string teamOnboardingStatus
+        number offboardingPlannedAt
+        number offboardingStartedAt
+        number archivedAt
     }
 
     teams {

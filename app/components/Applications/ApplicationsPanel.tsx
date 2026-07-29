@@ -6,6 +6,7 @@ import { useApplications } from "@/lib/client/applications/hooks/useApplications
 import { useMembers } from "@/lib/client/members/hooks/useMembers";
 import type { ApplicationWithFiles, User } from "@/lib/db/types";
 import type { MemberStage } from "@/lib/members/stages";
+import { isUnavailableMemberStatus } from "@/lib/members/status";
 import { ApplicationsTable } from "./ApplicationsTable/ApplicationsTable";
 import { ApplicationsToolbar } from "./ApplicationsToolbar";
 import {
@@ -57,7 +58,10 @@ export function ApplicationsPanel({
     sortDirection: "desc",
   });
   const owners = useMemo(
-    () => members.filter((member) => member.memberStatus !== "offboarded"),
+    () =>
+      members.filter(
+        (member) => !isUnavailableMemberStatus(member.memberStatus),
+      ),
     [members],
   );
   const ownersById = useMemo(

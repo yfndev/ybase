@@ -219,13 +219,35 @@ test("completed onboarding stays locked after member approval", async () => {
   await expect(
     setTeamOnboardingStatus({ userId: memberA, status: "in_progress" }),
   ).rejects.toThrow("kann nicht erneut geöffnet werden");
+
+  await setMemberStatus({ userId: memberA, status: "offboarding_planned" });
+  await expect(
+    setTeamOnboardingStatus({ userId: memberA, status: "in_progress" }),
+  ).rejects.toThrow("kann nicht erneut geöffnet werden");
 });
 
-test("setMemberStatus offboards a member and stamps the offboarding time", async () => {
+test("setMemberStatus records every offboarding phase", async () => {
+  await setMemberStatus({ userId: memberA, status: "offboarding_planned" });
+  let updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.memberStatus).toBe("offboarding_planned");
+  expect(typeof updated?.offboardingPlannedAt).toBe("number");
+
+  await setMemberStatus({ userId: memberA, status: "offboarding" });
+  updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.memberStatus).toBe("offboarding");
+  expect(typeof updated?.offboardingStartedAt).toBe("number");
+
+  await setMemberStatus({ userId: memberA, status: "archived" });
+  updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.memberStatus).toBe("archived");
+  expect(typeof updated?.archivedAt).toBe("number");
+});
+
+test("setMemberStatus maps legacy offboarded writes to archived", async () => {
   await setMemberStatus({ userId: memberA, status: "offboarded" });
   const updated = await (await users()).findOne({ _id: memberA });
-  expect(updated?.memberStatus).toBe("offboarded");
-  expect(typeof updated?.offboardedAt).toBe("number");
+  expect(updated?.memberStatus).toBe("archived");
+  expect(typeof updated?.archivedAt).toBe("number");
 });
 
 test("setMemberStatus marks a member as inactive", async () => {
@@ -236,7 +258,7 @@ test("setMemberStatus marks a member as inactive", async () => {
 
 test("setMemberStatus cannot touch a user from another org", async () => {
   await expect(
-    setMemberStatus({ userId: memberB, status: "offboarded" }),
+    setMemberStatus({ userId: memberB, status: "archived" }),
   ).rejects.toThrow("User not found");
 });
 
@@ -463,9 +485,9 @@ test("updateMemberProfile rejects an archived team", async () => {
   ).rejects.toThrow("Team nicht verfügbar");
 });
 
-test("listMembers keeps offboarded profiles visible", async () => {
-  await setMemberStatus({ userId: memberA, status: "offboarded" });
+test("listMembers keeps archived profiles visible", async () => {
+  await setMemberStatus({ userId: memberA, status: "archived" });
   const members = await listMembers();
-  const offboarded = members.find((member) => member._id === memberA);
-  expect(offboarded?.memberStatus).toBe("offboarded");
+  const archived = members.find((member) => member._id === memberA);
+  expect(archived?.memberStatus).toBe("archived");
 });

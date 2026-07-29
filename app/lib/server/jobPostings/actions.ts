@@ -5,6 +5,7 @@ import { USER_PERMISSIONS } from "../../auth/roles";
 import { requirePermission } from "../../auth/session";
 import { jobPostings, teams, users } from "../../db/collections";
 import { newId } from "../../db/ids";
+import { UNAVAILABLE_MEMBER_STATUSES } from "../../members/status";
 import { addLog } from "../logs";
 import { requireOwnedJobPosting } from "./access";
 import { sanitizeRichText } from "./sanitize";
@@ -133,7 +134,7 @@ async function requireContactMembers(
     .find({
       _id: { $in: contactUserIds },
       organizationId,
-      memberStatus: { $ne: "offboarded" },
+      memberStatus: { $nin: [...UNAVAILABLE_MEMBER_STATUSES] },
     })
     .project({ _id: 1, email: 1 })
     .toArray();

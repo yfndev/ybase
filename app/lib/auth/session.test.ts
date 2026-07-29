@@ -52,19 +52,39 @@ test("admin passes People & Culture and finance permission guards", async () => 
   await expect(requirePermission("manage_finance")).resolves.toBeDefined();
 });
 
-test("offboarded users lose access to protected data", async () => {
+test.each(["offboarding", "archived", "offboarded"])(
+  "%s users lose access to protected data",
+  async (memberStatus) => {
+    mocks.findOne.mockResolvedValue({
+      _id: "user-id",
+      organizationId: "organization-id",
+      role: "admin",
+      memberStatus,
+    });
+
+    await expect(requireUser()).rejects.toThrow(
+      "User is offboarding or archived",
+    );
+    await expect(requireRole("member")).rejects.toThrow(
+      "User is offboarding or archived",
+    );
+    await expect(requirePermission("manage_members")).rejects.toThrow(
+      "User is offboarding or archived",
+    );
+  },
+);
+
+test("members with a planned offboarding keep regular access", async () => {
   mocks.findOne.mockResolvedValue({
     _id: "user-id",
     organizationId: "organization-id",
-    role: "admin",
-    memberStatus: "offboarded",
+    role: "member",
+    memberStatus: "offboarding_planned",
   });
 
-  await expect(requireUser()).rejects.toThrow("User is offboarded");
-  await expect(requireRole("member")).rejects.toThrow("User is offboarded");
-  await expect(requirePermission("manage_members")).rejects.toThrow(
-    "User is offboarded",
-  );
+  await expect(requireUser()).resolves.toMatchObject({
+    memberStatus: "offboarding_planned",
+  });
 });
 
 test("members in onboarding cannot access regular platform data", async () => {

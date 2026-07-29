@@ -101,14 +101,24 @@ test("returns active members directly from their ybase profiles", async () => {
       name: "Aaron Default",
     }),
     member({
-      _id: "member-offboarded",
-      name: "Former Person",
+      _id: "member-planned",
+      name: "Planned Person",
+      memberStatus: "offboarding_planned",
+    }),
+    member({
+      _id: "member-offboarding",
+      name: "Offboarding Person",
       teamId: undefined,
-      memberStatus: "offboarded",
+      memberStatus: "offboarding",
       boardMembership: {
         departmentId: "department-operations",
         isChair: false,
       },
+    }),
+    member({
+      _id: "member-archived",
+      name: "Archived Person",
+      memberStatus: "archived",
     }),
     member({
       _id: "member-archived-team",
@@ -155,6 +165,12 @@ test("returns active members directly from their ybase profiles", async () => {
     {
       id: `ybase:${organizationId}:member:member-defaults`,
       name: "Aaron Default",
+      role: "",
+      isLead: false,
+    },
+    {
+      id: `ybase:${organizationId}:member:member-planned`,
+      name: "Planned Person",
       role: "",
       isLead: false,
     },

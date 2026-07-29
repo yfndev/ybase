@@ -223,12 +223,20 @@ test("updateJobPosting rejects unavailable contacts", async () => {
   const offboardedContact = await insertMember(orgA, {
     memberStatus: "offboarded",
   });
+  const offboardingContact = await insertMember(orgA, {
+    memberStatus: "offboarding",
+  });
+  const archivedContact = await insertMember(orgA, {
+    memberStatus: "archived",
+  });
   const contactWithoutEmail = await insertMember(orgA, { email: undefined });
   const id = await createJobPostingDraft({ title: "T", teamId: teamA });
 
   for (const contactUserId of [
     foreignContact,
     offboardedContact,
+    offboardingContact,
+    archivedContact,
     contactWithoutEmail,
   ]) {
     await expect(
@@ -240,6 +248,22 @@ test("updateJobPosting rejects unavailable contacts", async () => {
       }),
     ).rejects.toThrow("Ansprechpartner nicht verfügbar");
   }
+});
+
+test("updateJobPosting keeps planned offboarding contacts available", async () => {
+  const contactId = await insertMember(orgA, {
+    memberStatus: "offboarding_planned",
+  });
+  const id = await createJobPostingDraft({ title: "T", teamId: teamA });
+
+  await updateJobPosting({
+    jobPostingId: id,
+    title: "T",
+    teamId: teamA,
+    contactUserIds: [contactId],
+  });
+
+  expect((await getJobPostingById(id)).contactUserIds).toEqual([contactId]);
 });
 
 test("cannot touch or read a posting from another org", async () => {

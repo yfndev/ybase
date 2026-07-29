@@ -5,6 +5,7 @@ import { AppSidebar } from "@/components/Sidebar/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
 import { requireAuthenticatedUser } from "@/lib/auth/session";
+import { isUnavailableMemberStatus } from "@/lib/members/status";
 import { OnboardingNotice } from "./OnboardingNotice";
 import { OffboardedNotice } from "./OffboardedNotice";
 import { PublicProfileSetup } from "./PublicProfileSetup";
@@ -19,7 +20,7 @@ export default async function ProtectedLayout({
   const member = await requireAuthenticatedUser();
 
   let content: ReactNode;
-  if (member.memberStatus === "offboarded") {
+  if (isUnavailableMemberStatus(member.memberStatus)) {
     content = <OffboardedNotice />;
   } else if (member.publicProfileSetupRequired === true) {
     content = (

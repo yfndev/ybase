@@ -55,7 +55,10 @@ describe("member lifecycle stages", () => {
     member("onboarding-member", "onboarding"),
     member("active-member", "active"),
     member("inactive-member", "inactive"),
-    member("offboarded-member", "offboarded"),
+    member("planned-member", "offboarding_planned"),
+    member("offboarding-member", "offboarding"),
+    member("archived-member", "archived"),
+    member("legacy-offboarded-member", "offboarded"),
   ];
   const memberStatusesById = new Map(
     members.map((entry) => [entry._id, entry.memberStatus]),
@@ -65,7 +68,11 @@ describe("member lifecycle stages", () => {
     expect(isMemberStage("interview")).toBe(true);
     expect(isMemberStage("unknown")).toBe(false);
     expect(memberStageLabel("onboarding")).toBe("Onboarding");
+    expect(memberStageLabel("offboarding_planned")).toBe(
+      "Offboarding vorgemerkt",
+    );
     expect(memberStageForStatus("active")).toBe("active");
+    expect(memberStageForStatus("offboarded")).toBe("archived");
   });
 
   test("groups application records by recruiting step", () => {
@@ -95,13 +102,19 @@ describe("member lifecycle stages", () => {
     expect(membersForStage(members, "onboarding")).toEqual([]);
   });
 
-  test("keeps inactive and offboarded members separate", () => {
+  test("keeps offboarding phases separate and maps legacy records to archive", () => {
     expect(
       membersForStage(members, "inactive").map((entry) => entry._id),
     ).toEqual(["inactive-member"]);
     expect(
-      membersForStage(members, "offboarded").map((entry) => entry._id),
-    ).toEqual(["offboarded-member"]);
+      membersForStage(members, "offboarding_planned").map((entry) => entry._id),
+    ).toEqual(["planned-member"]);
+    expect(
+      membersForStage(members, "offboarding").map((entry) => entry._id),
+    ).toEqual(["offboarding-member"]);
+    expect(
+      membersForStage(members, "archived").map((entry) => entry._id),
+    ).toEqual(["archived-member", "legacy-offboarded-member"]);
   });
 
   test("counts records shown in every tab", () => {
@@ -111,8 +124,9 @@ describe("member lifecycle stages", () => {
       onboarding: 2,
       active: 1,
       inactive: 1,
-      offboarded: 1,
-      archived: 2,
+      offboarding_planned: 1,
+      offboarding: 1,
+      archived: 4,
     });
   });
 });

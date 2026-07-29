@@ -5,6 +5,7 @@ import { USER_PERMISSIONS } from "../../auth/roles";
 import { requirePermission } from "../../auth/session";
 import { applications, jobPostings, users } from "../../db/collections";
 import type { Application, ApplicationWithFiles } from "../../db/types";
+import { UNAVAILABLE_MEMBER_STATUSES } from "../../members/status";
 import { addLog } from "../logs";
 import {
   loadOwnedApplication,
@@ -148,7 +149,7 @@ export async function updateApplicationManagement(input: {
     ).countDocuments({
       _id: { $in: parsed.ownerIds },
       organizationId: user.organizationId,
-      memberStatus: { $ne: "offboarded" },
+      memberStatus: { $nin: [...UNAVAILABLE_MEMBER_STATUSES] },
     });
     if (availableOwners !== parsed.ownerIds.length) {
       throw new Error(

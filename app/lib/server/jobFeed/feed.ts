@@ -1,6 +1,7 @@
 import { departments, jobPostings, teams, users } from "../../db/collections";
 import type { JobPosting, User } from "../../db/types";
 import { berlinToday } from "../../jobPostings/deadline";
+import { UNAVAILABLE_MEMBER_STATUSES } from "../../members/status";
 import { YFN_ORGANIZATION } from "../../organization";
 
 export const JOB_FEED_TAG = "YFN_TEAM" as const;
@@ -82,7 +83,7 @@ export async function getJobFeedV1(
       .find({
         _id: { $in: contactUserIds },
         organizationId,
-        memberStatus: { $ne: "offboarded" },
+        memberStatus: { $nin: [...UNAVAILABLE_MEMBER_STATUSES] },
       })
       .project<Pick<User, "_id" | "name" | "email">>({
         _id: 1,

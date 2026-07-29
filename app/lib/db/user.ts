@@ -1,5 +1,12 @@
 export type UserRole = "admin" | "finance" | "people_culture" | "member";
-export type MemberStatus = "onboarding" | "active" | "inactive" | "offboarded";
+export type MemberStatus =
+  | "onboarding"
+  | "active"
+  | "inactive"
+  | "offboarding_planned"
+  | "offboarding"
+  | "archived"
+  | "offboarded";
 export type TeamOnboardingStatus = "not_started" | "in_progress" | "completed";
 export type ProfileImageSource = "google" | "upload";
 
@@ -45,5 +52,8 @@ export interface User {
   registeredAt?: number;
   onboardedAt?: number;
   teamOnboardedAt?: number;
+  offboardingPlannedAt?: number;
+  offboardingStartedAt?: number;
+  archivedAt?: number;
   offboardedAt?: number;
 }

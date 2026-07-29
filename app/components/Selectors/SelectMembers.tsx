@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { User } from "@/lib/db/types";
 import { getInitials } from "@/lib/formatters/getInitials";
+import { isUnavailableMemberStatus } from "@/lib/members/status";
 import { profileAvatarUrl } from "@/lib/profile/avatar";
 import { MultiSelect, type MultiSelectOption } from "./MultiSelect";
 
@@ -95,7 +96,7 @@ export function SelectMembers({
       members
         .filter(
           (member) =>
-            member.memberStatus !== "offboarded" &&
+            !isUnavailableMemberStatus(member.memberStatus) &&
             Boolean(member.email?.trim()),
         )
         .map((member) => ({

@@ -1,5 +1,6 @@
 import { useMemberMutations } from "@/lib/client/members/hooks/useMemberMutations";
 import type { MemberStatus, UserRole } from "@/lib/db/types";
+import { normalizeMemberStatus } from "@/lib/members/status";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import type { MemberDrawerProps } from "./MemberDrawer.types";
@@ -29,7 +30,9 @@ export function useMemberDrawerForm(
     member.secondaryTeamId ?? "",
   );
   const [position, setPosition] = useState(member.positionTitle ?? "");
-  const [status, setStatus] = useState<MemberStatus>(member.memberStatus);
+  const [status, setStatus] = useState<MemberStatus>(
+    normalizeMemberStatus(member.memberStatus),
+  );
   const [role, setRole] = useState<UserRole>(member.role ?? "member");
   const [isTeamLead, setIsTeamLead] = useState(member.isTeamLead ?? false);
   const [isSecondaryTeamLead, setIsSecondaryTeamLead] = useState(

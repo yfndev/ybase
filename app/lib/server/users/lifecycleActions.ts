@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { users } from "../../db/collections";
 import type { MemberStatus, Team } from "../../db/types";
+import { isPublicMemberStatus } from "../../members/status";
 import { addLog } from "../logs";
 import {
   loadManagedMember,
@@ -15,6 +16,9 @@ const memberStatusSchema = z.enum([
   "onboarding",
   "active",
   "inactive",
+  "offboarding_planned",
+  "offboarding",
+  "archived",
   "offboarded",
 ]);
 const teamOnboardingSchema = z.enum([
@@ -27,9 +31,10 @@ export async function setMemberStatus(input: {
   userId: string;
   status: MemberStatus;
 }): Promise<void> {
-  const { userId, status } = z
+  const { userId, status: parsedStatus } = z
     .object({ userId: z.string(), status: memberStatusSchema })
     .parse(input);
+  const status = parsedStatus === "offboarded" ? "archived" : parsedStatus;
   const { currentUser, target } = await loadManagedMember(userId);
   if (status === "active" && target.teamOnboardingStatus !== "completed") {
     throw new Error(
@@ -114,7 +119,7 @@ export async function setTeamOnboardingStatus(input: {
     .object({ userId: z.string(), status: teamOnboardingSchema })
     .parse(input);
   const { currentUser, target } = await loadManagedMember(userId);
-  if (target.memberStatus === "active" && status !== "completed") {
+  if (isPublicMemberStatus(target.memberStatus) && status !== "completed") {
     throw new Error(
       "Das Onboarding eines freigegebenen Teammitglieds kann nicht erneut geöffnet werden.",
     );

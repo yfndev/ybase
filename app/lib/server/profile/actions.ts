@@ -4,6 +4,8 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { requireAuthenticatedUser } from "../../auth/session";
 import { users } from "../../db/collections";
+import type { MemberStatus } from "../../db/types";
+import { isUnavailableMemberStatus } from "../../members/status";
 import { profileImageUploadDirectory } from "../../s3/keys";
 import {
   getObjectBuffer,
@@ -32,11 +34,13 @@ const completeSchema = z.object({
 function requireEligibleUser<
   T extends {
     organizationId?: string;
-    memberStatus: string;
+    memberStatus: MemberStatus;
   },
 >(user: T): asserts user is T & { organizationId: string } {
   if (!user.organizationId) throw new Error("User has no organization");
-  if (user.memberStatus === "offboarded") throw new Error("User is offboarded");
+  if (isUnavailableMemberStatus(user.memberStatus)) {
+    throw new Error("User is offboarding or archived");
+  }
 }
 
 export async function generateProfileImageUpload(
