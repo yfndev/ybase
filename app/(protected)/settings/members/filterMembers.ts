@@ -13,10 +13,13 @@ export function departmentIdsOf(
   member: User,
   teamsById: Map<string, Team>,
 ): string[] {
-  if (member.boardMembership) return [member.boardMembership.departmentId];
-
-  const departmentIds: string[] = [];
-  for (const teamId of [member.teamId, member.secondaryTeamId]) {
+  const departmentIds = member.boardMembership
+    ? [member.boardMembership.departmentId]
+    : [];
+  const teamIds = member.boardMembership
+    ? [member.secondaryTeamId]
+    : [member.teamId, member.secondaryTeamId];
+  for (const teamId of teamIds) {
     if (!teamId) continue;
     const departmentId = teamsById.get(teamId)?.departmentId;
     if (departmentId && !departmentIds.includes(departmentId)) {

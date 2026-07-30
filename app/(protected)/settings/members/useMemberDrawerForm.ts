@@ -1,5 +1,5 @@
 import { useMemberMutations } from "@/lib/client/members/hooks/useMemberMutations";
-import type { MemberStatus, UserRole } from "@/lib/db/types";
+import type { BoardMembership, MemberStatus, UserRole } from "@/lib/db/types";
 import { normalizeMemberStatus } from "@/lib/members/status";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -65,11 +65,10 @@ export function useMemberDrawerForm(
         toast.error("Bitte wähle ein Team aus.");
         return;
       }
-      if (teamId && secondaryTeamId === teamId) {
+      if (!board.isBoardMember && teamId && secondaryTeamId === teamId) {
         toast.error("Hauptteam und weiteres Team müssen unterschiedlich sein.");
         return;
       }
-
       const profile: {
         userId: string;
         teamId?: string | null;
@@ -77,26 +76,18 @@ export function useMemberDrawerForm(
         positionTitle?: string | null;
         isTeamLead?: boolean;
         isSecondaryTeamLead?: boolean;
-        boardMembership?: {
-          departmentId: string;
-          isChair: boolean;
-          secondaryRole?: string;
-        } | null;
+        boardMembership?: BoardMembership | null;
       } = { userId: member._id };
       if (board.isBoardMember) {
         if (member.teamId) profile.teamId = null;
-        if (member.secondaryTeamId) profile.secondaryTeamId = null;
       } else if (teamId && teamId !== member.teamId) {
         profile.teamId = teamId;
       }
-      if (
-        !board.isBoardMember &&
-        secondaryTeamId !== (member.secondaryTeamId ?? "")
-      ) {
+      if (secondaryTeamId !== (member.secondaryTeamId ?? "")) {
         profile.secondaryTeamId = secondaryTeamId || null;
       }
       const trimmed =
-        !board.isBoardMember && !hasNonChapterTeam ? "" : position.trim();
+        board.isBoardMember || !hasNonChapterTeam ? "" : position.trim();
       const currentPosition = member.positionTitle?.trim() ?? "";
       if (trimmed !== currentPosition) {
         profile.positionTitle = trimmed || null;
@@ -105,19 +96,16 @@ export function useMemberDrawerForm(
       if (nextIsTeamLead !== (member.isTeamLead ?? false)) {
         profile.isTeamLead = nextIsTeamLead;
       }
-      const nextIsSecondaryTeamLead =
-        board.isBoardMember || !secondaryTeamId ? false : isSecondaryTeamLead;
+      const nextIsSecondaryTeamLead = secondaryTeamId
+        ? isSecondaryTeamLead
+        : false;
       if (nextIsSecondaryTeamLead !== (member.isSecondaryTeamLead ?? false)) {
         profile.isSecondaryTeamLead = nextIsSecondaryTeamLead;
       }
-      const trimmedBoardSecondaryRole = board.boardSecondaryRole.trim();
       const nextBoardMembership = board.isBoardMember
         ? {
             departmentId: board.boardDepartmentId,
             isChair: board.boardIsChair,
-            ...(trimmedBoardSecondaryRole
-              ? { secondaryRole: trimmedBoardSecondaryRole }
-              : {}),
           }
         : null;
       const currentBoardMembership = member.boardMembership ?? null;

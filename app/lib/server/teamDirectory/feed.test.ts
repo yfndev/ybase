@@ -91,15 +91,16 @@ test("returns active members directly from their ybase profiles", async () => {
       _id: "member-board",
       name: "Board Person",
       teamId: undefined,
+      secondaryTeamId: "team-people",
+      isSecondaryTeamLead: true,
       boardMembership: {
         departmentId: "department-operations",
         isChair: true,
-        secondaryRole: "Finanzen",
       },
     }),
     member({
-      _id: "member-board-without-secondary-role",
-      name: "Board Person Without Secondary Role",
+      _id: "member-board-without-team",
+      name: "Board Person Without Team",
       teamId: undefined,
       boardMembership: {
         departmentId: "department-operations",
@@ -148,12 +149,11 @@ test("returns active members directly from their ybase profiles", async () => {
       name: "Board Person",
       role: "Operations",
       isChair: true,
-      secondaryRole: "Finanzen",
     },
     {
-      id: `ybase:${organizationId}:member:member-board-without-secondary-role`,
+      id: `ybase:${organizationId}:member:member-board-without-team`,
       departmentId: `ybase:${organizationId}:department:department-operations`,
-      name: "Board Person Without Secondary Role",
+      name: "Board Person Without Team",
       role: "Operations",
       isChair: false,
     },
@@ -179,6 +179,12 @@ test("returns active members directly from their ybase profiles", async () => {
       role: "Lead",
       isLead: true,
       imageUrl: `${publicOrigin}/api/v1/team-directory/images/member-visible`,
+    },
+    {
+      id: `ybase:${organizationId}:member:member-board`,
+      name: "Board Person",
+      role: "Lead",
+      isLead: true,
     },
     {
       id: `ybase:${organizationId}:member:member-defaults`,

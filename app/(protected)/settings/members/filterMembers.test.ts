@@ -89,20 +89,27 @@ test("filters by department derived from the member's team", () => {
   expect(result.map((entry) => entry._id)).toEqual(["ben"]);
 });
 
-test("filters board members by their assigned department", () => {
+test("filters board members by either assigned department", () => {
   const boardMember = member({
     _id: "board",
+    secondaryTeamId: "team-eng",
     boardMembership: {
       departmentId: "dept-ops",
       isChair: false,
     },
   });
-  const result = filterMembers(
+  const byPrimaryDepartment = filterMembers(
     [boardMember],
     { ...baseFilters, departmentId: "dept-ops" },
     teamsById,
   );
-  expect(result.map((entry) => entry._id)).toEqual(["board"]);
+  const bySecondaryDepartment = filterMembers(
+    [boardMember],
+    { ...baseFilters, departmentId: "dept-tech" },
+    teamsById,
+  );
+  expect(byPrimaryDepartment.map((entry) => entry._id)).toEqual(["board"]);
+  expect(bySecondaryDepartment.map((entry) => entry._id)).toEqual(["board"]);
 });
 
 test("filters by team", () => {

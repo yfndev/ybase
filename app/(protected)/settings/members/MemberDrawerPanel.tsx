@@ -57,19 +57,13 @@ export function MemberDrawerPanel({
 
       <div className="flex flex-1 flex-col gap-4 px-6">
         <PublicOrganizationFields form={form} />
-        {form.isBoardMember || form.hasNonChapterTeam ? (
+        {!form.isBoardMember && form.hasNonChapterTeam ? (
           <div className="grid gap-1.5">
             <Label htmlFor="member-position">Position (optional)</Label>
             <Input
               id="member-position"
-              value={
-                form.isBoardMember ? form.boardSecondaryRole : form.position
-              }
-              onChange={(event) =>
-                form.isBoardMember
-                  ? form.setBoardSecondaryRole(event.target.value)
-                  : form.setPosition(event.target.value)
-              }
+              value={form.position}
+              onChange={(event) => form.setPosition(event.target.value)}
               placeholder="z. B. Tech Lead"
             />
           </div>
