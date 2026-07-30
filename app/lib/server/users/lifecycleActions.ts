@@ -89,13 +89,6 @@ export async function setMemberStatus(input: {
       } else if (target.isSecondaryTeamLead) {
         throw new Error("Ein Lead benötigt ein zugeordnetes weiteres Team.");
       }
-      if (
-        target.positionTitle &&
-        team.isChapter &&
-        (!secondaryTeam || secondaryTeam.isChapter)
-      ) {
-        throw new Error("Chapter haben keine allgemeine Position.");
-      }
     }
   }
 

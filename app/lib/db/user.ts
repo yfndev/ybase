@@ -42,7 +42,6 @@ export interface User {
   accountHolder?: string;
   teamId?: string;
   secondaryTeamId?: string;
-  positionTitle?: string;
   isTeamLead?: boolean;
   isSecondaryTeamLead?: boolean;
   boardMembership?: BoardMembership;

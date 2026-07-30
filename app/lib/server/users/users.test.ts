@@ -22,6 +22,7 @@ import { newId } from "../../db/ids";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { listMembers } from "./data";
+import { createMember } from "./creation";
 import { setMemberStatus, setTeamOnboardingStatus } from "./lifecycleActions";
 import { addUserToOrganization } from "./membership";
 import { updateBankDetails, updateMemberProfile } from "./profile";
@@ -144,6 +145,77 @@ test("addUserToOrganization cannot pull in a user from another org", async () =>
   expect(unchanged?.organizationId).toBe(orgB);
 });
 
+test("createMember starts a member in onboarding and writes a log", async () => {
+  await seedTeam("manual-team", orgA);
+  const member = await createMember({
+    name: "  Manual Member  ",
+    email: "  MANUAL@YOUNGFOUNDERS.NETWORK  ",
+    teamId: "manual-team",
+    isTeamLead: true,
+  });
+
+  const created = await (await users()).findOne({ _id: member._id });
+  expect(created).toMatchObject({
+    name: "Manual Member",
+    email: "manual@youngfounders.network",
+    organizationId: orgA,
+    role: "member",
+    teamId: "manual-team",
+    isTeamLead: true,
+    memberStatus: "onboarding",
+    teamOnboardingStatus: "not_started",
+    publicProfileSetupRequired: true,
+  });
+  expect(typeof created?.registeredAt).toBe("number");
+
+  const log = await (await logs()).findOne({ action: "member.created" });
+  expect(log).toMatchObject({
+    userId: adminA,
+    entityId: member._id,
+    organizationId: orgA,
+  });
+});
+
+test("createMember rejects invalid domains and duplicate profiles", async () => {
+  await seedTeam("manual-team", orgA);
+  await expect(
+    createMember({
+      name: "External Member",
+      email: "member@example.org",
+      teamId: "manual-team",
+      isTeamLead: false,
+    }),
+  ).rejects.toThrow("gültige YFN-E-Mail-Adresse");
+
+  await createMember({
+    name: "Existing Member",
+    email: "existing@youngfounders.network",
+    teamId: "manual-team",
+    isTeamLead: false,
+  });
+  await expect(
+    createMember({
+      name: "Existing Member",
+      email: "EXISTING@YOUNGFOUNDERS.NETWORK",
+      teamId: "manual-team",
+      isTeamLead: false,
+    }),
+  ).rejects.toThrow("bereits ein Profil");
+});
+
+test("createMember rejects leads for chapters", async () => {
+  await seedTeam("manual-chapter", orgA, false, true);
+
+  await expect(
+    createMember({
+      name: "Chapter Lead",
+      email: "chapter@youngfounders.network",
+      teamId: "manual-chapter",
+      isTeamLead: true,
+    }),
+  ).rejects.toThrow("Chapter haben keine Lead-Position");
+});
+
 test("updateBankDetails updates the caller's own bank details", async () => {
   await updateBankDetails({
     iban: "de89 3704 0044 0532 0130 00",
@@ -212,7 +284,6 @@ test("completed onboarding stays locked after member approval", async () => {
   await updateMemberProfile({
     userId: memberA,
     teamId: "team-1",
-    positionTitle: "Teammitglied",
   });
   await setMemberStatus({ userId: memberA, status: "active" });
 
@@ -301,25 +372,16 @@ async function seedDepartment(
   return departmentId;
 }
 
-test("updateMemberProfile assigns a team and can clear an optional position", async () => {
+test("updateMemberProfile assigns a team and its lead role", async () => {
   await seedTeam("team-1", orgA);
   await updateMemberProfile({
     userId: memberA,
     teamId: "team-1",
-    positionTitle: "Treasurer",
     isTeamLead: true,
   });
   const updated = await (await users()).findOne({ _id: memberA });
   expect(updated?.teamId).toBe("team-1");
-  expect(updated?.positionTitle).toBe("Treasurer");
   expect(updated?.isTeamLead).toBe(true);
-
-  await updateMemberProfile({
-    userId: memberA,
-    positionTitle: null,
-  });
-  const cleared = await (await users()).findOne({ _id: memberA });
-  expect(cleared?.positionTitle).toBeUndefined();
 });
 
 test("updateMemberProfile assigns a different optional second team", async () => {
@@ -355,7 +417,7 @@ test("updateMemberProfile assigns a different optional second team", async () =>
   expect(cleared?.isSecondaryTeamLead).toBe(false);
 });
 
-test("updateMemberProfile rejects positions reserved from chapters", async () => {
+test("updateMemberProfile rejects leads for chapters", async () => {
   await seedTeam("team-chapter", orgA, false, true);
 
   await expect(
@@ -365,13 +427,6 @@ test("updateMemberProfile rejects positions reserved from chapters", async () =>
       isTeamLead: true,
     }),
   ).rejects.toThrow("keine Lead-Position");
-  await expect(
-    updateMemberProfile({
-      userId: memberA,
-      teamId: "team-chapter",
-      positionTitle: "Regional Lead",
-    }),
-  ).rejects.toThrow("keine allgemeine Position");
 });
 
 test("updateMemberProfile assigns and removes a board membership", async () => {

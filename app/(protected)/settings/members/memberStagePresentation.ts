@@ -16,14 +16,14 @@ export const APPLICATION_STAGE_EMPTY_TEXT: Partial<
     title: "Keine Interviews geplant",
     description: "Zum Interview eingeladene Bewerber:innen erscheinen hier.",
   },
-  onboarding: {
-    title: "Niemand im Onboarding",
-    description: "Zugesagte und registrierte neue Mitglieder erscheinen hier.",
-  },
 };
 
 export const MEMBER_STAGE_EMPTY_TEXT: Partial<Record<MemberStage, EmptyText>> =
   {
+    onboarding: {
+      title: "Niemand im Onboarding",
+      description: "Neue Mitglieder im Onboarding erscheinen hier.",
+    },
     active: {
       title: "Keine Vereinsmitglieder gefunden",
       description: "Passe Suche oder Filter an, um Mitglieder anzuzeigen.",

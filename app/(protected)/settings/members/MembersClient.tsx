@@ -1,12 +1,11 @@
 "use client";
 
 import { ApplicationsPanel } from "@/components/Applications/ApplicationsPanel";
-import { PageHeader } from "@/components/Layout/PageHeader";
 import { useApplications } from "@/lib/client/applications/hooks/useApplications";
 import { useDepartments } from "@/lib/client/departments/hooks/useDepartments";
 import { useMembers } from "@/lib/client/members/hooks/useMembers";
 import { useTeams } from "@/lib/client/teams/hooks/useTeams";
-import type { ApplicationWithFiles, User } from "@/lib/db/types";
+import type { User } from "@/lib/db/types";
 import { useIsAdmin } from "@/lib/hooks/useCurrentUserRole";
 import {
   applicationsForStage,
@@ -17,10 +16,9 @@ import {
 } from "@/lib/members/stages";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { AcceptedApplicantDrawer } from "./AcceptedApplicantDrawer";
 import { ALL, filterMembers, type MemberFilters } from "./filterMembers";
 import { MemberDrawer } from "./MemberDrawer";
-import { MemberStageTabs } from "./MemberStageTabs";
+import { MembersPageHeader } from "./MembersPageHeader";
 import { MembersTable } from "./MembersTable";
 import { MembersToolbar } from "./MembersToolbar";
 import {
@@ -48,8 +46,6 @@ export function MembersClient({
     search: "",
   });
   const [selectedMember, setSelectedMember] = useState<User | null>(null);
-  const [selectedAcceptedApplication, setSelectedAcceptedApplication] =
-    useState<ApplicationWithFiles | null>(null);
 
   const teamsById = useMemo(
     () => new Map(teams.map((team) => [team._id, team])),
@@ -60,17 +56,13 @@ export function MembersClient({
       new Map(departments.map((department) => [department._id, department])),
     [departments],
   );
-  const memberStatusesById = useMemo(
-    () => new Map(members.map((member) => [member._id, member.memberStatus])),
-    [members],
-  );
   const counts = useMemo(
     () => memberStageCounts(applications, members),
     [applications, members],
   );
   const stagedApplications = useMemo(
-    () => applicationsForStage(applications, stage, memberStatusesById),
-    [applications, memberStatusesById, stage],
+    () => applicationsForStage(applications, stage),
+    [applications, stage],
   );
   const stagedMembers = useMemo(
     () => membersForStage(members, stage),
@@ -85,23 +77,27 @@ export function MembersClient({
       )
     : [];
   const showsMembers = memberStatuses.length > 0;
-
   const adminCount = members.filter((member) => member.role === "admin").length;
   const selectedApplicationEmptyText = APPLICATION_STAGE_EMPTY_TEXT[stage];
   const selectedMemberEmptyText = MEMBER_STAGE_EMPTY_TEXT[stage];
+  const showsMemberSection = showsMembers && selectedMemberEmptyText;
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Mitglieder" />
-
-      <MemberStageTabs
+      <MembersPageHeader
         stage={stage}
         counts={counts}
         isLoading={applicationsLoading || membersLoading}
-        onChange={(nextStage) => {
+        departments={departments}
+        teams={teams}
+        onMemberCreated={(member) => {
+          setStage("onboarding");
+          setSelectedMember(member);
+          router.replace("/members?stage=onboarding", { scroll: false });
+        }}
+        onStageChange={(nextStage) => {
           setStage(nextStage);
           setSelectedMember(null);
-          setSelectedAcceptedApplication(null);
           router.replace(`/members?stage=${nextStage}`, { scroll: false });
         }}
       />
@@ -117,24 +113,11 @@ export function MembersClient({
             detailBackUrl={`/members?stage=${stage}`}
             emptyTitle={selectedApplicationEmptyText.title}
             emptyDescription={selectedApplicationEmptyText.description}
-            onSelect={
-              stage === "onboarding"
-                ? (application) => {
-                    const member = members.find(
-                      (entry) =>
-                        entry._id === application.onboardingUserId ||
-                        entry.applicationId === application._id,
-                    );
-                    setSelectedAcceptedApplication(member ? null : application);
-                    setSelectedMember(member ?? null);
-                  }
-                : undefined
-            }
           />
         </section>
       ) : null}
 
-      {showsMembers && selectedMemberEmptyText ? (
+      {showsMemberSection ? (
         <section className="space-y-4">
           {stage === "archived" ? (
             <h2 className="text-lg font-semibold">Archivierte Mitglieder</h2>
@@ -179,12 +162,6 @@ export function MembersClient({
           onClose={() => setSelectedMember(null)}
         />
       )}
-      {selectedAcceptedApplication ? (
-        <AcceptedApplicantDrawer
-          application={selectedAcceptedApplication}
-          onClose={() => setSelectedAcceptedApplication(null)}
-        />
-      ) : null}
     </div>
   );
 }

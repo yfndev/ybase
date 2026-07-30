@@ -195,7 +195,6 @@ test("links an accepted application on the first matching login", async () => {
     applicationId,
     organizationId,
     teamId,
-    positionTitle: "People Lead",
     memberStatus: "onboarding",
     teamOnboardingStatus: "not_started",
   });

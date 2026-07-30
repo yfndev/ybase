@@ -103,7 +103,7 @@ export function SelectMembers({
           value: member._id,
           label: memberName(member),
           description: member.name ? member.email : undefined,
-          keywords: `${member.name ?? ""} ${member.email ?? ""} ${member.positionTitle ?? ""}`,
+          keywords: `${member.name ?? ""} ${member.email ?? ""}`,
           member,
         }))
         .sort((first, second) => first.label.localeCompare(second.label, "de")),
