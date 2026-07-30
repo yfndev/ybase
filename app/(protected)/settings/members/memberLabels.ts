@@ -15,6 +15,7 @@ const MEMBER_STATUS_OPTIONS: Option<MemberStatus>[] = [
   { value: "offboarding_planned", label: "Offboarding vorgemerkt" },
   { value: "offboarding", label: "Offboarding" },
   { value: "archived", label: "Archiviert" },
+  { value: "excluded", label: "Ausgeschlossen" },
 ];
 
 export function memberStatusOptions(

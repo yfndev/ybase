@@ -124,6 +124,17 @@ export function MembersClient({
           {stage === "archived" ? (
             <h2 className="text-lg font-semibold">Archivierte Mitglieder</h2>
           ) : null}
+          {stage === "excluded" ? (
+            <div>
+              <h2 className="text-lg font-semibold">
+                Ausgeschlossene Personen
+              </h2>
+              <p className="text-muted-foreground mt-1 text-sm">
+                Zentrale Liste aller Personen, die aus dem Team ausgeschlossen
+                wurden.
+              </p>
+            </div>
+          ) : null}
           <MembersToolbar
             filters={{ ...filters, status: memberStatuses }}
             departments={departments}

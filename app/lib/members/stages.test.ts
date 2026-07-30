@@ -65,6 +65,7 @@ describe("member lifecycle stages", () => {
     member("planned-member", "offboarding_planned"),
     member("offboarding-member", "offboarding"),
     member("archived-member", "archived"),
+    member("excluded-member", "excluded"),
     member("legacy-offboarded-member", "offboarded"),
   ];
   test("validates stage query parameters", () => {
@@ -76,6 +77,7 @@ describe("member lifecycle stages", () => {
     );
     expect(memberStageForStatus("active")).toBe("active");
     expect(memberStageForStatus("offboarded")).toBe("archived");
+    expect(memberStageForStatus("excluded")).toBe("excluded");
   });
 
   test("groups application records by recruiting step", () => {
@@ -109,6 +111,9 @@ describe("member lifecycle stages", () => {
     expect(
       membersForStage(members, "archived").map((entry) => entry._id),
     ).toEqual(["archived-member", "legacy-offboarded-member"]);
+    expect(
+      membersForStage(members, "excluded").map((entry) => entry._id),
+    ).toEqual(["excluded-member"]);
   });
 
   test("counts records shown in every tab", () => {
@@ -120,6 +125,7 @@ describe("member lifecycle stages", () => {
       offboarding_planned: 1,
       offboarding: 1,
       archived: 2,
+      excluded: 1,
     });
   });
 });

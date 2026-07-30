@@ -8,6 +8,7 @@ type MemberStatusPatch = Partial<
     | "offboardingPlannedAt"
     | "offboardingStartedAt"
     | "archivedAt"
+    | "excludedAt"
   >
 >;
 
@@ -26,6 +27,7 @@ export function memberStatusPatch(
   if (next === "offboarding_planned") patch.offboardingPlannedAt = now;
   if (next === "offboarding") patch.offboardingStartedAt = now;
   if (next === "archived" || next === "offboarded") patch.archivedAt = now;
+  if (next === "excluded") patch.excludedAt = now;
   return patch;
 }
 

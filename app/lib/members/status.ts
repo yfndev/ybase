@@ -8,6 +8,7 @@ export const PUBLIC_MEMBER_STATUSES = [
 export const UNAVAILABLE_MEMBER_STATUSES = [
   "offboarding",
   "archived",
+  "excluded",
   "offboarded",
 ] as const satisfies readonly MemberStatus[];
 

@@ -42,4 +42,9 @@ export const MEMBER_STAGE_EMPTY_TEXT: Partial<Record<MemberStage, EmptyText>> =
       title: "Keine archivierten Mitglieder",
       description: "Vollständig offboardete Mitglieder erscheinen hier.",
     },
+    excluded: {
+      title: "Keine ausgeschlossenen Personen",
+      description:
+        "Aus dem Team ausgeschlossene Personen erscheinen zentral in dieser Liste.",
+    },
   };

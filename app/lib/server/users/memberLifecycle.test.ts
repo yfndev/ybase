@@ -31,6 +31,13 @@ test("archiving a member records the completion timestamp", () => {
   });
 });
 
+test("excluding a member records a separate exclusion timestamp", () => {
+  expect(memberStatusPatch("active", "excluded", NOW)).toEqual({
+    memberStatus: "excluded",
+    excludedAt: NOW,
+  });
+});
+
 test("returning to onboarding only updates the status", () => {
   expect(memberStatusPatch("active", "onboarding", NOW)).toEqual({
     memberStatus: "onboarding",

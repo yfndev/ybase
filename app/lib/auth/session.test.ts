@@ -52,7 +52,7 @@ test("admin passes People & Culture and finance permission guards", async () => 
   await expect(requirePermission("manage_finance")).resolves.toBeDefined();
 });
 
-test.each(["offboarding", "archived", "offboarded"])(
+test.each(["offboarding", "archived", "excluded", "offboarded"])(
   "%s users lose access to protected data",
   async (memberStatus) => {
     mocks.findOne.mockResolvedValue({
@@ -62,14 +62,10 @@ test.each(["offboarding", "archived", "offboarded"])(
       memberStatus,
     });
 
-    await expect(requireUser()).rejects.toThrow(
-      "User is offboarding or archived",
-    );
-    await expect(requireRole("member")).rejects.toThrow(
-      "User is offboarding or archived",
-    );
+    await expect(requireUser()).rejects.toThrow("User is unavailable");
+    await expect(requireRole("member")).rejects.toThrow("User is unavailable");
     await expect(requirePermission("manage_members")).rejects.toThrow(
-      "User is offboarding or archived",
+      "User is unavailable",
     );
   },
 );
