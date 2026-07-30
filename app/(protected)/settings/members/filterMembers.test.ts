@@ -33,6 +33,8 @@ const anna = member({
   _id: "anna",
   name: "Anna Admin",
   email: "anna@youngfounders.network",
+  privateEmail: "anna.private@example.com",
+  phone: "+49 170 1234567",
   memberStatus: "active",
   teamId: "team-eng",
 });
@@ -142,12 +144,22 @@ test("filters members by their optional second team and department", () => {
   expect(byDepartment.map((entry) => entry._id)).toEqual(["chapter-member"]);
 });
 
-test("search matches name and email case-insensitively", () => {
+test("search matches names and contact details case-insensitively", () => {
   expect(
     filterMembers(everyone, { ...baseFilters, search: "admin" }, teamsById),
   ).toHaveLength(1);
   expect(
     filterMembers(everyone, { ...baseFilters, search: "ANNA@" }, teamsById),
+  ).toHaveLength(1);
+  expect(
+    filterMembers(
+      everyone,
+      { ...baseFilters, search: "private@example" },
+      teamsById,
+    ),
+  ).toHaveLength(1);
+  expect(
+    filterMembers(everyone, { ...baseFilters, search: "1234567" }, teamsById),
   ).toHaveLength(1);
   expect(
     filterMembers(everyone, { ...baseFilters, search: "missing" }, teamsById),

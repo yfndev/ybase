@@ -1,5 +1,6 @@
 "use client";
 
+import { Mail, Smartphone } from "lucide-react";
 import { MemberStageBadge } from "@/components/Members/MemberStageBadge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TableCell, TableRow } from "@/components/ui/table";
@@ -89,6 +90,34 @@ export function MemberRow({
       </TableCell>
       <TableCell className="text-muted-foreground">
         {member.email || "—"}
+      </TableCell>
+      <TableCell className="min-w-52">
+        {member.privateEmail || member.phone ? (
+          <div className="flex flex-col gap-1 text-sm">
+            {member.privateEmail ? (
+              <a
+                href={`mailto:${member.privateEmail}`}
+                className="text-muted-foreground flex items-center gap-1.5 hover:text-foreground hover:underline"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <Mail aria-hidden="true" className="size-3.5 shrink-0" />
+                <span className="max-w-48 truncate">{member.privateEmail}</span>
+              </a>
+            ) : null}
+            {member.phone ? (
+              <a
+                href={`tel:${member.phone.replace(/\s/g, "")}`}
+                className="text-muted-foreground flex items-center gap-1.5 hover:text-foreground hover:underline"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <Smartphone aria-hidden="true" className="size-3.5 shrink-0" />
+                <span>{member.phone}</span>
+              </a>
+            ) : null}
+          </div>
+        ) : (
+          "—"
+        )}
       </TableCell>
       <TableCell>
         <MemberStageBadge stage={memberStageForStatus(member.memberStatus)} />

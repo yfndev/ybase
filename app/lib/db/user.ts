@@ -28,6 +28,7 @@ export interface User {
   googleProfileImageSyncedAt?: number;
   email?: string;
   emailVerificationTime?: number;
+  privateEmail?: string;
   phone?: string;
   phoneVerificationTime?: number;
   isAnonymous?: boolean;
