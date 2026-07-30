@@ -13,3 +13,23 @@ export interface TallyForm {
   blocks: TallyBlock[];
   settings: Record<string, unknown>;
 }
+
+export interface TallyFormSummary {
+  id: string;
+  name: string;
+  status: string;
+  workspaceId: string;
+  folderId?: string | null;
+}
+
+export interface TallyFolder {
+  id: string;
+  name: string;
+  workspaceId: string;
+  parentId: string | null;
+}
+
+export interface TallyTemplateOption {
+  id: string;
+  name: string;
+}
