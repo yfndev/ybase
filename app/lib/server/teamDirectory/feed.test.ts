@@ -97,6 +97,8 @@ test("returns active members directly from their ybase profiles", async () => {
         departmentId: "department-operations",
         isChair: true,
       },
+      profileImageStorageKey: "board-profile-image",
+      publicProfileCompletedAt: 100,
     }),
     member({
       _id: "member-board-without-team",
@@ -149,6 +151,7 @@ test("returns active members directly from their ybase profiles", async () => {
       name: "Board Person",
       role: "Operations",
       isChair: true,
+      imageUrl: `${publicOrigin}/api/v1/team-directory/images/member-board`,
     },
     {
       id: `ybase:${organizationId}:member:member-board-without-team`,
@@ -185,6 +188,7 @@ test("returns active members directly from their ybase profiles", async () => {
       name: "Board Person",
       role: "Lead",
       isLead: true,
+      imageUrl: `${publicOrigin}/api/v1/team-directory/images/member-board`,
     },
     {
       id: `ybase:${organizationId}:member:member-defaults`,

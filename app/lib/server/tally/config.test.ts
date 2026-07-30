@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import {
-  TALLY_RECRUITING_TEMPLATE_FORM_ID,
+  TALLY_RECRUITING_FALLBACK_TEMPLATE_FORM_ID,
   TALLY_RECRUITING_WORKSPACE_ID,
 } from "../../tally/constants";
 import { loadTallyFormConfig } from "./config";
@@ -13,7 +13,7 @@ test("uses the repository recruiting workspace and template", () => {
     }),
   ).toEqual({
     workspaceId: TALLY_RECRUITING_WORKSPACE_ID,
-    templateFormId: TALLY_RECRUITING_TEMPLATE_FORM_ID,
+    templateFormId: TALLY_RECRUITING_FALLBACK_TEMPLATE_FORM_ID,
     webhookUrl: "https://example.com/webhook",
     webhookSigningSecret: "secret",
   });

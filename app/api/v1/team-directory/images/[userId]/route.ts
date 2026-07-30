@@ -25,24 +25,32 @@ export async function GET(_request: Request, context: RouteContext) {
     publicProfileCompletedAt: { $exists: true },
     profileImageStorageKey: { $exists: true },
   });
-  if (!member?.teamId || !member.profileImageStorageKey) {
+  if (!member?.profileImageStorageKey) {
     return new Response(null, { status: 404, headers: NOT_FOUND_HEADERS });
   }
 
-  const team = await (
-    await teams()
-  ).findOne({
-    _id: member.teamId,
-    organizationId,
-    isArchived: false,
-  });
-  if (!team) {
-    return new Response(null, { status: 404, headers: NOT_FOUND_HEADERS });
+  let departmentId = member.boardMembership?.departmentId;
+  if (!departmentId) {
+    if (!member.teamId) {
+      return new Response(null, { status: 404, headers: NOT_FOUND_HEADERS });
+    }
+    const team = await (
+      await teams()
+    ).findOne({
+      _id: member.teamId,
+      organizationId,
+      isArchived: false,
+    });
+    if (!team) {
+      return new Response(null, { status: 404, headers: NOT_FOUND_HEADERS });
+    }
+    departmentId = team.departmentId;
   }
+
   const department = await (
     await departments()
   ).findOne({
-    _id: team.departmentId,
+    _id: departmentId,
     organizationId,
     isArchived: false,
   });

@@ -66,7 +66,9 @@ export async function provisionTallyFormDraft(
       );
       emailFieldUuid = resolveEmailFieldUuid(blocks);
     } else {
-      const template = await client.getForm(config.templateFormId);
+      const templateFormId =
+        posting.tallyTemplateFormId ?? config.templateFormId;
+      const template = await client.getForm(templateFormId);
       blocks = withRequiredPhoneField(
         withJobPostingContent(
           normalizeTemplateBlocks(template.blocks),
@@ -75,7 +77,7 @@ export async function provisionTallyFormDraft(
       );
       emailFieldUuid = resolveEmailFieldUuid(blocks);
       const created = await client.createForm({
-        templateId: config.templateFormId,
+        templateId: templateFormId,
         workspaceId: config.workspaceId,
         blocks,
       });

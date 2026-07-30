@@ -14,6 +14,9 @@ Vorstandsmitglied direkt einem aktiven Department zu. Über `secondaryTeamId`
 kann ein Vorstandsmitglied zusätzlich einem Team zugeordnet und dort mit
 `isSecondaryTeamLead` als Lead gekennzeichnet werden.
 
+Für Team- und Vorstandsmitglieder wird `imageUrl` veröffentlicht, sobald ein
+Profilbild vorhanden und das öffentliche Profil vollständig ausgefüllt ist.
+
 Ein optionales `secondaryTeamId` veröffentlicht dieselbe Person zusätzlich als
 Mitglied eines Teams. Für reguläre Mitglieder ist dies neben `teamId` das zweite
 Team; für Vorstandsmitglieder ist es die einzige direkte Teamzuordnung.
@@ -58,7 +61,8 @@ dargestellt.
         "departmentId": "ybase:org:department:department",
         "name": "Ada Beispiel",
         "role": "Operations",
-        "isChair": true
+        "isChair": true,
+        "imageUrl": "https://ybase.example/api/v1/team-directory/images/user"
       }
     ],
     "departments": [

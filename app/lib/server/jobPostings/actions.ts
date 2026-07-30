@@ -12,6 +12,7 @@ import { addLog } from "../logs";
 import { requireOwnedJobPosting } from "./access";
 import { sanitizeRichText } from "./sanitize";
 import { provisionTallyFormDraft } from "./tallyFormProvisioning";
+import { requireRecruitingTallyTemplate } from "./tallyTemplates";
 
 const optionalText = z.string().trim().optional();
 const DEFAULT_SHORT_TEXT =
@@ -66,17 +67,22 @@ function toDocumentFields(content: Content, contactUserIds: string[]) {
 export async function createJobPostingDraft(input: {
   title: string;
   teamId: string;
+  tallyTemplateFormId: string;
   urgency?: JobPostingUrgency;
 }): Promise<string> {
   const user = await requirePermission(USER_PERMISSIONS.recruiting);
-  const { title, teamId, urgency } = z
+  const { title, teamId, tallyTemplateFormId, urgency } = z
     .object({
       title: z.string().trim().min(1),
       teamId: z.string().trim().min(1),
+      tallyTemplateFormId: z.string().trim().min(1),
       urgency: z.enum(["normal", "urgent"]).default("normal"),
     })
     .parse(input);
-  await requireActiveTeam(teamId, user.organizationId);
+  await Promise.all([
+    requireActiveTeam(teamId, user.organizationId),
+    requireRecruitingTallyTemplate(tallyTemplateFormId),
+  ]);
 
   const _id = newId();
   await (
@@ -93,6 +99,7 @@ export async function createJobPostingDraft(input: {
     benefits: DEFAULT_JOB_POSTING_BENEFITS,
     requirements: DEFAULT_REQUIREMENTS,
     createdBy: user._id,
+    tallyTemplateFormId,
   });
   await addLog(user.organizationId, user._id, "jobPosting.create", _id, title);
   const posting = await (await jobPostings()).findOne({ _id });
