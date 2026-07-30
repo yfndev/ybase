@@ -18,9 +18,7 @@ interface Props {
 function roleLabel(member: User): string {
   if (member.boardMembership) {
     const boardRole = member.boardMembership.isChair ? "Vorsitz" : "Vorstand";
-    return member.boardMembership.secondaryRole
-      ? `${boardRole} · ${member.boardMembership.secondaryRole}`
-      : boardRole;
+    return member.isSecondaryTeamLead ? `${boardRole}, Lead` : boardRole;
   }
   if (member.isTeamLead || member.isSecondaryTeamLead) return "Lead";
   return "—";
@@ -46,9 +44,17 @@ export function MemberRow({
     return department ? [department.name] : [];
   });
   const departmentLabel =
-    boardDepartment?.name ?? ([...new Set(teamDepartments)].join(", ") || "—");
+    [
+      ...new Set(
+        member.boardMembership
+          ? [boardDepartment?.name, ...teamDepartments].filter(
+              (name) => name !== undefined,
+            )
+          : teamDepartments,
+      ),
+    ].join(", ") || "—";
   const teamLabel = member.boardMembership
-    ? "Vorstand"
+    ? ["Vorstand", secondaryTeam?.name].filter(Boolean).join(", ")
     : [team, secondaryTeam]
         .flatMap((entry) => (entry ? [entry.name] : []))
         .join(", ") || "—";

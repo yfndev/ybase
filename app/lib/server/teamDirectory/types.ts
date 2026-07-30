@@ -12,7 +12,6 @@ export interface TeamDirectoryBoardMember {
   name: string;
   role: string;
   isChair: boolean;
-  secondaryRole?: string;
   imageUrl?: string;
 }
 

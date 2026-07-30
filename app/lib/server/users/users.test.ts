@@ -263,12 +263,15 @@ test("setMemberStatus requires a team assignment before activation", async () =>
   ).rejects.toThrow("ein aktives Team");
 });
 
-test("setMemberStatus activates a board member without a team", async () => {
+test("setMemberStatus activates a board member with an additional team", async () => {
   await setTeamOnboardingStatus({ userId: memberA, status: "completed" });
   const departmentId = await seedDepartment(orgA);
+  await seedTeam("team-1", orgA);
   await updateMemberProfile({
     userId: memberA,
     boardMembership: { departmentId, isChair: true },
+    secondaryTeamId: "team-1",
+    isSecondaryTeamLead: true,
   });
 
   await setMemberStatus({ userId: memberA, status: "active" });
@@ -276,6 +279,8 @@ test("setMemberStatus activates a board member without a team", async () => {
   const updated = await (await users()).findOne({ _id: memberA });
   expect(updated?.memberStatus).toBe("active");
   expect(updated?.teamId).toBeUndefined();
+  expect(updated?.secondaryTeamId).toBe("team-1");
+  expect(updated?.isSecondaryTeamLead).toBe(true);
 });
 
 test("completed onboarding stays locked after member approval", async () => {
@@ -445,29 +450,17 @@ test("updateMemberProfile assigns and removes a board membership", async () => {
     boardMembership: {
       departmentId,
       isChair: true,
-      secondaryRole: "  Finanzen  ",
     },
   });
   const assigned = await (await users()).findOne({ _id: memberA });
   expect(assigned?.boardMembership).toEqual({
     departmentId,
     isChair: true,
-    secondaryRole: "Finanzen",
   });
   expect(assigned?.teamId).toBeUndefined();
-  expect(assigned?.secondaryTeamId).toBeUndefined();
+  expect(assigned?.secondaryTeamId).toBe("team-chapter");
   expect(assigned?.isTeamLead).toBe(false);
-  expect(assigned?.isSecondaryTeamLead).toBe(false);
-
-  await updateMemberProfile({
-    userId: memberA,
-    boardMembership: { departmentId, isChair: true },
-  });
-  const withoutSecondaryRole = await (await users()).findOne({ _id: memberA });
-  expect(withoutSecondaryRole?.boardMembership).toEqual({
-    departmentId,
-    isChair: true,
-  });
+  expect(assigned?.isSecondaryTeamLead).toBe(true);
 
   await updateMemberProfile({
     userId: memberA,
@@ -498,7 +491,7 @@ test("updateMemberProfile rejects an unavailable board department", async () => 
   ).rejects.toThrow("Department nicht verfügbar");
 });
 
-test("updateMemberProfile prevents a board member from joining a team", async () => {
+test("updateMemberProfile gives board members only an additional team", async () => {
   const departmentId = await seedDepartment(orgA);
   await updateMemberProfile({
     userId: memberA,
@@ -508,19 +501,22 @@ test("updateMemberProfile prevents a board member from joining a team", async ()
 
   await expect(
     updateMemberProfile({ userId: memberA, teamId: "team-1" }),
-  ).rejects.toThrow("einem Department statt einem Team");
-  await expect(
-    updateMemberProfile({
-      userId: memberA,
-      secondaryTeamId: "team-1",
-    }),
-  ).rejects.toThrow("einem Department statt einem Team");
+  ).rejects.toThrow("kein Hauptteam");
   await expect(
     updateMemberProfile({
       userId: memberA,
       isSecondaryTeamLead: true,
     }),
-  ).rejects.toThrow("einem Department statt einem Team");
+  ).rejects.toThrow("zugeordnetes weiteres Team");
+
+  await updateMemberProfile({
+    userId: memberA,
+    secondaryTeamId: "team-1",
+    isSecondaryTeamLead: true,
+  });
+  const updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.secondaryTeamId).toBe("team-1");
+  expect(updated?.isSecondaryTeamLead).toBe(true);
 });
 
 test("updateMemberProfile rejects a team from another org", async () => {

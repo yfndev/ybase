@@ -44,15 +44,11 @@ export async function setMemberStatus(input: {
     if (!target.name?.trim()) {
       throw new Error("Aktive Mitglieder benötigen einen Namen.");
     }
+    let primaryTeam: Team | undefined;
     if (target.boardMembership) {
-      if (
-        target.teamId ||
-        target.secondaryTeamId ||
-        target.isTeamLead ||
-        target.isSecondaryTeamLead
-      ) {
+      if (target.teamId || target.isTeamLead) {
         throw new Error(
-          "Vorstandsmitglieder dürfen keinem Team direkt zugeordnet sein.",
+          "Vorstandsmitglieder haben kein Hauptteam. Nutze das weitere Team.",
         );
       }
       await requireActiveOrganizationDepartment(
@@ -65,30 +61,30 @@ export async function setMemberStatus(input: {
           "Aktive Mitglieder benötigen ein aktives Team oder ein Vorstands-Department.",
         );
       }
-      const team = await requireActiveOrganizationTeam(
+      primaryTeam = await requireActiveOrganizationTeam(
         target.teamId,
         currentUser.organizationId,
       );
-      if (team.isChapter && target.isTeamLead) {
+      if (primaryTeam.isChapter && target.isTeamLead) {
         throw new Error("Chapter haben keine Lead-Position.");
       }
-      let secondaryTeam: Team | undefined;
-      if (target.secondaryTeamId) {
-        if (target.secondaryTeamId === target.teamId) {
-          throw new Error(
-            "Hauptteam und weiteres Team müssen unterschiedlich sein.",
-          );
-        }
-        secondaryTeam = await requireActiveOrganizationTeam(
-          target.secondaryTeamId,
-          currentUser.organizationId,
+    }
+    let secondaryTeam: Team | undefined;
+    if (target.secondaryTeamId) {
+      if (!target.boardMembership && target.secondaryTeamId === target.teamId) {
+        throw new Error(
+          "Hauptteam und weiteres Team müssen unterschiedlich sein.",
         );
-        if (secondaryTeam.isChapter && target.isSecondaryTeamLead) {
-          throw new Error("Chapter haben keine Lead-Position.");
-        }
-      } else if (target.isSecondaryTeamLead) {
-        throw new Error("Ein Lead benötigt ein zugeordnetes weiteres Team.");
       }
+      secondaryTeam = await requireActiveOrganizationTeam(
+        target.secondaryTeamId,
+        currentUser.organizationId,
+      );
+      if (secondaryTeam.isChapter && target.isSecondaryTeamLead) {
+        throw new Error("Chapter haben keine Lead-Position.");
+      }
+    } else if (target.isSecondaryTeamLead) {
+      throw new Error("Ein Lead benötigt ein zugeordnetes weiteres Team.");
     }
   }
 

@@ -11,10 +11,6 @@ export function useBoardMembershipForm(member: User) {
   const [boardIsChair, setBoardIsChair] = useState(
     member.boardMembership?.isChair ?? false,
   );
-  const [boardSecondaryRole, setBoardSecondaryRole] = useState(
-    member.boardMembership?.secondaryRole ?? "",
-  );
-
   return {
     isBoardMember,
     setIsBoardMember,
@@ -22,7 +18,5 @@ export function useBoardMembershipForm(member: User) {
     setBoardDepartmentId,
     boardIsChair,
     setBoardIsChair,
-    boardSecondaryRole,
-    setBoardSecondaryRole,
   };
 }

@@ -10,20 +10,20 @@ Der Feed enthält ausschließlich aktive Mitglieder. Für die operative
 Teamstruktur werden außerdem ein aktives Department, ein aktives Team und ein
 Name vorausgesetzt. Die interne Position ist optional und wird nicht im
 Organigramm veröffentlicht. Eine optionale `boardMembership` ordnet ein
-Vorstandsmitglied direkt einem aktiven Department zu. Vorstandsmitglieder sind
-keinem Team innerhalb dieses Departments zugeordnet. Die optionale
-`secondaryRole` innerhalb der Vorstandszuordnung wird als Nebenrolle
-veröffentlicht.
+Vorstandsmitglied direkt einem aktiven Department zu. Über `secondaryTeamId`
+kann ein Vorstandsmitglied zusätzlich einem Team zugeordnet und dort mit
+`isSecondaryTeamLead` als Lead gekennzeichnet werden.
 
 Für Team- und Vorstandsmitglieder wird `imageUrl` veröffentlicht, sobald ein
 Profilbild vorhanden und das öffentliche Profil vollständig ausgefüllt ist.
 
 Ein optionales `secondaryTeamId` veröffentlicht dieselbe Person zusätzlich als
-Mitglied eines zweiten Teams. `isTeamLead` markiert die Person im Hauptteam aus
-`teamId` als Lead, `isSecondaryTeamLead` unabhängig davon im weiteren Team aus
-`secondaryTeamId`. Für bestehende Consumer enthält `role` bei diesen
-Mitgliedschaften zusätzlich `"Lead"` und ist für alle anderen Mitgliedschaften
-leer.
+Mitglied eines Teams. Für reguläre Mitglieder ist dies neben `teamId` das zweite
+Team; für Vorstandsmitglieder ist es die einzige direkte Teamzuordnung.
+`isTeamLead` markiert reguläre Mitglieder im Hauptteam als Lead,
+`isSecondaryTeamLead` unabhängig davon im weiteren Team. Für bestehende
+Consumer enthält `role` bei diesen Mitgliedschaften zusätzlich `"Lead"` und ist
+für alle anderen Mitgliedschaften leer.
 
 Teams mit `isChapter: true` werden als Chapter veröffentlicht. Chapter führen
 weder Lead- noch allgemeine Positionen und stehen innerhalb ihres Departments
@@ -41,10 +41,10 @@ Der Consumer stellt die Ebenen in dieser Reihenfolge dar:
 3. Teams
 4. Teammitglieder
 
-Vorstandsmitglieder stehen auf Department-Ebene oberhalb der Teams. Innerhalb
-des Vorstands wird die optionale Position zusätzlich dargestellt. Innerhalb
-eines Teams stehen Leads vor den übrigen Mitgliedern und erhalten eine
-Lead-Hervorhebung. Weitere Positionen von Teammitgliedern werden nicht
+Vorstandsmitglieder stehen auf Department-Ebene oberhalb der Teams. Mit einer
+zusätzlichen Teamzuordnung erscheinen sie außerdem im entsprechenden Team.
+Innerhalb eines Teams stehen Leads vor den übrigen Mitgliedern und erhalten
+eine Lead-Hervorhebung. Weitere Positionen von Teammitgliedern werden nicht
 dargestellt.
 
 ## Vertrag
@@ -62,7 +62,6 @@ dargestellt.
         "name": "Ada Beispiel",
         "role": "Operations",
         "isChair": true,
-        "secondaryRole": "Finanzen",
         "imageUrl": "https://ybase.example/api/v1/team-directory/images/user"
       }
     ],

@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { UpdateFilter } from "mongodb";
 import { requireUser } from "../../auth/session";
 import { users } from "../../db/collections";
-import type { User } from "../../db/types";
+import type { BoardMembership, User } from "../../db/types";
 import { bankDetailsSchema } from "../bankDetails";
 import {
   loadManagedMember,
@@ -30,11 +30,7 @@ export async function updateMemberProfile(input: {
   secondaryTeamId?: string | null;
   isTeamLead?: boolean;
   isSecondaryTeamLead?: boolean;
-  boardMembership?: {
-    departmentId: string;
-    isChair: boolean;
-    secondaryRole?: string;
-  } | null;
+  boardMembership?: BoardMembership | null;
 }): Promise<void> {
   const {
     userId,
@@ -54,7 +50,6 @@ export async function updateMemberProfile(input: {
         .object({
           departmentId: z.string().trim().min(1),
           isChair: z.boolean(),
-          secondaryRole: z.string().trim().min(1).optional(),
         })
         .nullable()
         .optional(),
@@ -64,52 +59,52 @@ export async function updateMemberProfile(input: {
   const hasBoardAssignment =
     boardMembership !== null &&
     (boardMembership !== undefined || target.boardMembership !== undefined);
-  const joinsTeam =
-    typeof teamId === "string" ||
-    typeof secondaryTeamId === "string" ||
-    isTeamLead === true ||
-    isSecondaryTeamLead === true;
-  if (hasBoardAssignment && joinsTeam) {
+  const joinsPrimaryTeam = typeof teamId === "string" || isTeamLead === true;
+  if (hasBoardAssignment && joinsPrimaryTeam) {
     throw new Error(
-      "Vorstandsmitglieder werden einem Department statt einem Team zugeordnet.",
+      "Vorstandsmitglieder haben kein Hauptteam. Nutze das weitere Team.",
     );
   }
   const nextTeamId =
-    teamId === undefined ? target.teamId : (teamId ?? undefined);
+    hasBoardAssignment || teamId === null
+      ? undefined
+      : (teamId ?? target.teamId);
   const nextSecondaryTeamId =
     secondaryTeamId === undefined
       ? target.secondaryTeamId
       : (secondaryTeamId ?? undefined);
-  const nextIsTeamLead = isTeamLead ?? target.isTeamLead ?? false;
+  const nextIsTeamLead = hasBoardAssignment
+    ? false
+    : (isTeamLead ?? target.isTeamLead ?? false);
   const nextIsSecondaryTeamLead =
     secondaryTeamId === null
       ? false
       : (isSecondaryTeamLead ?? target.isSecondaryTeamLead ?? false);
-  if (nextTeamId && nextSecondaryTeamId && nextTeamId === nextSecondaryTeamId) {
+  if (
+    !hasBoardAssignment &&
+    nextTeamId &&
+    nextSecondaryTeamId &&
+    nextTeamId === nextSecondaryTeamId
+  ) {
     throw new Error("Hauptteam und weiteres Team müssen unterschiedlich sein.");
   }
   if (!hasBoardAssignment && nextIsTeamLead && !nextTeamId) {
     throw new Error("Ein Lead benötigt ein zugeordnetes Hauptteam.");
   }
-  if (!hasBoardAssignment && nextIsSecondaryTeamLead && !nextSecondaryTeamId) {
+  if (nextIsSecondaryTeamLead && !nextSecondaryTeamId) {
     throw new Error("Ein Lead benötigt ein zugeordnetes weiteres Team.");
   }
-  const [nextTeam, nextSecondaryTeam] = hasBoardAssignment
-    ? [undefined, undefined]
-    : await Promise.all([
-        nextTeamId
-          ? requireActiveOrganizationTeam(
-              nextTeamId,
-              currentUser.organizationId,
-            )
-          : undefined,
-        nextSecondaryTeamId
-          ? requireActiveOrganizationTeam(
-              nextSecondaryTeamId,
-              currentUser.organizationId,
-            )
-          : undefined,
-      ]);
+  const [nextTeam, nextSecondaryTeam] = await Promise.all([
+    nextTeamId
+      ? requireActiveOrganizationTeam(nextTeamId, currentUser.organizationId)
+      : undefined,
+    nextSecondaryTeamId
+      ? requireActiveOrganizationTeam(
+          nextSecondaryTeamId,
+          currentUser.organizationId,
+        )
+      : undefined,
+  ]);
   if (nextIsTeamLead && nextTeam?.isChapter) {
     throw new Error("Chapter haben keine Lead-Position.");
   }
@@ -144,7 +139,6 @@ export async function updateMemberProfile(input: {
     );
     patch.boardMembership = boardMembership;
     patch.isTeamLead = false;
-    patch.isSecondaryTeamLead = false;
   }
 
   const update: UpdateFilter<User> = {};
@@ -160,10 +154,7 @@ export async function updateMemberProfile(input: {
       (boardMembership !== undefined && boardMembership !== null)
         ? { teamId: "" }
         : {}),
-      ...(secondaryTeamId === null ||
-      (boardMembership !== undefined && boardMembership !== null)
-        ? { secondaryTeamId: "" }
-        : {}),
+      ...(secondaryTeamId === null ? { secondaryTeamId: "" } : {}),
       ...(boardMembership === null ? { boardMembership: "" } : {}),
     };
   }

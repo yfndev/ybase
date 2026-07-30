@@ -1,8 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MemberStageBadge } from "@/components/Members/MemberStageBadge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { SheetFooter } from "@/components/ui/sheet";
 import type { User, UserRole } from "@/lib/db/types";
 import { getInitials } from "@/lib/formatters/getInitials";
@@ -57,18 +55,6 @@ export function MemberDrawerPanel({
 
       <div className="flex flex-1 flex-col gap-4 px-6">
         <PublicOrganizationFields form={form} />
-        {form.isBoardMember ? (
-          <div className="grid gap-1.5">
-            <Label htmlFor="member-board-role">Weitere Rolle (optional)</Label>
-            <Input
-              id="member-board-role"
-              value={form.boardSecondaryRole}
-              onChange={(event) =>
-                form.setBoardSecondaryRole(event.target.value)
-              }
-            />
-          </div>
-        ) : null}
         <MemberStatusField
           status={form.status}
           onboarding={member.teamOnboardingStatus}
