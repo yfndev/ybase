@@ -1,7 +1,6 @@
 "use client";
 
-import { Archive, MoreVertical, Pencil, Trash2 } from "lucide-react";
-import Link from "next/link";
+import { Archive, MoreVertical, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -40,12 +39,6 @@ export function JobPostingActionsMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={0} className={menu.content}>
-        <DropdownMenuItem className={menu.item} asChild>
-          <Link href={`/recruiting/${posting._id}`}>
-            <Pencil className="text-current" />
-            Bearbeiten
-          </Link>
-        </DropdownMenuItem>
         {canArchive ? (
           <DropdownMenuItem className={menu.item} onSelect={onArchive}>
             <Archive className="text-current" />
