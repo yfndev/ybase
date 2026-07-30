@@ -21,8 +21,8 @@ import {
 import { newId } from "../../db/ids";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
-import { listMembers } from "./data";
 import { createMember } from "./creation";
+import { listMembers } from "./data";
 import { setMemberStatus, setTeamOnboardingStatus } from "./lifecycleActions";
 import { addUserToOrganization } from "./membership";
 import { updateBankDetails, updateMemberProfile } from "./profile";
@@ -150,6 +150,8 @@ test("createMember starts a member in onboarding and writes a log", async () => 
   const member = await createMember({
     name: "  Manual Member  ",
     email: "  MANUAL@YOUNGFOUNDERS.NETWORK  ",
+    privateEmail: "  MANUAL@EXAMPLE.COM  ",
+    phone: "  +49 170 1234567  ",
     teamId: "manual-team",
     isTeamLead: true,
   });
@@ -158,6 +160,8 @@ test("createMember starts a member in onboarding and writes a log", async () => 
   expect(created).toMatchObject({
     name: "Manual Member",
     email: "manual@youngfounders.network",
+    privateEmail: "manual@example.com",
+    phone: "+49 170 1234567",
     organizationId: orgA,
     role: "member",
     teamId: "manual-team",
@@ -216,6 +220,24 @@ test("createMember rejects leads for chapters", async () => {
   ).rejects.toThrow("Chapter haben keine Lead-Position");
 });
 
+test("rejects invalid private contact details", async () => {
+  await seedTeam("manual-team", orgA);
+
+  await expect(
+    createMember({
+      name: "Invalid Contact",
+      email: "invalid@youngfounders.network",
+      privateEmail: "not-an-email",
+      teamId: "manual-team",
+      isTeamLead: false,
+    }),
+  ).rejects.toThrow("gültige private E-Mail-Adresse");
+
+  await expect(
+    updateMemberProfile({ userId: memberA, phone: "call me" }),
+  ).rejects.toThrow("gültige Telefonnummer");
+});
+
 test("updateBankDetails updates the caller's own bank details", async () => {
   await updateBankDetails({
     iban: "de89 3704 0044 0532 0130 00",
@@ -226,6 +248,27 @@ test("updateBankDetails updates the caller's own bank details", async () => {
   expect(updated?.iban).toBe("DE89370400440532013000");
   expect(updated?.bic).toBe("COBADEFFXXX");
   expect(updated?.accountHolder).toBe("Admin A");
+});
+
+test("updateMemberProfile updates and clears private contact details", async () => {
+  await updateMemberProfile({
+    userId: memberA,
+    privateEmail: "  MEMBER.PRIVATE@EXAMPLE.COM  ",
+    phone: "  +49 170 7654321  ",
+  });
+  expect(await (await users()).findOne({ _id: memberA })).toMatchObject({
+    privateEmail: "member.private@example.com",
+    phone: "+49 170 7654321",
+  });
+
+  await updateMemberProfile({
+    userId: memberA,
+    privateEmail: null,
+    phone: null,
+  });
+  const cleared = await (await users()).findOne({ _id: memberA });
+  expect(cleared).not.toHaveProperty("privateEmail");
+  expect(cleared).not.toHaveProperty("phone");
 });
 
 test("updateBankDetails rejects missing bank details", async () => {

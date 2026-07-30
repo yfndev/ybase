@@ -1,8 +1,8 @@
 "use client";
 
+import { PlaneTakeoff, UserRound } from "lucide-react";
 import { Table, TableBody } from "@/components/ui/table";
 import type { Department, Team, User } from "@/lib/db/types";
-import { PlaneTakeoff, UserRound } from "lucide-react";
 import { MemberRow } from "./MemberRow";
 import { MembersTableHeader } from "./MembersTableHeader";
 import { MembersTableSkeleton } from "./MembersTableSkeleton";
@@ -48,7 +48,7 @@ export function MembersTable({
   }
 
   return (
-    <div className="rounded-md border overflow-hidden">
+    <div className="overflow-x-auto rounded-md border">
       <Table>
         <MembersTableHeader />
         <TableBody>

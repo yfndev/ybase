@@ -9,6 +9,7 @@ import type { User } from "../../db/types";
 import { YFN_ORGANIZATION } from "../../organization";
 import { addLog } from "../logs";
 import { requireActiveOrganizationTeam } from "./access";
+import { phoneSchema, privateEmailSchema } from "./contactDetails";
 
 const MEMBER_EMAIL_CONFLICT_MESSAGE =
   "Für diese E-Mail-Adresse gibt es bereits ein Profil.";
@@ -28,6 +29,8 @@ const createMemberSchema = z.object({
       (email) => email.endsWith(`@${YFN_ORGANIZATION.domain}`),
       "Bitte gib eine gültige YFN-E-Mail-Adresse an.",
     ),
+  privateEmail: privateEmailSchema.optional(),
+  phone: phoneSchema.optional(),
   teamId: z.string().trim().min(1),
   isTeamLead: z.boolean(),
 });
@@ -58,6 +61,10 @@ export async function createMember(input: CreateMemberInput): Promise<User> {
     _creationTime: createdAt,
     name: memberInput.name,
     email: memberInput.email,
+    ...(memberInput.privateEmail
+      ? { privateEmail: memberInput.privateEmail }
+      : {}),
+    ...(memberInput.phone ? { phone: memberInput.phone } : {}),
     organizationId: actor.organizationId,
     role: "member",
     teamId: memberInput.teamId,

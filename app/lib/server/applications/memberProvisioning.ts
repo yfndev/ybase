@@ -28,6 +28,10 @@ export async function createAcceptedApplicantMember(
     _creationTime: now,
     name: input.application.applicantName,
     email: normalizeYfnEmail(input.email),
+    privateEmail: input.application.applicantEmailNormalized,
+    ...(input.application.applicantPhone?.trim()
+      ? { phone: input.application.applicantPhone.trim() }
+      : {}),
     googleWorkspaceUserId: input.googleWorkspaceUserId,
     organizationId: input.organizationId,
     role: "member",
