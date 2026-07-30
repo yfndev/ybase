@@ -35,7 +35,6 @@ const anna = member({
   email: "anna@youngfounders.network",
   memberStatus: "active",
   teamId: "team-eng",
-  positionTitle: "Treasurer",
 });
 const ben = member({
   _id: "ben",
@@ -143,9 +142,9 @@ test("filters members by their optional second team and department", () => {
   expect(byDepartment.map((entry) => entry._id)).toEqual(["chapter-member"]);
 });
 
-test("search matches name, email and position case-insensitively", () => {
+test("search matches name and email case-insensitively", () => {
   expect(
-    filterMembers(everyone, { ...baseFilters, search: "treasurer" }, teamsById),
+    filterMembers(everyone, { ...baseFilters, search: "admin" }, teamsById),
   ).toHaveLength(1);
   expect(
     filterMembers(everyone, { ...baseFilters, search: "ANNA@" }, teamsById),

@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createMember } from "@/lib/server/users/creation";
 import {
   setMemberStatus,
   setTeamOnboardingStatus,
@@ -12,6 +13,7 @@ export function useMemberMutations() {
     queryClient.invalidateQueries({ queryKey: ["members"] });
 
   return {
+    create: useMutation({ mutationFn: createMember, onSuccess }),
     updateProfile: useMutation({ mutationFn: updateMemberProfile, onSuccess }),
     setStatus: useMutation({ mutationFn: setMemberStatus, onSuccess }),
     setOnboarding: useMutation({

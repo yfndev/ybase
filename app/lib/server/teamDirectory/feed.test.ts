@@ -214,13 +214,12 @@ test("returns active members directly from their ybase profiles", async () => {
   ]);
 });
 
-test("includes members without a position", async () => {
+test("includes regular team members", async () => {
   await (
     await users()
   ).insertOne(
     member({
-      _id: "member-without-position",
-      positionTitle: undefined,
+      _id: "regular-member",
     }),
   );
 
@@ -228,7 +227,7 @@ test("includes members without a position", async () => {
 
   expect(feed.data.departments[0]?.teams[0]?.members).toEqual([
     {
-      id: `ybase:${organizationId}:member:member-without-position`,
+      id: `ybase:${organizationId}:member:regular-member`,
       name: "Test Member",
       role: "",
       isLead: false,
@@ -249,7 +248,6 @@ function member(
     organizationId,
     role: "member" as const,
     teamId: "team-people",
-    positionTitle: "People Lead",
     memberStatus: "active" as const,
     teamOnboardingStatus: "completed" as const,
     ...rest,

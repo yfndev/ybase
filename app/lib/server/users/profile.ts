@@ -28,7 +28,6 @@ export async function updateMemberProfile(input: {
   userId: string;
   teamId?: string | null;
   secondaryTeamId?: string | null;
-  positionTitle?: string | null;
   isTeamLead?: boolean;
   isSecondaryTeamLead?: boolean;
   boardMembership?: BoardMembership | null;
@@ -37,7 +36,6 @@ export async function updateMemberProfile(input: {
     userId,
     teamId,
     secondaryTeamId,
-    positionTitle,
     isTeamLead,
     isSecondaryTeamLead,
     boardMembership,
@@ -46,7 +44,6 @@ export async function updateMemberProfile(input: {
       userId: z.string(),
       teamId: z.string().trim().min(1).nullable().optional(),
       secondaryTeamId: z.string().trim().min(1).nullable().optional(),
-      positionTitle: z.string().trim().min(1).nullable().optional(),
       isTeamLead: z.boolean().optional(),
       isSecondaryTeamLead: z.boolean().optional(),
       boardMembership: z
@@ -114,23 +111,11 @@ export async function updateMemberProfile(input: {
   if (nextIsSecondaryTeamLead && nextSecondaryTeam?.isChapter) {
     throw new Error("Chapter haben keine Lead-Position.");
   }
-  const hasNonChapterTeam = [nextTeam, nextSecondaryTeam].some(
-    (team) => team && !team.isChapter,
-  );
-  if (
-    !hasBoardAssignment &&
-    typeof positionTitle === "string" &&
-    !hasNonChapterTeam
-  ) {
-    throw new Error("Chapter haben keine allgemeine Position.");
-  }
-
   const patch: Partial<
     Pick<
       User,
       | "teamId"
       | "secondaryTeamId"
-      | "positionTitle"
       | "isTeamLead"
       | "isSecondaryTeamLead"
       | "boardMembership"
@@ -141,9 +126,6 @@ export async function updateMemberProfile(input: {
   }
   if (secondaryTeamId !== undefined && secondaryTeamId !== null) {
     patch.secondaryTeamId = secondaryTeamId;
-  }
-  if (positionTitle !== undefined && positionTitle !== null) {
-    patch.positionTitle = positionTitle;
   }
   if (isTeamLead !== undefined) patch.isTeamLead = isTeamLead;
   if (isSecondaryTeamLead !== undefined) {
@@ -164,7 +146,6 @@ export async function updateMemberProfile(input: {
   if (
     teamId === null ||
     secondaryTeamId === null ||
-    positionTitle === null ||
     (boardMembership !== undefined && boardMembership !== null) ||
     boardMembership === null
   ) {
@@ -175,7 +156,6 @@ export async function updateMemberProfile(input: {
         : {}),
       ...(secondaryTeamId === null ? { secondaryTeamId: "" } : {}),
       ...(boardMembership === null ? { boardMembership: "" } : {}),
-      ...(positionTitle === null ? { positionTitle: "" } : {}),
     };
   }
   if (Object.keys(update).length === 0) return;

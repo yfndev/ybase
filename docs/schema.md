@@ -48,7 +48,6 @@ erDiagram
         string role
         string teamId
         string secondaryTeamId
-        string positionTitle
         boolean isTeamLead
         boolean isSecondaryTeamLead
         object boardMembership "departmentId, isChair"

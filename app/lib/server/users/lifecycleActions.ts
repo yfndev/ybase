@@ -86,14 +86,6 @@ export async function setMemberStatus(input: {
     } else if (target.isSecondaryTeamLead) {
       throw new Error("Ein Lead benötigt ein zugeordnetes weiteres Team.");
     }
-    if (
-      !target.boardMembership &&
-      target.positionTitle &&
-      primaryTeam?.isChapter &&
-      (!secondaryTeam || secondaryTeam.isChapter)
-    ) {
-      throw new Error("Chapter haben keine allgemeine Position.");
-    }
   }
 
   const patch = memberStatusPatch(target.memberStatus, status, Date.now());
