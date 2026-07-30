@@ -5,7 +5,6 @@ import { useApplications } from "@/lib/client/applications/hooks/useApplications
 import { useDepartments } from "@/lib/client/departments/hooks/useDepartments";
 import { useMembers } from "@/lib/client/members/hooks/useMembers";
 import { useTeams } from "@/lib/client/teams/hooks/useTeams";
-import type { User } from "@/lib/db/types";
 import { useIsAdmin } from "@/lib/hooks/useCurrentUserRole";
 import {
   applicationsForStage,
@@ -45,7 +44,7 @@ export function MembersClient({
     teamId: ALL,
     search: "",
   });
-  const [selectedMember, setSelectedMember] = useState<User | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
   const teamsById = useMemo(
     () => new Map(teams.map((team) => [team._id, team])),
@@ -56,6 +55,9 @@ export function MembersClient({
       new Map(departments.map((department) => [department._id, department])),
     [departments],
   );
+  const selectedMember = selectedMemberId
+    ? (members.find((member) => member._id === selectedMemberId) ?? null)
+    : null;
   const counts = useMemo(
     () => memberStageCounts(applications, members),
     [applications, members],
@@ -92,12 +94,12 @@ export function MembersClient({
         teams={teams}
         onMemberCreated={(member) => {
           setStage("onboarding");
-          setSelectedMember(member);
+          setSelectedMemberId(member._id);
           router.replace("/members?stage=onboarding", { scroll: false });
         }}
         onStageChange={(nextStage) => {
           setStage(nextStage);
-          setSelectedMember(null);
+          setSelectedMemberId(null);
           router.replace(`/members?stage=${nextStage}`, { scroll: false });
         }}
       />
@@ -147,7 +149,7 @@ export function MembersClient({
             isDepartureEmptyState={
               stage === "offboarding_planned" && stagedMembers.length === 0
             }
-            onSelect={setSelectedMember}
+            onSelect={(member) => setSelectedMemberId(member._id)}
           />
         </section>
       ) : null}
@@ -159,7 +161,7 @@ export function MembersClient({
           departments={departments}
           canEditRoles={isAdmin}
           adminCount={adminCount}
-          onClose={() => setSelectedMember(null)}
+          onClose={() => setSelectedMemberId(null)}
         />
       )}
     </div>

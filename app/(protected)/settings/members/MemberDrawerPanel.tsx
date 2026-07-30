@@ -9,6 +9,7 @@ import { memberStageForStatus } from "@/lib/members/stages";
 import { profileAvatarUrl } from "@/lib/profile/avatar";
 import { LabeledSelect } from "./LabeledSelect";
 import { MemberContactFields } from "./MemberContactFields";
+import { MemberInfractionsSection } from "./MemberInfractionsSection";
 import { MemberStatusField } from "./MemberStatusField";
 import { ROLE_OPTIONS } from "./memberLabels";
 import { PublicOrganizationFields } from "./PublicOrganizationFields";
@@ -60,6 +61,7 @@ export function MemberDrawerPanel({
         <MemberStatusField
           status={form.status}
           onboarding={member.teamOnboardingStatus}
+          infractionCount={member.memberInfractions?.length ?? 0}
           onChange={form.setStatus}
         />
         <LabeledSelect
@@ -75,6 +77,7 @@ export function MemberDrawerPanel({
               : "Rollen können nur von Admins geändert werden."
           }
         />
+        <MemberInfractionsSection member={member} />
       </div>
 
       <SheetFooter className="mt-6 border-t px-6 pt-6 pb-6">

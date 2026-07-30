@@ -35,6 +35,11 @@ export async function setMemberStatus(input: {
     .parse(input);
   const status = parsedStatus === "offboarded" ? "archived" : parsedStatus;
   const { currentUser, target } = await loadManagedMember(userId);
+  if (status === "active" && (target.memberInfractions?.length ?? 0) >= 2) {
+    throw new Error(
+      "Ein Mitglied mit zwei Verstößen kann nicht erneut aktiviert werden.",
+    );
+  }
   if (status === "active" && target.teamOnboardingStatus !== "completed") {
     throw new Error(
       "Das Teammitglied kann erst nach Abschluss aller Onboarding-Aufgaben freigegeben werden.",
