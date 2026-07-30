@@ -1,5 +1,10 @@
 "use client";
 
+import { Megaphone, Plus } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import toast from "react-hot-toast";
 import { CreateJobPostingDialog } from "@/components/Dialogs/CreateJobPostingDialog";
 import { DeleteJobPostingDialog } from "@/components/JobPostings/DeleteJobPostingDialog";
 import { JobPostingActionsMenu } from "@/components/JobPostings/JobPostingActionsMenu";
@@ -20,12 +25,9 @@ import { useTeamDirectory } from "@/lib/client/teams/hooks/useTeamDirectory";
 import type { JobPosting } from "@/lib/db/types";
 import { jobPostingUrgency } from "@/lib/jobPostings/urgency";
 import { cn } from "@/lib/utils";
-import { Megaphone, Plus } from "lucide-react";
-import Link from "next/link";
-import { useState } from "react";
-import toast from "react-hot-toast";
 
 export function RecruitingClient() {
+  const router = useRouter();
   const { jobPostings, isLoading } = useJobPostings();
   const { lookup } = useTeamDirectory();
   const { archive, deletePosting } = useJobPostingMutations();
@@ -101,14 +103,17 @@ export function RecruitingClient() {
                     <TableRow
                       key={posting._id}
                       className={cn(
+                        "cursor-pointer",
                         isUrgent &&
                           "border-l-4 border-l-secondary bg-secondary/[0.06] hover:bg-secondary/10",
                       )}
+                      onClick={() => router.push(`/recruiting/${posting._id}`)}
                     >
                       <TableCell className="font-medium">
                         <Link
                           href={`/recruiting/${posting._id}`}
                           className="outline-none hover:underline focus-visible:underline"
+                          onClick={(event) => event.stopPropagation()}
                         >
                           {posting.title}
                         </Link>
@@ -118,7 +123,10 @@ export function RecruitingClient() {
                       <TableCell>
                         <JobPostingStatusBadge status={posting.status} />
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell
+                        className="text-right"
+                        onClick={(event) => event.stopPropagation()}
+                      >
                         <JobPostingActionsMenu
                           posting={posting}
                           disabled={
