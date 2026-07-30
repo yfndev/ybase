@@ -49,7 +49,7 @@ export function MemberDrawer(props: MemberDrawerProps) {
       closeDisabled={isSaving}
     >
       <MemberDrawerForm
-        key={member._id}
+        key={`${member._id}:${member.memberStatus}:${member.memberInfractions?.length ?? 0}`}
         {...props}
         onSavingChange={setIsSaving}
       />

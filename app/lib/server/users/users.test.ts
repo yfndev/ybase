@@ -23,6 +23,7 @@ import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { listMembers } from "./data";
 import { createMember } from "./creation";
+import { recordMemberInfraction } from "./infractions";
 import { setMemberStatus, setTeamOnboardingStatus } from "./lifecycleActions";
 import { addUserToOrganization } from "./membership";
 import { updateBankDetails, updateMemberProfile } from "./profile";
@@ -329,6 +330,118 @@ test("setMemberStatus maps legacy offboarded writes to archived", async () => {
 test("setMemberStatus cannot touch a user from another org", async () => {
   await expect(
     setMemberStatus({ userId: memberB, status: "archived" }),
+  ).rejects.toThrow("User not found");
+});
+
+test("recordMemberInfraction stores the first infraction with an audit log", async () => {
+  await (
+    await users()
+  ).updateOne({ _id: memberA }, { $set: { memberStatus: "active" } });
+
+  const result = await recordMemberInfraction({
+    userId: memberA,
+    reason: "  Wiederholtes Missachten einer internen Vereinbarung.  ",
+  });
+
+  expect(result).toEqual({ infractionCount: 1, memberExcluded: false });
+  const updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.memberStatus).toBe("active");
+  expect(updated?.memberInfractions).toHaveLength(1);
+  expect(updated?.memberInfractions?.[0]).toMatchObject({
+    reason: "Wiederholtes Missachten einer internen Vereinbarung.",
+    createdBy: adminA,
+  });
+  expect(typeof updated?.memberInfractions?.[0]?.createdAt).toBe("number");
+  const log = await (
+    await logs()
+  ).findOne({ action: "member.infraction_added" });
+  expect(log).toMatchObject({
+    userId: adminA,
+    entityId: memberA,
+    organizationId: orgA,
+  });
+});
+
+test("recordMemberInfraction excludes the member atomically on the second infraction", async () => {
+  await (
+    await users()
+  ).updateOne({ _id: memberA }, { $set: { memberStatus: "active" } });
+  await recordMemberInfraction({
+    userId: memberA,
+    reason: "Erster dokumentierter Verstoß.",
+  });
+
+  const result = await recordMemberInfraction({
+    userId: memberA,
+    reason: "Zweiter dokumentierter Verstoß.",
+  });
+
+  expect(result).toEqual({ infractionCount: 2, memberExcluded: true });
+  const updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.memberInfractions).toHaveLength(2);
+  expect(updated?.memberStatus).toBe("offboarding");
+  expect(typeof updated?.offboardingStartedAt).toBe("number");
+  const statusLog = await (
+    await logs()
+  ).findOne({ action: "member.status_change" });
+  expect(statusLog?.details).toContain("zweiter Verstoß");
+});
+
+test("recordMemberInfraction handles two simultaneous infractions safely", async () => {
+  await (
+    await users()
+  ).updateOne({ _id: memberA }, { $set: { memberStatus: "active" } });
+
+  const results = await Promise.all([
+    recordMemberInfraction({
+      userId: memberA,
+      reason: "Erster gleichzeitig gemeldeter Verstoß.",
+    }),
+    recordMemberInfraction({
+      userId: memberA,
+      reason: "Zweiter gleichzeitig gemeldeter Verstoß.",
+    }),
+  ]);
+
+  expect(results.map(({ infractionCount }) => infractionCount).sort()).toEqual([
+    1, 2,
+  ]);
+  const updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.memberInfractions).toHaveLength(2);
+  expect(updated?.memberStatus).toBe("offboarding");
+});
+
+test("setMemberStatus cannot reactivate a member after two infractions", async () => {
+  await (
+    await users()
+  ).updateOne({ _id: memberA }, { $set: { memberStatus: "active" } });
+  await recordMemberInfraction({
+    userId: memberA,
+    reason: "Erster dokumentierter Verstoß.",
+  });
+  await recordMemberInfraction({
+    userId: memberA,
+    reason: "Zweiter dokumentierter Verstoß.",
+  });
+
+  await expect(
+    setMemberStatus({ userId: memberA, status: "active" }),
+  ).rejects.toThrow("nicht erneut aktiviert");
+});
+
+test("recordMemberInfraction rejects unavailable and foreign members", async () => {
+  await expect(
+    recordMemberInfraction({
+      userId: memberA,
+      reason: "Verstoß während des Onboardings.",
+    }),
+  ).rejects.toThrow("nur bei aktiven");
+
+  await expect(
+    recordMemberInfraction({
+      userId: memberB,
+      reason: "Verstoß in einer anderen Organisation.",
+    }),
   ).rejects.toThrow("User not found");
 });
 

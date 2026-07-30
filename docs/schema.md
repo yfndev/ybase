@@ -57,6 +57,7 @@ erDiagram
         number offboardingPlannedAt
         number offboardingStartedAt
         number archivedAt
+        array memberInfractions "_id, reason, createdAt, createdBy"
     }
 
     teams {

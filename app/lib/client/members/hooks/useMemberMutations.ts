@@ -4,6 +4,7 @@ import {
   setMemberStatus,
   setTeamOnboardingStatus,
 } from "@/lib/server/users/lifecycleActions";
+import { recordMemberInfraction } from "@/lib/server/users/infractions";
 import { updateMemberProfile } from "@/lib/server/users/profile";
 import { updateUserRole } from "@/lib/server/users/roles";
 
@@ -18,6 +19,10 @@ export function useMemberMutations() {
     setStatus: useMutation({ mutationFn: setMemberStatus, onSuccess }),
     setOnboarding: useMutation({
       mutationFn: setTeamOnboardingStatus,
+      onSuccess,
+    }),
+    recordInfraction: useMutation({
+      mutationFn: recordMemberInfraction,
       onSuccess,
     }),
     updateRole: useMutation({ mutationFn: updateUserRole, onSuccess }),

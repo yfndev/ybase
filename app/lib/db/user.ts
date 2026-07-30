@@ -14,6 +14,13 @@ export interface BoardMembership {
   isChair: boolean;
 }
 
+export interface MemberInfraction {
+  _id: string;
+  reason: string;
+  createdAt: number;
+  createdBy: string;
+}
+
 export interface User {
   _id: string;
   _creationTime: number;
@@ -54,4 +61,5 @@ export interface User {
   offboardingStartedAt?: number;
   archivedAt?: number;
   offboardedAt?: number;
+  memberInfractions?: MemberInfraction[];
 }
