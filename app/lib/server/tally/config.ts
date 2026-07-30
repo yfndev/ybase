@@ -1,5 +1,5 @@
 import {
-  TALLY_RECRUITING_TEMPLATE_FORM_ID,
+  TALLY_RECRUITING_FALLBACK_TEMPLATE_FORM_ID,
   TALLY_RECRUITING_WORKSPACE_ID,
 } from "../../tally/constants";
 
@@ -42,7 +42,7 @@ export function loadTallyFormConfig(
   }
   return {
     workspaceId: TALLY_RECRUITING_WORKSPACE_ID,
-    templateFormId: TALLY_RECRUITING_TEMPLATE_FORM_ID,
+    templateFormId: TALLY_RECRUITING_FALLBACK_TEMPLATE_FORM_ID,
     webhookUrl,
     webhookSigningSecret,
   };

@@ -7,6 +7,12 @@ vi.mock("../../auth/session", () => ({
 vi.mock("./tallyFormProvisioning", () => ({
   provisionTallyFormDraft: vi.fn(async () => ({ ok: true, formId: "form-1" })),
 }));
+vi.mock("./tallyTemplates", () => ({
+  requireRecruitingTallyTemplate: vi.fn(async (id: string) => ({
+    id,
+    name: "Vorlage",
+  })),
+}));
 
 import { requirePermission, requireUser } from "../../auth/session";
 import { departments, jobPostings, teams, users } from "../../db/collections";
@@ -17,6 +23,7 @@ import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { createJobPostingDraft, updateJobPosting } from "./actions";
 import { getJobPostingById, getJobPostings } from "./data";
 import { provisionTallyFormDraft } from "./tallyFormProvisioning";
+import { requireRecruitingTallyTemplate } from "./tallyTemplates";
 
 let orgA: string;
 let orgB: string;
@@ -90,7 +97,11 @@ beforeEach(async () => {
 });
 
 test("createJobPostingDraft stores a draft scoped to the org without a department", async () => {
-  const id = await createJobPostingDraft({ title: "Vorstand", teamId: teamA });
+  const id = await createJobPostingDraft({
+    title: "Vorstand",
+    teamId: teamA,
+    tallyTemplateFormId: "template-1",
+  });
   const foreignTeam = await insertTeam(orgB);
   await (
     await jobPostings()
@@ -110,33 +121,68 @@ test("createJobPostingDraft stores a draft scoped to the org without a departmen
     _id: id,
     title: "Vorstand",
     teamId: teamA,
+    tallyTemplateFormId: "template-1",
     shortText:
       "Baue mit uns die größte Community für junge (angehende) Gründer:innen im deutschsprachigen Raum auf.",
   });
   expect(list[0].status).toBe("draft");
   expect(list[0]).not.toHaveProperty("departmentId");
   expect(provisionTallyFormDraft).toHaveBeenCalledWith(
-    expect.objectContaining({ _id: id, title: "Vorstand", status: "draft" }),
+    expect.objectContaining({
+      _id: id,
+      title: "Vorstand",
+      status: "draft",
+      tallyTemplateFormId: "template-1",
+    }),
     expect.objectContaining({ _id: userA, organizationId: orgA }),
   );
+  expect(requireRecruitingTallyTemplate).toHaveBeenCalledWith("template-1");
 });
 
 test("createJobPostingDraft rejects an archived team", async () => {
   const archived = await insertTeam(orgA, true);
   await expect(
-    createJobPostingDraft({ title: "X", teamId: archived }),
+    createJobPostingDraft({
+      title: "X",
+      teamId: archived,
+      tallyTemplateFormId: "template-1",
+    }),
   ).rejects.toThrow("Team nicht verfügbar");
 });
 
 test("createJobPostingDraft rejects a team from another org", async () => {
   const foreign = await insertTeam(orgB);
   await expect(
-    createJobPostingDraft({ title: "X", teamId: foreign }),
+    createJobPostingDraft({
+      title: "X",
+      teamId: foreign,
+      tallyTemplateFormId: "template-1",
+    }),
   ).rejects.toThrow("Team nicht verfügbar");
 });
 
+test("createJobPostingDraft rejects a form outside the templates folder", async () => {
+  vi.mocked(requireRecruitingTallyTemplate).mockRejectedValueOnce(
+    new Error("Tally-Vorlage nicht verfügbar"),
+  );
+
+  await expect(
+    createJobPostingDraft({
+      title: "X",
+      teamId: teamA,
+      tallyTemplateFormId: "foreign-form",
+    }),
+  ).rejects.toThrow("Tally-Vorlage nicht verfügbar");
+  expect(await (await jobPostings()).countDocuments()).toBe(0);
+  expect(provisionTallyFormDraft).not.toHaveBeenCalled();
+});
+
 test("updateJobPosting sanitizes rich text before storing", async () => {
-  const id = await createJobPostingDraft({ title: "T", teamId: teamA });
+  const id = await createJobPostingDraft({
+    title: "T",
+    teamId: teamA,
+    tallyTemplateFormId: "template-1",
+  });
   await updateJobPosting({
     jobPostingId: id,
     title: "T",
@@ -162,7 +208,11 @@ test("updateJobPosting sanitizes rich text before storing", async () => {
 });
 
 test("updateJobPosting can edit content while published", async () => {
-  const id = await createJobPostingDraft({ title: "Alt", teamId: teamA });
+  const id = await createJobPostingDraft({
+    title: "Alt",
+    teamId: teamA,
+    tallyTemplateFormId: "template-1",
+  });
   await (
     await jobPostings()
   ).updateOne(
@@ -187,7 +237,11 @@ test("updateJobPosting can edit content while published", async () => {
 });
 
 test("stores the exact application questions and forwards them to Tally", async () => {
-  const id = await createJobPostingDraft({ title: "T", teamId: teamA });
+  const id = await createJobPostingDraft({
+    title: "T",
+    teamId: teamA,
+    tallyTemplateFormId: "template-1",
+  });
   const applicationQuestions = [
     "Welche Systeme hast du skaliert?",
     "Wie führst du ein technisches Team?",
@@ -211,7 +265,11 @@ test("stores the exact application questions and forwards them to Tally", async 
 test("updateJobPosting stores unique organization members as contacts", async () => {
   const firstContact = await insertMember(orgA, { name: "Erster Kontakt" });
   const secondContact = await insertMember(orgA, { name: "Zweiter Kontakt" });
-  const id = await createJobPostingDraft({ title: "Alt", teamId: teamA });
+  const id = await createJobPostingDraft({
+    title: "Alt",
+    teamId: teamA,
+    tallyTemplateFormId: "template-1",
+  });
 
   await updateJobPosting({
     jobPostingId: id,
@@ -236,7 +294,11 @@ test("updateJobPosting rejects unavailable contacts", async () => {
     memberStatus: "archived",
   });
   const contactWithoutEmail = await insertMember(orgA, { email: undefined });
-  const id = await createJobPostingDraft({ title: "T", teamId: teamA });
+  const id = await createJobPostingDraft({
+    title: "T",
+    teamId: teamA,
+    tallyTemplateFormId: "template-1",
+  });
 
   for (const contactUserId of [
     foreignContact,
@@ -260,7 +322,11 @@ test("updateJobPosting keeps planned offboarding contacts available", async () =
   const contactId = await insertMember(orgA, {
     memberStatus: "offboarding_planned",
   });
-  const id = await createJobPostingDraft({ title: "T", teamId: teamA });
+  const id = await createJobPostingDraft({
+    title: "T",
+    teamId: teamA,
+    tallyTemplateFormId: "template-1",
+  });
 
   await updateJobPosting({
     jobPostingId: id,

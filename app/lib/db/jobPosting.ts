@@ -18,6 +18,7 @@ export interface JobPosting {
   contactUserIds?: string[];
   applicationQuestions?: string[];
   createdBy: string;
+  tallyTemplateFormId?: string;
   tallyFormId?: string;
   tallyWebhookId?: string;
   tallyFormError?: string;

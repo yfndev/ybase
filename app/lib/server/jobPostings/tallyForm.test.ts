@@ -149,7 +149,7 @@ beforeEach(async () => {
   );
   vi.mocked(loadTallyFormConfig).mockReturnValue({
     workspaceId: "ws",
-    templateFormId: "tpl",
+    templateFormId: "tpl-general",
     webhookUrl: "https://ybase.test/api/tally/webhook",
     webhookSigningSecret: "secret",
   });
@@ -172,6 +172,7 @@ test("creates, configures, publishes and stores the tally ids", async () => {
   expect(client.createForm).toHaveBeenCalledTimes(1);
   expect(client.createForm).toHaveBeenCalledWith(
     expect.objectContaining({
+      templateId: "tpl-general",
       blocks: expect.arrayContaining([
         expect.objectContaining({
           type: "FORM_TITLE",
@@ -223,6 +224,22 @@ test("creates, configures, publishes and stores the tally ids", async () => {
     userId: userA,
     _creationTime: expect.any(Number),
   });
+});
+
+test("uses the template selected for the posting", async () => {
+  const client = useClient(fakeClient());
+  const id = await insertDraft(orgA, {
+    tallyTemplateFormId: "tpl-selected",
+  });
+
+  await expect(generateTallyForm({ jobPostingId: id })).resolves.toEqual({
+    ok: true,
+  });
+
+  expect(client.getForm).toHaveBeenCalledWith("tpl-selected");
+  expect(client.createForm).toHaveBeenCalledWith(
+    expect.objectContaining({ templateId: "tpl-selected" }),
+  );
 });
 
 test("syncs posting content and exact role questions into Tally", async () => {

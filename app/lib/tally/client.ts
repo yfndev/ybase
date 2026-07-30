@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { createTallyRequest, TALLY_API_URL } from "./transport";
-import type { TallyBlock, TallyForm } from "./types";
+import type {
+  TallyBlock,
+  TallyFolder,
+  TallyForm,
+  TallyFormSummary,
+} from "./types";
 
 type FormPatch = Partial<Pick<TallyForm, "blocks" | "settings" | "status">> & {
   name?: string;
@@ -22,6 +27,24 @@ const formResourceSchema = z.object({
 });
 const createdFormSchema = z.object({ id: z.string(), status: z.string() });
 const webhookSchema = z.object({ id: z.string() });
+const formSummarySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  status: z.string(),
+  workspaceId: z.string(),
+  folderId: z.string().nullable().optional(),
+});
+const formListSchema = z.object({
+  items: z.array(formSummarySchema),
+  hasMore: z.boolean().optional().default(false),
+});
+const folderSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  workspaceId: z.string(),
+  parentId: z.string().nullable(),
+});
+const folderListSchema = z.array(folderSchema);
 
 export function createTallyClient(
   apiToken: string,
@@ -34,6 +57,32 @@ export function createTallyClient(
 
   async function getForm(formId: string): Promise<TallyForm> {
     return formResourceSchema.parse(await request(`/forms/${formId}`));
+  }
+
+  async function listForms(workspaceId: string): Promise<TallyFormSummary[]> {
+    const forms: TallyFormSummary[] = [];
+    let page = 1;
+    let hasMore = false;
+    do {
+      const query = new URLSearchParams({
+        page: String(page),
+        limit: "500",
+        workspaceIds: workspaceId,
+      });
+      const result = formListSchema.parse(
+        await request(`/forms?${query.toString()}`),
+      );
+      forms.push(...result.items);
+      hasMore = result.hasMore;
+      page += 1;
+    } while (hasMore);
+    return forms;
+  }
+
+  async function listFolders(workspaceId: string): Promise<TallyFolder[]> {
+    return folderListSchema.parse(
+      await request(`/workspaces/${encodeURIComponent(workspaceId)}/folders`),
+    );
   }
 
   async function createForm(input: {
@@ -80,6 +129,8 @@ export function createTallyClient(
 
   return {
     getForm,
+    listForms,
+    listFolders,
     createForm,
     updateForm,
     publishForm: (formId: string) =>
