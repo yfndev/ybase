@@ -66,8 +66,8 @@ export async function recordMemberInfraction(input: RecordInfractionInput) {
     };
     if (memberExcluded) {
       update.$set = {
-        memberStatus: "offboarding",
-        offboardingStartedAt: infraction.createdAt,
+        memberStatus: "excluded",
+        excludedAt: infraction.createdAt,
       };
     }
 
@@ -87,7 +87,7 @@ export async function recordMemberInfraction(input: RecordInfractionInput) {
           currentUser._id,
           "member.status_change",
           target._id,
-          `${target.name ?? target.email}: ${target.memberStatus} → offboarding (zweiter Verstoß)`,
+          `${target.name ?? target.email}: ${target.memberStatus} → excluded (zweiter Verstoß)`,
         );
       }
       return { infractionCount, memberExcluded };

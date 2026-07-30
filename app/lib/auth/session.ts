@@ -24,7 +24,7 @@ export async function requireUser() {
   const user = await requireAuthenticatedUser();
   if (!user.organizationId) throw new Error("User has no organization");
   if (isUnavailableMemberStatus(user.memberStatus)) {
-    throw new Error("User is offboarding or archived");
+    throw new Error("User is unavailable");
   }
   if (user.memberStatus === "onboarding") {
     throw new Error("Member is awaiting approval");

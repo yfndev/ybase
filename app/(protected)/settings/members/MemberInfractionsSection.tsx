@@ -41,7 +41,7 @@ export function MemberInfractionsSection({ member }: { member: User }) {
       setIsOpen(false);
       toast.success(
         result.memberExcluded
-          ? "Mitglied ins Offboarding verschoben"
+          ? "Mitglied ausgeschlossen"
           : "Verstoß gespeichert",
       );
     } catch (error) {
@@ -114,8 +114,7 @@ export function MemberInfractionsSection({ member }: { member: User }) {
                 <ShieldAlert className="mt-0.5 size-5 shrink-0" />
                 <p>
                   Dies ist der zweite Verstoß. Nach dem Speichern wird das
-                  Mitglied sofort ins Offboarding verschoben und der Zugriff
-                  gesperrt.
+                  Mitglied sofort ausgeschlossen und der Zugriff gesperrt.
                 </p>
               </div>
             ) : null}

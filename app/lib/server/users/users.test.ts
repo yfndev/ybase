@@ -370,6 +370,14 @@ test("setMemberStatus maps legacy offboarded writes to archived", async () => {
   expect(typeof updated?.archivedAt).toBe("number");
 });
 
+test("setMemberStatus records manual exclusions separately", async () => {
+  await setMemberStatus({ userId: memberA, status: "excluded" });
+  const updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.memberStatus).toBe("excluded");
+  expect(typeof updated?.excludedAt).toBe("number");
+  expect(updated?.archivedAt).toBeUndefined();
+});
+
 test("setMemberStatus cannot touch a user from another org", async () => {
   await expect(
     setMemberStatus({ userId: memberB, status: "archived" }),
@@ -422,8 +430,9 @@ test("recordMemberInfraction excludes the member atomically on the second infrac
   expect(result).toEqual({ infractionCount: 2, memberExcluded: true });
   const updated = await (await users()).findOne({ _id: memberA });
   expect(updated?.memberInfractions).toHaveLength(2);
-  expect(updated?.memberStatus).toBe("offboarding");
-  expect(typeof updated?.offboardingStartedAt).toBe("number");
+  expect(updated?.memberStatus).toBe("excluded");
+  expect(typeof updated?.excludedAt).toBe("number");
+  expect(updated?.offboardingStartedAt).toBeUndefined();
   const statusLog = await (
     await logs()
   ).findOne({ action: "member.status_change" });
@@ -451,7 +460,7 @@ test("recordMemberInfraction handles two simultaneous infractions safely", async
   ]);
   const updated = await (await users()).findOne({ _id: memberA });
   expect(updated?.memberInfractions).toHaveLength(2);
-  expect(updated?.memberStatus).toBe("offboarding");
+  expect(updated?.memberStatus).toBe("excluded");
 });
 
 test("setMemberStatus cannot reactivate a member after two infractions", async () => {

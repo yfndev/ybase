@@ -18,6 +18,7 @@ const memberStatusSchema = z.enum([
   "offboarding_planned",
   "offboarding",
   "archived",
+  "excluded",
   "offboarded",
 ]);
 const teamOnboardingSchema = z.enum([

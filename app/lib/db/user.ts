@@ -5,6 +5,7 @@ export type MemberStatus =
   | "offboarding_planned"
   | "offboarding"
   | "archived"
+  | "excluded"
   | "offboarded";
 export type TeamOnboardingStatus = "not_started" | "in_progress" | "completed";
 export type ProfileImageSource = "google" | "upload";
@@ -61,6 +62,7 @@ export interface User {
   offboardingPlannedAt?: number;
   offboardingStartedAt?: number;
   archivedAt?: number;
+  excludedAt?: number;
   offboardedAt?: number;
   memberInfractions?: MemberInfraction[];
 }

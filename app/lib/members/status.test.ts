@@ -13,7 +13,7 @@ describe("member status semantics", () => {
     expect(isUnavailableMemberStatus("offboarding_planned")).toBe(false);
   });
 
-  test.each(["offboarding", "archived", "offboarded"] as const)(
+  test.each(["offboarding", "archived", "excluded", "offboarded"] as const)(
     "treats %s members as unavailable",
     (status) => {
       expect(isUnavailableMemberStatus(status)).toBe(true);

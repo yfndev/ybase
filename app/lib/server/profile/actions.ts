@@ -39,7 +39,7 @@ function requireEligibleUser<
 >(user: T): asserts user is T & { organizationId: string } {
   if (!user.organizationId) throw new Error("User has no organization");
   if (isUnavailableMemberStatus(user.memberStatus)) {
-    throw new Error("User is offboarding or archived");
+    throw new Error("User is unavailable");
   }
 }
 

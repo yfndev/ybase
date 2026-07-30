@@ -17,6 +17,8 @@ const MEMBER_STAGE_BADGE_STYLES: Record<MemberStage, string> = {
     "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200",
   archived:
     "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200",
+  excluded:
+    "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/60 dark:text-red-200",
 };
 
 export function MemberStageBadge({

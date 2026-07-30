@@ -59,6 +59,7 @@ erDiagram
         number offboardingPlannedAt
         number offboardingStartedAt
         number archivedAt
+        number excludedAt
         array memberInfractions "_id, reason, createdAt, createdBy"
     }
 

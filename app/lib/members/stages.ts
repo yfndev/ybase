@@ -12,6 +12,7 @@ export const MEMBER_STAGE_OPTIONS = [
   { value: "offboarding_planned", label: "Offboarding vorgemerkt" },
   { value: "offboarding", label: "Offboarding" },
   { value: "archived", label: "Archiviert" },
+  { value: "excluded", label: "Ausgeschlossen" },
 ] as const;
 
 export type MemberStage = (typeof MEMBER_STAGE_OPTIONS)[number]["value"];
@@ -50,6 +51,7 @@ const MEMBER_STATUSES_BY_STAGE: Partial<
   offboarding_planned: ["offboarding_planned"],
   offboarding: ["offboarding"],
   archived: ["archived", "offboarded"],
+  excluded: ["excluded"],
 };
 
 export function memberStatusesForStage(
