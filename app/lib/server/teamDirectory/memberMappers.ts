@@ -38,6 +38,17 @@ function memberId(organizationId: string, userId: string): string {
   return `ybase:${organizationId}:member:${userId}`;
 }
 
+function profileImage(
+  user: DirectoryUser,
+  publicOrigin: string,
+): { imageUrl?: string } {
+  return user.profileImageStorageKey && user.publicProfileCompletedAt
+    ? {
+        imageUrl: `${publicOrigin}/api/v1/team-directory/images/${encodeURIComponent(user._id)}`,
+      }
+    : {};
+}
+
 export function memberDto(
   user: DirectoryUser,
   organizationId: string,
@@ -49,17 +60,14 @@ export function memberDto(
     name: profileName(user),
     role: isLead ? "Lead" : "",
     isLead,
-    ...(user.profileImageStorageKey && user.publicProfileCompletedAt
-      ? {
-          imageUrl: `${publicOrigin}/api/v1/team-directory/images/${encodeURIComponent(user._id)}`,
-        }
-      : {}),
+    ...profileImage(user, publicOrigin),
   };
 }
 
 export function boardMemberDto(
   user: DirectoryUser,
   organizationId: string,
+  publicOrigin: string,
   department: Pick<Department, "_id" | "name"> | undefined,
 ): TeamDirectoryBoardMember | null {
   const boardMembership = user.boardMembership;
@@ -75,5 +83,6 @@ export function boardMemberDto(
     ...(boardMembership.secondaryRole
       ? { secondaryRole: boardMembership.secondaryRole }
       : {}),
+    ...profileImage(user, publicOrigin),
   };
 }

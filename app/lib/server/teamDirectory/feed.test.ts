@@ -96,6 +96,8 @@ test("returns active members directly from their ybase profiles", async () => {
         isChair: true,
         secondaryRole: "Finanzen",
       },
+      profileImageStorageKey: "board-profile-image",
+      publicProfileCompletedAt: 100,
     }),
     member({
       _id: "member-board-without-secondary-role",
@@ -149,6 +151,7 @@ test("returns active members directly from their ybase profiles", async () => {
       role: "Operations",
       isChair: true,
       secondaryRole: "Finanzen",
+      imageUrl: `${publicOrigin}/api/v1/team-directory/images/member-board`,
     },
     {
       id: `ybase:${organizationId}:member:member-board-without-secondary-role`,
