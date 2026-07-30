@@ -15,6 +15,9 @@ keinem Team innerhalb dieses Departments zugeordnet. Die optionale
 `secondaryRole` innerhalb der Vorstandszuordnung wird als Nebenrolle
 veröffentlicht.
 
+Für Team- und Vorstandsmitglieder wird `imageUrl` veröffentlicht, sobald ein
+Profilbild vorhanden und das öffentliche Profil vollständig ausgefüllt ist.
+
 Ein optionales `secondaryTeamId` veröffentlicht dieselbe Person zusätzlich als
 Mitglied eines zweiten Teams. `isTeamLead` markiert die Person im Hauptteam aus
 `teamId` als Lead, `isSecondaryTeamLead` unabhängig davon im weiteren Team aus
@@ -59,7 +62,8 @@ dargestellt.
         "name": "Ada Beispiel",
         "role": "Operations",
         "isChair": true,
-        "secondaryRole": "Finanzen"
+        "secondaryRole": "Finanzen",
+        "imageUrl": "https://ybase.example/api/v1/team-directory/images/user"
       }
     ],
     "departments": [

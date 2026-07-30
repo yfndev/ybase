@@ -74,6 +74,7 @@ export async function getTeamDirectory(
         const boardMember = boardMemberDto(
           member,
           organizationId,
+          publicOrigin,
           member.boardMembership
             ? activeDepartments.get(member.boardMembership.departmentId)
             : undefined,
