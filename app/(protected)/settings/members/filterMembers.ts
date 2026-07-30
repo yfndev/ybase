@@ -32,7 +32,8 @@ export function departmentIdsOf(
 function matchesSearch(member: User, search: string): boolean {
   const needle = search.trim().toLowerCase();
   if (!needle) return true;
-  const haystack = `${member.name ?? ""} ${member.email ?? ""}`.toLowerCase();
+  const haystack =
+    `${member.name ?? ""} ${member.email ?? ""} ${member.privateEmail ?? ""} ${member.phone ?? ""}`.toLowerCase();
   return haystack.includes(needle);
 }
 

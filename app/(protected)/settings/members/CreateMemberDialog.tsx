@@ -1,5 +1,8 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -14,9 +17,7 @@ import { Label } from "@/components/ui/label";
 import { useMemberMutations } from "@/lib/client/members/hooks/useMemberMutations";
 import type { Department, Team, User } from "@/lib/db/types";
 import { YFN_ORGANIZATION } from "@/lib/organization";
-import { Loader2 } from "lucide-react";
-import { useState } from "react";
-import toast from "react-hot-toast";
+import { CreateMemberContactFields } from "./CreateMemberContactFields";
 import { LabeledSelect } from "./LabeledSelect";
 
 interface Props {
@@ -37,6 +38,8 @@ export function CreateMemberDialog({
   const { create } = useMemberMutations();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [privateEmail, setPrivateEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [teamId, setTeamId] = useState("");
   const [isTeamLead, setIsTeamLead] = useState(false);
   const activeTeams = teams.filter((team) => !team.isArchived);
@@ -48,6 +51,8 @@ export function CreateMemberDialog({
   const reset = () => {
     setName("");
     setEmail("");
+    setPrivateEmail("");
+    setPhone("");
     setTeamId("");
     setIsTeamLead(false);
   };
@@ -68,6 +73,8 @@ export function CreateMemberDialog({
       const member = await create.mutateAsync({
         name: name.trim(),
         email: email.trim(),
+        privateEmail: privateEmail.trim() || undefined,
+        phone: phone.trim() || undefined,
         teamId,
         isTeamLead,
       });
@@ -117,6 +124,12 @@ export function CreateMemberDialog({
               required
             />
           </div>
+          <CreateMemberContactFields
+            privateEmail={privateEmail}
+            phone={phone}
+            onPrivateEmailChange={setPrivateEmail}
+            onPhoneChange={setPhone}
+          />
           <LabeledSelect
             id="manual-member-team"
             label="Team*"

@@ -44,6 +44,8 @@ erDiagram
         string _id
         string organizationId
         string email
+        string privateEmail
+        string phone
         string googleWorkspaceUserId
         string role
         string teamId

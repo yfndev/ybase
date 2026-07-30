@@ -1,13 +1,14 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Loader2 } from "lucide-react";
 import { MemberStageBadge } from "@/components/Members/MemberStageBadge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { SheetFooter } from "@/components/ui/sheet";
 import type { User, UserRole } from "@/lib/db/types";
 import { getInitials } from "@/lib/formatters/getInitials";
 import { memberStageForStatus } from "@/lib/members/stages";
 import { profileAvatarUrl } from "@/lib/profile/avatar";
-import { Loader2 } from "lucide-react";
 import { LabeledSelect } from "./LabeledSelect";
+import { MemberContactFields } from "./MemberContactFields";
 import { MemberInfractionsSection } from "./MemberInfractionsSection";
 import { MemberStatusField } from "./MemberStatusField";
 import { ROLE_OPTIONS } from "./memberLabels";
@@ -55,6 +56,7 @@ export function MemberDrawerPanel({
       </div>
 
       <div className="flex flex-1 flex-col gap-4 px-6">
+        <MemberContactFields form={form} />
         <PublicOrganizationFields form={form} />
         <MemberStatusField
           status={form.status}
