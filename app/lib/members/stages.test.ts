@@ -29,12 +29,17 @@ function application(
   };
 }
 
-function member(id: string, status: User["memberStatus"]): User {
+function member(
+  id: string,
+  status: User["memberStatus"],
+  overrides: Partial<User> = {},
+): User {
   return {
     _id: id,
     _creationTime: 1,
     memberStatus: status,
     teamOnboardingStatus: "completed",
+    ...overrides,
   };
 }
 
@@ -52,17 +57,16 @@ describe("member lifecycle stages", () => {
     application("withdrawn", { status: "withdrawn" }),
   ];
   const members = [
-    member("onboarding-member", "onboarding"),
+    member("onboarding-member", "onboarding", {
+      applicationId: "linked-onboarding",
+    }),
+    member("manual-onboarding-member", "onboarding"),
     member("active-member", "active"),
     member("planned-member", "offboarding_planned"),
     member("offboarding-member", "offboarding"),
     member("archived-member", "archived"),
     member("legacy-offboarded-member", "offboarded"),
   ];
-  const memberStatusesById = new Map(
-    members.map((entry) => [entry._id, entry.memberStatus]),
-  );
-
   test("validates stage query parameters", () => {
     expect(isMemberStage("interview")).toBe(true);
     expect(isMemberStage("unknown")).toBe(false);
@@ -76,29 +80,23 @@ describe("member lifecycle stages", () => {
 
   test("groups application records by recruiting step", () => {
     expect(
-      applicationsForStage(applications, "application", memberStatusesById).map(
+      applicationsForStage(applications, "application").map(
         (entry) => entry._id,
       ),
     ).toEqual(["new", "review"]);
     expect(
-      applicationsForStage(applications, "interview", memberStatusesById).map(
-        (entry) => entry._id,
-      ),
+      applicationsForStage(applications, "interview").map((entry) => entry._id),
     ).toEqual(["interview"]);
     expect(
-      applicationsForStage(applications, "archived", memberStatusesById).map(
-        (entry) => entry._id,
-      ),
+      applicationsForStage(applications, "archived").map((entry) => entry._id),
     ).toEqual([]);
   });
 
-  test("keeps accepted applications in one onboarding list", () => {
+  test("uses member records as the single onboarding source", () => {
+    expect(applicationsForStage(applications, "onboarding")).toEqual([]);
     expect(
-      applicationsForStage(applications, "onboarding", memberStatusesById).map(
-        (entry) => entry._id,
-      ),
-    ).toEqual(["pending-onboarding", "linked-onboarding"]);
-    expect(membersForStage(members, "onboarding")).toEqual([]);
+      membersForStage(members, "onboarding").map((entry) => entry._id),
+    ).toEqual(["onboarding-member", "manual-onboarding-member"]);
   });
 
   test("keeps offboarding phases separate and maps legacy records to archive", () => {

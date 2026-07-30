@@ -30,7 +30,6 @@ export function useMemberDrawerForm(
   const [secondaryTeamId, setSecondaryTeamId] = useState(
     member.secondaryTeamId ?? "",
   );
-  const [position, setPosition] = useState(member.positionTitle ?? "");
   const [status, setStatus] = useState<MemberStatus>(
     normalizeMemberStatus(member.memberStatus),
   );
@@ -41,13 +40,8 @@ export function useMemberDrawerForm(
   );
   const board = useBoardMembershipForm(member);
 
-  const {
-    teamOptions,
-    departmentOptions,
-    department,
-    chapterTeamIds,
-    hasNonChapterTeam,
-  } = memberOrganizationState(teams, departments, teamId, secondaryTeamId);
+  const { teamOptions, departmentOptions, department, chapterTeamIds } =
+    memberOrganizationState(teams, departments, teamId);
   const isSaving =
     updateProfile.isPending ||
     setStatusMutation.isPending ||
@@ -74,7 +68,6 @@ export function useMemberDrawerForm(
         userId: string;
         teamId?: string | null;
         secondaryTeamId?: string | null;
-        positionTitle?: string | null;
         isTeamLead?: boolean;
         isSecondaryTeamLead?: boolean;
         boardMembership?: {
@@ -94,12 +87,6 @@ export function useMemberDrawerForm(
         secondaryTeamId !== (member.secondaryTeamId ?? "")
       ) {
         profile.secondaryTeamId = secondaryTeamId || null;
-      }
-      const trimmed =
-        !board.isBoardMember && !hasNonChapterTeam ? "" : position.trim();
-      const currentPosition = member.positionTitle?.trim() ?? "";
-      if (trimmed !== currentPosition) {
-        profile.positionTitle = trimmed || null;
       }
       const nextIsTeamLead = board.isBoardMember ? false : isTeamLead;
       if (nextIsTeamLead !== (member.isTeamLead ?? false)) {
@@ -130,7 +117,6 @@ export function useMemberDrawerForm(
       if (
         profile.teamId !== undefined ||
         profile.secondaryTeamId !== undefined ||
-        profile.positionTitle !== undefined ||
         profile.isTeamLead !== undefined ||
         profile.isSecondaryTeamLead !== undefined ||
         profile.boardMembership !== undefined
@@ -167,8 +153,6 @@ export function useMemberDrawerForm(
     setTeamId,
     secondaryTeamId,
     setSecondaryTeamId,
-    position,
-    setPosition,
     status,
     setStatus,
     role,
@@ -182,7 +166,6 @@ export function useMemberDrawerForm(
     departmentOptions,
     department,
     chapterTeamIds,
-    hasNonChapterTeam,
     canEditRoles,
     isSaving,
     handleSave,

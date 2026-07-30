@@ -15,16 +15,15 @@ interface Props {
   onSelect: (member: User) => void;
 }
 
-function positionLabel(member: User, teams: Team[]): string {
+function roleLabel(member: User): string {
   if (member.boardMembership) {
     const boardRole = member.boardMembership.isChair ? "Vorsitz" : "Vorstand";
     return member.boardMembership.secondaryRole
       ? `${boardRole} · ${member.boardMembership.secondaryRole}`
       : boardRole;
   }
-  if (teams.length > 0 && teams.every((team) => team.isChapter)) return "—";
   if (member.isTeamLead || member.isSecondaryTeamLead) return "Lead";
-  return member.positionTitle || "—";
+  return "—";
 }
 
 export function MemberRow({
@@ -53,10 +52,7 @@ export function MemberRow({
     : [team, secondaryTeam]
         .flatMap((entry) => (entry ? [entry.name] : []))
         .join(", ") || "—";
-  const position = positionLabel(
-    member,
-    [team, secondaryTeam].filter((entry) => entry !== undefined),
-  );
+  const role = roleLabel(member);
   const displayName = member.name || "Unbekanntes Mitglied";
 
   return (
@@ -93,7 +89,7 @@ export function MemberRow({
       </TableCell>
       <TableCell>{departmentLabel}</TableCell>
       <TableCell>{teamLabel}</TableCell>
-      <TableCell className="pr-4">{position}</TableCell>
+      <TableCell className="pr-4">{role}</TableCell>
     </TableRow>
   );
 }

@@ -9,7 +9,7 @@ export function MembersTableHeader() {
         <TableHead>Status</TableHead>
         <TableHead>Department</TableHead>
         <TableHead>Team</TableHead>
-        <TableHead className="pr-4">Position</TableHead>
+        <TableHead className="pr-4">Rolle</TableHead>
       </TableRow>
     </TableHeader>
   );

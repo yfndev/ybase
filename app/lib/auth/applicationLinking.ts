@@ -99,7 +99,6 @@ export async function linkAcceptedApplication(user: User): Promise<User> {
       $set: {
         applicationId: application._id,
         teamId: posting.teamId,
-        positionTitle: posting.title,
         memberStatus: "onboarding",
         teamOnboardingStatus: "not_started",
       },
@@ -146,7 +145,6 @@ export async function linkAcceptedApplication(user: User): Promise<User> {
     ...user,
     applicationId: application._id,
     teamId: posting.teamId,
-    positionTitle: posting.title,
     memberStatus: "onboarding",
     teamOnboardingStatus: "not_started",
   };

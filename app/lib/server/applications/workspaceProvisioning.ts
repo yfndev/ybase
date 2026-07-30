@@ -1,7 +1,7 @@
 import { emailDomain, normalizeYfnEmail } from "../../applications/yfnEmail";
 import { applications, users } from "../../db/collections";
+import { isDuplicateKeyError } from "../../db/errors";
 import type { Application } from "../../db/types";
-import { isDuplicateKeyError } from "./history";
 
 const CLAIM_TIMEOUT_MS = 5 * 60 * 1000;
 

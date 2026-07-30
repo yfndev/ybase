@@ -45,6 +45,7 @@ const APPLICATION_STAGE_STATUSES: Record<
 const MEMBER_STATUSES_BY_STAGE: Partial<
   Record<MemberStage, readonly MemberStatus[]>
 > = {
+  onboarding: ["onboarding"],
   active: ["active"],
   offboarding_planned: ["offboarding_planned"],
   offboarding: ["offboarding"],
@@ -60,17 +61,7 @@ export function memberStatusesForStage(
 export function applicationsForStage(
   applications: ApplicationWithFiles[],
   stage: MemberStage,
-  memberStatusesById: ReadonlyMap<string, MemberStatus>,
 ): ApplicationWithFiles[] {
-  if (stage === "onboarding") {
-    return applications.filter((application) => {
-      if (application.status !== "accepted") return false;
-      if (!application.onboardingUserId) return true;
-      const memberStatus = memberStatusesById.get(application.onboardingUserId);
-      return memberStatus === undefined || memberStatus === "onboarding";
-    });
-  }
-
   if (!(stage in APPLICATION_STAGE_STATUSES)) return [];
   const statuses =
     APPLICATION_STAGE_STATUSES[
@@ -90,13 +81,10 @@ export function memberStageCounts(
   applications: ApplicationWithFiles[],
   members: User[],
 ): Record<MemberStage, number> {
-  const memberStatusesById = new Map(
-    members.map((member) => [member._id, member.memberStatus]),
-  );
   return Object.fromEntries(
     MEMBER_STAGE_OPTIONS.map(({ value }) => {
       const count =
-        applicationsForStage(applications, value, memberStatusesById).length +
+        applicationsForStage(applications, value).length +
         membersForStage(members, value).length;
       return [value, count];
     }),

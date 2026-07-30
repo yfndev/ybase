@@ -5,8 +5,8 @@ import type { ApplicationDecision } from "../../applications/decisionEmail";
 import { isApplicationStatusTransitionAllowed } from "../../applications/transitions";
 import { applications, jobPostings } from "../../db/collections";
 import type { Application } from "../../db/types";
-import { addLog } from "../logs";
 import { loadOwnedApplication } from "./access";
+import { recordDecisionLogs } from "./decisionAudit";
 import { prepareAcceptance, sendDecisionEmail } from "./decisionDelivery";
 import {
   applicationDecisionInputSchema,
@@ -14,6 +14,10 @@ import {
   type ParsedApplicationDecision,
 } from "./decisionInput";
 import { createApplicationHistoryEntry } from "./history";
+import {
+  createAcceptedApplicantMember,
+  rollbackAcceptedApplicantMember,
+} from "./memberProvisioning";
 
 export async function sendApplicationDecision(
   input: ApplicationDecisionInput,
@@ -51,12 +55,56 @@ export async function sendApplicationDecision(
     subject: decision.subject,
     workspaceUserId: prepared.workspaceUserId,
   });
-  await persistDecision({
+
+  let acceptedMember:
+    | Awaited<ReturnType<typeof createAcceptedApplicantMember>>
+    | undefined;
+  if (decision.decision === "accepted") {
+    if (!prepared.workspaceUserId) {
+      throw new Error("Workspace-Mitglied konnte nicht angelegt werden");
+    }
+    acceptedMember = await createAcceptedApplicantMember({
+      application,
+      email: decision.yfnEmail,
+      googleWorkspaceUserId: prepared.workspaceUserId,
+      organizationId: user.organizationId,
+      teamId: posting.teamId,
+    });
+  }
+
+  let statusDetails: string;
+  try {
+    statusDetails = await persistDecision({
+      application,
+      decision,
+      userId: user._id,
+      organizationId: user.organizationId,
+      workspaceUserId: prepared.workspaceUserId,
+      onboardingUserId: acceptedMember?.member._id,
+    });
+  } catch (error) {
+    if (acceptedMember?.isCreated) {
+      try {
+        await rollbackAcceptedApplicantMember(
+          application._id,
+          acceptedMember.member._id,
+          user.organizationId,
+        );
+      } catch (rollbackError) {
+        console.error("accepted member rollback failed", rollbackError);
+      }
+    }
+    throw error;
+  }
+
+  await recordDecisionLogs({
     application,
     decision,
-    userId: user._id,
     organizationId: user.organizationId,
+    statusDetails,
+    userId: user._id,
     workspaceUserId: prepared.workspaceUserId,
+    onboardingUserId: acceptedMember?.member._id,
   });
 }
 
@@ -81,7 +129,8 @@ async function persistDecision(input: {
   organizationId: string;
   userId: string;
   workspaceUserId?: string;
-}): Promise<void> {
+  onboardingUserId?: string;
+}): Promise<string> {
   const entry = createApplicationHistoryEntry(
     input.userId,
     "status_changed",
@@ -101,6 +150,14 @@ async function persistDecision(input: {
       ...(input.workspaceUserId
         ? { workspaceProvisioningStatus: "provisioned" }
         : {}),
+      ...(input.onboardingUserId
+        ? {
+            $or: [
+              { onboardingUserId: { $exists: false } },
+              { onboardingUserId: input.onboardingUserId },
+            ],
+          }
+        : {}),
     },
     {
       $set: {
@@ -109,9 +166,23 @@ async function persistDecision(input: {
         ...(input.workspaceUserId
           ? { workspaceProvisioningStatus: "invited" as const }
           : {}),
+        ...(input.onboardingUserId
+          ? {
+              onboardingUserId: input.onboardingUserId,
+              onboardingLinkedAt: entry.timestamp,
+              cleanupEligibleAt: entry.timestamp,
+            }
+          : {}),
       },
-      ...(input.workspaceUserId
-        ? { $unset: { workspaceProvisioningError: "" } }
+      ...(input.workspaceUserId || input.onboardingUserId
+        ? {
+            $unset: {
+              ...(input.workspaceUserId
+                ? { workspaceProvisioningError: "" }
+                : {}),
+              ...(input.onboardingUserId ? { onboardingLinkError: "" } : {}),
+            },
+          }
         : {}),
       $push: { history: entry },
     },
@@ -120,20 +191,5 @@ async function persistDecision(input: {
     throw new Error("Bewerbung wurde zwischenzeitlich geändert");
   }
 
-  await addLog(
-    input.organizationId,
-    input.userId,
-    "application.status_change",
-    input.application._id,
-    entry.details,
-  );
-  if (input.workspaceUserId && input.decision.decision === "accepted") {
-    await addLog(
-      input.organizationId,
-      input.userId,
-      "application.workspace_provisioned",
-      input.application._id,
-      input.decision.yfnEmail,
-    );
-  }
+  return entry.details;
 }

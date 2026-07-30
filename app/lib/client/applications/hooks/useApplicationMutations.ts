@@ -24,7 +24,12 @@ export function useApplicationMutations() {
         const result = await submitApplicationDecision(input);
         if (!result.ok) throw new Error(result.error);
       },
-      onSuccess: invalidate,
+      onSuccess: (_, input) => {
+        invalidate();
+        if (input.decision === "accepted") {
+          queryClient.invalidateQueries({ queryKey: ["members"] });
+        }
+      },
     }),
   };
 }

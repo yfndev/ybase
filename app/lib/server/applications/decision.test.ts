@@ -12,6 +12,7 @@ import {
   jobPostings,
   logs,
   organizations,
+  users,
 } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { Application } from "../../db/types";
@@ -28,6 +29,7 @@ const actorId = newId();
 const postingId = newId();
 const yfnEmail = `alex@${YFN_ORGANIZATION.domain}`;
 let applicationId: string;
+let postingTeamId: string;
 
 setupTestDatabase();
 
@@ -36,6 +38,7 @@ afterEach(() => vi.unstubAllEnvs());
 beforeEach(async () => {
   vi.clearAllMocks();
   applicationId = newId();
+  postingTeamId = newId();
   vi.mocked(requirePermission).mockResolvedValue(
     createTestActor({ _id: actorId, organizationId }),
   );
@@ -64,7 +67,7 @@ beforeEach(async () => {
     _id: postingId,
     _creationTime: Date.now(),
     organizationId,
-    teamId: newId(),
+    teamId: postingTeamId,
     status: "published",
     title: "Fundraising",
     createdBy: actorId,
@@ -114,15 +117,31 @@ test("sends the edited acceptance email before changing the status", async () =>
     yfnEmail,
     workspaceUserId: "google-user-1",
     workspaceProvisioningStatus: "invited",
+    onboardingUserId: expect.any(String),
   });
   expect(JSON.stringify(stored)).not.toContain("temporary-password");
-  expect(stored?.history?.at(-1)).toMatchObject({
-    fromStatus: "review",
-    toStatus: "accepted",
-  });
+  expect(stored?.history).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        fromStatus: "review",
+        toStatus: "accepted",
+      }),
+    ]),
+  );
   expect(
     await (await logs()).findOne({ entityId: applicationId }),
   ).toMatchObject({ action: "application.status_change" });
+  expect(await (await users()).findOne({ applicationId })).toMatchObject({
+    _id: stored?.onboardingUserId,
+    name: "Alex Beispiel",
+    email: yfnEmail,
+    googleWorkspaceUserId: "google-user-1",
+    organizationId,
+    role: "member",
+    teamId: postingTeamId,
+    memberStatus: "onboarding",
+    teamOnboardingStatus: "not_started",
+  });
 });
 
 test("sends a rejection with its dedicated template and then rejects", async () => {
@@ -170,6 +189,7 @@ test.each([
   expect(stored?.status).toBe("review");
   expect(stored?.history).toBeUndefined();
   expect(stored?.workspaceProvisioningStatus).toBe("provisioned");
+  expect(await (await users()).countDocuments({ applicationId })).toBe(0);
 });
 
 test("does not overwrite a withdrawal that happens during delivery", async () => {
@@ -196,4 +216,5 @@ test("does not overwrite a withdrawal that happens during delivery", async () =>
   expect(
     await (await applications()).findOne({ _id: applicationId }),
   ).toMatchObject({ status: "withdrawn", fields: [], files: [] });
+  expect(await (await users()).countDocuments({ applicationId })).toBe(0);
 });

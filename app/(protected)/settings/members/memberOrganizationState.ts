@@ -4,17 +4,12 @@ export function memberOrganizationState(
   teams: Team[],
   departments: Department[],
   teamId: string,
-  secondaryTeamId: string,
 ) {
   const activeTeams = teams.filter((team) => !team.isArchived);
   const activeDepartments = departments.filter(
     (department) => !department.isArchived,
   );
   const selectedTeam = activeTeams.find((team) => team._id === teamId);
-  const selectedSecondaryTeam = activeTeams.find(
-    (team) => team._id === secondaryTeamId,
-  );
-
   return {
     teamOptions: activeTeams.map((team) => ({
       value: team._id,
@@ -29,9 +24,6 @@ export function memberOrganizationState(
       : undefined,
     chapterTeamIds: new Set(
       activeTeams.filter((team) => team.isChapter).map((team) => team._id),
-    ),
-    hasNonChapterTeam: [selectedTeam, selectedSecondaryTeam].some(
-      (team) => team && !team.isChapter,
     ),
   };
 }

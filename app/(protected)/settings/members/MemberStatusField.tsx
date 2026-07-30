@@ -22,11 +22,6 @@ export function MemberStatusField({ status, onboarding, onChange }: Props) {
       value={status}
       onValueChange={(value) => onChange(value as MemberStatus)}
       options={options}
-      hint={
-        !isApprovalAllowed
-          ? "Die Aktivierung ist erst möglich, wenn alle Onboarding-Aufgaben abgeschlossen sind."
-          : undefined
-      }
     />
   );
 }
