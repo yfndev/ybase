@@ -1,5 +1,10 @@
 "use client";
 
+import { Megaphone, Plus } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import toast from "react-hot-toast";
 import { CreateJobPostingDialog } from "@/components/Dialogs/CreateJobPostingDialog";
 import { DeleteJobPostingDialog } from "@/components/JobPostings/DeleteJobPostingDialog";
 import { JobPostingActionsMenu } from "@/components/JobPostings/JobPostingActionsMenu";
@@ -18,12 +23,11 @@ import { useJobPostingMutations } from "@/lib/client/jobPostings/hooks/useJobPos
 import { useJobPostings } from "@/lib/client/jobPostings/hooks/useJobPostings";
 import { useTeamDirectory } from "@/lib/client/teams/hooks/useTeamDirectory";
 import type { JobPosting } from "@/lib/db/types";
-import { Megaphone, Plus } from "lucide-react";
-import Link from "next/link";
-import { useState } from "react";
-import toast from "react-hot-toast";
+import { jobPostingUrgency } from "@/lib/jobPostings/urgency";
+import { cn } from "@/lib/utils";
 
 export function RecruitingClient() {
+  const router = useRouter();
   const { jobPostings, isLoading } = useJobPostings();
   const { lookup } = useTeamDirectory();
   const { archive, deletePosting } = useJobPostingMutations();
@@ -93,12 +97,23 @@ export function RecruitingClient() {
               <TableBody>
                 {jobPostings.map((posting) => {
                   const info = lookup.get(posting.teamId);
+                  const isUrgent =
+                    jobPostingUrgency(posting.urgency) === "urgent";
                   return (
-                    <TableRow key={posting._id}>
+                    <TableRow
+                      key={posting._id}
+                      className={cn(
+                        "cursor-pointer",
+                        isUrgent &&
+                          "border-l-4 border-l-secondary bg-secondary/[0.06] hover:bg-secondary/10",
+                      )}
+                      onClick={() => router.push(`/recruiting/${posting._id}`)}
+                    >
                       <TableCell className="font-medium">
                         <Link
                           href={`/recruiting/${posting._id}`}
                           className="outline-none hover:underline focus-visible:underline"
+                          onClick={(event) => event.stopPropagation()}
                         >
                           {posting.title}
                         </Link>
@@ -108,10 +123,15 @@ export function RecruitingClient() {
                       <TableCell>
                         <JobPostingStatusBadge status={posting.status} />
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell
+                        className="text-right"
+                        onClick={(event) => event.stopPropagation()}
+                      >
                         <JobPostingActionsMenu
                           posting={posting}
-                          disabled={archive.isPending || deletePosting.isPending}
+                          disabled={
+                            archive.isPending || deletePosting.isPending
+                          }
                           onArchive={() => void handleArchive(posting)}
                           onDelete={() => setPostingToDelete(posting)}
                         />

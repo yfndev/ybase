@@ -1,4 +1,5 @@
 export type JobPostingStatus = "draft" | "published" | "closed" | "archived";
+export type JobPostingUrgency = "normal" | "urgent";
 
 export interface JobPosting {
   _id: string;
@@ -6,11 +7,13 @@ export interface JobPosting {
   organizationId: string;
   teamId: string;
   status: JobPostingStatus;
+  urgency?: JobPostingUrgency;
   title: string;
   shortText?: string;
   description?: string;
   tasks?: string;
   requirements?: string;
+  benefits?: string;
   timeCommitment?: string;
   location?: string;
   isRemote?: boolean;
