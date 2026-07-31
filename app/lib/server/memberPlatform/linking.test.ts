@@ -44,21 +44,18 @@ test("suggests one profile and excludes profiles already linked in YBase", async
   const data = await getMemberPlatformLinkingData(member);
 
   expect(data).toEqual({
-    suggestedId: "platform-1",
-    profiles: [
-      {
-        id: "platform-1",
-        name: "Zoë Beispiel",
-        imageUrl: "https://example.com/profile.jpg",
-      },
-    ],
+    profile: {
+      id: "platform-1",
+      name: "Zoë Beispiel",
+      imageUrl: "https://example.com/profile.jpg",
+    },
   });
 });
 
 test("links exactly the profile confirmed by the member", async () => {
   const member = await insertMember();
   vi.mocked(requireAuthenticatedUser).mockResolvedValue(member);
-  await insertPlatformProfile("platform-1", "Andere", "Person");
+  await insertPlatformProfile("platform-1", "Zoë", "Beispiel");
 
   await confirmMemberPlatformProfile("platform-1");
 
@@ -70,6 +67,30 @@ test("links exactly the profile confirmed by the member", async () => {
     phone: "+49 170 1234567",
     memberPlatformSyncedAt: expect.any(Number),
   });
+});
+
+test("does not expose or confirm profiles without a unique match", async () => {
+  const member = await insertMember();
+  vi.mocked(requireAuthenticatedUser).mockResolvedValue(member);
+  await insertPlatformProfile("platform-1", "Andere", "Person");
+
+  await expect(getMemberPlatformLinkingData(member)).resolves.toEqual({
+    profile: undefined,
+  });
+  await expect(confirmMemberPlatformProfile("platform-1")).rejects.toThrow(
+    "nicht sicher zugeordnet",
+  );
+});
+
+test("leaves profile import to the membership workflow for managed members", async () => {
+  const member = await insertMember({ membershipId: newId() });
+  vi.mocked(requireAuthenticatedUser).mockResolvedValue(member);
+  await insertPlatformProfile("platform-1", "Zoë", "Beispiel");
+
+  await expect(getMemberPlatformLinkingData(member)).resolves.toBeNull();
+  await expect(confirmMemberPlatformProfile("platform-1")).rejects.toThrow(
+    "nicht verfügbar",
+  );
 });
 
 test("rejects a profile that another YBase member has already claimed", async () => {

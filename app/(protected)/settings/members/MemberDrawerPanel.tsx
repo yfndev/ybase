@@ -57,12 +57,14 @@ export function MemberDrawerPanel({
 
       <div className="flex flex-1 flex-col gap-4 px-6">
         <PublicOrganizationFields form={form} />
-        <MemberStatusField
-          status={form.status}
-          onboarding={member.teamOnboardingStatus}
-          infractionCount={member.memberInfractions?.length ?? 0}
-          onChange={form.setStatus}
-        />
+        {!member.membershipId ? (
+          <MemberStatusField
+            status={form.status}
+            onboarding={member.teamOnboardingStatus}
+            infractionCount={member.memberInfractions?.length ?? 0}
+            onChange={form.setStatus}
+          />
+        ) : null}
         <LabeledSelect
           id="member-role"
           label="Berechtigungen"
@@ -76,7 +78,9 @@ export function MemberDrawerPanel({
               : "Rollen können nur von Admins geändert werden."
           }
         />
-        <MemberInfractionsSection member={member} />
+        {!member.membershipId ? (
+          <MemberInfractionsSection member={member} />
+        ) : null}
         <MemberContactFields member={member} />
       </div>
 

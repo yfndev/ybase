@@ -8,7 +8,6 @@ import { YFN_ORGANIZATION } from "../../organization";
 import { getMemberPlatformDb } from "./client";
 
 const LINKABLE_MEMBER_STATES = ["ACCEPTED", "ALUMNI"];
-const COLLATOR = new Intl.Collator("de", { sensitivity: "base" });
 
 export interface MemberPlatformLinkOption {
   id: string;
@@ -17,8 +16,7 @@ export interface MemberPlatformLinkOption {
 }
 
 export interface MemberPlatformLinkingData {
-  suggestedId?: string;
-  profiles: MemberPlatformLinkOption[];
+  profile?: MemberPlatformLinkOption;
 }
 
 export async function getMemberPlatformLinkingData(
@@ -65,17 +63,14 @@ export async function getMemberPlatformLinkingData(
     member,
     profiles: availableProfiles,
   });
-  const options = availableProfiles
-    .map(toLinkOption)
-    .filter((option) => option.name)
-    .sort((left, right) => COLLATOR.compare(left.name, right.name));
-
-  return { suggestedId: suggested?.id, profiles: options };
+  const option = suggested ? toLinkOption(suggested) : undefined;
+  return { profile: option?.name ? option : undefined };
 }
 
 export function isEligibleForMemberPlatformLinking(member: User): boolean {
   return (
     !member.memberPlatformUserId &&
+    !member.membershipId &&
     member.memberStatus === "onboarding" &&
     member.email
       ?.trim()
