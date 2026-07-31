@@ -1,6 +1,7 @@
 "use server";
 
 import { APPLICATION_STATUS_LABELS } from "../../applications/status";
+import { assertApplicationAdmissionReady } from "../../applications/admissionEligibility";
 import type { ApplicationDecision } from "../../applications/decisionEmail";
 import { isApplicationStatusTransitionAllowed } from "../../applications/transitions";
 import { applications, jobPostings } from "../../db/collections";
@@ -114,6 +115,9 @@ function assertDecisionAllowed(
 ): void {
   if (!isApplicationStatusTransitionAllowed(application.status, decision)) {
     throw new Error("Dieser Statuswechsel ist nicht zulässig");
+  }
+  if (decision === "accepted") {
+    assertApplicationAdmissionReady(application, Date.now());
   }
   const isProvisioning =
     application.workspaceProvisioningStatus === "pending" ||

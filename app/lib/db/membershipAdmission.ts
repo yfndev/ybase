@@ -12,6 +12,15 @@ export interface GuardianConsent {
   userAgent?: string;
 }
 
+export type GuardianConsentView = Pick<
+  GuardianConsent,
+  | "representativeName"
+  | "representativeEmail"
+  | "expiresAt"
+  | "lastSentAt"
+  | "signedAt"
+>;
+
 export interface AdmissionDecision {
   result: "admitted" | "rejected";
   decidedAt: number;

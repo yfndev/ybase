@@ -3,6 +3,7 @@ import type {
   AdmissionAppealDecision,
   AdmissionDecision,
   GuardianConsent,
+  GuardianConsentView,
 } from "./membershipAdmission";
 
 export type ApplicationStatus =
@@ -31,6 +32,7 @@ export interface ApplicationField {
 export type ApplicationHistoryType =
   | "status_changed"
   | "management_updated"
+  | "guardian_consent_requested"
   | "guardian_consent_recorded"
   | "admission_decision_recorded"
   | "rejection_delivered"
@@ -93,6 +95,8 @@ export interface Application {
   applicantEmailNormalized: string;
   applicantPhone?: string;
   dateOfBirth?: string;
+  memberPlatformUserId?: string;
+  memberPlatformSyncedAt?: number;
   fields: ApplicationField[];
   files: ApplicationFile[];
   tallyEventId: string;
@@ -157,6 +161,7 @@ export type ApplicationWithFiles = Omit<
   files: ApplicationFileView[];
   jobPostingTitle: string;
   ownerIds: string[];
+  guardianConsent?: GuardianConsentView;
 };
 
 export type TallyWebhookEventStatus = "processed" | "duplicate" | "ignored";

@@ -3,7 +3,11 @@ const COLLATOR = new Intl.Collator("de", { sensitivity: "base" });
 export interface MemberPlatformProfile {
   id: string;
   deletedAt?: Date | null;
-  person?: { firstName?: string; lastName?: string };
+  person?: {
+    firstName?: string;
+    lastName?: string;
+    birthDate?: string | Date;
+  };
   contact?: { email?: string; phone?: string };
   auth?: { provider?: string; providerId?: string };
   images?: { profileImage?: string };

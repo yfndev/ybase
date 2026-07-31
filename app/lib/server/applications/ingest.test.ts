@@ -1,4 +1,5 @@
-import { beforeEach, expect, test } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { getClient } from "../../db/client";
 import {
   applications,
   jobPostings,
@@ -14,6 +15,7 @@ import { tallyWebhookSchema } from "./tallyPayload";
 let orgA: string;
 let postingA: string;
 let postingA2: string;
+const PLATFORM_DATABASE = "application_ingest_member_platform_test";
 
 function buildPayload(input: {
   eventId: string;
@@ -102,13 +104,18 @@ async function insertPosting(
 setupTestDatabase();
 
 beforeEach(async () => {
+  vi.stubEnv("MEMBER_PLATFORM_MONGODB_DB", "");
   await ensureIndexes();
   orgA = newId();
   postingA = await insertPosting(orgA);
   postingA2 = await insertPosting(orgA, { tallyFormId: "form-2" });
 });
 
+afterEach(() => vi.unstubAllEnvs());
+
 test("creates a received application scoped to the posting org with a snapshot", async () => {
+  vi.stubEnv("MEMBER_PLATFORM_MONGODB_DB", PLATFORM_DATABASE);
+  await insertPlatformProfile();
   const outcome = await ingestTallySubmission(
     buildPayload({
       eventId: "e1",
@@ -142,6 +149,11 @@ test("creates a received application scoped to the posting org with a snapshot",
   expect(stored?.applicantEmailNormalized).toBe("max@example.com");
   expect(stored?.applicantPhone).toBe("+49123456789");
   expect(stored?.applicantName).toBe("Max Mustermann");
+  expect(stored).toMatchObject({
+    dateOfBirth: "2004-02-29",
+    memberPlatformUserId: "platform-max",
+    memberPlatformSyncedAt: expect.any(Number),
+  });
   expect(stored?.withdrawalTokenHash).toMatch(/^[a-f0-9]{64}$/);
   expect(stored?.withdrawalTokenHash).not.toBe(
     outcome.status === "created" ? outcome.withdrawalToken : undefined,
@@ -162,6 +174,27 @@ test("creates a received application scoped to the posting org with a snapshot",
   ).toBe("+49123456789");
   expect(JSON.stringify(stored)).toContain("+49123456789");
 });
+
+async function insertPlatformProfile(): Promise<void> {
+  const database = (await getClient()).db(PLATFORM_DATABASE);
+  await database.dropDatabase();
+  await Promise.all([
+    database.collection("users").insertOne({
+      id: "platform-max",
+      deletedAt: null,
+      person: {
+        firstName: "Max",
+        lastName: "Mustermann",
+        birthDate: "2004-02-29T00:00:00.000Z",
+      },
+      contact: { email: "max@example.com" },
+    }),
+    database.collection("user-states").insertOne({
+      userId: "platform-max",
+      current: "ACCEPTED",
+    }),
+  ]);
+}
 
 test("resolves the posting from the Tally form when the hidden id is missing", async () => {
   const outcome = await ingestTallySubmission(

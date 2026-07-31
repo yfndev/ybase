@@ -14,7 +14,7 @@ export function toApplicationView(
     withdrawalTokenHash: _withdrawalTokenHash,
     yfnEmailNormalized: _yfnEmailNormalized,
     workspaceUserId: _workspaceUserId,
-    guardianConsent: _guardianConsent,
+    guardianConsent,
     admissionDecision: _admissionDecision,
     rejectionDelivery: _rejectionDelivery,
     appealTokenHash: _appealTokenHash,
@@ -32,6 +32,21 @@ export function toApplicationView(
     ...visibleApplication,
     jobPostingTitle,
     ownerIds: ownerIds ?? [],
+    ...(guardianConsent
+      ? {
+          guardianConsent: {
+            representativeName: guardianConsent.representativeName,
+            representativeEmail: guardianConsent.representativeEmail,
+            expiresAt: guardianConsent.expiresAt,
+            ...(guardianConsent.lastSentAt
+              ? { lastSentAt: guardianConsent.lastSentAt }
+              : {}),
+            ...(guardianConsent.signedAt
+              ? { signedAt: guardianConsent.signedAt }
+              : {}),
+          },
+        }
+      : {}),
     files: files.map(
       ({ sourceUrl: _sourceUrl, storageKey: _storageKey, ...file }) => file,
     ),

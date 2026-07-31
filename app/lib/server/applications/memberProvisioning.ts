@@ -29,6 +29,13 @@ export async function createAcceptedApplicantMember(
     name: input.application.applicantName,
     email: normalizeYfnEmail(input.email),
     privateEmail: input.application.applicantEmailNormalized,
+    ...(input.application.memberPlatformUserId
+      ? {
+          memberPlatformUserId: input.application.memberPlatformUserId,
+          memberPlatformSyncedAt:
+            input.application.memberPlatformSyncedAt ?? now,
+        }
+      : {}),
     ...(input.application.applicantPhone?.trim()
       ? { phone: input.application.applicantPhone.trim() }
       : {}),

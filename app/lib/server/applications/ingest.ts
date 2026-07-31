@@ -10,6 +10,7 @@ import { addLog } from "../logs";
 import { createApplicationFile } from "./fileRecord";
 import { isDuplicateKeyError } from "../../db/errors";
 import { recordWebhookEvent } from "./history";
+import { tryFindApplicationMemberPlatformProfile } from "./memberPlatformAdmission";
 import { parseTallySubmission, type TallyWebhookPayload } from "./tallyPayload";
 import { createApplicationWithdrawalToken } from "./withdrawalToken";
 
@@ -99,6 +100,9 @@ export async function ingestTallySubmission(
     return { status: "ignored", reason: "missing-phone" };
   }
 
+  const memberPlatformSnapshot = await tryFindApplicationMemberPlatformProfile(
+    parsed.emailNormalized,
+  );
   const withdrawal = createApplicationWithdrawalToken();
 
   const application: Application = {
@@ -111,6 +115,7 @@ export async function ingestTallySubmission(
     applicantEmail: parsed.email,
     applicantEmailNormalized: parsed.emailNormalized,
     applicantPhone: parsed.phone,
+    ...memberPlatformSnapshot,
     fields: parsed.fields,
     files: parsed.files.map(createApplicationFile),
     tallyEventId: payload.eventId,

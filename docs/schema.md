@@ -213,6 +213,8 @@ erDiagram
         string workspaceProvisioningStatus
         number workspaceProvisionedAt
         string dateOfBirth
+        string memberPlatformUserId
+        number memberPlatformSyncedAt
         object guardianConsent
         object admissionDecision "result, decidedAt, decidedBy, authority, recordedAt, recordedBy"
         object rejectionDelivery
@@ -257,13 +259,17 @@ recorded the decision remain on the application and in its history instead of
 being duplicated on the membership.
 Onboarding then uses the existing `users.memberStatus`: `onboarding` while the
 member confirms personal data and completes required acknowledgements, then
-`active`. The member platform performs its own profile claim; YBase stores only
-the resulting external profile ID and imported membership data. All document
-executions reference the membership directly. Individual tasks determine
-progress without introducing a second aggregate operational status. Current
-board authorization continues to use `users.boardMembership`; there is no
-parallel mandate collection. The internal `memberships.legalStatus` supports
-legal workflows but is not displayed as a parallel lifecycle:
+`active`. Before admission, YBase resolves exactly one active member-platform
+profile from the private application email and stores its external ID,
+birth-date snapshot and sync time on the application. The birth date is not
+collected again in YBase. A missing or ambiguous profile blocks admission; a
+free global profile search is not exposed. The accepted onboarding user
+inherits the confirmed external ID. All document executions reference the
+membership directly. Individual tasks determine progress without introducing
+a second aggregate operational status. Current board authorization continues
+to use `users.boardMembership`; there is no parallel mandate collection. The
+internal `memberships.legalStatus` supports legal workflows but is not displayed
+as a parallel lifecycle:
 
 The existing YBase profile linker remains available only to legacy users
 without `membershipId` and exposes at most one unambiguous suggestion. Once a

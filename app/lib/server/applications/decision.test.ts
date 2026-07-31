@@ -82,6 +82,9 @@ beforeEach(async () => {
     applicantEmail: "alex@example.com",
     applicantEmailNormalized: "alex@example.com",
     applicantPhone: "+49 170 1234567",
+    dateOfBirth: "2004-01-01",
+    memberPlatformUserId: "platform-alex",
+    memberPlatformSyncedAt: Date.now(),
     fields: [],
     files: [],
     tallyEventId: newId(),
@@ -130,7 +133,12 @@ test("sends the edited acceptance email before changing the status", async () =>
     ]),
   );
   expect(
-    await (await logs()).findOne({ entityId: applicationId }),
+    await (
+      await logs()
+    ).findOne({
+      entityId: applicationId,
+      action: "application.status_change",
+    }),
   ).toMatchObject({ action: "application.status_change" });
   expect(await (await users()).findOne({ applicationId })).toMatchObject({
     _id: stored?.onboardingUserId,
@@ -138,6 +146,8 @@ test("sends the edited acceptance email before changing the status", async () =>
     email: yfnEmail,
     privateEmail: "alex@example.com",
     phone: "+49 170 1234567",
+    memberPlatformUserId: "platform-alex",
+    memberPlatformSyncedAt: expect.any(Number),
     googleWorkspaceUserId: "google-user-1",
     organizationId,
     role: "member",
@@ -145,6 +155,33 @@ test("sends the edited acceptance email before changing the status", async () =>
     memberStatus: "onboarding",
     teamOnboardingStatus: "not_started",
   });
+});
+
+test("blocks acceptance before external side effects without a member-platform snapshot", async () => {
+  await (
+    await applications()
+  ).updateOne(
+    { _id: applicationId },
+    {
+      $unset: {
+        dateOfBirth: "",
+        memberPlatformUserId: "",
+        memberPlatformSyncedAt: "",
+      },
+    },
+  );
+
+  await expect(
+    sendApplicationDecision({
+      applicationId,
+      decision: "accepted",
+      yfnEmail,
+      subject: "Zusage",
+      message: "Willkommen!",
+    }),
+  ).rejects.toThrow("Member-Plattform-Profil");
+  expect(provisionWorkspaceUser).not.toHaveBeenCalled();
+  expect(sendMail).not.toHaveBeenCalled();
 });
 
 test("sends a rejection with its dedicated template and then rejects", async () => {

@@ -1,0 +1,1 @@
+export const LINKABLE_MEMBER_PLATFORM_STATES = ["ACCEPTED", "ALUMNI"] as const;

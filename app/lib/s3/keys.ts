@@ -50,3 +50,12 @@ export function membershipExecutionDirectory(
   assertSafePathSegment(executionId, "document execution ID");
   return `memberships/${organizationId}/executions/${executionId}`;
 }
+
+export function guardianConsentDirectory(
+  organizationId: string,
+  applicationId: string,
+): string {
+  assertSafePathSegment(organizationId, "organization ID");
+  assertSafePathSegment(applicationId, "application ID");
+  return `memberships/${organizationId}/applications/${applicationId}/guardian-consent`;
+}

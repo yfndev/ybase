@@ -74,6 +74,7 @@ export async function ensureIndexes(): Promise<void> {
       { key: { tallySubmissionId: 1 }, unique: true },
       { key: { tallyResponseId: 1 }, unique: true },
       { key: { withdrawalTokenHash: 1 }, unique: true, sparse: true },
+      { key: { "guardianConsent.tokenHash": 1 }, unique: true, sparse: true },
       { key: { appealTokenHash: 1 }, unique: true, sparse: true },
       { key: { "rejectionDelivery.messageId": 1 }, unique: true, sparse: true },
       { key: { yfnEmailNormalized: 1 }, unique: true, sparse: true },
