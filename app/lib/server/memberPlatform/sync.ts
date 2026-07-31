@@ -19,6 +19,7 @@ export async function tryRefreshMemberPlatformProfile(
 }
 
 async function refreshMemberPlatformProfile(member: User): Promise<User> {
+  if (member.membershipId) return member;
   const email = member.email?.trim().toLowerCase();
   if (!email?.endsWith(`@${YFN_ORGANIZATION.domain}`)) return member;
   if (!member.memberPlatformUserId) return member;
@@ -40,6 +41,7 @@ export async function persistMemberPlatformProfile(
   member: User,
   profile: MemberPlatformProfile,
 ): Promise<User> {
+  if (member.membershipId) return member;
   const privateEmail = profile.contact?.email?.trim().toLowerCase();
   const phone = profile.contact?.phone?.trim();
   const syncedAt = Date.now();
@@ -52,6 +54,7 @@ export async function persistMemberPlatformProfile(
   ).updateOne(
     {
       _id: member._id,
+      membershipId: { $exists: false },
       $or: [
         { memberPlatformUserId: { $exists: false } },
         { memberPlatformUserId: profile.id },

@@ -130,6 +130,33 @@ test("loads one application without internal identifiers", async () => {
         withdrawalTokenHash: "secret-withdrawal-hash",
         onboardingStartedBy: actorId,
         onboardingCompletedBy: actorId,
+        guardianConsent: {
+          representativeName: "Erika Beispiel",
+          representativeEmail: "erika@example.com",
+          tokenHash: "secret-guardian-hash",
+          expiresAt: Date.now() + 86_400_000,
+        },
+        admissionDecision: {
+          result: "admitted",
+          decidedAt: Date.now(),
+          decidedBy: actorId,
+          authority: "board_member",
+          recordedAt: Date.now(),
+          recordedBy: actorId,
+        },
+        rejectionDelivery: {
+          channel: "email",
+          recipient: "alex@example.com",
+          messageId: "secret-message-id",
+        },
+        appealTokenHash: "secret-appeal-hash",
+        appealStatement: "Interner Beschwerdetext",
+        appealDecision: {
+          result: "rejected",
+          decidedAt: Date.now(),
+          recordedAt: Date.now(),
+          recordedBy: actorId,
+        },
         fields: [
           {
             key: "phone-in-fields",
@@ -155,6 +182,12 @@ test("loads one application without internal identifiers", async () => {
   expect(application).not.toHaveProperty("tallyResponseId");
   expect(application).not.toHaveProperty("tallyFormId");
   expect(application).not.toHaveProperty("withdrawalTokenHash");
+  expect(application).not.toHaveProperty("guardianConsent");
+  expect(application).not.toHaveProperty("admissionDecision");
+  expect(application).not.toHaveProperty("rejectionDelivery");
+  expect(application).not.toHaveProperty("appealTokenHash");
+  expect(application).not.toHaveProperty("appealStatement");
+  expect(application).not.toHaveProperty("appealDecision");
   expect(application).not.toHaveProperty("onboardingStartedBy");
   expect(application).not.toHaveProperty("onboardingCompletedBy");
 });

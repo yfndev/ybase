@@ -16,9 +16,11 @@ export function MemberContactFields({ member }: { member: User }) {
             Private Kontaktdaten
           </h3>
           <p className="text-muted-foreground mt-1 text-xs">
-            {member.memberPlatformUserId
-              ? "Aus der Member-Plattform synchronisiert"
-              : "Noch nicht mit der Member-Plattform verknüpft"}
+            {member.membershipId
+              ? "In der YBase-Mitgliedschaftsakte verwaltet"
+              : member.memberPlatformUserId
+                ? "Aus der Member-Plattform synchronisiert"
+                : "Noch nicht mit der Member-Plattform verknüpft"}
           </p>
         </div>
         {profileUrl ? (

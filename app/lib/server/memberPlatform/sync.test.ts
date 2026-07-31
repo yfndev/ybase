@@ -86,6 +86,26 @@ test("does not refresh linked accounts outside the YFN domain", async () => {
   expect(synced.privateEmail).toBe("old@example.com");
 });
 
+test("does not overwrite YBase-owned membership contact data", async () => {
+  const member = await insertMember({
+    email: "zoe@youngfounders.network",
+    privateEmail: "ybase@example.com",
+    memberPlatformUserId: "platform-1",
+    membershipId: newId(),
+  });
+  await insertPlatformProfile({
+    id: "platform-1",
+    email: "platform@example.com",
+  });
+
+  const synced = await tryRefreshMemberPlatformProfile(member);
+
+  expect(synced.privateEmail).toBe("ybase@example.com");
+  await expect(
+    (await users()).findOne({ _id: member._id }),
+  ).resolves.toMatchObject({ privateEmail: "ybase@example.com" });
+});
+
 async function insertMember(overrides: Partial<User>): Promise<User> {
   const member: User = {
     _id: newId(),

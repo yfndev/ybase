@@ -12,6 +12,13 @@ erDiagram
     organizations ||--o{ volunteerAllowance : has
     organizations ||--o{ logs : has
     organizations ||--o{ applications : has
+    organizations ||--o{ memberships : has
+    applications ||--o| memberships : admits
+    users ||--o{ memberships : holds
+    memberships ||--o{ membershipCases : has
+    memberships ||--o{ documentExecutions : requires
+    documentVersions ||--o{ documentExecutions : executed_as
+    memberships ||--o{ membershipEvents : records
     jobPostings ||--o{ applications : receives
     organizations ||--o| jobFeedTokens : authenticates
     organizations ||--o{ reimbursementInvites : grants
@@ -56,6 +63,7 @@ erDiagram
         boolean isSecondaryTeamLead
         object boardMembership "departmentId, isChair"
         string applicationId
+        string membershipId
         string memberStatus
         string teamOnboardingStatus
         number offboardingPlannedAt
@@ -63,6 +71,75 @@ erDiagram
         number archivedAt
         number excludedAt
         array memberInfractions "_id, reason, createdAt, createdBy"
+    }
+
+    memberships {
+        string _id
+        string organizationId
+        string userId
+        string applicationId
+        string membershipNumber
+        boolean isCurrent
+        string legalStatus
+        number admittedAt
+        string memberPlatformUserId
+        string dateOfBirth
+        string privateEmail
+        number scheduledEndAt
+        string scheduledEndReason
+        number endedAt
+        string endReason
+        array handoverTasks
+    }
+
+    membershipCases {
+        string _id
+        string organizationId
+        string membershipId
+        string type
+        string status
+        string reason
+        string decision "excluded or dismissed"
+        number decidedAt
+        object decisionDelivery
+        number objectionExpiresAt
+        number objectedAt
+        string objectionText
+        string objectionOutcome "confirmed or overturned"
+        number objectionDecidedAt
+    }
+
+    documentVersions {
+        string _id
+        string organizationId
+        string kind
+        string versionLabel
+        string sourceUrl
+        string snapshotStorageKey
+        string sha256
+        array targetTeamIds
+        array targetDepartmentIds
+    }
+
+    documentExecutions {
+        string _id
+        string documentVersionId
+        string membershipId
+        string userId
+        string documentHash
+        string status
+        number completedAt
+    }
+
+    membershipEvents {
+        string _id
+        string organizationId
+        string membershipId
+        string caseId
+        string type
+        number occurredAt
+        string actorType
+        string idempotencyKey
     }
 
     teams {
@@ -135,6 +212,12 @@ erDiagram
         string workspaceUserId
         string workspaceProvisioningStatus
         number workspaceProvisionedAt
+        string dateOfBirth
+        object guardianConsent
+        object admissionDecision "result, decidedAt, decidedBy, authority, recordedAt, recordedBy"
+        object rejectionDelivery
+        number appealExpiresAt
+        object appealDecision "result, decidedAt, recordedAt, recordedBy, evidenceStorageKey"
         string onboardingUserId
         number onboardingLinkedAt
         number onboardingCompletedAt
@@ -158,10 +241,50 @@ server-only. Imported objects use deterministic storage keys; each file records
 its status, attempt count, error and final object key.
 
 Accepted applications hold the normalized YFN email and Google Workspace
-provisioning state. No temporary password is persisted. The first matching
-Google login links the application to the onboarding user, copies team and
-position from the job posting, and sets `cleanupEligibleAt` for the retention
-workflow. Link conflicts stay on the application for correction by P&C.
+provisioning state. The same application also records the formal admission
+decision, any required guardian consent, rejection delivery and appeal. This
+keeps the pre-membership procedure in the existing recruiting record instead of
+creating a second application model. No temporary password is persisted. The
+first matching Google login links the application to the onboarding user,
+copies team and position from the job posting, and sets `cleanupEligibleAt` for
+the retention workflow. Link conflicts stay on the application for correction
+by P&C.
+
+For new ordinary YFN members, `memberships` is the legal source of truth.
+A membership is created at the recorded admission time and contains the durable
+admission evidence and required guardian consent. Details about who made and
+recorded the decision remain on the application and in its history instead of
+being duplicated on the membership.
+Onboarding then uses the existing `users.memberStatus`: `onboarding` while the
+member confirms personal data and completes required acknowledgements, then
+`active`. The member platform performs its own profile claim; YBase stores only
+the resulting external profile ID and imported membership data. All document
+executions reference the membership directly. Individual tasks determine
+progress without introducing a second aggregate operational status. Current
+board authorization continues to use `users.boardMembership`; there is no
+parallel mandate collection. The internal `memberships.legalStatus` supports
+legal workflows but is not displayed as a parallel lifecycle:
+
+The existing YBase profile linker remains available only to legacy users
+without `membershipId` and exposes at most one unambiguous suggestion. Once a
+membership is managed in YBase, login refreshes no longer overwrite its private
+contact data from the member platform.
+
+- `active`: membership continues without a pending legal termination.
+- `resigning`: a resignation was received and the membership continues until
+  `scheduledEndAt`; it is not awaiting approval.
+- `suspended`: the exclusion decision was delivered and all membership rights
+  are suspended during the internal remedy process under § 5.4.
+- `ended`: membership no longer exists; `endReason` records why.
+
+After the official offboarding workflow, `archived` is the terminal status for
+ordinary departures and `excluded` is reserved for a final formal exclusion.
+The legacy value `offboarded` is migration-only and must not be written by new
+membership workflows. `membershipEvents` is append-only; sensitive case content
+remains in `membershipCases` and is intentionally absent from the general
+`logs` collection. `membershipCases` is limited to warnings and exclusion
+proceedings. Resignation, age limit and death are termination facts on the
+membership itself; the handover checklist is attached to that membership.
 
 The authoritative field definitions live in
 [`app/lib/db/types.ts`](../app/lib/db/types.ts), while indexes are defined in

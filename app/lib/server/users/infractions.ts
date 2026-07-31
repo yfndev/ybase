@@ -23,6 +23,11 @@ const recordInfractionSchema = z.object({
 type RecordInfractionInput = z.infer<typeof recordInfractionSchema>;
 
 function validateTarget(target: User): number {
+  if (target.membershipId) {
+    throw new Error(
+      "Verwarnungen für dieses Mitglied werden in der geschützten Fallakte verwaltet.",
+    );
+  }
   if (!ELIGIBLE_STATUSES.some((status) => status === target.memberStatus)) {
     throw new Error(
       "Verstöße können nur bei aktiven oder vorgemerkten Mitgliedern hinterlegt werden.",

@@ -363,11 +363,16 @@ test("setMemberStatus records every offboarding phase", async () => {
   expect(typeof updated?.archivedAt).toBe("number");
 });
 
-test("setMemberStatus maps legacy offboarded writes to archived", async () => {
-  await setMemberStatus({ userId: memberA, status: "offboarded" });
+test("setMemberStatus rejects legacy offboarded writes", async () => {
+  await expect(
+    setMemberStatus({
+      userId: memberA,
+      status: "offboarded" as never,
+    }),
+  ).rejects.toThrow();
   const updated = await (await users()).findOne({ _id: memberA });
-  expect(updated?.memberStatus).toBe("archived");
-  expect(typeof updated?.archivedAt).toBe("number");
+  expect(updated?.memberStatus).toBe("onboarding");
+  expect(updated?.archivedAt).toBeUndefined();
 });
 
 test("setMemberStatus records manual exclusions separately", async () => {
@@ -376,6 +381,20 @@ test("setMemberStatus records manual exclusions separately", async () => {
   expect(updated?.memberStatus).toBe("excluded");
   expect(typeof updated?.excludedAt).toBe("number");
   expect(updated?.archivedAt).toBeUndefined();
+});
+
+test("setMemberStatus cannot bypass a managed membership workflow", async () => {
+  await (
+    await users()
+  ).updateOne({ _id: memberA }, { $set: { membershipId: newId() } });
+
+  await expect(
+    setMemberStatus({ userId: memberA, status: "excluded" }),
+  ).rejects.toThrow("durch den Mitgliedschaftsvorgang gesteuert");
+
+  const unchanged = await (await users()).findOne({ _id: memberA });
+  expect(unchanged?.memberStatus).toBe("onboarding");
+  expect(unchanged?.excludedAt).toBeUndefined();
 });
 
 test("setMemberStatus cannot touch a user from another org", async () => {
@@ -411,6 +430,31 @@ test("recordMemberInfraction stores the first infraction with an audit log", asy
     entityId: memberA,
     organizationId: orgA,
   });
+});
+
+test("recordMemberInfraction uses the case workflow for managed memberships", async () => {
+  await (
+    await users()
+  ).updateOne(
+    { _id: memberA },
+    {
+      $set: {
+        membershipId: newId(),
+        memberStatus: "active",
+      },
+    },
+  );
+
+  await expect(
+    recordMemberInfraction({
+      userId: memberA,
+      reason: "Dokumentierter Verstoß.",
+    }),
+  ).rejects.toThrow("geschützten Fallakte");
+
+  const unchanged = await (await users()).findOne({ _id: memberA });
+  expect(unchanged?.memberInfractions).toBeUndefined();
+  expect(unchanged?.memberStatus).toBe("active");
 });
 
 test("recordMemberInfraction excludes the member atomically on the second infraction", async () => {
@@ -552,6 +596,25 @@ test("updateMemberProfile assigns a team and its lead role", async () => {
   const updated = await (await users()).findOne({ _id: memberA });
   expect(updated?.teamId).toBe("team-1");
   expect(updated?.isTeamLead).toBe(true);
+});
+
+test("updateMemberProfile protects legal contact data without blocking team changes", async () => {
+  await seedTeam("team-1", orgA);
+  await (
+    await users()
+  ).updateOne({ _id: memberA }, { $set: { membershipId: newId() } });
+
+  await expect(
+    updateMemberProfile({
+      userId: memberA,
+      privateEmail: "new@example.org",
+    }),
+  ).rejects.toThrow("Mitgliedschaftsakte");
+
+  await updateMemberProfile({ userId: memberA, teamId: "team-1" });
+  const updated = await (await users()).findOne({ _id: memberA });
+  expect(updated?.privateEmail).toBeUndefined();
+  expect(updated?.teamId).toBe("team-1");
 });
 
 test("updateMemberProfile assigns a different optional second team", async () => {

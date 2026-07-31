@@ -1,4 +1,5 @@
 export type * from "./application";
+export type * from "./legalDelivery";
 export type { JobFeedToken } from "./jobFeedToken";
 export type {
   JobPosting,
@@ -19,11 +20,17 @@ export type {
 export type { CostType, MealAllowance, MealAllowanceLine } from "./travelTypes";
 export type { SignatureToken } from "./signature";
 export type { UploadContextType, UploadOwnership } from "./upload";
+export type * from "./membership";
+export type * from "./membershipAdmission";
+export type * from "./membershipCase";
+export type * from "./membershipDocument";
+export type * from "./membershipEvent";
 export type {
   BoardMembership,
   MemberInfraction,
   MemberStatus,
   ProfileImageSource,
+  StoredMemberStatus,
   TeamOnboardingStatus,
   User,
   UserRole,

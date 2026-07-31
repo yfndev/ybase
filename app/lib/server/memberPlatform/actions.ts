@@ -5,6 +5,7 @@ import { requireAuthenticatedUser } from "../../auth/session";
 import { users } from "../../db/collections";
 import {
   findLinkableMemberPlatformProfile,
+  getMemberPlatformLinkingData,
   isEligibleForMemberPlatformLinking,
 } from "./linking";
 import { persistMemberPlatformProfile } from "./sync";
@@ -26,8 +27,8 @@ export async function confirmMemberPlatformProfile(
     );
   }
 
-  const [profile, existingClaim] = await Promise.all([
-    findLinkableMemberPlatformProfile(selectedId),
+  const [linkingData, existingClaim] = await Promise.all([
+    getMemberPlatformLinkingData(member),
     (await users()).findOne(
       {
         _id: { $ne: member._id },
@@ -41,6 +42,12 @@ export async function confirmMemberPlatformProfile(
       "Dieses Profil ist bereits verknüpft. Bitte wende dich an People & Culture.",
     );
   }
+  if (linkingData?.profile?.id !== selectedId) {
+    throw new Error(
+      "Dieses Profil kann nicht sicher zugeordnet werden. Bitte wende dich an People & Culture.",
+    );
+  }
+  const profile = await findLinkableMemberPlatformProfile(selectedId);
 
   const updated = await persistMemberPlatformProfile(member, profile);
   if (updated.memberPlatformUserId !== selectedId) {

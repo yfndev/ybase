@@ -2,7 +2,13 @@ import {
   getApplicationDisplayStatus,
   type ApplicationDisplayStatus,
 } from "../applications/status";
-import type { ApplicationWithFiles, MemberStatus, User } from "../db/types";
+import type {
+  ApplicationWithFiles,
+  MemberStatus,
+  StoredMemberStatus,
+  User,
+} from "../db/types";
+import { normalizeMemberStatus } from "./status";
 
 export const MEMBER_STAGE_OPTIONS = [
   { value: "application", label: "Bewerbung" },
@@ -31,8 +37,8 @@ export function memberStageLabel(stage: MemberStage): string {
   );
 }
 
-export function memberStageForStatus(status: MemberStatus): MemberStage {
-  return status === "offboarded" ? "archived" : status;
+export function memberStageForStatus(status: StoredMemberStatus): MemberStage {
+  return normalizeMemberStatus(status);
 }
 
 const APPLICATION_STAGE_STATUSES: Record<
@@ -50,7 +56,7 @@ const MEMBER_STATUSES_BY_STAGE: Partial<
   active: ["active"],
   offboarding_planned: ["offboarding_planned"],
   offboarding: ["offboarding"],
-  archived: ["archived", "offboarded"],
+  archived: ["archived"],
   excluded: ["excluded"],
 };
 
@@ -76,7 +82,9 @@ export function applicationsForStage(
 
 export function membersForStage(members: User[], stage: MemberStage): User[] {
   const statuses = memberStatusesForStage(stage);
-  return members.filter((member) => statuses.includes(member.memberStatus));
+  return members.filter((member) =>
+    statuses.includes(normalizeMemberStatus(member.memberStatus)),
+  );
 }
 
 export function memberStageCounts(

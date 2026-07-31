@@ -5,6 +5,11 @@ import type {
   JobFeedToken,
   JobPosting,
   Log,
+  DocumentExecution,
+  DocumentVersion,
+  Membership,
+  MembershipCase,
+  MembershipEvent,
   Organization,
   Project,
   Receipt,
@@ -87,4 +92,24 @@ export async function signatureTokens() {
 
 export async function uploadOwnerships() {
   return (await getDb()).collection<UploadOwnership>("uploadOwnerships");
+}
+
+export async function memberships() {
+  return (await getDb()).collection<Membership>("memberships");
+}
+
+export async function membershipCases() {
+  return (await getDb()).collection<MembershipCase>("membershipCases");
+}
+
+export async function documentVersions() {
+  return (await getDb()).collection<DocumentVersion>("documentVersions");
+}
+
+export async function documentExecutions() {
+  return (await getDb()).collection<DocumentExecution>("documentExecutions");
+}
+
+export async function membershipEvents() {
+  return (await getDb()).collection<MembershipEvent>("membershipEvents");
 }

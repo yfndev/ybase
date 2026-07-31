@@ -1,4 +1,5 @@
 import type { MemberStatus, Team, User } from "@/lib/db/types";
+import { normalizeMemberStatus } from "../../../lib/members/status";
 
 export const ALL = "all";
 
@@ -46,7 +47,9 @@ export function filterMembers(
     ? filters.status
     : [filters.status];
   return members.filter((member) => {
-    if (!statuses.includes(member.memberStatus)) return false;
+    if (!statuses.includes(normalizeMemberStatus(member.memberStatus))) {
+      return false;
+    }
     if (
       filters.departmentId !== ALL &&
       !departmentIdsOf(member, teamsById).includes(filters.departmentId)
