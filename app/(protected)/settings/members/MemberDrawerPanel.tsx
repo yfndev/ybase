@@ -56,7 +56,6 @@ export function MemberDrawerPanel({
       </div>
 
       <div className="flex flex-1 flex-col gap-4 px-6">
-        <MemberContactFields form={form} />
         <PublicOrganizationFields form={form} />
         <MemberStatusField
           status={form.status}
@@ -78,6 +77,7 @@ export function MemberDrawerPanel({
           }
         />
         <MemberInfractionsSection member={member} />
+        <MemberContactFields member={member} />
       </div>
 
       <SheetFooter className="mt-6 border-t px-6 pt-6 pb-6">

@@ -14,6 +14,7 @@ export async function ensureIndexes(): Promise<void> {
     { key: { email: 1 }, unique: true, sparse: true },
     { key: { googleWorkspaceUserId: 1 }, unique: true, sparse: true },
     { key: { applicationId: 1 }, unique: true, sparse: true },
+    { key: { memberPlatformUserId: 1 }, sparse: true },
     { key: { organizationId: 1 } },
     {
       key: {
