@@ -8,7 +8,6 @@ import { getInitials } from "@/lib/formatters/getInitials";
 import { memberStageForStatus } from "@/lib/members/stages";
 import { profileAvatarUrl } from "@/lib/profile/avatar";
 import { LabeledSelect } from "./LabeledSelect";
-import { MemberContactFields } from "./MemberContactFields";
 import { MemberInfractionsSection } from "./MemberInfractionsSection";
 import { MemberStatusField } from "./MemberStatusField";
 import { ROLE_OPTIONS } from "./memberLabels";
@@ -97,7 +96,6 @@ export function MemberDrawerPanel({
         {!member.membershipId ? (
           <MemberInfractionsSection member={member} />
         ) : null}
-        <MemberContactFields member={member} />
       </div>
 
       <SheetFooter className="mt-6 border-t px-6 pt-6 pb-6">
