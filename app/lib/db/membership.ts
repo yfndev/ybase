@@ -73,6 +73,11 @@ export interface Membership {
   endReason?: MembershipEndReason;
   endEvidenceStorageKey?: string;
   rightsSuspendedAt?: number;
+  handoverStartedAt?: number;
   handoverTasks: HandoverTask[];
+  userLifecycleSyncedAt?: number;
+  workspaceSuspendedAt?: number;
+  workspaceSuspensionPendingAt?: number;
+  workspaceSuspensionNotRequiredAt?: number;
   updatedAt: number;
 }

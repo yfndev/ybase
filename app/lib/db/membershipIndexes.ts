@@ -19,6 +19,17 @@ export async function ensureMembershipIndexes(db: Db): Promise<void> {
     },
     { key: { organizationId: 1, legalStatus: 1, scheduledEndAt: 1 } },
     { key: { organizationId: 1, legalStatus: 1, dateOfBirth: 1 } },
+    { key: { isCurrent: 1, legalStatus: 1, scheduledEndAt: 1 } },
+    { key: { isCurrent: 1, legalStatus: 1, dateOfBirth: 1 } },
+    { key: { legalStatus: 1, userLifecycleSyncedAt: 1 } },
+    {
+      key: {
+        legalStatus: 1,
+        workspaceSuspendedAt: 1,
+        workspaceSuspensionNotRequiredAt: 1,
+      },
+    },
+    { key: { organizationId: 1, "handoverTasks.ownerUserId": 1 } },
   ]);
   await db.collection("membershipCases").createIndexes([
     { key: { organizationId: 1, membershipId: 1, _creationTime: -1 } },
