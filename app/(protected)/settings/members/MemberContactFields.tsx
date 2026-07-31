@@ -1,40 +1,19 @@
-import { ExternalLink, Mail, Phone } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
 import type { User } from "@/lib/db/types";
 
-const MEMBER_PLATFORM_URL = "https://member.youngfounders.network";
-
 export function MemberContactFields({ member }: { member: User }) {
-  const profileUrl = member.memberPlatformUserId
-    ? `${MEMBER_PLATFORM_URL}/member/${member.memberPlatformUserId}`
-    : undefined;
-
   return (
     <section className="border-t pt-5" aria-labelledby="private-contact-title">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 id="private-contact-title" className="text-sm font-semibold">
-            Private Kontaktdaten
-          </h3>
-          <p className="text-muted-foreground mt-1 text-xs">
-            {member.membershipId
-              ? "In der YBase-Mitgliedschaftsakte verwaltet"
-              : member.memberPlatformUserId
-                ? "Aus der Member-Plattform synchronisiert"
-                : "Noch nicht mit der Member-Plattform verknüpft"}
-          </p>
-        </div>
-        {profileUrl ? (
-          <a
-            href={profileUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-muted-foreground hover:text-foreground inline-flex shrink-0 items-center gap-1 text-xs underline-offset-4 hover:underline"
-          >
-            Profil
-            <ExternalLink aria-hidden="true" className="size-3" />
-          </a>
-        ) : null}
-      </div>
+      <h3 id="private-contact-title" className="text-sm font-semibold">
+        Private Kontaktdaten
+      </h3>
+      <p className="text-muted-foreground mt-1 text-xs">
+        {member.membershipId
+          ? "In der YBase-Mitgliedschaftsakte verwaltet"
+          : member.memberPlatformUserId
+            ? "Aus der Member-Plattform synchronisiert"
+            : "Noch nicht mit der Member-Plattform verknüpft"}
+      </p>
 
       <div className="mt-3 grid gap-2 text-sm">
         {member.privateEmail ? (
