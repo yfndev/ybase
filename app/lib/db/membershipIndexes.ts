@@ -50,12 +50,14 @@ export async function ensureMembershipIndexes(db: Db): Promise<void> {
     },
     { key: { sha256: 1 } },
   ]);
-  await db
-    .collection("documentExecutions")
-    .createIndexes([
-      { key: { documentVersionId: 1, membershipId: 1, assignedAt: -1 } },
-      { key: { organizationId: 1, membershipId: 1, status: 1 } },
-    ]);
+  await db.collection("documentExecutions").createIndexes([
+    { key: { documentVersionId: 1, membershipId: 1, assignedAt: -1 } },
+    { key: { organizationId: 1, membershipId: 1, status: 1 } },
+    { key: { organizationId: 1, userId: 1, documentVersionId: 1 } },
+    {
+      key: { organizationId: 1, userId: 1, status: 1, completedAt: -1 },
+    },
+  ]);
   await db.collection("membershipEvents").createIndexes([
     { key: { organizationId: 1, occurredAt: -1 } },
     { key: { organizationId: 1, membershipId: 1, occurredAt: 1 } },

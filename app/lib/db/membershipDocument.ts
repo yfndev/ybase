@@ -36,6 +36,7 @@ export interface DocumentExecution {
   documentHash: string;
   membershipId: string;
   userId: string;
+  executionType: DocumentExecutionType;
   status: "assigned" | "completed" | "revoked";
   assignedAt: number;
   processingStartedAt?: number;
@@ -45,5 +46,6 @@ export interface DocumentExecution {
   paperEvidenceStorageKey?: string;
   ipAddress?: string;
   userAgent?: string;
+  consentGranted?: boolean;
   revokedAt?: number;
 }
