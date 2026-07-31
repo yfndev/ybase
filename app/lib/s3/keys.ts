@@ -32,3 +32,21 @@ export function reimbursementUploadDirectory(
   assertSafePathSegment(organizationId, "organization ID");
   return `reimbursements/${type}/${organizationId}/${DOCUMENT_DIRECTORIES[documentType]}`;
 }
+
+export function membershipDocumentDirectory(
+  organizationId: string,
+  documentVersionId: string,
+): string {
+  assertSafePathSegment(organizationId, "organization ID");
+  assertSafePathSegment(documentVersionId, "document version ID");
+  return `memberships/${organizationId}/documents/${documentVersionId}`;
+}
+
+export function membershipExecutionDirectory(
+  organizationId: string,
+  executionId: string,
+): string {
+  assertSafePathSegment(organizationId, "organization ID");
+  assertSafePathSegment(executionId, "document execution ID");
+  return `memberships/${organizationId}/executions/${executionId}`;
+}
