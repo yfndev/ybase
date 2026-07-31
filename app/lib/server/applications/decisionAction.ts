@@ -1,6 +1,7 @@
 "use server";
 
 import { ZodError } from "zod";
+import { APPLICATION_ADMISSION_ERRORS } from "../../applications/admissionEligibility";
 import type { ApplicationDecisionInput } from "./decisionInput";
 import { sendApplicationDecision } from "./decision";
 
@@ -29,6 +30,7 @@ const DISPLAYABLE_DECISION_ERRORS = new Set([
   "Workspace-Konto konnte nicht gespeichert werden",
   "E-Mail konnte nicht versendet werden",
   "Bewerbung wurde zwischenzeitlich geändert",
+  ...Object.values(APPLICATION_ADMISSION_ERRORS),
 ]);
 
 function decisionErrorMessage(

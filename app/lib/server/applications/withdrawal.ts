@@ -75,6 +75,10 @@ export async function withdrawApplicationByToken(
       $unset: {
         applicantName: "",
         applicantPhone: "",
+        dateOfBirth: "",
+        memberPlatformUserId: "",
+        memberPlatformSyncedAt: "",
+        guardianConsent: "",
         ownerIds: "",
         withdrawalTokenHash: "",
         yfnEmail: "",
@@ -100,10 +104,14 @@ export async function withdrawApplicationByToken(
   }
 
   const storageKeys = new Set(
-    application.files.map(
-      (file) =>
-        file.storageKey ?? applicationFileStorageKey(application._id, file),
-    ),
+    [
+      ...application.files.map(
+        (file) =>
+          file.storageKey ?? applicationFileStorageKey(application._id, file),
+      ),
+      application.guardianConsent?.signatureStorageKey,
+      application.guardianConsent?.completedPdfStorageKey,
+    ].filter((key): key is string => Boolean(key)),
   );
   const cleanup = [...storageKeys].map((key) =>
     (dependencies.deleter ?? deleteObject)(key),

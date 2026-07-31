@@ -2,12 +2,11 @@ import {
   type MemberPlatformProfile,
   suggestMemberPlatformProfile,
 } from "../../memberPlatform/suggestions";
+import { LINKABLE_MEMBER_PLATFORM_STATES } from "../../memberPlatform/states";
 import { users } from "../../db/collections";
 import type { User } from "../../db/types";
 import { YFN_ORGANIZATION } from "../../organization";
 import { getMemberPlatformDb } from "./client";
-
-const LINKABLE_MEMBER_STATES = ["ACCEPTED", "ALUMNI"];
 
 export interface MemberPlatformLinkOption {
   id: string;
@@ -41,7 +40,7 @@ export async function getMemberPlatformLinkingData(
       .toArray(),
     platformDb
       .collection("user-states")
-      .find({ current: { $in: LINKABLE_MEMBER_STATES } })
+      .find({ current: { $in: [...LINKABLE_MEMBER_PLATFORM_STATES] } })
       .project<{ userId: string }>({ _id: 0, userId: 1 })
       .toArray(),
     (await users())
@@ -96,7 +95,7 @@ export async function findLinkableMemberPlatformProfile(
       ),
     platformDb.collection("user-states").findOne({
       userId: profileId,
-      current: { $in: LINKABLE_MEMBER_STATES },
+      current: { $in: [...LINKABLE_MEMBER_PLATFORM_STATES] },
     }),
   ]);
   if (!profile || !state) {

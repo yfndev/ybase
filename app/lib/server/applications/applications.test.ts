@@ -130,6 +130,9 @@ test("loads one application without internal identifiers", async () => {
         withdrawalTokenHash: "secret-withdrawal-hash",
         onboardingStartedBy: actorId,
         onboardingCompletedBy: actorId,
+        dateOfBirth: "2004-01-01",
+        memberPlatformUserId: "platform-alex",
+        memberPlatformSyncedAt: Date.now(),
         guardianConsent: {
           representativeName: "Erika Beispiel",
           representativeEmail: "erika@example.com",
@@ -174,6 +177,9 @@ test("loads one application without internal identifiers", async () => {
     _id: applicationId,
     jobPostingTitle: "Fundraising",
     ownerIds: [ownerId],
+    dateOfBirth: "2004-01-01",
+    memberPlatformUserId: "platform-alex",
+    memberPlatformSyncedAt: expect.any(Number),
   });
   expect(application).not.toHaveProperty("applicantPhone");
   expect(application).not.toHaveProperty("applicantEmailNormalized");
@@ -182,7 +188,14 @@ test("loads one application without internal identifiers", async () => {
   expect(application).not.toHaveProperty("tallyResponseId");
   expect(application).not.toHaveProperty("tallyFormId");
   expect(application).not.toHaveProperty("withdrawalTokenHash");
-  expect(application).not.toHaveProperty("guardianConsent");
+  expect(application.guardianConsent).toEqual({
+    representativeName: "Erika Beispiel",
+    representativeEmail: "erika@example.com",
+    expiresAt: expect.any(Number),
+  });
+  expect(JSON.stringify(application.guardianConsent)).not.toContain(
+    "secret-guardian-hash",
+  );
   expect(application).not.toHaveProperty("admissionDecision");
   expect(application).not.toHaveProperty("rejectionDelivery");
   expect(application).not.toHaveProperty("appealTokenHash");

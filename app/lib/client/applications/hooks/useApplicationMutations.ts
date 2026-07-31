@@ -1,5 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { submitApplicationDecision } from "@/lib/server/applications/decisionAction";
+import {
+  requestGuardianConsent,
+  syncApplicationMemberPlatformProfile,
+} from "@/lib/server/applications/admissionRequirements";
 import { updateApplicationManagement } from "@/lib/server/applications/management";
 import { setApplicationStatus } from "@/lib/server/applications/status";
 
@@ -30,6 +34,14 @@ export function useApplicationMutations() {
           queryClient.invalidateQueries({ queryKey: ["members"] });
         }
       },
+    }),
+    syncMemberPlatformProfile: useMutation({
+      mutationFn: syncApplicationMemberPlatformProfile,
+      onSuccess: invalidate,
+    }),
+    requestGuardianConsent: useMutation({
+      mutationFn: requestGuardianConsent,
+      onSuccess: invalidate,
     }),
   };
 }

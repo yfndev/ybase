@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { ApplicationActionFooter } from "@/components/Applications/ApplicationActionFooter";
+import { ApplicationAdmissionRequirements } from "@/components/Applications/ApplicationAdmissionRequirements";
 import { ApplicationAnswers } from "@/components/Applications/ApplicationAnswers";
 import { ApplicationDetails } from "@/components/Applications/ApplicationDetails";
 import { ApplicationFiles } from "@/components/Applications/ApplicationFiles";
@@ -11,6 +12,7 @@ import { ApplicationManagement } from "@/components/Applications/ApplicationMana
 import { ApplicationReviewSidebar } from "@/components/Applications/ApplicationReviewSidebar";
 import { isApplicantIdentityField } from "@/components/Applications/applicationPresentation";
 import { PageHeader } from "@/components/Layout/PageHeader";
+import { getApplicationAdmissionIssue } from "@/lib/applications/admissionEligibility";
 import { useApplication } from "@/lib/client/applications/hooks/useApplication";
 import type { ApplicationWithFiles, User } from "@/lib/db/types";
 import { isUnavailableMemberStatus } from "@/lib/members/status";
@@ -76,6 +78,10 @@ export function ApplicationReview({
             jobPostingTitle={application.jobPostingTitle}
             organizationDomain={organizationDomain}
             yfnEmail={application.yfnEmail}
+            acceptanceBlockedReason={getApplicationAdmissionIssue(
+              application,
+              Date.now(),
+            )}
           />
         }
       >
@@ -91,6 +97,10 @@ export function ApplicationReview({
               key={`management-${revisionKey}`}
               application={application}
               owners={owners}
+            />
+            <ApplicationAdmissionRequirements
+              key={`admission-${revisionKey}`}
+              application={application}
             />
           </div>
         ) : null}

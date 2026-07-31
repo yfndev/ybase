@@ -13,7 +13,9 @@ export function useApplication(
     refetchInterval: (query) =>
       query.state.data?.files.some((file) =>
         ["pending", "importing"].includes(file.status),
-      )
+      ) ||
+      (query.state.data?.guardianConsent?.lastSentAt &&
+        !query.state.data.guardianConsent.signedAt)
         ? 1_500
         : false,
   });
