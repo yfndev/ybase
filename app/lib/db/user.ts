@@ -5,8 +5,8 @@ export type MemberStatus =
   | "offboarding_planned"
   | "offboarding"
   | "archived"
-  | "excluded"
-  | "offboarded";
+  | "excluded";
+export type StoredMemberStatus = MemberStatus | "offboarded";
 export type TeamOnboardingStatus = "not_started" | "in_progress" | "completed";
 export type ProfileImageSource = "google" | "upload";
 
@@ -56,7 +56,8 @@ export interface User {
   isSecondaryTeamLead?: boolean;
   boardMembership?: BoardMembership;
   applicationId?: string;
-  memberStatus: MemberStatus;
+  membershipId?: string;
+  memberStatus: StoredMemberStatus;
   teamOnboardingStatus: TeamOnboardingStatus;
   registeredAt?: number;
   onboardedAt?: number;

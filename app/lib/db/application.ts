@@ -1,3 +1,10 @@
+import type { LegalDelivery } from "./legalDelivery";
+import type {
+  AdmissionAppealDecision,
+  AdmissionDecision,
+  GuardianConsent,
+} from "./membershipAdmission";
+
 export type ApplicationStatus =
   | "received"
   | "review"
@@ -21,7 +28,14 @@ export interface ApplicationField {
   value: ApplicationFieldValue;
 }
 
-export type ApplicationHistoryType = "status_changed" | "management_updated";
+export type ApplicationHistoryType =
+  | "status_changed"
+  | "management_updated"
+  | "guardian_consent_recorded"
+  | "admission_decision_recorded"
+  | "rejection_delivered"
+  | "appeal_received"
+  | "appeal_decision_recorded";
 
 export type WorkspaceProvisioningStatus =
   | "pending"
@@ -78,6 +92,7 @@ export interface Application {
   applicantEmail: string;
   applicantEmailNormalized: string;
   applicantPhone?: string;
+  dateOfBirth?: string;
   fields: ApplicationField[];
   files: ApplicationFile[];
   tallyEventId: string;
@@ -99,6 +114,14 @@ export interface Application {
   onboardingStartedBy?: string;
   onboardingCompletedAt?: number;
   onboardingCompletedBy?: string;
+  guardianConsent?: GuardianConsent;
+  admissionDecision?: AdmissionDecision;
+  rejectionDelivery?: LegalDelivery;
+  appealTokenHash?: string;
+  appealExpiresAt?: number;
+  appealedAt?: number;
+  appealStatement?: string;
+  appealDecision?: AdmissionAppealDecision;
   cleanupEligibleAt?: number;
   submittedAt: number;
   withdrawnAt?: number;
@@ -119,6 +142,14 @@ export type ApplicationWithFiles = Omit<
   | "withdrawalTokenHash"
   | "yfnEmailNormalized"
   | "workspaceUserId"
+  | "guardianConsent"
+  | "admissionDecision"
+  | "rejectionDelivery"
+  | "appealTokenHash"
+  | "appealExpiresAt"
+  | "appealedAt"
+  | "appealStatement"
+  | "appealDecision"
   | "onboardingCompletedBy"
   | "onboardingStartedBy"
   | "cleanupEligibleAt"

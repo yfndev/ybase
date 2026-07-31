@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { requireAuthenticatedUser } from "../../auth/session";
 import { users } from "../../db/collections";
-import type { MemberStatus } from "../../db/types";
+import type { StoredMemberStatus } from "../../db/types";
 import { isUnavailableMemberStatus } from "../../members/status";
 import { profileImageUploadDirectory } from "../../s3/keys";
 import {
@@ -34,7 +34,7 @@ const completeSchema = z.object({
 function requireEligibleUser<
   T extends {
     organizationId?: string;
-    memberStatus: MemberStatus;
+    memberStatus: StoredMemberStatus;
   },
 >(user: T): asserts user is T & { organizationId: string } {
   if (!user.organizationId) throw new Error("User has no organization");

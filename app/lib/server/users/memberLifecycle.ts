@@ -1,4 +1,9 @@
-import type { MemberStatus, TeamOnboardingStatus, User } from "../../db/types";
+import type {
+  MemberStatus,
+  StoredMemberStatus,
+  TeamOnboardingStatus,
+  User,
+} from "../../db/types";
 
 type MemberStatusPatch = Partial<
   Pick<
@@ -17,7 +22,7 @@ type TeamOnboardingPatch = Partial<
 >;
 
 export function memberStatusPatch(
-  current: MemberStatus,
+  current: StoredMemberStatus,
   next: MemberStatus,
   now: number,
 ): MemberStatusPatch {
@@ -26,7 +31,7 @@ export function memberStatusPatch(
   if (next === "active") patch.onboardedAt = now;
   if (next === "offboarding_planned") patch.offboardingPlannedAt = now;
   if (next === "offboarding") patch.offboardingStartedAt = now;
-  if (next === "archived" || next === "offboarded") patch.archivedAt = now;
+  if (next === "archived") patch.archivedAt = now;
   if (next === "excluded") patch.excludedAt = now;
   return patch;
 }

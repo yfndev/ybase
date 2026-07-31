@@ -63,6 +63,14 @@ export async function updateMemberProfile(input: {
     })
     .parse(input);
   const { currentUser, target } = await loadManagedMember(userId);
+  if (
+    target.membershipId &&
+    (privateEmail !== undefined || phone !== undefined)
+  ) {
+    throw new Error(
+      "Private Kontaktdaten dieses Mitglieds werden in der Mitgliedschaftsakte verwaltet.",
+    );
+  }
   const hasBoardAssignment =
     boardMembership !== null &&
     (boardMembership !== undefined || target.boardMembership !== undefined);

@@ -19,7 +19,6 @@ const memberStatusSchema = z.enum([
   "offboarding",
   "archived",
   "excluded",
-  "offboarded",
 ]);
 const teamOnboardingSchema = z.enum([
   "not_started",
@@ -31,11 +30,15 @@ export async function setMemberStatus(input: {
   userId: string;
   status: MemberStatus;
 }): Promise<void> {
-  const { userId, status: parsedStatus } = z
+  const { userId, status } = z
     .object({ userId: z.string(), status: memberStatusSchema })
     .parse(input);
-  const status = parsedStatus === "offboarded" ? "archived" : parsedStatus;
   const { currentUser, target } = await loadManagedMember(userId);
+  if (target.membershipId) {
+    throw new Error(
+      "Der Status dieses Mitglieds wird durch den Mitgliedschaftsvorgang gesteuert.",
+    );
+  }
   if (status === "active" && (target.memberInfractions?.length ?? 0) >= 2) {
     throw new Error(
       "Ein Mitglied mit zwei Verstößen kann nicht erneut aktiviert werden.",

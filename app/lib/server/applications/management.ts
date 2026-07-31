@@ -4,7 +4,7 @@ import { z } from "zod";
 import { USER_PERMISSIONS } from "../../auth/roles";
 import { requirePermission } from "../../auth/session";
 import { applications, jobPostings, users } from "../../db/collections";
-import type { Application, ApplicationWithFiles } from "../../db/types";
+import type { ApplicationWithFiles } from "../../db/types";
 import { UNAVAILABLE_MEMBER_STATUSES } from "../../members/status";
 import { addLog } from "../logs";
 import {
@@ -13,36 +13,7 @@ import {
   requireRecruitingJobPosting,
 } from "./access";
 import { createApplicationHistoryEntry } from "./history";
-
-function toApplicationView(
-  application: Application,
-  jobPostingTitle: string,
-): ApplicationWithFiles {
-  const {
-    applicantEmailNormalized: _applicantEmailNormalized,
-    files,
-    tallyEventId: _tallyEventId,
-    tallySubmissionId: _tallySubmissionId,
-    tallyResponseId: _tallyResponseId,
-    tallyFormId: _tallyFormId,
-    withdrawalTokenHash: _withdrawalTokenHash,
-    yfnEmailNormalized: _yfnEmailNormalized,
-    workspaceUserId: _workspaceUserId,
-    onboardingStartedBy: _onboardingStartedBy,
-    onboardingCompletedBy: _onboardingCompletedBy,
-    cleanupEligibleAt: _cleanupEligibleAt,
-    ownerIds,
-    ...visibleApplication
-  } = application;
-  return {
-    ...visibleApplication,
-    jobPostingTitle,
-    ownerIds: ownerIds ?? [],
-    files: files.map(
-      ({ sourceUrl: _sourceUrl, storageKey: _storageKey, ...file }) => file,
-    ),
-  };
-}
+import { toApplicationView } from "./view";
 
 export async function getApplications(): Promise<ApplicationWithFiles[]> {
   const user = await requirePermission(USER_PERMISSIONS.recruiting);
