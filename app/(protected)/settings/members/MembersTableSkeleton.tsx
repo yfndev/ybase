@@ -20,9 +20,6 @@ export function MembersTableSkeleton() {
                 <Skeleton className="h-4 w-44" />
               </TableCell>
               <TableCell>
-                <Skeleton className="h-9 w-44" />
-              </TableCell>
-              <TableCell>
                 <Skeleton className="h-7 w-24 rounded-full" />
               </TableCell>
               <TableCell>

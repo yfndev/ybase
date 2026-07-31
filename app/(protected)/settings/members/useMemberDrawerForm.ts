@@ -26,8 +26,6 @@ export function useMemberDrawerForm(
     setStatus: setStatusMutation,
     updateRole,
   } = useMemberMutations();
-  const [privateEmail, setPrivateEmail] = useState(member.privateEmail ?? "");
-  const [phone, setPhone] = useState(member.phone ?? "");
   const [teamId, setTeamId] = useState(member.teamId ?? "");
   const [secondaryTeamId, setSecondaryTeamId] = useState(
     member.secondaryTeamId ?? "",
@@ -67,22 +65,12 @@ export function useMemberDrawerForm(
       }
       const profile: {
         userId: string;
-        privateEmail?: string | null;
-        phone?: string | null;
         teamId?: string | null;
         secondaryTeamId?: string | null;
         isTeamLead?: boolean;
         isSecondaryTeamLead?: boolean;
         boardMembership?: BoardMembership | null;
       } = { userId: member._id };
-      const nextPrivateEmail = privateEmail.trim().toLowerCase();
-      if (nextPrivateEmail !== (member.privateEmail ?? "")) {
-        profile.privateEmail = nextPrivateEmail || null;
-      }
-      const nextPhone = phone.trim();
-      if (nextPhone !== (member.phone ?? "")) {
-        profile.phone = nextPhone || null;
-      }
       if (board.isBoardMember) {
         if (member.teamId) profile.teamId = null;
       } else if (teamId && teamId !== member.teamId) {
@@ -115,8 +103,6 @@ export function useMemberDrawerForm(
         profile.boardMembership = nextBoardMembership;
       }
       if (
-        profile.privateEmail !== undefined ||
-        profile.phone !== undefined ||
         profile.teamId !== undefined ||
         profile.secondaryTeamId !== undefined ||
         profile.isTeamLead !== undefined ||
@@ -151,10 +137,6 @@ export function useMemberDrawerForm(
   };
 
   return {
-    privateEmail,
-    setPrivateEmail,
-    phone,
-    setPhone,
     teamId,
     setTeamId,
     secondaryTeamId,

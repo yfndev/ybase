@@ -1,34 +1,62 @@
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import type { MemberDrawerFormState } from "./useMemberDrawerForm";
+import { ExternalLink, Mail, Phone } from "lucide-react";
+import type { User } from "@/lib/db/types";
 
-export function MemberContactFields({ form }: { form: MemberDrawerFormState }) {
+const MEMBER_PLATFORM_URL = "https://member.youngfounders.network";
+
+export function MemberContactFields({ member }: { member: User }) {
+  const profileUrl = member.memberPlatformUserId
+    ? `${MEMBER_PLATFORM_URL}/member/${member.memberPlatformUserId}`
+    : undefined;
+
   return (
-    <fieldset className="space-y-3 rounded-md border p-4">
-      <legend className="px-1 text-sm font-medium">Private Kontaktdaten</legend>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="member-private-email">Private E-Mail</Label>
-        <Input
-          id="member-private-email"
-          type="email"
-          value={form.privateEmail}
-          onChange={(event) => form.setPrivateEmail(event.target.value)}
-          placeholder="name@beispiel.de"
-          autoComplete="email"
-        />
+    <section className="border-t pt-5" aria-labelledby="private-contact-title">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 id="private-contact-title" className="text-sm font-semibold">
+            Private Kontaktdaten
+          </h3>
+          <p className="text-muted-foreground mt-1 text-xs">
+            {member.memberPlatformUserId
+              ? "Aus der Member-Plattform synchronisiert"
+              : "Noch nicht mit der Member-Plattform verknüpft"}
+          </p>
+        </div>
+        {profileUrl ? (
+          <a
+            href={profileUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-muted-foreground hover:text-foreground inline-flex shrink-0 items-center gap-1 text-xs underline-offset-4 hover:underline"
+          >
+            Profil
+            <ExternalLink aria-hidden="true" className="size-3" />
+          </a>
+        ) : null}
       </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="member-phone">Telefonnummer</Label>
-        <Input
-          id="member-phone"
-          type="tel"
-          value={form.phone}
-          onChange={(event) => form.setPhone(event.target.value)}
-          placeholder="+49 170 1234567"
-          autoComplete="tel"
-          maxLength={40}
-        />
+
+      <div className="mt-3 grid gap-2 text-sm">
+        {member.privateEmail ? (
+          <a
+            href={`mailto:${member.privateEmail}`}
+            className="text-muted-foreground hover:text-foreground flex min-w-0 items-center gap-2 underline-offset-4 hover:underline"
+          >
+            <Mail aria-hidden="true" className="size-3.5 shrink-0" />
+            <span className="truncate">{member.privateEmail}</span>
+          </a>
+        ) : null}
+        {member.phone ? (
+          <a
+            href={`tel:${member.phone.replace(/\s/g, "")}`}
+            className="text-muted-foreground hover:text-foreground flex items-center gap-2 underline-offset-4 hover:underline"
+          >
+            <Phone aria-hidden="true" className="size-3.5 shrink-0" />
+            <span>{member.phone}</span>
+          </a>
+        ) : null}
+        {!member.privateEmail && !member.phone ? (
+          <p className="text-muted-foreground">Keine Kontaktdaten hinterlegt</p>
+        ) : null}
       </div>
-    </fieldset>
+    </section>
   );
 }

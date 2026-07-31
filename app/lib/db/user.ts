@@ -39,6 +39,8 @@ export interface User {
   privateEmail?: string;
   phone?: string;
   phoneVerificationTime?: number;
+  memberPlatformUserId?: string;
+  memberPlatformSyncedAt?: number;
   isAnonymous?: boolean;
   firstName?: string;
   lastName?: string;

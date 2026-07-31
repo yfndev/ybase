@@ -2,6 +2,7 @@ import { organizations, projects, users } from "../db/collections";
 import { newId } from "../db/ids";
 import type { User } from "../db/types";
 import { YFN_ORGANIZATION } from "../organization";
+import { tryRefreshMemberPlatformProfile } from "../server/memberPlatform/sync";
 import { linkAcceptedApplication } from "./applicationLinking";
 
 type SignInProfile = {
@@ -111,7 +112,7 @@ export async function ensureAppUser(profile: SignInProfile): Promise<User> {
     user = { ...user, ...membership };
   }
 
-  return linkAcceptedApplication(user);
+  return tryRefreshMemberPlatformProfile(await linkAcceptedApplication(user));
 }
 
 export async function isLinkedWorkspaceUser(

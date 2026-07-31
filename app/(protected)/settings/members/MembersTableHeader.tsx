@@ -6,7 +6,6 @@ export function MembersTableHeader() {
       <TableRow>
         <TableHead className="pl-4">Name</TableHead>
         <TableHead>YFN-Mail</TableHead>
-        <TableHead>Privater Kontakt</TableHead>
         <TableHead>Status</TableHead>
         <TableHead>Department</TableHead>
         <TableHead>Team</TableHead>

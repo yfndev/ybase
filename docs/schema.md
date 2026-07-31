@@ -46,6 +46,8 @@ erDiagram
         string email
         string privateEmail
         string phone
+        string memberPlatformUserId
+        number memberPlatformSyncedAt
         string googleWorkspaceUserId
         string role
         string teamId

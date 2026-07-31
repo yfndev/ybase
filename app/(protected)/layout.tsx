@@ -6,6 +6,8 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
 import { requireAuthenticatedUser } from "@/lib/auth/session";
 import { isUnavailableMemberStatus } from "@/lib/members/status";
+import { getMemberPlatformLinkingData } from "@/lib/server/memberPlatform/linking";
+import { MemberPlatformLinking } from "./MemberPlatformLinking";
 import { OnboardingNotice } from "./OnboardingNotice";
 import { OffboardedNotice } from "./OffboardedNotice";
 import { PublicProfileSetup } from "./PublicProfileSetup";
@@ -29,6 +31,16 @@ export default async function ProtectedLayout({
           member.googlePhotoIsDefault === false && Boolean(member.image)
         }
       />
+    );
+  } else if (
+    member.memberStatus === "onboarding" &&
+    !member.memberPlatformUserId
+  ) {
+    const linkingData = await getMemberPlatformLinkingData(member);
+    content = linkingData ? (
+      <MemberPlatformLinking data={linkingData} />
+    ) : (
+      <OnboardingNotice onboardingStatus={member.teamOnboardingStatus} />
     );
   } else if (member.memberStatus === "onboarding") {
     content = (
