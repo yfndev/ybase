@@ -17,7 +17,7 @@ export function CreateMemberContactFields({
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="manual-member-private-email">Private E-Mail</Label>
+        <Label htmlFor="manual-member-private-email">Private E-Mail*</Label>
         <Input
           id="manual-member-private-email"
           type="email"
@@ -25,6 +25,7 @@ export function CreateMemberContactFields({
           onChange={(event) => onPrivateEmailChange(event.target.value)}
           placeholder="name@beispiel.de"
           autoComplete="email"
+          required
         />
       </div>
       <div className="flex flex-col gap-2">

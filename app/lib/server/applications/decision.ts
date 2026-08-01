@@ -47,16 +47,6 @@ export async function sendApplicationDecision(
         })
       : { message: decision.message, workspaceUserId: undefined };
 
-  await sendDecisionEmail({
-    application,
-    decision: decision.decision,
-    jobTitle: posting.title,
-    message: prepared.message,
-    organizationId: user.organizationId,
-    subject: decision.subject,
-    workspaceUserId: prepared.workspaceUserId,
-  });
-
   let acceptedMember:
     | Awaited<ReturnType<typeof createAcceptedApplicantMember>>
     | undefined;
@@ -75,6 +65,15 @@ export async function sendApplicationDecision(
 
   let statusDetails: string;
   try {
+    await sendDecisionEmail({
+      application,
+      decision: decision.decision,
+      jobTitle: posting.title,
+      message: prepared.message,
+      organizationId: user.organizationId,
+      subject: decision.subject,
+      workspaceUserId: prepared.workspaceUserId,
+    });
     statusDetails = await persistDecision({
       application,
       decision,

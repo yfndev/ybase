@@ -65,7 +65,13 @@ export function CreateMemberDialog({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!name.trim() || !email.trim() || !teamId || create.isPending) {
+    if (
+      !name.trim() ||
+      !email.trim() ||
+      !privateEmail.trim() ||
+      !teamId ||
+      create.isPending
+    ) {
       return;
     }
 
@@ -73,7 +79,7 @@ export function CreateMemberDialog({
       const member = await create.mutateAsync({
         name: name.trim(),
         email: email.trim(),
-        privateEmail: privateEmail.trim() || undefined,
+        privateEmail: privateEmail.trim(),
         phone: phone.trim() || undefined,
         teamId,
         isTeamLead,
@@ -169,7 +175,11 @@ export function CreateMemberDialog({
               type="submit"
               variant="primary"
               disabled={
-                !name.trim() || !email.trim() || !teamId || create.isPending
+                !name.trim() ||
+                !email.trim() ||
+                !privateEmail.trim() ||
+                !teamId ||
+                create.isPending
               }
             >
               {create.isPending ? (
