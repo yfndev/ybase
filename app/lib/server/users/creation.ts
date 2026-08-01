@@ -10,6 +10,7 @@ import { YFN_ORGANIZATION } from "../../organization";
 import { addLog } from "../logs";
 import { requireActiveOrganizationTeam } from "./access";
 import { phoneSchema, privateEmailSchema } from "./contactDetails";
+import { provisionManualMemberWorkspace } from "./manualWorkspaceProvisioning";
 
 const MEMBER_EMAIL_CONFLICT_MESSAGE =
   "Für diese E-Mail-Adresse gibt es bereits ein Profil.";
@@ -29,7 +30,7 @@ const createMemberSchema = z.object({
       (email) => email.endsWith(`@${YFN_ORGANIZATION.domain}`),
       "Bitte gib eine gültige YFN-E-Mail-Adresse an.",
     ),
-  privateEmail: privateEmailSchema.optional(),
+  privateEmail: privateEmailSchema,
   phone: phoneSchema.optional(),
   teamId: z.string().trim().min(1),
   isTeamLead: z.boolean(),
@@ -61,9 +62,7 @@ export async function createMember(input: CreateMemberInput): Promise<User> {
     _creationTime: createdAt,
     name: memberInput.name,
     email: memberInput.email,
-    ...(memberInput.privateEmail
-      ? { privateEmail: memberInput.privateEmail }
-      : {}),
+    privateEmail: memberInput.privateEmail,
     ...(memberInput.phone ? { phone: memberInput.phone } : {}),
     organizationId: actor.organizationId,
     role: "member",
@@ -81,6 +80,33 @@ export async function createMember(input: CreateMemberInput): Promise<User> {
     if (isDuplicateKeyError(error)) {
       throw new Error(MEMBER_EMAIL_CONFLICT_MESSAGE);
     }
+    throw error;
+  }
+
+  try {
+    const workspaceAccount = await provisionManualMemberWorkspace({
+      name: memberInput.name,
+      primaryEmail: memberInput.email,
+      privateEmail: memberInput.privateEmail,
+    });
+    const result = await usersCollection.updateOne(
+      {
+        _id: createdMember._id,
+        organizationId: actor.organizationId,
+        googleWorkspaceUserId: { $exists: false },
+      },
+      { $set: { googleWorkspaceUserId: workspaceAccount.userId } },
+    );
+    if (result.modifiedCount !== 1) {
+      throw new Error("Google-Workspace-Konto konnte nicht verknüpft werden");
+    }
+    createdMember.googleWorkspaceUserId = workspaceAccount.userId;
+  } catch (error) {
+    await usersCollection.deleteOne({
+      _id: createdMember._id,
+      organizationId: actor.organizationId,
+      googleWorkspaceUserId: { $exists: false },
+    });
     throw error;
   }
 

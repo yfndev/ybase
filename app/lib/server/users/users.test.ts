@@ -5,6 +5,9 @@ vi.mock("../../auth/session", () => ({
   requireRole: vi.fn(),
   requirePermission: vi.fn(),
 }));
+vi.mock("./manualWorkspaceProvisioning", () => ({
+  provisionManualMemberWorkspace: vi.fn(),
+}));
 
 import {
   requirePermission,
@@ -25,6 +28,7 @@ import { createMember } from "./creation";
 import { listMembers } from "./data";
 import { recordMemberInfraction } from "./infractions";
 import { setMemberStatus, setTeamOnboardingStatus } from "./lifecycleActions";
+import { provisionManualMemberWorkspace } from "./manualWorkspaceProvisioning";
 import { addUserToOrganization } from "./membership";
 import { updateBankDetails, updateMemberProfile } from "./profile";
 import { updateUserRole } from "./roles";
@@ -38,6 +42,10 @@ let memberB: string;
 setupTestDatabase();
 
 beforeEach(async () => {
+  vi.clearAllMocks();
+  vi.mocked(provisionManualMemberWorkspace).mockResolvedValue({
+    userId: "google-manual-member",
+  });
   orgA = newId();
   orgB = newId();
   adminA = newId();
@@ -170,8 +178,14 @@ test("createMember starts a member in onboarding and writes a log", async () => 
     memberStatus: "onboarding",
     teamOnboardingStatus: "not_started",
     publicProfileSetupRequired: true,
+    googleWorkspaceUserId: "google-manual-member",
   });
   expect(typeof created?.registeredAt).toBe("number");
+  expect(provisionManualMemberWorkspace).toHaveBeenCalledWith({
+    name: "Manual Member",
+    primaryEmail: "manual@youngfounders.network",
+    privateEmail: "manual@example.com",
+  });
 
   const log = await (await logs()).findOne({ action: "member.created" });
   expect(log).toMatchObject({
@@ -187,6 +201,7 @@ test("createMember rejects invalid domains and duplicate profiles", async () => 
     createMember({
       name: "External Member",
       email: "member@example.org",
+      privateEmail: "external@example.org",
       teamId: "manual-team",
       isTeamLead: false,
     }),
@@ -195,6 +210,7 @@ test("createMember rejects invalid domains and duplicate profiles", async () => 
   await createMember({
     name: "Existing Member",
     email: "existing@youngfounders.network",
+    privateEmail: "existing@example.com",
     teamId: "manual-team",
     isTeamLead: false,
   });
@@ -202,6 +218,7 @@ test("createMember rejects invalid domains and duplicate profiles", async () => 
     createMember({
       name: "Existing Member",
       email: "EXISTING@YOUNGFOUNDERS.NETWORK",
+      privateEmail: "existing@example.com",
       teamId: "manual-team",
       isTeamLead: false,
     }),
@@ -215,10 +232,33 @@ test("createMember rejects leads for chapters", async () => {
     createMember({
       name: "Chapter Lead",
       email: "chapter@youngfounders.network",
+      privateEmail: "chapter@example.com",
       teamId: "manual-chapter",
       isTeamLead: true,
     }),
   ).rejects.toThrow("Chapter haben keine Lead-Position");
+});
+
+test("createMember rolls back the profile when Workspace setup fails", async () => {
+  await seedTeam("manual-team", orgA);
+  vi.mocked(provisionManualMemberWorkspace).mockRejectedValueOnce(
+    new Error("Zugangsdaten konnten nicht versendet werden"),
+  );
+
+  await expect(
+    createMember({
+      name: "Failed Member",
+      email: "failed@youngfounders.network",
+      privateEmail: "failed@example.com",
+      teamId: "manual-team",
+      isTeamLead: false,
+    }),
+  ).rejects.toThrow("Zugangsdaten konnten nicht versendet werden");
+
+  expect(
+    await (await users()).findOne({ email: "failed@youngfounders.network" }),
+  ).toBeNull();
+  expect(await (await logs()).findOne({ action: "member.created" })).toBeNull();
 });
 
 test("rejects invalid private contact details", async () => {
