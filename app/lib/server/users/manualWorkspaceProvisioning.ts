@@ -1,9 +1,10 @@
-import { appendWorkspaceAccessDetails } from "../../applications/decisionEmail";
-import { sendMail } from "../../email/brevo";
-import { BREVO_TEMPLATE_IDS } from "../../email/templates";
 import { appUrl } from "../../email/urls";
 import { provisionWorkspaceUser } from "../../googleWorkspace/users";
-import { YFN_ORGANIZATION } from "../../organization";
+import {
+  requireWorkspaceAccountReadyTemplateId,
+  sendUserStateEmail,
+  sendWorkspaceAccountReadyEmail,
+} from "./email";
 
 interface ManualWorkspaceProvisioningInput {
   name: string;
@@ -14,6 +15,7 @@ interface ManualWorkspaceProvisioningInput {
 export async function provisionManualMemberWorkspace(
   input: ManualWorkspaceProvisioningInput,
 ): Promise<{ userId: string }> {
+  requireWorkspaceAccountReadyTemplateId();
   const loginUrl = appUrl("/login");
   const { givenName, familyName } = workspaceMemberName(
     input.name,
@@ -26,27 +28,21 @@ export async function provisionManualMemberWorkspace(
     givenName,
     familyName,
   });
-  const message = appendWorkspaceAccessDetails({
-    message: `Hey ${givenName},\n\nwillkommen bei ${YFN_ORGANIZATION.name}. Dein Google-Workspace-Konto wurde für dein Onboarding eingerichtet.`,
-    primaryEmail: account.primaryEmail,
+  await sendWorkspaceAccountReadyEmail({
+    recoveryEmail: input.privateEmail,
+    applicantName: input.name,
+    workspaceEmail: account.primaryEmail,
     temporaryPassword: account.temporaryPassword,
     loginUrl,
   });
-  const delivery = await sendMail({
-    to: [{ email: input.privateEmail, name: input.name }],
-    templateId: BREVO_TEMPLATE_IDS.APPLICATION_ACCEPTED,
-    subject: "Deine Zugangsdaten für YFN",
-    params: {
-      applicantName: input.name,
-      jobTitle: "Mitglied",
-      organizationName: YFN_ORGANIZATION.name,
-      message,
+  await sendUserStateEmail({
+    user: {
+      name: input.name,
+      email: input.primaryEmail,
+      privateEmail: input.privateEmail,
     },
-    tags: ["ybase", "member", "manual-onboarding"],
+    event: "team_onboarding_started",
   });
-  if (delivery.status !== "sent") {
-    throw new Error("Zugangsdaten konnten nicht versendet werden");
-  }
 
   return { userId: account.userId };
 }

@@ -2,6 +2,16 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({ requirePermission: vi.fn() }));
 vi.mock("../../email/brevo", () => ({ sendMail: vi.fn() }));
+vi.mock("../../email/templates", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../email/templates")>();
+  return {
+    ...actual,
+    BREVO_TEMPLATE_IDS: {
+      ...actual.BREVO_TEMPLATE_IDS,
+      MEMBERSHIP_GUARDIAN_CONSENT: 999,
+    },
+  };
+});
 
 import { requirePermission } from "../../auth/session";
 import { getClient } from "../../db/client";

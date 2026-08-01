@@ -176,7 +176,7 @@ test("createMember starts a member in onboarding and writes a log", async () => 
     teamId: "manual-team",
     isTeamLead: true,
     memberStatus: "onboarding",
-    teamOnboardingStatus: "not_started",
+    teamOnboardingStatus: "in_progress",
     publicProfileSetupRequired: true,
     googleWorkspaceUserId: "google-manual-member",
   });

@@ -5,6 +5,11 @@ vi.mock("../../email/brevo", () => ({ sendMail: vi.fn() }));
 vi.mock("../../googleWorkspace/users", () => ({
   provisionWorkspaceUser: vi.fn(),
 }));
+vi.mock("../users/email", () => ({
+  requireWorkspaceAccountReadyTemplateId: vi.fn(),
+  sendUserStateEmail: vi.fn(),
+  sendWorkspaceAccountReadyEmail: vi.fn(),
+}));
 
 import { requirePermission } from "../../auth/session";
 import {
@@ -23,6 +28,11 @@ import { YFN_ORGANIZATION } from "../../organization";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { sendApplicationDecision } from "./decision";
+import {
+  requireWorkspaceAccountReadyTemplateId,
+  sendUserStateEmail,
+  sendWorkspaceAccountReadyEmail,
+} from "../users/email";
 
 const organizationId = newId();
 const actorId = newId();
@@ -51,6 +61,9 @@ beforeEach(async () => {
     primaryEmail: yfnEmail,
     temporaryPassword: "temporary-password",
   });
+  vi.mocked(sendWorkspaceAccountReadyEmail).mockResolvedValue();
+  vi.mocked(sendUserStateEmail).mockResolvedValue();
+  vi.mocked(requireWorkspaceAccountReadyTemplateId).mockReturnValue(170);
   vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://ybase.example");
   await (
     await organizations()
@@ -96,7 +109,7 @@ beforeEach(async () => {
   await (await applications()).insertOne(application);
 });
 
-test("sends the edited acceptance email before changing the status", async () => {
+test("sends acceptance, Workspace access, and onboarding instructions in order", async () => {
   await sendApplicationDecision({
     applicationId,
     decision: "accepted",
@@ -105,17 +118,39 @@ test("sends the edited acceptance email before changing the status", async () =>
     message: "Wir freuen uns sehr auf dich.",
   });
 
-  expect(sendMail).toHaveBeenCalledWith(
+  expect(sendMail).toHaveBeenNthCalledWith(
+    1,
     expect.objectContaining({
       to: [{ email: "alex@example.com", name: "Alex Beispiel" }],
       subject: "Individuelle Zusage",
       params: expect.objectContaining({
-        message: expect.stringContaining("temporary-password"),
+        message: "Wir freuen uns sehr auf dich.",
         jobTitle: "Fundraising",
         organizationName: YFN_ORGANIZATION.name,
       }),
     }),
   );
+  expect(sendWorkspaceAccountReadyEmail).toHaveBeenCalledWith({
+    recoveryEmail: "alex@example.com",
+    applicantName: "Alex Beispiel",
+    workspaceEmail: yfnEmail,
+    temporaryPassword: "temporary-password",
+    loginUrl: "https://ybase.example/login",
+  });
+  expect(sendUserStateEmail).toHaveBeenCalledWith({
+    user: expect.objectContaining({
+      name: "Alex Beispiel",
+      privateEmail: "alex@example.com",
+      teamOnboardingStatus: "in_progress",
+    }),
+    event: "team_onboarding_started",
+  });
+  expect(vi.mocked(sendMail).mock.invocationCallOrder[0]).toBeLessThan(
+    vi.mocked(sendWorkspaceAccountReadyEmail).mock.invocationCallOrder[0],
+  );
+  expect(
+    vi.mocked(sendWorkspaceAccountReadyEmail).mock.invocationCallOrder[0],
+  ).toBeLessThan(vi.mocked(sendUserStateEmail).mock.invocationCallOrder[0]);
   const stored = await (await applications()).findOne({ _id: applicationId });
   expect(stored).toMatchObject({
     status: "accepted",
@@ -123,6 +158,8 @@ test("sends the edited acceptance email before changing the status", async () =>
     workspaceUserId: "google-user-1",
     workspaceProvisioningStatus: "invited",
     onboardingUserId: expect.any(String),
+    onboardingStartedAt: expect.any(Number),
+    onboardingStartedBy: actorId,
   });
   expect(JSON.stringify(stored)).not.toContain("temporary-password");
   expect(stored?.history).toEqual(
@@ -154,7 +191,7 @@ test("sends the edited acceptance email before changing the status", async () =>
     role: "member",
     teamId: postingTeamId,
     memberStatus: "onboarding",
-    teamOnboardingStatus: "not_started",
+    teamOnboardingStatus: "in_progress",
   });
 });
 
@@ -269,6 +306,33 @@ test.each([
   expect(stored?.history).toBeUndefined();
   expect(stored?.workspaceProvisioningStatus).toBe("provisioned");
   expect(await (await users()).countDocuments({ applicationId })).toBe(0);
+});
+
+test("records a failed Workspace credentials delivery", async () => {
+  vi.mocked(sendWorkspaceAccountReadyEmail).mockRejectedValueOnce(
+    new Error("Brevo unavailable"),
+  );
+
+  await expect(
+    sendApplicationDecision({
+      applicationId,
+      decision: "accepted",
+      yfnEmail,
+      subject: "Zusage",
+      message: "Willkommen!",
+    }),
+  ).rejects.toThrow("Brevo unavailable");
+
+  expect(sendUserStateEmail).not.toHaveBeenCalled();
+  expect(await (await users()).countDocuments({ applicationId })).toBe(0);
+  expect(
+    await (await applications()).findOne({ _id: applicationId }),
+  ).toMatchObject({
+    status: "review",
+    workspaceProvisioningStatus: "provisioned",
+    workspaceProvisioningError:
+      "Workspace-Konto erstellt, Zugangsdaten nicht versendet",
+  });
 });
 
 test("does not overwrite a withdrawal that happens during delivery", async () => {
