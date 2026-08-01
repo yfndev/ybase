@@ -269,8 +269,8 @@ test("syncs posting content and exact role questions into Tally", async () => {
   expect(serialized).toContain("Du entwickelst YBase weiter.");
   expect(serialized).toContain("Aufgaben");
   expect(serialized).toContain("Anforderungen");
-  expect(serialized).toContain("Benefits");
-  expect(serialized).toContain("Zugang zur YFN Community");
+  expect(serialized).not.toContain("Benefits");
+  expect(serialized).not.toContain("Zugang zur YFN Community");
   expect(serialized).toContain("Rahmenbedingungen");
   expect(serialized).toContain("Welche Architektur hast du zuletzt gestaltet?");
   expect(serialized).not.toContain("Spezifische Frage");

@@ -163,6 +163,14 @@ test("syncs posting sections and exact application questions into the role secti
       block("FORM_TITLE"),
       roleHeading,
       {
+        ...block("HEADING_3", "HEADING_3", "old-benefits-heading"),
+        payload: { safeHTMLSchema: [["Benefits"]] },
+      },
+      {
+        ...block("TEXT", "TEXT", "old-benefits-text"),
+        payload: { safeHTMLSchema: [["Alte Benefits"]] },
+      },
+      {
         ...block("LABEL", "LABEL", "question-label"),
         payload: { safeHTMLSchema: [["Spezifische Frage 1"]] },
       },
@@ -178,7 +186,6 @@ test("syncs posting sections and exact application questions into the role secti
       description: "<p>Du entwickelst <strong>YBase</strong>.</p>",
       tasks: "<ul><li>Architektur gestalten</li><li>Team begleiten</li></ul>",
       requirements: "<p>Erfahrung mit TypeScript &amp; React</p>",
-      benefits: "<ul><li>Zugang zur YFN Community</li></ul>",
       timeCommitment: "5 Stunden pro Woche",
       location: "Berlin",
       isRemote: true,
@@ -195,8 +202,8 @@ test("syncs posting sections and exact application questions into the role secti
   expect(serialized).toContain("• Architektur gestalten");
   expect(serialized).toContain("Anforderungen");
   expect(serialized).toContain("Erfahrung mit TypeScript &amp; React");
-  expect(serialized).toContain("Benefits");
-  expect(serialized).toContain("• Zugang zur YFN Community");
+  expect(serialized).not.toContain("Benefits");
+  expect(serialized).not.toContain("Alte Benefits");
   expect(serialized).toContain("Rahmenbedingungen");
   expect(serialized).toContain("Arbeitsort: Berlin · Remote möglich");
   expect(serialized).toContain("Bewerbungsfrist: 31.08.2026");
