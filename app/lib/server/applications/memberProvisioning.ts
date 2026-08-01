@@ -20,7 +20,16 @@ export async function createAcceptedApplicantMember(
     applicationId: input.application._id,
     organizationId: input.organizationId,
   });
-  if (existing) return { isCreated: false, member: existing };
+  if (existing) {
+    if (existing.teamOnboardingStatus === "not_started") {
+      await userCollection.updateOne(
+        { _id: existing._id, teamOnboardingStatus: "not_started" },
+        { $set: { teamOnboardingStatus: "in_progress" } },
+      );
+      existing.teamOnboardingStatus = "in_progress";
+    }
+    return { isCreated: false, member: existing };
+  }
 
   const now = Date.now();
   const member: User = {
@@ -45,7 +54,7 @@ export async function createAcceptedApplicantMember(
     teamId: input.teamId,
     applicationId: input.application._id,
     memberStatus: "onboarding",
-    teamOnboardingStatus: "not_started",
+    teamOnboardingStatus: "in_progress",
     publicProfileSetupRequired: true,
     registeredAt: now,
   };

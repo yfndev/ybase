@@ -15,6 +15,7 @@ export async function deliverGuardianConsentRequest(input: {
   representativeEmail: string;
   requestedAt: number;
 }): Promise<string> {
+  const templateId = requireGuardianConsentTemplateId();
   const { token, tokenHash } = createGuardianConsentToken();
   const consent: GuardianConsent = {
     representativeName: input.representativeName,
@@ -32,7 +33,7 @@ export async function deliverGuardianConsentRequest(input: {
           name: consent.representativeName,
         },
       ],
-      templateId: BREVO_TEMPLATE_IDS.MEMBERSHIP_GUARDIAN_CONSENT,
+      templateId,
       params: {
         representativeName: consent.representativeName,
         applicantName:
@@ -50,6 +51,16 @@ export async function deliverGuardianConsentRequest(input: {
     throw error;
   }
   return tokenHash;
+}
+
+function requireGuardianConsentTemplateId(): number {
+  const templateId = BREVO_TEMPLATE_IDS.MEMBERSHIP_GUARDIAN_CONSENT;
+  if (!templateId) {
+    throw new Error(
+      "Brevo-Template für die Vertretungszustimmung ist nicht konfiguriert",
+    );
+  }
+  return templateId;
 }
 
 async function reserveGuardianRequest(

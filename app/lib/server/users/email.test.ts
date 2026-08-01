@@ -4,9 +4,7 @@ vi.mock("../../email/brevo", () => ({ sendMail: vi.fn() }));
 
 import { sendMail } from "../../email/brevo";
 import {
-  notifyMemberStatusChange,
   notifyTeamOnboardingChange,
-  sendUserStateEmail,
   sendWorkspaceAccountReadyEmail,
 } from "./email";
 
@@ -22,18 +20,7 @@ beforeEach(() => {
 });
 
 describe("user-state emails", () => {
-  it("does not send before the static Brevo ID is configured", async () => {
-    await sendUserStateEmail({ user, event: "member_activated" });
-
-    expect(sendMail).not.toHaveBeenCalled();
-  });
-
   it("emits only for actual state transitions", async () => {
-    await notifyMemberStatusChange({
-      user,
-      previous: "active",
-      next: "active",
-    });
     await notifyTeamOnboardingChange({
       user,
       previous: "not_started",
@@ -43,7 +30,33 @@ describe("user-state emails", () => {
     expect(sendMail).not.toHaveBeenCalled();
   });
 
-  it("supports a dedicated Workspace account email", async () => {
+  it("sends the onboarding-required template when onboarding starts", async () => {
+    await notifyTeamOnboardingChange({
+      user,
+      previous: "not_started",
+      next: "in_progress",
+    });
+
+    expect(sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: [{ email: "alex@example.com", name: "Alex Beispiel" }],
+        templateId: 171,
+        params: expect.objectContaining({ memberName: "Alex Beispiel" }),
+      }),
+    );
+  });
+
+  it("does not send a separate team onboarding completion email", async () => {
+    await notifyTeamOnboardingChange({
+      user,
+      previous: "in_progress",
+      next: "completed",
+    });
+
+    expect(sendMail).not.toHaveBeenCalled();
+  });
+
+  it("sends Workspace credentials with the resolved Brevo template", async () => {
     await sendWorkspaceAccountReadyEmail({
       recoveryEmail: "alex@example.com",
       applicantName: "Alex Beispiel",
@@ -52,6 +65,16 @@ describe("user-state emails", () => {
       loginUrl: "https://ybase.example/login",
     });
 
-    expect(sendMail).not.toHaveBeenCalled();
+    expect(sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        templateId: 172,
+        params: expect.objectContaining({
+          memberName: "Alex Beispiel",
+          workspaceEmail: "alex@youngfounders.network",
+          temporaryPassword: "temporary-password",
+          loginUrl: "https://ybase.example/login",
+        }),
+      }),
+    );
   });
 });

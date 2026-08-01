@@ -10,7 +10,7 @@ import {
   requireActiveOrganizationDepartment,
   requireActiveOrganizationTeam,
 } from "./access";
-import { notifyMemberStatusChange, notifyTeamOnboardingChange } from "./email";
+import { notifyTeamOnboardingChange } from "./email";
 import { memberStatusPatch, teamOnboardingPatch } from "./memberLifecycle";
 
 const memberStatusSchema = z.enum([
@@ -116,11 +116,6 @@ export async function setMemberStatus(input: {
     target._id,
     `${target.name ?? target.email}: ${target.memberStatus} → ${status}`,
   );
-  await notifyMemberStatusChange({
-    user: target,
-    previous: target.memberStatus,
-    next: status,
-  });
 }
 
 export async function setTeamOnboardingStatus(input: {

@@ -1,7 +1,6 @@
 import { memberships, users } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { HandoverTask, Membership, User } from "../../db/types";
-import { notifyMemberStatusChange } from "../users/email";
 import { appendMembershipEvent } from "./events";
 
 const HANDOVER_TASKS: Array<Pick<HandoverTask, "category" | "title">> = [
@@ -88,7 +87,7 @@ export async function ensureMembershipHandover(
         );
   if (!stored?.handoverStartedAt) return false;
 
-  const statusUpdate = await (
+  await (
     await users()
   ).updateOne(
     {
@@ -103,13 +102,6 @@ export async function ensureMembershipHandover(
       },
     },
   );
-  if (statusUpdate.modifiedCount === 1) {
-    await notifyMemberStatusChange({
-      user: member,
-      previous: member.memberStatus,
-      next: "offboarding_planned",
-    });
-  }
   await appendMembershipEvent({
     organizationId: membership.organizationId,
     membershipId: membership._id,

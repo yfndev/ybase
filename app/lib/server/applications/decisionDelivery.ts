@@ -1,11 +1,13 @@
-import { appendWorkspaceAccessDetails } from "../../applications/decisionEmail";
 import type { ApplicationDecision } from "../../applications/decisionEmail";
 import type { Application } from "../../db/types";
 import { sendMail } from "../../email/brevo";
 import { BREVO_TEMPLATE_IDS } from "../../email/templates";
 import { provisionWorkspaceUser } from "../../googleWorkspace/users";
 import { YFN_ORGANIZATION } from "../../organization";
-import { sendWorkspaceAccountReadyEmail } from "../users/email";
+import {
+  requireWorkspaceAccountReadyTemplateId,
+  sendWorkspaceAccountReadyEmail,
+} from "../users/email";
 import {
   recordWorkspaceDeliveryFailure,
   recordWorkspaceProvisioned,
@@ -36,6 +38,7 @@ export async function prepareAcceptance(input: {
   workspaceUserId: string;
   workspaceAccess: WorkspaceAccessDetails;
 }> {
+  requireWorkspaceAccountReadyTemplateId();
   const loginUrl = ybaseLoginUrl();
   const reservation = await reserveWorkspaceProvisioning({
     application: input.application,
@@ -63,12 +66,7 @@ export async function prepareAcceptance(input: {
     };
     return {
       workspaceUserId: account.userId,
-      message: appendWorkspaceAccessDetails({
-        message: input.message,
-        primaryEmail: workspaceAccess.primaryEmail,
-        temporaryPassword: workspaceAccess.temporaryPassword,
-        loginUrl,
-      }),
+      message: input.message,
       workspaceAccess,
     };
   } catch (error) {
@@ -121,13 +119,18 @@ export async function sendDecisionEmail(input: {
   }
 
   if (input.decision === "accepted" && input.workspaceAccess) {
-    await sendWorkspaceAccountReadyEmail({
-      recoveryEmail: input.application.applicantEmail,
-      applicantName: input.application.applicantName,
-      workspaceEmail: input.workspaceAccess.primaryEmail,
-      temporaryPassword: input.workspaceAccess.temporaryPassword,
-      loginUrl: input.workspaceAccess.loginUrl,
-    });
+    try {
+      await sendWorkspaceAccountReadyEmail({
+        recoveryEmail: input.application.applicantEmail,
+        applicantName: input.application.applicantName,
+        workspaceEmail: input.workspaceAccess.primaryEmail,
+        temporaryPassword: input.workspaceAccess.temporaryPassword,
+        loginUrl: input.workspaceAccess.loginUrl,
+      });
+    } catch (error) {
+      await recordDeliveryFailure(input);
+      throw error;
+    }
   }
 }
 

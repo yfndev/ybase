@@ -1,13 +1,20 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
-vi.mock("../../email/brevo", () => ({ sendMail: vi.fn() }));
 vi.mock("../../googleWorkspace/users", () => ({
   provisionWorkspaceUser: vi.fn(),
 }));
+vi.mock("./email", () => ({
+  requireWorkspaceAccountReadyTemplateId: vi.fn(),
+  sendUserStateEmail: vi.fn(),
+  sendWorkspaceAccountReadyEmail: vi.fn(),
+}));
 
-import { sendMail } from "../../email/brevo";
-import { BREVO_TEMPLATE_IDS } from "../../email/templates";
 import { provisionWorkspaceUser } from "../../googleWorkspace/users";
+import {
+  requireWorkspaceAccountReadyTemplateId,
+  sendUserStateEmail,
+  sendWorkspaceAccountReadyEmail,
+} from "./email";
 import { provisionManualMemberWorkspace } from "./manualWorkspaceProvisioning";
 
 afterEach(() => vi.unstubAllEnvs());
@@ -20,10 +27,9 @@ beforeEach(() => {
     primaryEmail: "alex@youngfounders.network",
     temporaryPassword: "temporary-password",
   });
-  vi.mocked(sendMail).mockResolvedValue({
-    status: "sent",
-    messageId: "message-1",
-  });
+  vi.mocked(requireWorkspaceAccountReadyTemplateId).mockReturnValue(170);
+  vi.mocked(sendUserStateEmail).mockResolvedValue();
+  vi.mocked(sendWorkspaceAccountReadyEmail).mockResolvedValue();
 });
 
 test("creates a Workspace account and sends its credentials privately", async () => {
@@ -42,23 +48,30 @@ test("creates a Workspace account and sends its credentials privately", async ()
     givenName: "Alex",
     familyName: "Beispiel",
   });
-  expect(sendMail).toHaveBeenCalledWith(
-    expect.objectContaining({
-      to: [{ email: "alex@example.com", name: "Alex Beispiel" }],
-      templateId: BREVO_TEMPLATE_IDS.APPLICATION_ACCEPTED,
-      subject: "Deine Zugangsdaten für YFN",
-      params: expect.objectContaining({
-        message: expect.stringContaining("temporary-password"),
-      }),
-    }),
-  );
+  expect(sendWorkspaceAccountReadyEmail).toHaveBeenCalledWith({
+    recoveryEmail: "alex@example.com",
+    applicantName: "Alex Beispiel",
+    workspaceEmail: "alex@youngfounders.network",
+    temporaryPassword: "temporary-password",
+    loginUrl: "https://ybase.example/login",
+  });
+  expect(sendUserStateEmail).toHaveBeenCalledWith({
+    user: {
+      name: "Alex Beispiel",
+      email: "alex@youngfounders.network",
+      privateEmail: "alex@example.com",
+    },
+    event: "team_onboarding_started",
+  });
+  expect(
+    vi.mocked(sendWorkspaceAccountReadyEmail).mock.invocationCallOrder[0],
+  ).toBeLessThan(vi.mocked(sendUserStateEmail).mock.invocationCallOrder[0]);
 });
 
-test.each([
-  { status: "skipped", reason: "disabled" } as const,
-  { status: "skipped", reason: "recipient-not-allowed" } as const,
-])("fails onboarding when credentials are not delivered", async (delivery) => {
-  vi.mocked(sendMail).mockResolvedValueOnce(delivery);
+test("fails onboarding when Workspace credentials are not delivered", async () => {
+  vi.mocked(sendWorkspaceAccountReadyEmail).mockRejectedValueOnce(
+    new Error("Google-Workspace-Zugang konnte nicht versendet werden"),
+  );
 
   await expect(
     provisionManualMemberWorkspace({
@@ -66,7 +79,26 @@ test.each([
       primaryEmail: "alex@youngfounders.network",
       privateEmail: "alex@example.com",
     }),
-  ).rejects.toThrow("Zugangsdaten konnten nicht versendet werden");
+  ).rejects.toThrow("Google-Workspace-Zugang konnte nicht versendet werden");
+});
+
+test("does not provision before the access template is configured", async () => {
+  vi.mocked(requireWorkspaceAccountReadyTemplateId).mockImplementationOnce(
+    () => {
+      throw new Error(
+        "Brevo-Template für Google-Workspace-Zugang ist nicht konfiguriert",
+      );
+    },
+  );
+
+  await expect(
+    provisionManualMemberWorkspace({
+      name: "Alex Beispiel",
+      primaryEmail: "alex@youngfounders.network",
+      privateEmail: "alex@example.com",
+    }),
+  ).rejects.toThrow("nicht konfiguriert");
+  expect(provisionWorkspaceUser).not.toHaveBeenCalled();
 });
 
 test("validates the login URL before creating the account", async () => {
