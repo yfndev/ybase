@@ -10,6 +10,7 @@ import { YFN_ORGANIZATION } from "../../organization";
 import { addLog } from "../logs";
 import { requireActiveOrganizationTeam } from "./access";
 import { phoneSchema, privateEmailSchema } from "./contactDetails";
+import { sendUserStateEmail } from "./email";
 
 const MEMBER_EMAIL_CONFLICT_MESSAGE =
   "Für diese E-Mail-Adresse gibt es bereits ein Profil.";
@@ -91,6 +92,10 @@ export async function createMember(input: CreateMemberInput): Promise<User> {
     createdMember._id,
     `${memberInput.name} (${memberInput.email})`,
   );
+  await sendUserStateEmail({
+    user: createdMember,
+    event: "member_onboarding_started",
+  });
 
   return createdMember;
 }

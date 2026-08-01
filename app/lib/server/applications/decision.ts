@@ -45,7 +45,11 @@ export async function sendApplicationDecision(
           message: decision.message,
           yfnEmail: decision.yfnEmail,
         })
-      : { message: decision.message, workspaceUserId: undefined };
+      : {
+          message: decision.message,
+          workspaceAccess: undefined,
+          workspaceUserId: undefined,
+        };
 
   await sendDecisionEmail({
     application,
@@ -55,6 +59,7 @@ export async function sendApplicationDecision(
     organizationId: user.organizationId,
     subject: decision.subject,
     workspaceUserId: prepared.workspaceUserId,
+    workspaceAccess: prepared.workspaceAccess,
   });
 
   let acceptedMember:

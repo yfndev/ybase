@@ -7,6 +7,7 @@ import { newId } from "../../db/ids";
 import type { MemberInfraction, User } from "../../db/types";
 import { addLog } from "../logs";
 import { loadManagedMember } from "./access";
+import { notifyMemberStatusChange } from "./email";
 
 const MAX_INFRACTIONS = 2;
 const ELIGIBLE_STATUSES = ["active", "offboarding_planned"] as const;
@@ -87,6 +88,11 @@ export async function recordMemberInfraction(input: RecordInfractionInput) {
         `${target.name ?? target.email}: Verstoß ${infractionCount}/${MAX_INFRACTIONS}`,
       );
       if (memberExcluded) {
+        await notifyMemberStatusChange({
+          user: target,
+          previous: target.memberStatus,
+          next: "excluded",
+        });
         await addLog(
           currentUser.organizationId,
           currentUser._id,
