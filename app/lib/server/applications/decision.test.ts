@@ -107,6 +107,7 @@ test("sends the edited acceptance email before changing the status", async () =>
 
   expect(sendMail).toHaveBeenCalledWith(
     expect.objectContaining({
+      to: [{ email: "alex@example.com", name: "Alex Beispiel" }],
       subject: "Individuelle Zusage",
       params: expect.objectContaining({
         message: expect.stringContaining("temporary-password"),
@@ -182,6 +183,44 @@ test("blocks acceptance before external side effects without a member-platform s
   ).rejects.toThrow("Member-Plattform-Profil");
   expect(provisionWorkspaceUser).not.toHaveBeenCalled();
   expect(sendMail).not.toHaveBeenCalled();
+});
+
+test("does not send credentials when the onboarding profile cannot be linked", async () => {
+  await (
+    await users()
+  ).createIndex({ memberPlatformUserId: 1 }, { unique: true, sparse: true });
+  await (
+    await users()
+  ).insertOne({
+    _id: newId(),
+    _creationTime: Date.now(),
+    name: "Existing Profile",
+    email: "existing@youngfounders.network",
+    privateEmail: "existing@example.com",
+    memberPlatformUserId: "platform-alex",
+    organizationId,
+    role: "member",
+    memberStatus: "onboarding",
+    teamOnboardingStatus: "not_started",
+  });
+
+  await expect(
+    sendApplicationDecision({
+      applicationId,
+      decision: "accepted",
+      yfnEmail,
+      subject: "Zusage",
+      message: "Willkommen!",
+    }),
+  ).rejects.toThrow("nicht eindeutig");
+
+  expect(sendMail).not.toHaveBeenCalled();
+  expect(
+    await (await applications()).findOne({ _id: applicationId }),
+  ).toMatchObject({
+    status: "review",
+    workspaceProvisioningStatus: "provisioned",
+  });
 });
 
 test("sends a rejection with its dedicated template and then rejects", async () => {
