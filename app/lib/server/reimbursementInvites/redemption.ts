@@ -7,6 +7,7 @@ import {
 } from "../../members/status";
 import { YFN_ORGANIZATION } from "../../organization";
 import { addLog } from "../logs";
+import { notifyMemberStatusChange } from "../users/email";
 import {
   hashReimbursementInviteToken,
   isReimbursementInviteToken,
@@ -71,4 +72,9 @@ export async function redeemReimbursementInvite(token: string): Promise<void> {
     invite._id,
     email,
   );
+  await notifyMemberStatusChange({
+    user,
+    previous: user.memberStatus,
+    next: "active",
+  });
 }

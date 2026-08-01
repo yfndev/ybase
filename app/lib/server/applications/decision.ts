@@ -45,7 +45,11 @@ export async function sendApplicationDecision(
           message: decision.message,
           yfnEmail: decision.yfnEmail,
         })
-      : { message: decision.message, workspaceUserId: undefined };
+      : {
+          message: decision.message,
+          workspaceAccess: undefined,
+          workspaceUserId: undefined,
+        };
 
   let acceptedMember:
     | Awaited<ReturnType<typeof createAcceptedApplicantMember>>
@@ -73,6 +77,7 @@ export async function sendApplicationDecision(
       organizationId: user.organizationId,
       subject: decision.subject,
       workspaceUserId: prepared.workspaceUserId,
+      workspaceAccess: prepared.workspaceAccess,
     });
     statusDetails = await persistDecision({
       application,

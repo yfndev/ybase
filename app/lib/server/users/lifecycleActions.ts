@@ -10,6 +10,7 @@ import {
   requireActiveOrganizationDepartment,
   requireActiveOrganizationTeam,
 } from "./access";
+import { notifyMemberStatusChange, notifyTeamOnboardingChange } from "./email";
 import { memberStatusPatch, teamOnboardingPatch } from "./memberLifecycle";
 
 const memberStatusSchema = z.enum([
@@ -96,9 +97,18 @@ export async function setMemberStatus(input: {
       throw new Error("Ein Lead benötigt ein zugeordnetes weiteres Team.");
     }
   }
+  if (target.memberStatus === status) return;
 
   const patch = memberStatusPatch(target.memberStatus, status, Date.now());
-  await (await users()).updateOne({ _id: target._id }, { $set: patch });
+  const result = await (
+    await users()
+  ).updateOne(
+    { _id: target._id, memberStatus: target.memberStatus },
+    { $set: patch },
+  );
+  if (result.modifiedCount !== 1) {
+    throw new Error("Das Mitglied wurde zwischenzeitlich geändert.");
+  }
   await addLog(
     currentUser.organizationId,
     currentUser._id,
@@ -106,6 +116,11 @@ export async function setMemberStatus(input: {
     target._id,
     `${target.name ?? target.email}: ${target.memberStatus} → ${status}`,
   );
+  await notifyMemberStatusChange({
+    user: target,
+    previous: target.memberStatus,
+    next: status,
+  });
 }
 
 export async function setTeamOnboardingStatus(input: {
@@ -121,13 +136,22 @@ export async function setTeamOnboardingStatus(input: {
       "Das Onboarding eines freigegebenen Teammitglieds kann nicht erneut geöffnet werden.",
     );
   }
+  if (target.teamOnboardingStatus === status) return;
 
   const patch = teamOnboardingPatch(
     target.teamOnboardingStatus,
     status,
     Date.now(),
   );
-  await (await users()).updateOne({ _id: target._id }, { $set: patch });
+  const result = await (
+    await users()
+  ).updateOne(
+    { _id: target._id, teamOnboardingStatus: target.teamOnboardingStatus },
+    { $set: patch },
+  );
+  if (result.modifiedCount !== 1) {
+    throw new Error("Das Mitglied wurde zwischenzeitlich geändert.");
+  }
   await addLog(
     currentUser.organizationId,
     currentUser._id,
@@ -135,4 +159,9 @@ export async function setTeamOnboardingStatus(input: {
     target._id,
     `${target.name ?? target.email}: ${target.teamOnboardingStatus} → ${status}`,
   );
+  await notifyTeamOnboardingChange({
+    user: target,
+    previous: target.teamOnboardingStatus,
+    next: status,
+  });
 }

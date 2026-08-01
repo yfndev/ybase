@@ -5,6 +5,7 @@ import { sendMail } from "../../email/brevo";
 import { BREVO_TEMPLATE_IDS } from "../../email/templates";
 import { provisionWorkspaceUser } from "../../googleWorkspace/users";
 import { YFN_ORGANIZATION } from "../../organization";
+import { sendWorkspaceAccountReadyEmail } from "../users/email";
 import {
   recordWorkspaceDeliveryFailure,
   recordWorkspaceProvisioned,
@@ -19,12 +20,22 @@ const templateIds = {
   rejected: BREVO_TEMPLATE_IDS.APPLICATION_REJECTED,
 };
 
+export type WorkspaceAccessDetails = {
+  primaryEmail: string;
+  temporaryPassword: string;
+  loginUrl: string;
+};
+
 export async function prepareAcceptance(input: {
   application: Application;
   organizationId: string;
   message: string;
   yfnEmail: string;
-}): Promise<{ message: string; workspaceUserId: string }> {
+}): Promise<{
+  message: string;
+  workspaceUserId: string;
+  workspaceAccess: WorkspaceAccessDetails;
+}> {
   const loginUrl = ybaseLoginUrl();
   const reservation = await reserveWorkspaceProvisioning({
     application: input.application,
@@ -45,14 +56,20 @@ export async function prepareAcceptance(input: {
       organizationId: input.organizationId,
       workspaceUserId: account.userId,
     });
+    const workspaceAccess: WorkspaceAccessDetails = {
+      primaryEmail: account.primaryEmail,
+      temporaryPassword: account.temporaryPassword,
+      loginUrl,
+    };
     return {
       workspaceUserId: account.userId,
       message: appendWorkspaceAccessDetails({
         message: input.message,
-        primaryEmail: account.primaryEmail,
-        temporaryPassword: account.temporaryPassword,
+        primaryEmail: workspaceAccess.primaryEmail,
+        temporaryPassword: workspaceAccess.temporaryPassword,
         loginUrl,
       }),
+      workspaceAccess,
     };
   } catch (error) {
     await recordWorkspaceProvisioningFailure({
@@ -72,6 +89,7 @@ export async function sendDecisionEmail(input: {
   organizationId: string;
   subject: string;
   workspaceUserId?: string;
+  workspaceAccess?: WorkspaceAccessDetails;
 }): Promise<void> {
   let delivery: Awaited<ReturnType<typeof sendMail>>;
   try {
@@ -100,6 +118,16 @@ export async function sendDecisionEmail(input: {
   if (delivery.status !== "sent") {
     await recordDeliveryFailure(input);
     throw new Error("E-Mail konnte nicht versendet werden");
+  }
+
+  if (input.decision === "accepted" && input.workspaceAccess) {
+    await sendWorkspaceAccountReadyEmail({
+      recoveryEmail: input.application.applicantEmail,
+      applicantName: input.application.applicantName,
+      workspaceEmail: input.workspaceAccess.primaryEmail,
+      temporaryPassword: input.workspaceAccess.temporaryPassword,
+      loginUrl: input.workspaceAccess.loginUrl,
+    });
   }
 }
 

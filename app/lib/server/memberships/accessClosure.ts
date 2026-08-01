@@ -3,6 +3,7 @@ import { memberships, users } from "../../db/collections";
 import type { Membership, User } from "../../db/types";
 import { suspendWorkspaceUser } from "../../googleWorkspace/membershipLifecycle";
 import { terminalMemberStatus } from "../../members/termination";
+import { notifyMemberStatusChange } from "../users/email";
 
 export async function syncEndedMembershipAccess(
   membership: Membership,
@@ -41,6 +42,11 @@ export async function syncEndedMembershipAccess(
     await users()
   ).updateOne({ _id: user._id, membershipId: membership._id }, update);
   if (projected.matchedCount !== 1) return;
+  await notifyMemberStatusChange({
+    user,
+    previous: user.memberStatus,
+    next: status,
+  });
   await (
     await memberships()
   ).updateOne(
