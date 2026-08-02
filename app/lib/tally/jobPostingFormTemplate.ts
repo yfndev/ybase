@@ -1,9 +1,11 @@
 import { DEFAULT_APPLICATION_QUESTIONS } from "../jobPostings/applicationQuestions";
-import {
-  jobPostingSections,
-  type JobPostingTallyContent,
-} from "./jobPostingFormSections";
+import type { JobPosting } from "../db/types";
 import type { TallyBlock } from "./types";
+
+type JobPostingTallyContent = Pick<
+  JobPosting,
+  "title" | "applicationQuestions"
+>;
 
 export function jobPostingFormTitle(jobTitle: string): string {
   return `Baue das Young Founders Network mit auf: Bewerbung als ${jobTitle.trim()}`;
@@ -54,7 +56,7 @@ function reusableBlockPool(blocks: TallyBlock[]): Map<string, TallyBlock[]> {
 
 function contentBlock(
   pool: Map<string, TallyBlock[]>,
-  type: "HEADING_3" | "TEXT" | "LABEL",
+  type: "HEADING_3" | "LABEL",
   text: string,
 ): TallyBlock {
   const existing = pool.get(type)?.shift();
@@ -89,8 +91,7 @@ export function withJobPostingContent(
   blocks: TallyBlock[],
   posting: JobPostingTallyContent,
 ): TallyBlock[] {
-  const cleanJobTitle = posting.title.trim();
-  const titled = withFormTitle(blocks, jobPostingFormTitle(cleanJobTitle));
+  const titled = withFormTitle(blocks, jobPostingFormTitle(posting.title));
   const roleHeadingIndex = titled.findIndex(
     (block) =>
       block.type === "HEADING_2" &&
@@ -107,26 +108,10 @@ export function withJobPostingContent(
     nextSectionOffset === -1
       ? titled.length
       : roleHeadingIndex + 1 + nextSectionOffset;
-  const roleHeading = titled[roleHeadingIndex];
   const pool = reusableBlockPool(
     titled.slice(roleHeadingIndex + 1, roleSectionEnd),
   );
-  const generated: TallyBlock[] = [
-    {
-      ...roleHeading,
-      payload: {
-        ...roleHeading.payload,
-        safeHTMLSchema: [[`Deine Stelle: ${cleanJobTitle}`]],
-      },
-    },
-  ];
-
-  for (const section of jobPostingSections(posting)) {
-    generated.push(
-      contentBlock(pool, "HEADING_3", section.heading),
-      contentBlock(pool, "TEXT", section.text),
-    );
-  }
+  const generated: TallyBlock[] = [];
 
   const questions = (
     posting.applicationQuestions ?? [...DEFAULT_APPLICATION_QUESTIONS]
