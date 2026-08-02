@@ -1,6 +1,7 @@
 import type { JobPosting, JobPostingUrgency } from "@/lib/db/types";
 import { jobPostingApplicationQuestions } from "./applicationQuestions";
 import { DEFAULT_JOB_POSTING_BENEFITS } from "./benefits";
+import type { JobPostingTimeCommitment } from "./timeCommitment";
 import { jobPostingUrgency } from "./urgency";
 
 export interface JobPostingFormValues {
@@ -12,7 +13,7 @@ export interface JobPostingFormValues {
   tasks: string;
   requirements: string;
   benefits: string;
-  timeCommitment: string;
+  timeCommitment: JobPostingTimeCommitment | "";
   location: string;
   isRemote: boolean;
   deadline: string;

@@ -1,3 +1,5 @@
+import type { JobPostingTimeCommitment } from "../jobPostings/timeCommitment";
+
 export type JobPostingStatus = "draft" | "published" | "closed" | "archived";
 export type JobPostingUrgency = "normal" | "urgent";
 
@@ -14,7 +16,7 @@ export interface JobPosting {
   tasks?: string;
   requirements?: string;
   benefits?: string;
-  timeCommitment?: string;
+  timeCommitment?: JobPostingTimeCommitment | "";
   location?: string;
   isRemote?: boolean;
   deadline?: string;
