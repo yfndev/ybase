@@ -83,14 +83,7 @@ export function ApplicationAdmissionRequirements({
 
   return (
     <section className="space-y-4 border-t pt-5">
-      <div className="space-y-1">
-        <h3 className="text-xl font-semibold">Member-Profil</h3>
-        {!hasProfile ? (
-          <p className="text-sm text-muted-foreground">
-            Für die Zusage erforderlich
-          </p>
-        ) : null}
-      </div>
+      <h3 className="text-xl font-semibold">Member-Profil *</h3>
       <ApplicationAdmissionProfile
         canSync={isEditable}
         candidates={searchMemberPlatformProfiles.data ?? null}

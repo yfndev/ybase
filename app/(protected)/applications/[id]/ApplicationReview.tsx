@@ -42,6 +42,8 @@ export function ApplicationReview({
   const displayName = withdrawn
     ? "Anonymisierte Bewerbung"
     : application.applicantName || "Bewerbung";
+  const isProfileRequired =
+    !application.memberPlatformUserId || !application.dateOfBirth;
   const revisionKey = `${application._id}-${application.updatedAt ?? 0}-${application.status}`;
 
   return (
@@ -68,6 +70,7 @@ export function ApplicationReview({
             jobPostingTitle={application.jobPostingTitle}
             organizationDomain={organizationDomain}
             yfnEmail={application.yfnEmail}
+            isProfileRequired={isProfileRequired}
             acceptanceBlockedReason={getApplicationAdmissionIssue(
               application,
               Date.now(),
@@ -78,6 +81,12 @@ export function ApplicationReview({
         <div className="hidden min-[1280px]:block">
           <ApplicationDetails application={application} />
         </div>
+        <div>
+          <ApplicationHistory
+            application={application}
+            ownersById={ownersById}
+          />
+        </div>
         {!withdrawn ? (
           <div>
             <ApplicationAdmissionRequirements
@@ -86,12 +95,6 @@ export function ApplicationReview({
             />
           </div>
         ) : null}
-        <div>
-          <ApplicationHistory
-            application={application}
-            ownersById={ownersById}
-          />
-        </div>
       </ApplicationReviewSidebar>
     </div>
   );

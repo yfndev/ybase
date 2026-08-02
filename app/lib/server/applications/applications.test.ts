@@ -260,6 +260,17 @@ test("rejects an owner from another organization", async () => {
 });
 
 test("enforces allowed non-decision transitions and records them", async () => {
+  await (
+    await applications()
+  ).updateOne(
+    { _id: applicationId },
+    {
+      $set: {
+        memberPlatformUserId: "platform-alex",
+        dateOfBirth: "2004-01-01",
+      },
+    },
+  );
   await setApplicationStatus({ applicationId, status: "interview" });
 
   const stored = await (await applications()).findOne({ _id: applicationId });
@@ -272,6 +283,15 @@ test("enforces allowed non-decision transitions and records them", async () => {
   await expect(
     setApplicationStatus({ applicationId, status: "review" }),
   ).rejects.toThrow("nicht zulässig");
+});
+
+test("requires a member-platform profile before an interview", async () => {
+  await expect(
+    setApplicationStatus({ applicationId, status: "interview" }),
+  ).rejects.toThrow("Member-Plattform-Profil");
+  expect(
+    await (await applications()).findOne({ _id: applicationId }),
+  ).toMatchObject({ status: "received" });
 });
 
 test("requires acceptance and rejection to use the email action", async () => {
