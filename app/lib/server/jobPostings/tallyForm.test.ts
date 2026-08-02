@@ -250,7 +250,7 @@ test("keeps posting details out of Tally and syncs exact role questions", async 
     tasks: "<ul><li>Architektur gestalten</li></ul>",
     requirements: "<p>Erfahrung mit TypeScript</p>",
     benefits: "<ul><li>Zugang zur YFN Community</li></ul>",
-    timeCommitment: "5 Stunden pro Woche",
+    timeCommitment: "Zwischen 4 und 8 Stunden",
     location: "Remote",
     deadline: "2026-08-31",
     applicationQuestions: ["Welche Architektur hast du zuletzt gestaltet?"],
@@ -271,7 +271,7 @@ test("keeps posting details out of Tally and syncs exact role questions", async 
   expect(serialized).not.toContain("Erfahrung mit TypeScript");
   expect(serialized).not.toContain("Benefits");
   expect(serialized).not.toContain("Zugang zur YFN Community");
-  expect(serialized).not.toContain("5 Stunden pro Woche");
+  expect(serialized).not.toContain("Zwischen 4 und 8 Stunden");
   expect(serialized).not.toContain("2026-08-31");
   expect(serialized).toContain("Fragen zur Rolle");
   expect(serialized).toContain("Welche Architektur hast du zuletzt gestaltet?");

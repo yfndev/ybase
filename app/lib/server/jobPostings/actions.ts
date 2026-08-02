@@ -7,6 +7,7 @@ import { jobPostings, teams, users } from "../../db/collections";
 import type { JobPostingUrgency } from "../../db/types";
 import { newId } from "../../db/ids";
 import { DEFAULT_JOB_POSTING_BENEFITS } from "../../jobPostings/benefits";
+import { JOB_POSTING_TIME_COMMITMENTS } from "../../jobPostings/timeCommitment";
 import { UNAVAILABLE_MEMBER_STATUSES } from "../../members/status";
 import { addLog } from "../logs";
 import { requireOwnedJobPosting } from "./access";
@@ -28,7 +29,10 @@ const contentSchema = z.object({
   tasks: optionalText,
   requirements: optionalText,
   benefits: optionalText,
-  timeCommitment: optionalText,
+  timeCommitment: z
+    .enum(JOB_POSTING_TIME_COMMITMENTS)
+    .or(z.literal(""))
+    .optional(),
   location: optionalText,
   isRemote: z.boolean().optional(),
   deadline: optionalText,

@@ -1,6 +1,7 @@
 "use client";
 
 import { SelectJobPostingUrgency } from "@/components/Selectors/SelectJobPostingUrgency";
+import { SelectJobPostingTimeCommitment } from "@/components/Selectors/SelectJobPostingTimeCommitment";
 import { SelectMembers } from "@/components/Selectors/SelectMembers";
 import { SelectTeam } from "@/components/Selectors/SelectTeam";
 import { Input } from "@/components/ui/input";
@@ -69,12 +70,11 @@ export function JobPostingBasicFields({ values, onChange }: Props) {
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="jp-time">Zeitaufwand</Label>
-          <Input
+          <Label htmlFor="jp-time">Zeitaufwand pro Woche</Label>
+          <SelectJobPostingTimeCommitment
             id="jp-time"
             value={values.timeCommitment}
-            onChange={(e) => onChange({ timeCommitment: e.target.value })}
-            placeholder="z. B. 5 h/Woche"
+            onValueChange={(timeCommitment) => onChange({ timeCommitment })}
           />
         </div>
         <div className="flex flex-col gap-2">

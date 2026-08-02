@@ -273,6 +273,34 @@ test("updateJobPosting changes the urgency", async () => {
   expect((await getJobPostingById(id)).urgency).toBe("urgent");
 });
 
+test("updateJobPosting only accepts canonical time commitments", async () => {
+  const id = await createJobPostingDraft({
+    title: "T",
+    teamId: teamA,
+    tallyTemplateFormId: "template-1",
+  });
+
+  await expect(
+    updateJobPosting({
+      jobPostingId: id,
+      title: "T",
+      teamId: teamA,
+      // @ts-expect-error Exercise validation for untyped server-action callers.
+      timeCommitment: "5 Stunden pro Woche",
+    }),
+  ).rejects.toThrow();
+
+  await updateJobPosting({
+    jobPostingId: id,
+    title: "T",
+    teamId: teamA,
+    timeCommitment: "Zwischen 4 und 8 Stunden",
+  });
+  expect((await getJobPostingById(id)).timeCommitment).toBe(
+    "Zwischen 4 und 8 Stunden",
+  );
+});
+
 test("stores the exact application questions and forwards them to Tally", async () => {
   const id = await createJobPostingDraft({
     title: "T",
