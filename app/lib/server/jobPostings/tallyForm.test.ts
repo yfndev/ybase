@@ -11,6 +11,7 @@ import { requirePermission } from "../../auth/session";
 import { jobPostings, logs } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { JobPosting } from "../../db/types";
+import { berlinToday } from "../../jobPostings/deadline";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { createConfiguredTallyClient } from "../tally/client";
@@ -335,10 +336,11 @@ test("publishing syncs the title and preserves other manual Tally changes", asyn
   });
 });
 
-test("returns errors for incomplete or expired drafts before calling Tally", async () => {
+test("returns errors for incomplete or non-future drafts before calling Tally", async () => {
   const client = useClient(fakeClient());
   const incomplete = await insertDraft(orgA, { title: "" });
   const expired = await insertDraft(orgA, { deadline: "2000-01-01" });
+  const dueToday = await insertDraft(orgA, { deadline: berlinToday() });
 
   await expect(
     generateTallyForm({ jobPostingId: incomplete }),
@@ -348,7 +350,11 @@ test("returns errors for incomplete or expired drafts before calling Tally", asy
   });
   await expect(generateTallyForm({ jobPostingId: expired })).resolves.toEqual({
     ok: false,
-    error: "Die Frist liegt in der Vergangenheit",
+    error: "Die Frist muss in der Zukunft liegen",
+  });
+  await expect(generateTallyForm({ jobPostingId: dueToday })).resolves.toEqual({
+    ok: false,
+    error: "Die Frist muss in der Zukunft liegen",
   });
   expect(client.getForm).not.toHaveBeenCalled();
 });

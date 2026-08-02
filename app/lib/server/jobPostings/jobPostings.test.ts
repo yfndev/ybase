@@ -19,6 +19,7 @@ import { departments, jobPostings, teams, users } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { User } from "../../db/types";
 import { DEFAULT_JOB_POSTING_BENEFITS } from "../../jobPostings/benefits";
+import { berlinToday } from "../../jobPostings/deadline";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { createJobPostingDraft, updateJobPosting } from "./actions";
@@ -254,6 +255,57 @@ test("updateJobPosting can edit content while published", async () => {
     }),
     expect.objectContaining({ _id: userA, organizationId: orgA }),
   );
+});
+
+test("updateJobPosting only accepts empty or future deadlines", async () => {
+  const id = await createJobPostingDraft({
+    title: "T",
+    teamId: teamA,
+    tallyTemplateFormId: "template-1",
+  });
+
+  await expect(
+    updateJobPosting({
+      jobPostingId: id,
+      title: "T",
+      teamId: teamA,
+      deadline: berlinToday(),
+    }),
+  ).rejects.toThrow("Die Frist muss in der Zukunft liegen");
+
+  await expect(
+    updateJobPosting({
+      jobPostingId: id,
+      title: "T",
+      teamId: teamA,
+      deadline: "2000-01-01",
+    }),
+  ).rejects.toThrow("Die Frist muss in der Zukunft liegen");
+
+  await expect(
+    updateJobPosting({
+      jobPostingId: id,
+      title: "T",
+      teamId: teamA,
+      deadline: "keine-frist",
+    }),
+  ).rejects.toThrow("Die Frist muss in der Zukunft liegen");
+
+  await updateJobPosting({
+    jobPostingId: id,
+    title: "T",
+    teamId: teamA,
+    deadline: "2999-12-31",
+  });
+  expect((await getJobPostingById(id)).deadline).toBe("2999-12-31");
+
+  await updateJobPosting({
+    jobPostingId: id,
+    title: "T",
+    teamId: teamA,
+    deadline: "",
+  });
+  expect((await getJobPostingById(id)).deadline).toBe("");
 });
 
 test("updateJobPosting changes the urgency", async () => {

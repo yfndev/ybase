@@ -5,7 +5,7 @@ import { USER_PERMISSIONS } from "../../auth/roles";
 import { requirePermission } from "../../auth/session";
 import { jobPostings } from "../../db/collections";
 import type { JobPosting } from "../../db/types";
-import { berlinToday, isDeadlinePassed } from "../../jobPostings/deadline";
+import { isDeadlineInFuture } from "../../jobPostings/deadline";
 import { addLog } from "../logs";
 import { createConfiguredTallyClient } from "../tally/client";
 import {
@@ -23,8 +23,8 @@ function assertPublishable(posting: JobPosting): void {
       "Titel und Team sind vor der Veröffentlichung erforderlich",
     );
   }
-  if (isDeadlinePassed(posting.deadline, berlinToday())) {
-    throw new Error("Die Frist liegt in der Vergangenheit");
+  if (!isDeadlineInFuture(posting.deadline)) {
+    throw new Error("Die Frist muss in der Zukunft liegen");
   }
 }
 
