@@ -18,8 +18,11 @@ export function ApplicationAdmissionRequirements({
 }: {
   application: ApplicationWithFiles;
 }) {
-  const { syncMemberPlatformProfile, requestGuardianConsent } =
-    useApplicationMutations();
+  const {
+    searchMemberPlatformProfiles,
+    selectMemberPlatformProfile,
+    requestGuardianConsent,
+  } = useApplicationMutations();
   const [representativeName, setRepresentativeName] = useState(
     application.guardianConsent?.representativeName ?? "",
   );
@@ -33,22 +36,31 @@ export function ApplicationAdmissionRequirements({
   const isEligible = age !== null && age >= 16 && age < 25;
   const consent = application.guardianConsent;
   const pending =
-    syncMemberPlatformProfile.isPending || requestGuardianConsent.isPending;
+    searchMemberPlatformProfiles.isPending ||
+    selectMemberPlatformProfile.isPending ||
+    requestGuardianConsent.isPending;
   const isEditable = EDITABLE_STATUSES.has(application.status);
   if (application.status === "rejected") return null;
 
-  async function syncProfile() {
+  async function searchProfiles() {
     try {
-      await syncMemberPlatformProfile.mutateAsync({
+      await searchMemberPlatformProfiles.mutateAsync({
         applicationId: application._id,
       });
-      toast.success("Member-Plattform-Profil synchronisiert");
-    } catch (error) {
-      toast(
-        error instanceof Error
-          ? error.message
-          : "Member-Plattform-Profil konnte nicht gefunden werden",
-      );
+    } catch {
+      toast.error("Member-Profile konnten nicht geladen werden.");
+    }
+  }
+
+  async function selectProfile(profileId: string) {
+    try {
+      await selectMemberPlatformProfile.mutateAsync({
+        applicationId: application._id,
+        profileId,
+      });
+      toast.success("Member-Profil zugeordnet");
+    } catch {
+      toast.error("Member-Profil konnte nicht zugeordnet werden.");
     }
   }
 
@@ -74,13 +86,20 @@ export function ApplicationAdmissionRequirements({
       <h3 className="text-xl font-semibold">Aufnahmevoraussetzungen</h3>
       <ApplicationAdmissionProfile
         canSync={isEditable}
+        candidates={searchMemberPlatformProfiles.data ?? null}
         dateOfBirth={dateOfBirth}
         hasProfile={hasProfile}
         isEligible={isEligible}
         isPending={pending}
         isSigned={Boolean(consent?.signedAt)}
-        isSyncing={syncMemberPlatformProfile.isPending}
-        onSync={syncProfile}
+        isSearching={searchMemberPlatformProfiles.isPending}
+        selectingProfileId={
+          selectMemberPlatformProfile.isPending
+            ? selectMemberPlatformProfile.variables?.profileId
+            : undefined
+        }
+        onSearch={searchProfiles}
+        onSelect={selectProfile}
       />
       {hasProfile && isEligible && isMinor ? (
         <div className="space-y-4 rounded-lg border p-4">

@@ -8,6 +8,11 @@ import { addLog } from "../logs";
 import { loadOwnedApplication } from "./access";
 import { deliverGuardianConsentRequest } from "./guardianConsentDelivery";
 import { createApplicationHistoryEntry } from "./history";
+import {
+  loadApplicationMemberPlatformSnapshot,
+  searchApplicationMemberPlatformCandidates,
+  type ApplicationMemberPlatformCandidate,
+} from "./memberPlatformCandidates";
 import { findApplicationMemberPlatformProfile } from "./memberPlatformAdmission";
 
 const OPEN_STATUSES = ["received", "review", "interview"] as const;
@@ -33,6 +38,52 @@ export async function syncApplicationMemberPlatformProfile(input: {
       "Die Member-Plattform-Daten sind durch die Zustimmung bereits bestätigt.",
     );
   }
+  await storeMemberPlatformSnapshot(application, user._id, snapshot);
+}
+
+export async function searchApplicationMemberPlatformProfiles(input: {
+  applicationId: string;
+}): Promise<ApplicationMemberPlatformCandidate[]> {
+  const parsed = z.object({ applicationId: z.string().min(1) }).parse(input);
+  const { application } = await loadOwnedApplication(parsed.applicationId);
+  assertRequirementsEditable(application);
+  return searchApplicationMemberPlatformCandidates({
+    applicantName: application.applicantName,
+    privateEmail: application.applicantEmailNormalized,
+  });
+}
+
+export async function selectApplicationMemberPlatformProfile(input: {
+  applicationId: string;
+  profileId: string;
+}): Promise<void> {
+  const parsed = z
+    .object({
+      applicationId: z.string().min(1),
+      profileId: z.string().trim().min(1).max(120),
+    })
+    .parse(input);
+  const { user, application } = await loadOwnedApplication(
+    parsed.applicationId,
+  );
+  assertRequirementsEditable(application);
+  if (application.guardianConsent?.signedAt) {
+    throw new Error("Aufnahmedaten sind bereits bestätigt.");
+  }
+  const candidates = await searchApplicationMemberPlatformCandidates({
+    applicantName: application.applicantName,
+    privateEmail: application.applicantEmailNormalized,
+  });
+  if (!candidates.some(({ id }) => id === parsed.profileId)) {
+    throw new Error("Member-Profil gehört nicht zu den Suchergebnissen.");
+  }
+  const snapshot = await loadApplicationMemberPlatformSnapshot(
+    parsed.profileId,
+  );
+  const unchanged =
+    application.memberPlatformUserId === snapshot.memberPlatformUserId &&
+    application.dateOfBirth === snapshot.dateOfBirth;
+  if (unchanged) return;
   await storeMemberPlatformSnapshot(application, user._id, snapshot);
 }
 

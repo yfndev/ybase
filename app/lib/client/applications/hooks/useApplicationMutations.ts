@@ -1,9 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { submitApplicationDecision } from "@/lib/server/applications/decisionAction";
+import { requestGuardianConsent } from "@/lib/server/applications/admissionRequirements";
 import {
-  requestGuardianConsent,
-  syncApplicationMemberPlatformProfile,
-} from "@/lib/server/applications/admissionRequirements";
+  searchApplicationMemberPlatformProfilesAction,
+  selectApplicationMemberPlatformProfileAction,
+} from "@/lib/server/applications/admissionRequirementsAction";
 import { setApplicationStatus } from "@/lib/server/applications/status";
 
 export function useApplicationMutations() {
@@ -30,8 +31,30 @@ export function useApplicationMutations() {
         }
       },
     }),
-    syncMemberPlatformProfile: useMutation({
-      mutationFn: syncApplicationMemberPlatformProfile,
+    searchMemberPlatformProfiles: useMutation({
+      mutationFn: async (
+        input: Parameters<
+          typeof searchApplicationMemberPlatformProfilesAction
+        >[0],
+      ) => {
+        const result =
+          await searchApplicationMemberPlatformProfilesAction(input);
+        if (!result.ok)
+          throw new Error("Member-Profile konnten nicht geladen werden.");
+        return result.candidates;
+      },
+    }),
+    selectMemberPlatformProfile: useMutation({
+      mutationFn: async (
+        input: Parameters<
+          typeof selectApplicationMemberPlatformProfileAction
+        >[0],
+      ) => {
+        const result =
+          await selectApplicationMemberPlatformProfileAction(input);
+        if (!result.ok)
+          throw new Error("Member-Profil konnte nicht zugeordnet werden.");
+      },
       onSuccess: invalidate,
     }),
     requestGuardianConsent: useMutation({
