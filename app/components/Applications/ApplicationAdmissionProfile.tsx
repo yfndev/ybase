@@ -1,40 +1,46 @@
-import { RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { ApplicationMemberPlatformCandidate } from "@/lib/server/applications/memberPlatformCandidates";
 import { formatFieldValue } from "./applicationPresentation";
+
+interface ApplicationAdmissionProfileProps {
+  dateOfBirth?: string;
+  hasProfile: boolean;
+  isEligible: boolean;
+  canSync: boolean;
+  candidates: ApplicationMemberPlatformCandidate[] | null;
+  isPending: boolean;
+  isSigned: boolean;
+  isSearching: boolean;
+  selectingProfileId?: string;
+  onSearch: () => void;
+  onSelect: (profileId: string) => void;
+}
 
 export function ApplicationAdmissionProfile({
   dateOfBirth,
   hasProfile,
   isEligible,
   canSync,
+  candidates,
   isPending,
   isSigned,
-  isSyncing,
-  onSync,
-}: {
-  dateOfBirth?: string;
-  hasProfile: boolean;
-  isEligible: boolean;
-  canSync: boolean;
-  isPending: boolean;
-  isSigned: boolean;
-  isSyncing: boolean;
-  onSync: () => void;
-}) {
+  isSearching,
+  selectingProfileId,
+  onSearch,
+  onSelect,
+}: ApplicationAdmissionProfileProps) {
   if (!hasProfile || !dateOfBirth) {
     return (
       <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
-        <p className="text-sm text-muted-foreground">
-          Noch kein Member-Plattform-Profil zugeordnet. Die Suche verwendet
-          zuerst den Namen aus der Bewerbung und die private E-Mail nur zur
-          Eingrenzung.
-        </p>
         {canSync ? (
-          <SyncButton
+          <ProfileSearch
+            candidates={candidates}
             isPending={isPending}
-            isSyncing={isSyncing}
-            label="Profil erneut suchen"
-            onSync={onSync}
+            isSearching={isSearching}
+            selectingProfileId={selectingProfileId}
+            onSearch={onSearch}
+            onSelect={onSelect}
           />
         ) : null}
       </div>
@@ -46,9 +52,6 @@ export function ApplicationAdmissionProfile({
       <div className="space-y-1">
         <p className="text-sm font-medium">Geburtsdatum</p>
         <p>{formatFieldValue(dateOfBirth, "INPUT_DATE")}</p>
-        <p className="text-xs text-muted-foreground">
-          Aus dem eindeutig zugeordneten Member-Plattform-Profil übernommen.
-        </p>
       </div>
       {isEligible ? (
         <p className="text-sm text-green-700">
@@ -61,42 +64,98 @@ export function ApplicationAdmissionProfile({
         </p>
       )}
       {canSync && !isSigned ? (
-        <SyncButton
-          compact
+        <ProfileSearch
+          candidates={candidates}
           isPending={isPending}
-          isSyncing={isSyncing}
-          label="Daten erneut laden"
-          onSync={onSync}
+          isSearching={isSearching}
+          selectingProfileId={selectingProfileId}
+          onSearch={onSearch}
+          onSelect={onSelect}
         />
       ) : null}
     </div>
   );
 }
 
-function SyncButton({
-  compact,
+function ProfileSearch({
+  candidates,
   isPending,
-  isSyncing,
-  label,
-  onSync,
+  isSearching,
+  selectingProfileId,
+  onSearch,
+  onSelect,
 }: {
-  compact?: boolean;
+  candidates: ApplicationMemberPlatformCandidate[] | null;
   isPending: boolean;
-  isSyncing: boolean;
-  label: string;
-  onSync: () => void;
+  isSearching: boolean;
+  selectingProfileId?: string;
+  onSearch: () => void;
+  onSelect: (profileId: string) => void;
 }) {
   return (
-    <Button
-      type="button"
-      variant="outline"
-      size={compact ? "sm" : "member"}
-      className={compact ? undefined : "w-full"}
-      disabled={isPending}
-      onClick={onSync}
-    >
-      <RefreshCw className={isSyncing ? "size-4 animate-spin" : "size-4"} />
-      {label}
-    </Button>
+    <div className="space-y-3">
+      <Button
+        type="button"
+        variant="outline"
+        size="member"
+        className="w-full"
+        disabled={isPending}
+        aria-busy={isSearching}
+        onClick={onSearch}
+      >
+        <RefreshCw
+          aria-hidden="true"
+          className={isSearching ? "size-4 animate-spin" : "size-4"}
+        />
+        {candidates === null ? "Member-Profile suchen" : "Suche aktualisieren"}
+      </Button>
+
+      {candidates === null ? null : candidates.length > 0 ? (
+        <fieldset className="space-y-2">
+          <legend className="text-sm font-medium">
+            Passendes Profil auswählen
+          </legend>
+          <ul className="space-y-2">
+            {candidates.map((candidate) => (
+              <li key={candidate.id}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="member"
+                  className="h-auto w-full justify-start whitespace-normal px-4 text-left"
+                  disabled={isPending}
+                  aria-label={`${candidate.name} als Member-Profil zuordnen`}
+                  onClick={() => onSelect(candidate.id)}
+                >
+                  <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+                    <span className="font-semibold">{candidate.name}</span>
+                    {candidate.email ? (
+                      <span className="break-all text-xs font-normal text-muted-foreground">
+                        {candidate.email}
+                      </span>
+                    ) : null}
+                    <span className="text-xs font-normal text-muted-foreground">
+                      Geburtsdatum:{" "}
+                      {formatFieldValue(candidate.dateOfBirth, "INPUT_DATE")}
+                    </span>
+                  </span>
+                  {selectingProfileId === candidate.id ? (
+                    <Loader2
+                      aria-hidden="true"
+                      className="size-4 animate-spin"
+                    />
+                  ) : null}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </fieldset>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Kein aktives Member-Profil gefunden. Vor der Aufnahme muss die Person
+          eines erstellen.
+        </p>
+      )}
+    </div>
   );
 }
