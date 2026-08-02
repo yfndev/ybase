@@ -895,6 +895,45 @@ test("deleteReimbursement removes receipts and deletes the stored files", async 
   expect(deleteObject).toHaveBeenCalledWith("sig-key");
 });
 
+test("deleteReimbursement removes a mileage reimbursement without a receipt file", async () => {
+  const input = reimbursementInput();
+  const id = await createTravelReimbursement({
+    ...input,
+    amount: 1.5,
+    startDate: "2026-05-15",
+    startTime: "08:00",
+    endDate: "2026-05-15",
+    endTime: "18:00",
+    destination: "Berlin",
+    purpose: "Testfahrt",
+    isInternational: false,
+    receipts: [
+      {
+        costType: "car",
+        receiptDate: "2026-05-15",
+        companyName: "Privater PKW",
+        description: "",
+        netAmount: 1.5,
+        taxRate: 0,
+        grossAmount: 1.5,
+        kilometers: 5,
+      },
+    ],
+  });
+
+  await deleteReimbursement({ reimbursementId: id });
+
+  expect(await (await reimbursements()).findOne({ _id: id })).toBeNull();
+  expect(
+    await (await receipts()).find({ reimbursementId: id }).toArray(),
+  ).toHaveLength(0);
+  expect(
+    await (await travelDetails()).findOne({ reimbursementId: id }),
+  ).toBeNull();
+  expect(deleteObject).not.toHaveBeenCalledWith("");
+  expect(deleteObject).toHaveBeenCalledWith("sig-key");
+});
+
 test("finance can delete another member's reimbursement", async () => {
   const reimbursementId = newId();
   await (
