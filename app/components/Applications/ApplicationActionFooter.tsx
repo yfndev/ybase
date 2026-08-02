@@ -38,6 +38,7 @@ export function ApplicationActionFooter({
   jobPostingTitle,
   organizationDomain,
   yfnEmail,
+  isProfileRequired,
   acceptanceBlockedReason,
 }: {
   applicationId: string;
@@ -46,6 +47,7 @@ export function ApplicationActionFooter({
   jobPostingTitle: string;
   organizationDomain: string;
   yfnEmail?: string;
+  isProfileRequired: boolean;
   acceptanceBlockedReason?: string;
 }) {
   const { setStatus, sendDecision } = useApplicationMutations();
@@ -135,6 +137,7 @@ export function ApplicationActionFooter({
                 disabled={
                   setStatus.isPending ||
                   sendDecision.isPending ||
+                  (action.status === "interview" && isProfileRequired) ||
                   (action.status === "accepted" &&
                     Boolean(acceptanceBlockedReason))
                 }

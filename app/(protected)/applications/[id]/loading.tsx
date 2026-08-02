@@ -64,16 +64,16 @@ export default function ApplicationLoading() {
           <DetailSkeleton />
         </div>
         <div>
-          <section className="space-y-3 border-t pt-5">
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-9 w-full" />
-          </section>
-        </div>
-        <div>
           <section className="space-y-4 border-t pt-5">
             <Skeleton className="h-6 w-28" />
             <Skeleton className="h-4 w-40" />
             <Skeleton className="h-4 w-52" />
+          </section>
+        </div>
+        <div>
+          <section className="space-y-3 border-t pt-5">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-9 w-full" />
           </section>
         </div>
       </ApplicationReviewSidebar>

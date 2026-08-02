@@ -40,6 +40,14 @@ export async function setApplicationStatus(input: {
   ) {
     throw new Error("Dieser Statuswechsel ist nicht zulässig");
   }
+  if (
+    status === "interview" &&
+    (!application.memberPlatformUserId || !application.dateOfBirth)
+  ) {
+    throw new Error(
+      "Vor dem Interview muss ein Member-Plattform-Profil verknüpft sein",
+    );
+  }
 
   const entry = createApplicationHistoryEntry(
     user._id,

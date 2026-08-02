@@ -49,16 +49,12 @@ export function ApplicationAdmissionProfile({
         <p className="text-sm font-medium">Geburtsdatum</p>
         <p>{formatFieldValue(dateOfBirth, "INPUT_DATE")}</p>
       </div>
-      {isEligible ? (
-        <p className="text-sm text-green-700">
-          Die Altersvoraussetzung ist erfüllt.
-        </p>
-      ) : (
+      {!isEligible ? (
         <p className="text-sm text-destructive">
           Bei der Aufnahme muss die Person mindestens 16 und noch nicht 25 Jahre
           alt sein.
         </p>
-      )}
+      ) : null}
       {canSync && !isSigned ? (
         <ProfileSearch
           candidates={candidates}
