@@ -8,14 +8,12 @@ import { ApplicationDetails } from "@/components/Applications/ApplicationDetails
 import { ApplicationFiles } from "@/components/Applications/ApplicationFiles";
 import { ApplicationHistory } from "@/components/Applications/ApplicationHistory";
 import { ApplicationMainStatus } from "@/components/Applications/ApplicationMainStatus";
-import { ApplicationManagement } from "@/components/Applications/ApplicationManagement";
 import { ApplicationReviewSidebar } from "@/components/Applications/ApplicationReviewSidebar";
 import { isApplicantIdentityField } from "@/components/Applications/applicationPresentation";
 import { PageHeader } from "@/components/Layout/PageHeader";
 import { getApplicationAdmissionIssue } from "@/lib/applications/admissionEligibility";
 import { useApplication } from "@/lib/client/applications/hooks/useApplication";
 import type { ApplicationWithFiles, User } from "@/lib/db/types";
-import { isUnavailableMemberStatus } from "@/lib/members/status";
 
 export function ApplicationReview({
   initialApplication,
@@ -31,13 +29,6 @@ export function ApplicationReview({
   const { application, refetch } = useApplication(
     initialApplication._id,
     initialApplication,
-  );
-  const owners = useMemo(
-    () =>
-      members.filter(
-        (member) => !isUnavailableMemberStatus(member.memberStatus),
-      ),
-    [members],
   );
   const ownersById = useMemo(
     () => new Map(members.map((member) => [member._id, member])),
@@ -93,11 +84,6 @@ export function ApplicationReview({
         </div>
         {!withdrawn ? (
           <div>
-            <ApplicationManagement
-              key={`management-${revisionKey}`}
-              application={application}
-              owners={owners}
-            />
             <ApplicationAdmissionRequirements
               key={`admission-${revisionKey}`}
               application={application}

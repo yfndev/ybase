@@ -4,7 +4,6 @@ import {
   requestGuardianConsent,
   syncApplicationMemberPlatformProfile,
 } from "@/lib/server/applications/admissionRequirements";
-import { updateApplicationManagement } from "@/lib/server/applications/management";
 import { setApplicationStatus } from "@/lib/server/applications/status";
 
 export function useApplicationMutations() {
@@ -13,10 +12,6 @@ export function useApplicationMutations() {
     queryClient.invalidateQueries({ queryKey: ["applications"] });
 
   return {
-    updateManagement: useMutation({
-      mutationFn: updateApplicationManagement,
-      onSuccess: invalidate,
-    }),
     setStatus: useMutation({
       mutationFn: setApplicationStatus,
       onSuccess: invalidate,
