@@ -187,9 +187,9 @@ test("creates, configures, publishes and stores the tally ids", async () => {
           }),
         }),
         expect.objectContaining({
-          type: "HEADING_2",
+          type: "HEADING_3",
           payload: expect.objectContaining({
-            safeHTMLSchema: [["Deine Stelle: Vorstand"]],
+            safeHTMLSchema: [["Fragen zur Rolle"]],
           }),
         }),
         expect.objectContaining({
@@ -242,7 +242,7 @@ test("uses the template selected for the posting", async () => {
   );
 });
 
-test("syncs posting content and exact role questions into Tally", async () => {
+test("keeps posting details out of Tally and syncs exact role questions", async () => {
   const client = useClient(fakeClient());
   const id = await insertDraft(orgA, {
     shortText: "Gestalte unsere technische Plattform.",
@@ -265,13 +265,15 @@ test("syncs posting content and exact role questions into Tally", async () => {
   >;
   const patch = updateFormCalls[0]?.[1];
   const serialized = JSON.stringify(patch?.blocks);
-  expect(serialized).toContain("Über die Rolle");
-  expect(serialized).toContain("Du entwickelst YBase weiter.");
-  expect(serialized).toContain("Aufgaben");
-  expect(serialized).toContain("Anforderungen");
+  expect(serialized).not.toContain("Gestalte unsere technische Plattform.");
+  expect(serialized).not.toContain("Du entwickelst YBase weiter.");
+  expect(serialized).not.toContain("Architektur gestalten");
+  expect(serialized).not.toContain("Erfahrung mit TypeScript");
   expect(serialized).not.toContain("Benefits");
   expect(serialized).not.toContain("Zugang zur YFN Community");
-  expect(serialized).toContain("Rahmenbedingungen");
+  expect(serialized).not.toContain("5 Stunden pro Woche");
+  expect(serialized).not.toContain("2026-08-31");
+  expect(serialized).toContain("Fragen zur Rolle");
   expect(serialized).toContain("Welche Architektur hast du zuletzt gestaltet?");
   expect(serialized).not.toContain("Spezifische Frage");
 });

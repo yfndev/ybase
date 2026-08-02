@@ -121,7 +121,7 @@ test("withHiddenField leaves an existing job posting field unchanged", () => {
   expect(withHiddenField(blocks, JOB_POSTING_HIDDEN_FIELD)).toBe(blocks);
 });
 
-test("applies the clean role title to the Tally role section", () => {
+test("applies the title and replaces the role section with application questions", () => {
   const roleHeading = {
     ...block("HEADING_2"),
     payload: { safeHTMLSchema: [["Deine Stelle: XXX"]] },
@@ -139,17 +139,16 @@ test("applies the clean role title to the Tally role section", () => {
   expect(result[0].payload?.safeHTMLSchema).toEqual([
     ["Baue das Young Founders Network mit auf: Bewerbung als Tech Lead"],
   ]);
-  expect(result[1].payload?.safeHTMLSchema).toEqual([
-    ["Deine Stelle: Tech Lead"],
-  ]);
+  expect(result[1].payload?.safeHTMLSchema).toEqual([["Fragen zur Rolle"]]);
   expect(result.at(-1)).toEqual(otherHeading);
+  expect(JSON.stringify(result)).not.toContain("Deine Stelle:");
   expect(JSON.stringify(result)).not.toContain("Spezifische Frage");
   expect(JSON.stringify(result)).toContain(
     "Was reizt dich besonders an dieser Rolle?",
   );
 });
 
-test("syncs posting sections and exact application questions into the role section", () => {
+test("removes posting details and syncs exact application questions", () => {
   const roleHeading = {
     ...block("HEADING_2", "HEADING_2", "role-heading"),
     payload: { safeHTMLSchema: [["Deine Stelle: XXX"]] },
@@ -182,31 +181,15 @@ test("syncs posting sections and exact application questions into the role secti
     ],
     {
       title: "Tech Lead",
-      shortText: "Baue unsere Plattform mit auf.",
-      description: "<p>Du entwickelst <strong>YBase</strong>.</p>",
-      tasks: "<ul><li>Architektur gestalten</li><li>Team begleiten</li></ul>",
-      requirements: "<p>Erfahrung mit TypeScript &amp; React</p>",
-      timeCommitment: "5 Stunden pro Woche",
-      location: "Berlin",
-      isRemote: true,
-      deadline: "2026-08-31",
       applicationQuestions: ["Welche Systeme hast du bereits verantwortet?"],
     },
   );
   const serialized = JSON.stringify(result);
 
-  expect(serialized).toContain("Über die Rolle");
-  expect(serialized).toContain("Baue unsere Plattform mit auf.");
-  expect(serialized).toContain("Du entwickelst YBase.");
-  expect(serialized).toContain("Aufgaben");
-  expect(serialized).toContain("• Architektur gestalten");
-  expect(serialized).toContain("Anforderungen");
-  expect(serialized).toContain("Erfahrung mit TypeScript &amp; React");
+  expect(serialized).not.toContain("Deine Stelle:");
   expect(serialized).not.toContain("Benefits");
   expect(serialized).not.toContain("Alte Benefits");
-  expect(serialized).toContain("Rahmenbedingungen");
-  expect(serialized).toContain("Arbeitsort: Berlin · Remote möglich");
-  expect(serialized).toContain("Bewerbungsfrist: 31.08.2026");
+  expect(serialized).toContain("Fragen zur Rolle");
   expect(serialized).toContain("Welche Systeme hast du bereits verantwortet?");
   expect(serialized).not.toContain("Spezifische Frage");
   expect(result.at(-1)).toEqual(nextHeading);
