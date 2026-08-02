@@ -1,6 +1,9 @@
 import type { Db } from "mongodb";
-import type { MemberPlatformProfile } from "../../memberPlatform/suggestions";
-import { normalizeEmail } from "../../memberPlatform/suggestions";
+import {
+  type MemberPlatformProfile,
+  normalizeEmail,
+  normalizeName,
+} from "../../memberPlatform/suggestions";
 import { LINKABLE_MEMBER_PLATFORM_STATES } from "../../memberPlatform/states";
 import { ageOnDate } from "../../members/legalDates";
 import { getMemberPlatformDb } from "../memberPlatform/client";
@@ -15,30 +18,39 @@ type Resolution =
   | { snapshot: ApplicationMemberPlatformSnapshot }
   | { error: string };
 
-const NOT_FOUND_ERROR =
-  "Kein eindeutiges, aktives Member-Plattform-Profil für die private Bewerbungs-E-Mail gefunden.";
+const NAME_NOT_FOUND_ERROR =
+  "Kein aktives Member-Plattform-Profil mit dem Namen aus der Bewerbung gefunden.";
+const EMAIL_NOT_FOUND_ERROR =
+  "Kein aktives Member-Plattform-Profil für die private Bewerbungs-E-Mail gefunden.";
+const AMBIGUOUS_ERROR =
+  "Mehrere aktive Member-Plattform-Profile mit diesem Namen gefunden. Die private Bewerbungs-E-Mail konnte sie nicht eindeutig unterscheiden.";
 const BIRTH_DATE_ERROR =
   "Das Member-Plattform-Profil enthält kein gültiges Geburtsdatum.";
 
+interface ApplicationProfileLookup {
+  applicantName?: string;
+  privateEmail: string;
+}
+
 export async function findApplicationMemberPlatformProfile(
-  privateEmail: string,
+  lookup: ApplicationProfileLookup,
 ): Promise<ApplicationMemberPlatformSnapshot> {
   const database = await getMemberPlatformDb();
   if (!database) {
     throw new Error("Die Member-Plattform ist nicht konfiguriert.");
   }
-  const resolution = await resolveProfile(database, privateEmail);
+  const resolution = await resolveProfile(database, lookup);
   if ("error" in resolution) throw new Error(resolution.error);
   return resolution.snapshot;
 }
 
 export async function tryFindApplicationMemberPlatformProfile(
-  privateEmail: string,
+  lookup: ApplicationProfileLookup,
 ): Promise<ApplicationMemberPlatformSnapshot | undefined> {
   try {
     const database = await getMemberPlatformDb();
     if (!database) return undefined;
-    const resolution = await resolveProfile(database, privateEmail);
+    const resolution = await resolveProfile(database, lookup);
     return "snapshot" in resolution ? resolution.snapshot : undefined;
   } catch (error) {
     console.error("member-platform application snapshot failed", error);
@@ -48,20 +60,30 @@ export async function tryFindApplicationMemberPlatformProfile(
 
 async function resolveProfile(
   database: Db,
-  privateEmail: string,
+  lookup: ApplicationProfileLookup,
 ): Promise<Resolution> {
-  const email = normalizeEmail(privateEmail);
+  const email = normalizeEmail(lookup.privateEmail);
+  const nameQueries = buildNameQueries(lookup.applicantName);
+  const candidateQueries = [
+    ...nameQueries,
+    ...(email ? [{ "contact.email": email }] : []),
+  ];
+  const notFoundError =
+    nameQueries.length > 0 ? NAME_NOT_FOUND_ERROR : EMAIL_NOT_FOUND_ERROR;
+  if (candidateQueries.length === 0) return { error: notFoundError };
+
   const profiles = await database
     .collection<MemberPlatformProfile>("users")
-    .find({ deletedAt: null, "contact.email": email })
-    .collation({ locale: "en", strength: 2 })
+    .find({ deletedAt: null, $or: candidateQueries })
+    .collation({ locale: "de", strength: 1 })
     .project<MemberPlatformProfile>({
       _id: 0,
       id: 1,
       person: 1,
+      contact: 1,
     })
     .toArray();
-  if (profiles.length === 0) return { error: NOT_FOUND_ERROR };
+  if (profiles.length === 0) return { error: notFoundError };
 
   const states = await database
     .collection("user-states")
@@ -73,9 +95,13 @@ async function resolveProfile(
     .toArray();
   const eligibleIds = new Set(states.map(({ userId }) => userId));
   const eligibleProfiles = profiles.filter(({ id }) => eligibleIds.has(id));
-  if (eligibleProfiles.length !== 1) return { error: NOT_FOUND_ERROR };
+  const profile = selectProfile(eligibleProfiles, lookup);
+  if (!profile) {
+    return {
+      error: eligibleProfiles.length > 1 ? AMBIGUOUS_ERROR : notFoundError,
+    };
+  }
 
-  const profile = eligibleProfiles[0];
   const dateOfBirth = normalizeBirthDate(profile.person?.birthDate);
   if (!dateOfBirth) return { error: BIRTH_DATE_ERROR };
   return {
@@ -85,6 +111,51 @@ async function resolveProfile(
       dateOfBirth,
     },
   };
+}
+
+function buildNameQueries(
+  applicantName?: string,
+): Array<Record<string, string>> {
+  const parts = applicantName?.trim().split(/\s+/).filter(Boolean) ?? [];
+  const queries: Array<Record<string, string>> = [];
+  for (let splitAt = 1; splitAt < parts.length; splitAt += 1) {
+    queries.push({
+      "person.firstName": parts.slice(0, splitAt).join(" "),
+      "person.lastName": parts.slice(splitAt).join(" "),
+    });
+  }
+  return queries;
+}
+
+function selectProfile(
+  profiles: MemberPlatformProfile[],
+  lookup: ApplicationProfileLookup,
+): MemberPlatformProfile | undefined {
+  const name = normalizeName(lookup.applicantName);
+  const email = normalizeEmail(lookup.privateEmail);
+  const nameMatches = name
+    ? profiles.filter(
+        (profile) =>
+          normalizeName(
+            [profile.person?.firstName, profile.person?.lastName]
+              .filter(Boolean)
+              .join(" "),
+          ) === name,
+      )
+    : [];
+
+  if (nameMatches.length === 1) return nameMatches[0];
+  if (nameMatches.length > 1) {
+    const emailMatches = nameMatches.filter(
+      (profile) => normalizeEmail(profile.contact?.email) === email,
+    );
+    return emailMatches.length === 1 ? emailMatches[0] : undefined;
+  }
+
+  const emailMatches = profiles.filter(
+    (profile) => normalizeEmail(profile.contact?.email) === email,
+  );
+  return emailMatches.length === 1 ? emailMatches[0] : undefined;
 }
 
 function normalizeBirthDate(value: string | Date | undefined): string | null {

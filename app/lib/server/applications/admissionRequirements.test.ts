@@ -111,6 +111,93 @@ test("imports the birth date from one eligible member-platform profile", async (
   ).not.toHaveProperty("guardianConsent");
 });
 
+test("prefers an exact applicant name when the private email differs", async () => {
+  await Promise.all([
+    insertPlatformProfile({
+      id: "platform-name-match",
+      email: "new-address@example.com",
+      birthDate: "2004-01-01T00:00:00.000Z",
+    }),
+    insertPlatformProfile({
+      id: "platform-email-match",
+      email: "alex@example.com",
+      birthDate: "2003-01-01T00:00:00.000Z",
+      firstName: "Andere",
+      lastName: "Person",
+    }),
+  ]);
+
+  await syncApplicationMemberPlatformProfile({
+    applicationId: application._id,
+  });
+
+  expect(
+    await (await applications()).findOne({ _id: application._id }),
+  ).toMatchObject({
+    dateOfBirth: "2004-01-01",
+    memberPlatformUserId: "platform-name-match",
+  });
+});
+
+test("uses the private email to disambiguate identical names", async () => {
+  await Promise.all([
+    insertPlatformProfile({
+      id: "platform-other-alex",
+      email: "other@example.com",
+      birthDate: "2003-01-01T00:00:00.000Z",
+    }),
+    insertPlatformProfile({
+      id: "platform-applicant",
+      email: "alex@example.com",
+      birthDate: "2004-01-01T00:00:00.000Z",
+    }),
+  ]);
+
+  await syncApplicationMemberPlatformProfile({
+    applicationId: application._id,
+  });
+
+  expect(
+    await (await applications()).findOne({ _id: application._id }),
+  ).toMatchObject({
+    dateOfBirth: "2004-01-01",
+    memberPlatformUserId: "platform-applicant",
+  });
+});
+
+test("falls back to the private email when the application has no name", async () => {
+  await insertPlatformProfile({
+    id: "platform-email-fallback",
+    email: "alex@example.com",
+    birthDate: "2004-01-01T00:00:00.000Z",
+    firstName: "Andere",
+    lastName: "Person",
+  });
+  await (
+    await applications()
+  ).updateOne({ _id: application._id }, { $unset: { applicantName: "" } });
+
+  await syncApplicationMemberPlatformProfile({
+    applicationId: application._id,
+  });
+
+  expect(
+    await (await applications()).findOne({ _id: application._id }),
+  ).toMatchObject({ memberPlatformUserId: "platform-email-fallback" });
+});
+
+test("reports the email fallback when an application has no name", async () => {
+  await (
+    await applications()
+  ).updateOne({ _id: application._id }, { $unset: { applicantName: "" } });
+
+  await expect(
+    syncApplicationMemberPlatformProfile({
+      applicationId: application._id,
+    }),
+  ).rejects.toThrow("private Bewerbungs-E-Mail");
+});
+
 test("sends a secure guardian link and stores only its hash", async () => {
   await seedMemberPlatformSnapshot("2009-01-01");
   await requestGuardianConsent({
@@ -176,7 +263,7 @@ test("rejects synchronization without one matching active profile", async () => 
     syncApplicationMemberPlatformProfile({
       applicationId: application._id,
     }),
-  ).rejects.toThrow("Kein eindeutiges");
+  ).rejects.toThrow("mit dem Namen");
   expect(
     await (await applications()).findOne({ _id: application._id }),
   ).not.toHaveProperty("dateOfBirth");
@@ -200,7 +287,7 @@ test("rejects ambiguous member-platform profiles with the same email", async () 
     syncApplicationMemberPlatformProfile({
       applicationId: application._id,
     }),
-  ).rejects.toThrow("Kein eindeutiges");
+  ).rejects.toThrow("Mehrere aktive");
 });
 
 test("checks every matching profile before accepting a unique claim", async () => {
@@ -222,7 +309,7 @@ test("checks every matching profile before accepting a unique claim", async () =
     syncApplicationMemberPlatformProfile({
       applicationId: application._id,
     }),
-  ).rejects.toThrow("Kein eindeutiges");
+  ).rejects.toThrow("Mehrere aktive");
 });
 
 async function seedMemberPlatformSnapshot(dateOfBirth: string): Promise<void> {
@@ -239,6 +326,8 @@ async function insertPlatformProfile(input: {
   email: string;
   birthDate: string;
   state?: string;
+  firstName?: string;
+  lastName?: string;
 }): Promise<void> {
   const database = (await getClient()).db(PLATFORM_DATABASE);
   await Promise.all([
@@ -246,8 +335,8 @@ async function insertPlatformProfile(input: {
       id: input.id,
       deletedAt: null,
       person: {
-        firstName: "Alex",
-        lastName: "Beispiel",
+        firstName: input.firstName ?? "Alex",
+        lastName: input.lastName ?? "Beispiel",
         birthDate: input.birthDate,
       },
       contact: { email: input.email },

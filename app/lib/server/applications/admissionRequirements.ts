@@ -20,9 +20,10 @@ export async function syncApplicationMemberPlatformProfile(input: {
     parsed.applicationId,
   );
   assertRequirementsEditable(application);
-  const snapshot = await findApplicationMemberPlatformProfile(
-    application.applicantEmailNormalized,
-  );
+  const snapshot = await findApplicationMemberPlatformProfile({
+    applicantName: application.applicantName,
+    privateEmail: application.applicantEmailNormalized,
+  });
   const unchanged =
     application.memberPlatformUserId === snapshot.memberPlatformUserId &&
     application.dateOfBirth === snapshot.dateOfBirth;
