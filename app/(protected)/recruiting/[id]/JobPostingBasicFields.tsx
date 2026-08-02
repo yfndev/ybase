@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useMembers } from "@/lib/client/members/hooks/useMembers";
 import { useTeamDirectory } from "@/lib/client/teams/hooks/useTeamDirectory";
+import { berlinTomorrow } from "@/lib/jobPostings/deadline";
 import type { JobPostingFormValues } from "@/lib/jobPostings/form";
 
 interface Props {
@@ -82,6 +83,7 @@ export function JobPostingBasicFields({ values, onChange }: Props) {
           <Input
             id="jp-deadline"
             type="date"
+            min={berlinTomorrow()}
             value={values.deadline}
             onChange={(e) => onChange({ deadline: e.target.value })}
           />

@@ -7,6 +7,7 @@ import { jobPostings, teams, users } from "../../db/collections";
 import type { JobPostingUrgency } from "../../db/types";
 import { newId } from "../../db/ids";
 import { DEFAULT_JOB_POSTING_BENEFITS } from "../../jobPostings/benefits";
+import { isDeadlineInFuture } from "../../jobPostings/deadline";
 import { JOB_POSTING_TIME_COMMITMENTS } from "../../jobPostings/timeCommitment";
 import { UNAVAILABLE_MEMBER_STATUSES } from "../../members/status";
 import { addLog } from "../logs";
@@ -118,6 +119,9 @@ export async function updateJobPosting(
   const { jobPostingId, ...content } = z
     .object({ jobPostingId: z.string(), ...contentSchema.shape })
     .parse(input);
+  if (!isDeadlineInFuture(content.deadline)) {
+    throw new Error("Die Frist muss in der Zukunft liegen");
+  }
 
   const posting = await requireOwnedJobPosting(
     jobPostingId,

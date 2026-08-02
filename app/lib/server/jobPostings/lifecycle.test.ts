@@ -12,6 +12,7 @@ import { newId } from "../../db/ids";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import type { JobPosting } from "../../db/types";
+import { berlinToday } from "../../jobPostings/deadline";
 import { createConfiguredTallyClient } from "../tally/client";
 import {
   archiveJobPosting,
@@ -133,7 +134,18 @@ test("reopenJobPosting reopens and reopens the Tally form", async () => {
 test("reopenJobPosting refuses an expired posting until the deadline is renewed", async () => {
   const id = await insertPosting(orgA, { status: "closed", deadline: PAST });
   await expect(reopenJobPosting({ jobPostingId: id })).rejects.toThrow(
-    "Vergangenheit",
+    "Zukunft",
+  );
+  expect((await read(id)).status).toBe("closed");
+});
+
+test("reopenJobPosting refuses a deadline on the current day", async () => {
+  const id = await insertPosting(orgA, {
+    status: "closed",
+    deadline: berlinToday(),
+  });
+  await expect(reopenJobPosting({ jobPostingId: id })).rejects.toThrow(
+    "Zukunft",
   );
   expect((await read(id)).status).toBe("closed");
 });

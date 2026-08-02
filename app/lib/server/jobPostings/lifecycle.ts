@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { USER_PERMISSIONS } from "../../auth/roles";
 import { requirePermission } from "../../auth/session";
-import { berlinToday, isDeadlinePassed } from "../../jobPostings/deadline";
+import { isDeadlineInFuture } from "../../jobPostings/deadline";
 import { statusMeansClosed } from "../../jobPostings/status";
 import { requireOwnedJobPosting } from "./access";
 import { applyStatusTransition, syncTallyClosed } from "./tallySync";
@@ -48,8 +48,8 @@ export async function reopenJobPosting(input: {
       "Nur geschlossene Ausschreibungen können wieder geöffnet werden",
     );
   }
-  if (isDeadlinePassed(posting.deadline, berlinToday())) {
-    throw new Error("Die Frist liegt in der Vergangenheit");
+  if (!isDeadlineInFuture(posting.deadline)) {
+    throw new Error("Die Frist muss in der Zukunft liegen");
   }
   const result = await applyStatusTransition({
     posting,
