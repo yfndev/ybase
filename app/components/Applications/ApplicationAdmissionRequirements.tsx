@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label";
 import { useApplicationMutations } from "@/lib/client/applications/hooks/useApplicationMutations";
 import type { ApplicationWithFiles } from "@/lib/db/types";
 import { ageOnDate } from "@/lib/members/legalDates";
-import { DATE_TIME_FORMAT } from "./applicationPresentation";
 import { ApplicationAdmissionProfile } from "./ApplicationAdmissionProfile";
+import { DATE_TIME_FORMAT } from "./applicationPresentation";
 
 const EDITABLE_STATUSES = new Set(["received", "review", "interview"]);
 
@@ -83,7 +83,14 @@ export function ApplicationAdmissionRequirements({
 
   return (
     <section className="space-y-4 border-t pt-5">
-      <h3 className="text-xl font-semibold">Aufnahmevoraussetzungen</h3>
+      <div className="space-y-1">
+        <h3 className="text-xl font-semibold">Member-Profil</h3>
+        {!hasProfile ? (
+          <p className="text-sm text-muted-foreground">
+            Für die Zusage erforderlich
+          </p>
+        ) : null}
+      </div>
       <ApplicationAdmissionProfile
         canSync={isEditable}
         candidates={searchMemberPlatformProfiles.data ?? null}
