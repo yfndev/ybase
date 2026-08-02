@@ -44,10 +44,10 @@ export function ApplicationAdmissionRequirements({
       });
       toast.success("Member-Plattform-Profil synchronisiert");
     } catch (error) {
-      toast.error(
+      toast(
         error instanceof Error
           ? error.message
-          : "Member-Plattform-Profil konnte nicht synchronisiert werden",
+          : "Member-Plattform-Profil konnte nicht gefunden werden",
       );
     }
   }

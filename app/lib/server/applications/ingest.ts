@@ -100,9 +100,10 @@ export async function ingestTallySubmission(
     return { status: "ignored", reason: "missing-phone" };
   }
 
-  const memberPlatformSnapshot = await tryFindApplicationMemberPlatformProfile(
-    parsed.emailNormalized,
-  );
+  const memberPlatformSnapshot = await tryFindApplicationMemberPlatformProfile({
+    applicantName: parsed.name,
+    privateEmail: parsed.emailNormalized,
+  });
   const withdrawal = createApplicationWithdrawalToken();
 
   const application: Application = {

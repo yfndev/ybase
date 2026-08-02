@@ -23,16 +23,17 @@ export function ApplicationAdmissionProfile({
 }) {
   if (!hasProfile || !dateOfBirth) {
     return (
-      <div className="space-y-3 rounded-lg border border-destructive/40 p-4">
-        <p className="text-sm text-destructive">
-          Über die private Bewerbungs-E-Mail wurde noch kein eindeutiges,
-          aktives Member-Plattform-Profil mit Geburtsdatum gefunden.
+      <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
+        <p className="text-sm text-muted-foreground">
+          Noch kein Member-Plattform-Profil zugeordnet. Die Suche verwendet
+          zuerst den Namen aus der Bewerbung und die private E-Mail nur zur
+          Eingrenzung.
         </p>
         {canSync ? (
           <SyncButton
             isPending={isPending}
             isSyncing={isSyncing}
-            label="Member-Plattform erneut prüfen"
+            label="Profil erneut suchen"
             onSync={onSync}
           />
         ) : null}
