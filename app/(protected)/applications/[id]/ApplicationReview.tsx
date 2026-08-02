@@ -7,7 +7,6 @@ import { ApplicationAnswers } from "@/components/Applications/ApplicationAnswers
 import { ApplicationDetails } from "@/components/Applications/ApplicationDetails";
 import { ApplicationFiles } from "@/components/Applications/ApplicationFiles";
 import { ApplicationHistory } from "@/components/Applications/ApplicationHistory";
-import { ApplicationMainStatus } from "@/components/Applications/ApplicationMainStatus";
 import { ApplicationReviewSidebar } from "@/components/Applications/ApplicationReviewSidebar";
 import { isApplicantIdentityField } from "@/components/Applications/applicationPresentation";
 import { PageHeader } from "@/components/Layout/PageHeader";
@@ -78,9 +77,6 @@ export function ApplicationReview({
       >
         <div className="hidden min-[1280px]:block">
           <ApplicationDetails application={application} />
-        </div>
-        <div>
-          <ApplicationMainStatus status={application.status} />
         </div>
         {!withdrawn ? (
           <div>
