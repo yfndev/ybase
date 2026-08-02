@@ -15,7 +15,9 @@ async function cleanupReimbursement(reimbursement: Reimbursement) {
     .toArray();
 
   for (const receipt of receiptList) {
-    await deleteObject(receipt.fileStorageId);
+    if (receipt.fileStorageId) {
+      await deleteObject(receipt.fileStorageId);
+    }
     await (await receipts()).deleteOne({ _id: receipt._id });
   }
   if (reimbursement.type === "travel") {
