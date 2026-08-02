@@ -1,3 +1,4 @@
+import type { CarAllowanceRate } from "@/lib/travel-costs";
 import { CONNECTION_ERROR, postJson } from "./http";
 
 export type ReimbursementLink =
@@ -55,6 +56,7 @@ export type ReimbursementLink =
             | "accommodation"
             | "incidental";
           kilometers?: number;
+          mileageRate?: CarAllowanceRate;
         }>;
       };
     };

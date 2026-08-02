@@ -1,5 +1,5 @@
 import type { MealAllowance } from "@/lib/db/types";
-import type { CostType } from "@/lib/travel-costs";
+import type { CarAllowanceRate, CostType } from "@/lib/travel-costs";
 
 export type { CostType };
 
@@ -18,6 +18,7 @@ export type TravelReceipt = Receipt & {
   clientId: string;
   costType: CostType;
   kilometers?: number;
+  mileageRate?: CarAllowanceRate;
 };
 
 export type ExternalReimbursementPageUIProps = {

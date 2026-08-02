@@ -2,6 +2,7 @@
 
 import { ReceiptUploadExternal } from "@/components/Reimbursements/ReceiptUploadExternal";
 import { InvoiceOrganizationHint } from "@/components/Reimbursements/InvoiceOrganizationHint";
+import { CarMileageRateSelect } from "@/components/Reimbursements/CarMileageRateSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Trash2 } from "lucide-react";
-import { CAR_ALLOWANCE_RATE_EUR_PER_KM } from "@/lib/travel-costs";
+import { calculateCarAllowance, getCarAllowanceRate } from "@/lib/travel-costs";
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import type { TravelReceipt } from "./types";
 
@@ -33,6 +34,8 @@ type Props = {
 export function TravelReceiptCard(props: Props) {
   const { receipt } = props;
   const isCar = receipt.costType === "car";
+  const mileageRate = getCarAllowanceRate(receipt);
+  const mileageRateInputId = `${receipt.clientId}-mileage-rate`;
 
   return (
     <fieldset className="@container min-w-0 border rounded-lg p-4 space-y-4">
@@ -40,7 +43,7 @@ export function TravelReceiptCard(props: Props) {
       <div className="flex justify-between items-center">
         <h3 className="font-medium">
           {isCar
-            ? `${props.title} (${formatCurrency(CAR_ALLOWANCE_RATE_EUR_PER_KM)}/km)`
+            ? `${props.title} (${formatCurrency(mileageRate)}/km)`
             : props.title}
         </h3>
         <Button
@@ -84,6 +87,12 @@ export function TravelReceiptCard(props: Props) {
 
         {isCar ? (
           <>
+            <CarMileageRateSelect
+              id={mileageRateInputId}
+              kilometers={receipt.kilometers}
+              mileageRate={mileageRate}
+              onUpdate={props.onUpdate}
+            />
             <div>
               <Label>Kilometer *</Label>
               <Input
@@ -95,10 +104,7 @@ export function TravelReceiptCard(props: Props) {
                     0,
                     Math.floor(parseFloat(e.target.value) || 0),
                   );
-                  const amount =
-                    Math.round(
-                      kilometers * CAR_ALLOWANCE_RATE_EUR_PER_KM * 100,
-                    ) / 100;
+                  const amount = calculateCarAllowance(kilometers, mileageRate);
                   props.onUpdate({
                     kilometers,
                     grossAmount: amount,

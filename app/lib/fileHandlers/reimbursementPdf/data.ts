@@ -2,6 +2,8 @@ import {
   COST_LABELS,
   getMealAllowanceTotal,
   getMealAllowanceWithLegacyFallback,
+  getCarAllowanceRate,
+  type CarAllowanceRate,
   type CostType,
 } from "@/lib/travel-costs";
 import type { MealAllowance } from "@/lib/db/types";
@@ -55,6 +57,7 @@ export type ReceiptInput = {
   grossAmount?: number;
   costType?: CostType;
   kilometers?: number;
+  mileageRate?: CarAllowanceRate;
   fileUrl?: string | null;
 };
 
@@ -102,7 +105,9 @@ function receiptDescription(receipt: ReceiptInput): string {
   const costLabel = receipt.costType ? COST_LABELS[receipt.costType] : "";
   const parts = [costLabel, receipt.description].filter(Boolean);
   if (receipt.costType === "car" && receipt.kilometers) {
-    parts.push(`${receipt.kilometers} km × 0,30 €`);
+    parts.push(
+      `${receipt.kilometers} km × ${getCarAllowanceRate(receipt).toFixed(2).replace(".", ",")} €`,
+    );
   }
   return parts.join(" – ");
 }

@@ -1,6 +1,6 @@
-import type { CostType, MealAllowance } from "@/lib/db/types";
+import type { CarAllowanceRate, CostType, MealAllowance } from "@/lib/db/types";
 
-export type { CostType };
+export type { CarAllowanceRate, CostType };
 
 export const COST_LABELS: Record<CostType, string> = {
   car: "PKW",
@@ -24,7 +24,24 @@ export const DEFAULT_TAX_RATES: Record<CostType, number> = {
 
 export const COST_TYPES = Object.keys(COST_LABELS) as CostType[];
 
-export const CAR_ALLOWANCE_RATE_EUR_PER_KM = 0.3;
+export const CAR_ALLOWANCE_RATES_EUR_PER_KM = [
+  0.3, 0.15,
+] as const satisfies readonly CarAllowanceRate[];
+
+export const CAR_ALLOWANCE_RATE_EUR_PER_KM = CAR_ALLOWANCE_RATES_EUR_PER_KM[0];
+
+export function getCarAllowanceRate(receipt: {
+  mileageRate?: CarAllowanceRate;
+}): CarAllowanceRate {
+  return receipt.mileageRate ?? CAR_ALLOWANCE_RATE_EUR_PER_KM;
+}
+
+export function calculateCarAllowance(
+  kilometers: number,
+  mileageRate: CarAllowanceRate,
+): number {
+  return Math.round(kilometers * mileageRate * 100) / 100;
+}
 
 export const MEAL_ALLOWANCE_PARTIAL_DAY_EUR = 14;
 export const MEAL_ALLOWANCE_FULL_DAY_EUR = 28;

@@ -6,7 +6,7 @@ import type {
   ReimbursementInput,
 } from "../reimbursementPdf/data";
 import {
-  CAR_ALLOWANCE_RATE_EUR_PER_KM,
+  getCarAllowanceRate,
   getMealAllowanceWithLegacyFallback,
 } from "../../travel-costs";
 import type { TravelMode, TravelPdfData, TravelPdfField } from "./types";
@@ -77,9 +77,13 @@ export function buildTravelPdfData(
     0,
   );
   if (carReceipts.length > 0) {
+    const mileageRates = new Set(carReceipts.map(getCarAllowanceRate));
     modes.add("car");
     fields.privateCarKilometers = number(carKilometers);
-    fields.mileageRate = euro(CAR_ALLOWANCE_RATE_EUR_PER_KM);
+    fields.mileageRate =
+      mileageRates.size === 1
+        ? euro(mileageRates.values().next().value ?? 0)
+        : "verschieden";
     addMoneyField(fields, "privateCarCost", carTotal);
   }
 

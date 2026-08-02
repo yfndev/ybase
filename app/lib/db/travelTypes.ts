@@ -7,6 +7,8 @@ export type CostType =
   | "accommodation"
   | "incidental";
 
+export type CarAllowanceRate = 0.3 | 0.15;
+
 export type MealAllowanceLine = { days: number; rate: number };
 
 export type MealAllowance = {
