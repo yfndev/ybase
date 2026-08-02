@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import { formatDate } from "@/lib/formatters/formatDate";
-import { CAR_ALLOWANCE_RATE_EUR_PER_KM } from "@/lib/travel-costs";
+import { getCarAllowanceRate } from "@/lib/travel-costs";
 import { ExternalLink, FileText } from "lucide-react";
 import { COST_TYPE_LABELS } from "./constants";
 import type { ReceiptWithUrl } from "./types";
@@ -77,7 +77,7 @@ export function ReceiptCard({ receipt }: { receipt: ReceiptWithUrl }) {
             {receipt.kilometers && (
               <span className="text-sm text-muted-foreground">
                 {receipt.kilometers} km ×{" "}
-                {formatCurrency(CAR_ALLOWANCE_RATE_EUR_PER_KM)}
+                {formatCurrency(getCarAllowanceRate(receipt))}
               </span>
             )}
           </div>

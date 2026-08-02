@@ -1,7 +1,11 @@
 "use client";
 
 import { toNet } from "@/lib/bank-utils";
-import { type CostType, DEFAULT_TAX_RATES } from "@/lib/travel-costs";
+import {
+  CAR_ALLOWANCE_RATE_EUR_PER_KM,
+  type CostType,
+  DEFAULT_TAX_RATES,
+} from "@/lib/travel-costs";
 import { createClientReceiptId } from "@/lib/travelReceiptForm";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -68,6 +72,8 @@ export function useReceipts(startDate: string) {
         grossAmount: 0,
         fileStorageId: "",
         kilometers: costType === "car" ? 0 : undefined,
+        mileageRate:
+          costType === "car" ? CAR_ALLOWANCE_RATE_EUR_PER_KM : undefined,
       },
     ]);
   };

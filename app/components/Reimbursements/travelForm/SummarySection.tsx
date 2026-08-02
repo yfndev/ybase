@@ -3,10 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
-import {
-  CAR_ALLOWANCE_RATE_EUR_PER_KM,
-  COST_LABELS as LABELS,
-} from "@/lib/travel-costs";
+import { COST_LABELS as LABELS, getCarAllowanceRate } from "@/lib/travel-costs";
 import { getTravelReceiptLabel } from "@/lib/travelReceiptForm";
 import { Loader2 } from "lucide-react";
 import type { Receipt } from "./types";
@@ -64,7 +61,7 @@ export function SummarySection({
                     {receipt.costType === "car" && (
                       <div className="text-sm text-muted-foreground">
                         {receipt.kilometers} km ×{" "}
-                        {formatCurrency(CAR_ALLOWANCE_RATE_EUR_PER_KM)}
+                        {formatCurrency(getCarAllowanceRate(receipt))}
                       </div>
                     )}
                   </div>

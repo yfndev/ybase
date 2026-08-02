@@ -1,4 +1,4 @@
-import type { CostType, MealAllowance } from "./travelTypes";
+import type { CarAllowanceRate, CostType, MealAllowance } from "./travelTypes";
 
 export type ReimbursementType = "expense" | "travel";
 export type ReviewStatus =
@@ -71,4 +71,5 @@ export interface Receipt {
   fileStorageId: string;
   costType?: CostType;
   kilometers?: number;
+  mileageRate?: CarAllowanceRate;
 }

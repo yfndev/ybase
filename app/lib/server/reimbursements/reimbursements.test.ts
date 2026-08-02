@@ -375,6 +375,43 @@ test("creates a kilometer allowance without requiring a receipt file", async () 
   });
 });
 
+test("creates a kilometer allowance with the 15 cent rate", async () => {
+  const input = reimbursementInput();
+  const id = await createTravelReimbursement({
+    ...input,
+    amount: 15,
+    startDate: "2026-05-15",
+    startTime: "08:00",
+    endDate: "2026-05-15",
+    endTime: "18:00",
+    destination: "Berlin",
+    purpose: "Workshop",
+    isInternational: false,
+    receipts: [
+      {
+        costType: "car",
+        receiptDate: "2026-05-15",
+        companyName: "Privater PKW",
+        description: "",
+        netAmount: 15,
+        taxRate: 0,
+        grossAmount: 15,
+        kilometers: 100,
+        mileageRate: 0.15,
+      },
+    ],
+  });
+
+  const receipt = await (await receipts()).findOne({ reimbursementId: id });
+  expect(receipt).toMatchObject({
+    costType: "car",
+    kilometers: 100,
+    mileageRate: 0.15,
+    grossAmount: 15,
+    fileStorageId: "",
+  });
+});
+
 test("creating an emailed submission request sends the request template", async () => {
   const id = await createReimbursementLink({
     projectId: projectA,

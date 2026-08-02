@@ -1,5 +1,6 @@
 "use client";
 
+import { CarMileageRateSelect } from "@/components/Reimbursements/CarMileageRateSelect";
 import { ReceiptUpload } from "@/components/Reimbursements/ReceiptUpload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { toNet } from "@/lib/bank-utils";
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
-import { CAR_ALLOWANCE_RATE_EUR_PER_KM } from "@/lib/travel-costs";
+import { calculateCarAllowance, getCarAllowanceRate } from "@/lib/travel-costs";
 import { Trash2 } from "lucide-react";
 import { InvoiceOrganizationHint } from "../InvoiceOrganizationHint";
 import { PLACEHOLDERS } from "./constants";
@@ -34,13 +35,16 @@ export function ReceiptCard({
   onUpdate,
   organizationName,
 }: Props) {
+  const mileageRate = getCarAllowanceRate(receipt);
+  const mileageRateInputId = `${receipt.clientId}-mileage-rate`;
+
   return (
     <fieldset className="@container min-w-0 border rounded-lg p-4 space-y-4">
       <legend className="sr-only">{title}</legend>
       <div className="flex justify-between items-center">
         <h3 className="font-medium">
           {receipt.costType === "car"
-            ? `${title} (${formatCurrency(CAR_ALLOWANCE_RATE_EUR_PER_KM)}/km)`
+            ? `${title} (${formatCurrency(mileageRate)}/km)`
             : title}
         </h3>
         <Button
@@ -85,6 +89,12 @@ export function ReceiptCard({
         ) : null}
         {receipt.costType === "car" ? (
           <>
+            <CarMileageRateSelect
+              id={mileageRateInputId}
+              kilometers={receipt.kilometers}
+              mileageRate={mileageRate}
+              onUpdate={onUpdate}
+            />
             <div>
               <Label>Kilometer *</Label>
               <Input
@@ -96,8 +106,7 @@ export function ReceiptCard({
                     0,
                     Math.floor(parseFloat(e.target.value) || 0),
                   );
-                  const amount =
-                    Math.round(km * CAR_ALLOWANCE_RATE_EUR_PER_KM * 100) / 100;
+                  const amount = calculateCarAllowance(km, mileageRate);
                   onUpdate({
                     kilometers: km,
                     grossAmount: amount,
