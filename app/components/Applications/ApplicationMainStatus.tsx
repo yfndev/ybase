@@ -1,111 +1,124 @@
 import { Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { ApplicationStatus } from "@/lib/db/types";
 import {
-  getApplicationMainStatus,
-  type ApplicationMainStatus as MainStatus,
+	getApplicationMainStatus,
+	type ApplicationMainStatus as MainStatus,
 } from "@/lib/applications/mainStatus";
+import type { ApplicationStatus } from "@/lib/db/types";
 import { cn } from "@/lib/utils";
 
 const FLOW = [
-  {
-    status: "application",
-    label: "Bewerbung",
-    active:
-      "border-sky-300 bg-sky-50 text-sky-900 dark:border-sky-700 dark:bg-sky-950/60 dark:text-sky-100",
-  },
-  {
-    status: "interview",
-    label: "Interview",
-    active:
-      "border-violet-300 bg-violet-50 text-violet-900 dark:border-violet-700 dark:bg-violet-950/60 dark:text-violet-100",
-  },
-  {
-    status: "accepted",
-    label: "Angenommen",
-    active:
-      "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-100",
-  },
+	{
+		status: "application",
+		label: "Bewerbung",
+	},
+	{
+		status: "interview",
+		label: "Interview",
+	},
+	{
+		status: "accepted",
+		label: "Angenommen",
+	},
 ] as const;
 
 const TERMINAL_STATUS: Record<
-  Extract<MainStatus, "rejected" | "withdrawn">,
-  { label: string; className: string }
+	Extract<MainStatus, "rejected" | "withdrawn">,
+	{ label: string; className: string }
 > = {
-  rejected: {
-    label: "Abgelehnt",
-    className:
-      "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200",
-  },
-  withdrawn: {
-    label: "Zurückgezogen",
-    className:
-      "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200",
-  },
+	rejected: {
+		label: "Abgelehnt",
+		className: "border-destructive bg-destructive text-destructive-foreground",
+	},
+	withdrawn: {
+		label: "Zurückgezogen",
+		className: "border-border bg-muted text-muted-foreground",
+	},
 };
 
 export function ApplicationMainStatus({
-  status,
+	status,
 }: {
-  status: ApplicationStatus;
+	status: ApplicationStatus;
 }) {
-  const mainStatus = getApplicationMainStatus(status);
-  const activeIndex = FLOW.findIndex((step) => step.status === mainStatus);
-  const terminalStatus =
-    mainStatus === "rejected" || mainStatus === "withdrawn"
-      ? TERMINAL_STATUS[mainStatus]
-      : undefined;
+	const mainStatus = getApplicationMainStatus(status);
+	const activeIndex = FLOW.findIndex((step) => step.status === mainStatus);
+	const terminalStatus =
+		mainStatus === "rejected" || mainStatus === "withdrawn"
+			? TERMINAL_STATUS[mainStatus]
+			: undefined;
 
-  return (
-    <section className="space-y-4 border-t pt-5">
-      <h3 className="text-xl font-semibold">Status der Bewerbung</h3>
-      {activeIndex >= 0 ? (
-        <ol
-          className="grid grid-cols-3 gap-2"
-          aria-label="Bewerbungsfortschritt"
-        >
-          {FLOW.map((step, index) => {
-            const isActive = index === activeIndex;
-            const isCompleted = index < activeIndex;
-            return (
-              <li
-                key={step.status}
-                aria-current={isActive ? "step" : undefined}
-                className={cn(
-                  "flex min-h-20 flex-col justify-between border p-3",
-                  isActive
-                    ? step.active
-                    : "border-border bg-background text-muted-foreground",
-                )}
-              >
-                <span
-                  className={cn(
-                    "flex size-6 items-center justify-center border text-xs font-semibold",
-                    isActive
-                      ? "border-current"
-                      : isCompleted
-                        ? "border-foreground bg-foreground text-background"
-                        : "border-border",
-                  )}
-                >
-                  {isCompleted ? <Check className="size-3.5" /> : index + 1}
-                </span>
-                <span className="text-sm font-semibold">{step.label}</span>
-              </li>
-            );
-          })}
-        </ol>
-      ) : terminalStatus ? (
-        <Badge
-          variant="outline"
-          className={cn(
-            "px-4 py-2 text-base font-semibold",
-            terminalStatus.className,
-          )}
-        >
-          {terminalStatus.label}
-        </Badge>
-      ) : null}
-    </section>
-  );
+	return (
+		<section className="space-y-4 border-t pt-5">
+			<h3 className="text-xl font-semibold">Status der Bewerbung</h3>
+			{activeIndex >= 0 ? (
+				<ol className="grid grid-cols-3" aria-label="Bewerbungsfortschritt">
+					{FLOW.map((step, index) => {
+						const isActive = index === activeIndex;
+						const isCompleted = index < activeIndex;
+						const stateLabel = isActive
+							? "Aktuell"
+							: isCompleted
+								? "Abgeschlossen"
+								: "Ausstehend";
+						return (
+							<li
+								key={step.status}
+								aria-current={isActive ? "step" : undefined}
+								aria-label={`${index + 1}. ${step.label}: ${stateLabel}`}
+								className={cn(
+									"relative flex flex-col items-center gap-2 text-center",
+									index > 0 &&
+										"before:absolute before:top-[15px] before:right-1/2 before:h-0.5 before:w-full before:content-['']",
+									index > activeIndex
+										? "before:bg-border"
+										: "before:bg-foreground",
+								)}
+							>
+								<span
+									className={cn(
+										"relative z-10 flex size-8 items-center justify-center border-2 bg-background text-sm font-semibold",
+										isActive
+											? "border-foreground bg-primary text-primary-foreground"
+											: isCompleted
+												? "border-foreground bg-foreground text-background"
+												: "border-border text-muted-foreground",
+									)}
+								>
+									{isCompleted ? (
+										<Check aria-hidden="true" className="size-4" />
+									) : (
+										index + 1
+									)}
+								</span>
+								<span
+									className={cn(
+										"text-sm font-semibold",
+										!isActive && "text-muted-foreground",
+									)}
+								>
+									{step.label}
+								</span>
+								{isActive ? (
+									<span className="text-[0.6875rem] font-semibold tracking-wider text-muted-foreground uppercase">
+										Aktuell
+									</span>
+								) : null}
+							</li>
+						);
+					})}
+				</ol>
+			) : terminalStatus ? (
+				<Badge
+					variant="outline"
+					className={cn(
+						"h-9 border-2 px-3 text-sm font-semibold",
+						terminalStatus.className,
+					)}
+				>
+					{terminalStatus.label}
+				</Badge>
+			) : null}
+		</section>
+	);
 }
