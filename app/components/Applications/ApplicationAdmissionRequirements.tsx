@@ -81,7 +81,6 @@ export function ApplicationAdmissionRequirements({
         candidates={memberProfiles.candidates}
         dateOfBirth={dateOfBirth}
         hasProfile={hasProfile}
-        isEligible={isEligible}
         isPending={pending}
         isSigned={Boolean(consent?.signedAt)}
         isSearching={memberProfiles.isSearching}

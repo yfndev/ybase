@@ -6,7 +6,6 @@ import { formatFieldValue } from "./applicationPresentation";
 interface ApplicationAdmissionProfileProps {
   dateOfBirth?: string;
   hasProfile: boolean;
-  isEligible: boolean;
   canSync: boolean;
   candidates: ApplicationMemberPlatformCandidate[] | null;
   isPending: boolean;
@@ -22,7 +21,6 @@ interface ApplicationAdmissionProfileProps {
 export function ApplicationAdmissionProfile({
   dateOfBirth,
   hasProfile,
-  isEligible,
   canSync,
   candidates,
   isPending,
@@ -61,12 +59,6 @@ export function ApplicationAdmissionProfile({
           <span>{formatFieldValue(dateOfBirth, "INPUT_DATE")}</span>
         </div>
       </div>
-      {!isEligible ? (
-        <p className="text-sm text-destructive">
-          Bei der Aufnahme muss die Person mindestens 16 und noch nicht 25 Jahre
-          alt sein.
-        </p>
-      ) : null}
       {canSync && !isSigned ? (
         <ApplicationAdmissionProfileSearch
           candidates={candidates}
