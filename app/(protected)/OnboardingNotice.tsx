@@ -61,6 +61,11 @@ function OnboardingStep({ state, title, description }: StepProps) {
 export function OnboardingNotice({ onboardingStatus }: Props) {
   const isOnboardingComplete = onboardingStatus === "completed";
   const isOnboardingStarted = onboardingStatus === "in_progress";
+  const title = isOnboardingComplete
+    ? "Deine Unterlagen werden geprüft"
+    : isOnboardingStarted
+      ? "Onboarding abschließen"
+      : "Dein Onboarding wird vorbereitet";
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
@@ -69,10 +74,11 @@ export function OnboardingNotice({ onboardingStatus }: Props) {
           <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
             <ClipboardCheck aria-hidden="true" className="size-6" />
           </div>
-          <CardTitle className="text-2xl">Dein Onboarding läuft</CardTitle>
+          <CardTitle className="text-2xl">{title}</CardTitle>
           <CardDescription className="text-base leading-relaxed">
-            Sobald deine Aufgaben abgeschlossen und von People &amp; Culture
-            freigegeben wurden, kannst du YBase vollständig nutzen.
+            Schließe die erforderlichen Unterlagen ab. Nach der Prüfung durch
+            People &amp; Culture wird dein vollständiger YBase-Zugang
+            freigeschaltet.
           </CardDescription>
         </CardHeader>
 
@@ -80,18 +86,18 @@ export function OnboardingNotice({ onboardingStatus }: Props) {
           <ol className="space-y-6" aria-label="Onboarding-Fortschritt">
             <OnboardingStep
               state="completed"
-              title="Registrierung abgeschlossen"
-              description="Dein Teammitglied-Profil wurde angelegt."
+              title="YBase-Zugang eingerichtet"
+              description="Dein Konto wurde angelegt und mit deinem Member-Profil verknüpft."
             />
             <OnboardingStep
               state={isOnboardingComplete ? "completed" : "current"}
-              title="Onboarding-Aufgaben erledigen"
+              title="Unterlagen ausfüllen und bestätigen"
               description={
                 isOnboardingComplete
-                  ? "Alle hinterlegten Aufgaben wurden als abgeschlossen markiert."
+                  ? "Alle erforderlichen Unterlagen wurden abgeschlossen."
                   : isOnboardingStarted
-                    ? "Deine Aufgaben sind in Bearbeitung. Dazu gehört z. B. das Formular zur Teilnahme am Verein."
-                    : "People & Culture stellt dir die Aufgaben bereit, darunter das Formular zur Teilnahme am Verein."
+                    ? "Schließe die dir zugesandten Unterlagen ab, darunter die Datenschutzhinweise und weitere erforderliche Erklärungen."
+                    : "People & Culture stellt dir die erforderlichen Unterlagen bereit."
               }
             />
             <OnboardingStep
@@ -99,8 +105,8 @@ export function OnboardingNotice({ onboardingStatus }: Props) {
               title="Freigabe durch People & Culture"
               description={
                 isOnboardingComplete
-                  ? "Deine Angaben werden geprüft. Nach der Freigabe kannst du unter anderem Erstattungen einreichen."
-                  : "Die Prüfung beginnt, sobald deine Onboarding-Aufgaben abgeschlossen sind."
+                  ? "People & Culture prüft deine Angaben und schaltet anschließend deinen vollständigen Zugang frei."
+                  : "Die Prüfung beginnt, sobald du alle erforderlichen Unterlagen abgeschlossen hast."
               }
             />
           </ol>
