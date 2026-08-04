@@ -17,6 +17,8 @@ const DISPLAYABLE_DECISION_ERRORS = new Set([
   "YBase-URL ist nicht konfiguriert",
   "Diese Workspace-E-Mail ist bereits einer Bewerbung zugeordnet",
   "Diese Workspace-E-Mail gehört bereits zu einem YBase-Profil",
+  "Das Member-Profil ist bereits mit einem YBase-Nutzer verknüpft.",
+  "Das Mitglied konnte nicht eindeutig mit der Bewerbung verknüpft werden.",
   "Diese Workspace-E-Mail ist bereits vergeben",
   "Das Workspace-Konto verwendet eine andere E-Mail",
   "Google-Workspace-Integration ist nicht konfiguriert",
