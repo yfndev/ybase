@@ -117,8 +117,8 @@ export function ApplicationAdmissionProfileSearch({
                   variant="ghost"
                   size="member"
                   className={cn(
-                    "h-auto w-full justify-between whitespace-normal rounded-none px-2 py-3 text-left hover:bg-muted/50",
-                    isSelected && "bg-muted/50 disabled:opacity-100",
+                    "h-auto w-full justify-between whitespace-normal rounded-none px-2 py-3 text-left",
+                    isSelected && "disabled:opacity-100",
                   )}
                   disabled={isPending || isSelected}
                   aria-label={
@@ -146,7 +146,7 @@ export function ApplicationAdmissionProfileSearch({
                       className="size-4 animate-spin"
                     />
                   ) : isSelected ? (
-                    <span className="flex items-center gap-1 text-sm font-semibold text-green-700">
+                    <span className="flex items-center gap-1 text-sm font-semibold">
                       <CheckCircle2 aria-hidden="true" className="size-4" />
                       Zugeordnet
                     </span>

@@ -12,6 +12,37 @@ interface AcceptedApplicantMemberInput {
   teamId: string;
 }
 
+export async function assertAcceptedApplicantMemberAvailable(input: {
+  application: Application;
+  email: string;
+}): Promise<void> {
+  const userCollection = await users();
+  const [existingByEmail, existingByMemberProfile] = await Promise.all([
+    userCollection.findOne({ email: normalizeYfnEmail(input.email) }),
+    input.application.memberPlatformUserId
+      ? userCollection.findOne({
+          memberPlatformUserId: input.application.memberPlatformUserId,
+        })
+      : undefined,
+  ]);
+  if (
+    existingByMemberProfile &&
+    existingByMemberProfile.applicationId !== input.application._id
+  ) {
+    throw new Error(
+      "Das Member-Profil ist bereits mit einem YBase-Nutzer verknüpft.",
+    );
+  }
+  if (
+    existingByEmail &&
+    existingByEmail.applicationId !== input.application._id
+  ) {
+    throw new Error(
+      "Diese Workspace-E-Mail gehört bereits zu einem YBase-Profil",
+    );
+  }
+}
+
 export async function createAcceptedApplicantMember(
   input: AcceptedApplicantMemberInput,
 ): Promise<{ isCreated: boolean; member: User }> {

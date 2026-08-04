@@ -8,6 +8,7 @@ import {
   requireWorkspaceAccountReadyTemplateId,
   sendWorkspaceAccountReadyEmail,
 } from "../users/email";
+import { assertAcceptedApplicantMemberAvailable } from "./memberProvisioning";
 import {
   recordWorkspaceDeliveryFailure,
   recordWorkspaceProvisioned,
@@ -38,6 +39,10 @@ export async function prepareAcceptance(input: {
   workspaceUserId: string;
   workspaceAccess: WorkspaceAccessDetails;
 }> {
+  await assertAcceptedApplicantMemberAvailable({
+    application: input.application,
+    email: input.yfnEmail,
+  });
   requireWorkspaceAccountReadyTemplateId();
   const loginUrl = ybaseLoginUrl();
   const reservation = await reserveWorkspaceProvisioning({

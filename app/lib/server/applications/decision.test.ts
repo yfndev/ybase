@@ -28,6 +28,7 @@ import { YFN_ORGANIZATION } from "../../organization";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { sendApplicationDecision } from "./decision";
+import { submitApplicationDecision } from "./decisionAction";
 import {
   requireWorkspaceAccountReadyTemplateId,
   sendUserStateEmail,
@@ -222,7 +223,7 @@ test("blocks acceptance before external side effects without a member-platform s
   expect(sendMail).not.toHaveBeenCalled();
 });
 
-test("does not send credentials when the onboarding profile cannot be linked", async () => {
+test("rejects an already linked member profile before external side effects", async () => {
   await (
     await users()
   ).createIndex({ memberPlatformUserId: 1 }, { unique: true, sparse: true });
@@ -242,22 +243,23 @@ test("does not send credentials when the onboarding profile cannot be linked", a
   });
 
   await expect(
-    sendApplicationDecision({
+    submitApplicationDecision({
       applicationId,
       decision: "accepted",
       yfnEmail,
       subject: "Zusage",
       message: "Willkommen!",
     }),
-  ).rejects.toThrow("nicht eindeutig");
+  ).resolves.toEqual({
+    ok: false,
+    error: "Das Member-Profil ist bereits mit einem YBase-Nutzer verknüpft.",
+  });
 
+  expect(provisionWorkspaceUser).not.toHaveBeenCalled();
   expect(sendMail).not.toHaveBeenCalled();
   expect(
     await (await applications()).findOne({ _id: applicationId }),
-  ).toMatchObject({
-    status: "review",
-    workspaceProvisioningStatus: "provisioned",
-  });
+  ).not.toHaveProperty("workspaceProvisioningStatus");
 });
 
 test("sends a rejection with its dedicated template and then rejects", async () => {
