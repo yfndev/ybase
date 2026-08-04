@@ -51,14 +51,14 @@ export function ApplicationAdmissionProfile({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
-        <p className="flex items-center gap-2 font-semibold text-green-700">
+      <div className="space-y-3 border-y py-3">
+        <p className="flex items-center gap-2 font-medium">
           <CheckCircle2 aria-hidden="true" className="size-4" />
           Member-Profil zugeordnet
         </p>
-        <div className="space-y-1">
-          <p className="text-sm font-medium">Geburtsdatum</p>
-          <p>{formatFieldValue(dateOfBirth, "INPUT_DATE")}</p>
+        <div className="flex items-baseline justify-between gap-4 text-sm">
+          <span className="text-muted-foreground">Geburtsdatum</span>
+          <span>{formatFieldValue(dateOfBirth, "INPUT_DATE")}</span>
         </div>
       </div>
       {!isEligible ? (
