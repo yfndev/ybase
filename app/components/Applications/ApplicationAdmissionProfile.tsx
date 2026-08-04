@@ -1,6 +1,6 @@
-import { Loader2, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { CheckCircle2 } from "lucide-react";
 import type { ApplicationMemberPlatformCandidate } from "@/lib/server/applications/memberPlatformCandidates";
+import { ApplicationAdmissionProfileSearch } from "./ApplicationAdmissionProfileSearch";
 import { formatFieldValue } from "./applicationPresentation";
 
 interface ApplicationAdmissionProfileProps {
@@ -12,6 +12,8 @@ interface ApplicationAdmissionProfileProps {
   isPending: boolean;
   isSigned: boolean;
   isSearching: boolean;
+  searchError: boolean;
+  selectedProfileId?: string;
   selectingProfileId?: string;
   onSearch: () => void;
   onSelect: (profileId: string) => void;
@@ -26,16 +28,20 @@ export function ApplicationAdmissionProfile({
   isPending,
   isSigned,
   isSearching,
+  searchError,
+  selectedProfileId,
   selectingProfileId,
   onSearch,
   onSelect,
 }: ApplicationAdmissionProfileProps) {
   if (!hasProfile || !dateOfBirth) {
     return canSync ? (
-      <ProfileSearch
+      <ApplicationAdmissionProfileSearch
         candidates={candidates}
         isPending={isPending}
         isSearching={isSearching}
+        searchError={searchError}
+        selectedProfileId={selectedProfileId}
         selectingProfileId={selectingProfileId}
         onSearch={onSearch}
         onSelect={onSelect}
@@ -45,9 +51,15 @@ export function ApplicationAdmissionProfile({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-1">
-        <p className="text-sm font-medium">Geburtsdatum</p>
-        <p>{formatFieldValue(dateOfBirth, "INPUT_DATE")}</p>
+      <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
+        <p className="flex items-center gap-2 font-semibold text-green-700">
+          <CheckCircle2 aria-hidden="true" className="size-4" />
+          Member-Profil zugeordnet
+        </p>
+        <div className="space-y-1">
+          <p className="text-sm font-medium">Geburtsdatum</p>
+          <p>{formatFieldValue(dateOfBirth, "INPUT_DATE")}</p>
+        </div>
       </div>
       {!isEligible ? (
         <p className="text-sm text-destructive">
@@ -56,118 +68,17 @@ export function ApplicationAdmissionProfile({
         </p>
       ) : null}
       {canSync && !isSigned ? (
-        <ProfileSearch
+        <ApplicationAdmissionProfileSearch
           candidates={candidates}
           isPending={isPending}
           isSearching={isSearching}
+          searchError={searchError}
+          selectedProfileId={selectedProfileId}
           selectingProfileId={selectingProfileId}
           onSearch={onSearch}
           onSelect={onSelect}
         />
       ) : null}
-    </div>
-  );
-}
-
-function ProfileSearch({
-  candidates,
-  isPending,
-  isSearching,
-  selectingProfileId,
-  onSearch,
-  onSelect,
-}: {
-  candidates: ApplicationMemberPlatformCandidate[] | null;
-  isPending: boolean;
-  isSearching: boolean;
-  selectingProfileId?: string;
-  onSearch: () => void;
-  onSelect: (profileId: string) => void;
-}) {
-  if (candidates === null) {
-    return (
-      <Button
-        type="button"
-        variant="outline"
-        size="member"
-        className="w-full"
-        disabled={isPending}
-        aria-busy={isSearching}
-        onClick={onSearch}
-      >
-        <RefreshCw
-          aria-hidden="true"
-          className={isSearching ? "size-4 animate-spin" : "size-4"}
-        />
-        Member-Profile suchen
-      </Button>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium">
-          {candidates.length > 0
-            ? "Passendes Profil auswählen"
-            : "Keine Treffer"}
-        </p>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          disabled={isPending}
-          aria-busy={isSearching}
-          onClick={onSearch}
-        >
-          <RefreshCw
-            aria-hidden="true"
-            className={isSearching ? "size-3.5 animate-spin" : "size-3.5"}
-          />
-          Aktualisieren
-        </Button>
-      </div>
-
-      {candidates.length > 0 ? (
-        <ul className="divide-y border-y">
-          {candidates.map((candidate) => (
-            <li key={candidate.id}>
-              <Button
-                type="button"
-                variant="ghost"
-                size="member"
-                className="h-auto w-full justify-between whitespace-normal rounded-none px-2 py-3 text-left hover:bg-muted/50"
-                disabled={isPending}
-                aria-label={`${candidate.name} als Member-Profil zuordnen`}
-                onClick={() => onSelect(candidate.id)}
-              >
-                <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
-                  <span className="font-semibold">{candidate.name}</span>
-                  {candidate.email ? (
-                    <span className="break-all text-xs font-normal text-muted-foreground">
-                      {candidate.email}
-                    </span>
-                  ) : null}
-                  <span className="text-xs font-normal text-muted-foreground">
-                    Geburtsdatum:{" "}
-                    {formatFieldValue(candidate.dateOfBirth, "INPUT_DATE")}
-                  </span>
-                </span>
-                {selectingProfileId === candidate.id ? (
-                  <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-                ) : (
-                  <span className="text-sm font-semibold">Zuordnen</span>
-                )}
-              </Button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          Kein aktives Member-Profil gefunden. Vor der Aufnahme muss die Person
-          eines erstellen.
-        </p>
-      )}
     </div>
   );
 }

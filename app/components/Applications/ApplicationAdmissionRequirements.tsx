@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useApplicationMemberPlatformProfiles } from "@/lib/client/applications/hooks/useApplicationMemberPlatformProfiles";
 import { useApplicationMutations } from "@/lib/client/applications/hooks/useApplicationMutations";
 import type { ApplicationWithFiles } from "@/lib/db/types";
 import { ageOnDate } from "@/lib/members/legalDates";
@@ -18,11 +19,8 @@ export function ApplicationAdmissionRequirements({
 }: {
   application: ApplicationWithFiles;
 }) {
-  const {
-    searchMemberPlatformProfiles,
-    selectMemberPlatformProfile,
-    requestGuardianConsent,
-  } = useApplicationMutations();
+  const { selectMemberPlatformProfile, requestGuardianConsent } =
+    useApplicationMutations();
   const [representativeName, setRepresentativeName] = useState(
     application.guardianConsent?.representativeName ?? "",
   );
@@ -35,22 +33,16 @@ export function ApplicationAdmissionRequirements({
   const isMinor = age !== null && age < 18;
   const isEligible = age !== null && age >= 16 && age < 25;
   const consent = application.guardianConsent;
+  const isEditable = EDITABLE_STATUSES.has(application.status);
+  const memberProfiles = useApplicationMemberPlatformProfiles(
+    application._id,
+    isEditable && !consent?.signedAt,
+  );
   const pending =
-    searchMemberPlatformProfiles.isPending ||
+    memberProfiles.isSearching ||
     selectMemberPlatformProfile.isPending ||
     requestGuardianConsent.isPending;
-  const isEditable = EDITABLE_STATUSES.has(application.status);
   if (application.status === "rejected") return null;
-
-  async function searchProfiles() {
-    try {
-      await searchMemberPlatformProfiles.mutateAsync({
-        applicationId: application._id,
-      });
-    } catch {
-      toast.error("Member-Profile konnten nicht geladen werden.");
-    }
-  }
 
   async function selectProfile(profileId: string) {
     try {
@@ -86,19 +78,21 @@ export function ApplicationAdmissionRequirements({
       <h3 className="text-xl font-semibold">Member-Profil *</h3>
       <ApplicationAdmissionProfile
         canSync={isEditable}
-        candidates={searchMemberPlatformProfiles.data ?? null}
+        candidates={memberProfiles.candidates}
         dateOfBirth={dateOfBirth}
         hasProfile={hasProfile}
         isEligible={isEligible}
         isPending={pending}
         isSigned={Boolean(consent?.signedAt)}
-        isSearching={searchMemberPlatformProfiles.isPending}
+        isSearching={memberProfiles.isSearching}
+        searchError={memberProfiles.isError}
+        selectedProfileId={application.memberPlatformUserId}
         selectingProfileId={
           selectMemberPlatformProfile.isPending
             ? selectMemberPlatformProfile.variables?.profileId
             : undefined
         }
-        onSearch={searchProfiles}
+        onSearch={() => void memberProfiles.refetch()}
         onSelect={selectProfile}
       />
       {hasProfile && isEligible && isMinor ? (

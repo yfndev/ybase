@@ -274,7 +274,11 @@ test("enforces allowed non-decision transitions and records them", async () => {
   await setApplicationStatus({ applicationId, status: "interview" });
 
   const stored = await (await applications()).findOne({ _id: applicationId });
-  expect(stored?.status).toBe("interview");
+  expect(stored).toMatchObject({
+    status: "interview",
+    memberPlatformUserId: "platform-alex",
+    dateOfBirth: "2004-01-01",
+  });
   expect(stored?.history).toHaveLength(1);
   expect(stored?.history?.at(-1)).toMatchObject({
     fromStatus: "received",
