@@ -3,7 +3,10 @@
 import { z } from "zod";
 import { USER_PERMISSIONS } from "../../auth/roles";
 import { requirePermission } from "../../auth/session";
-import { isDeadlineInFuture } from "../../jobPostings/deadline";
+import {
+  isDeadlineInFuture,
+  JOB_POSTING_DEADLINE_ERROR,
+} from "../../jobPostings/deadline";
 import { statusMeansClosed } from "../../jobPostings/status";
 import { requireOwnedJobPosting } from "./access";
 import { applyStatusTransition, syncTallyClosed } from "./tallySync";
@@ -49,7 +52,7 @@ export async function reopenJobPosting(input: {
     );
   }
   if (!isDeadlineInFuture(posting.deadline)) {
-    throw new Error("Die Frist muss in der Zukunft liegen");
+    throw new Error(JOB_POSTING_DEADLINE_ERROR);
   }
   const result = await applyStatusTransition({
     posting,

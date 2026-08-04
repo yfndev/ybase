@@ -5,7 +5,10 @@ import { USER_PERMISSIONS } from "../../auth/roles";
 import { requirePermission } from "../../auth/session";
 import { jobPostings } from "../../db/collections";
 import type { JobPosting } from "../../db/types";
-import { isDeadlineInFuture } from "../../jobPostings/deadline";
+import {
+  isDeadlineInFuture,
+  JOB_POSTING_DEADLINE_ERROR,
+} from "../../jobPostings/deadline";
 import { addLog } from "../logs";
 import { createConfiguredTallyClient } from "../tally/client";
 import {
@@ -24,7 +27,7 @@ function assertPublishable(posting: JobPosting): void {
     );
   }
   if (!isDeadlineInFuture(posting.deadline)) {
-    throw new Error("Die Frist muss in der Zukunft liegen");
+    throw new Error(JOB_POSTING_DEADLINE_ERROR);
   }
 }
 
