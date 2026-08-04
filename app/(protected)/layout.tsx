@@ -24,7 +24,10 @@ export default async function ProtectedLayout({
   let content: ReactNode;
   if (isUnavailableMemberStatus(member.memberStatus)) {
     content = <OffboardedNotice />;
-  } else if (member.publicProfileSetupRequired === true) {
+  } else if (
+    member.publicProfileSetupRequired === true &&
+    !member.memberPlatformUserId
+  ) {
     content = (
       <PublicProfileSetup
         canUseGooglePhoto={

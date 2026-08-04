@@ -179,7 +179,8 @@ test("sends acceptance, Workspace access, and onboarding instructions in order",
       action: "application.status_change",
     }),
   ).toMatchObject({ action: "application.status_change" });
-  expect(await (await users()).findOne({ applicationId })).toMatchObject({
+  const onboardingMember = await (await users()).findOne({ applicationId });
+  expect(onboardingMember).toMatchObject({
     _id: stored?.onboardingUserId,
     name: "Alex Beispiel",
     email: yfnEmail,
@@ -194,6 +195,7 @@ test("sends acceptance, Workspace access, and onboarding instructions in order",
     memberStatus: "onboarding",
     teamOnboardingStatus: "in_progress",
   });
+  expect(onboardingMember).not.toHaveProperty("publicProfileSetupRequired");
 });
 
 test("blocks acceptance before external side effects without a member-platform snapshot", async () => {

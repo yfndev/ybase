@@ -86,7 +86,6 @@ export async function createAcceptedApplicantMember(
     applicationId: input.application._id,
     memberStatus: "onboarding",
     teamOnboardingStatus: "in_progress",
-    publicProfileSetupRequired: true,
     registeredAt: now,
   };
 
