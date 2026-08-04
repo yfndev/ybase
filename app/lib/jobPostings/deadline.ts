@@ -2,6 +2,9 @@ const BERLIN_DATE = new Intl.DateTimeFormat("en-CA", {
   timeZone: "Europe/Berlin",
 });
 
+export const JOB_POSTING_DEADLINE_ERROR =
+  "Die Frist muss in der Zukunft liegen";
+
 export function berlinToday(now: Date = new Date()): string {
   return BERLIN_DATE.format(now);
 }

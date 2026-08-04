@@ -10,6 +10,10 @@ import { Button } from "@/components/ui/button";
 import { useJobPostingMutations } from "@/lib/client/jobPostings/hooks/useJobPostingMutations";
 import type { JobPosting } from "@/lib/db/types";
 import {
+  isDeadlineInFuture,
+  JOB_POSTING_DEADLINE_ERROR,
+} from "@/lib/jobPostings/deadline";
+import {
   type JobPostingFormValues,
   toJobPostingForm,
 } from "@/lib/jobPostings/form";
@@ -34,9 +38,14 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
   const patch = (part: Partial<JobPostingFormValues>) =>
     setValues((current) => ({ ...current, ...part }));
 
-  const hasRequiredFields = () => {
+  const validateFields = () => {
     if (!values.title.trim() || !values.teamId) {
       toast.error("Titel und Team sind erforderlich");
+      return false;
+    }
+
+    if (!isDeadlineInFuture(values.deadline)) {
+      toast.error(JOB_POSTING_DEADLINE_ERROR);
       return false;
     }
 
@@ -44,7 +53,7 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
   };
 
   const handleSave = async () => {
-    if (!hasRequiredFields()) return;
+    if (!validateFields()) return;
 
     setActiveAction("save");
     try {
@@ -60,7 +69,7 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
   };
 
   const handlePublish = async () => {
-    if (!hasRequiredFields()) return;
+    if (!validateFields()) return;
 
     setActiveAction("publish");
     try {
