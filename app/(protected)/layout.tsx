@@ -11,6 +11,7 @@ import { MemberPlatformLinking } from "./MemberPlatformLinking";
 import { OnboardingNotice } from "./OnboardingNotice";
 import { OffboardedNotice } from "./OffboardedNotice";
 import { PublicProfileSetup } from "./PublicProfileSetup";
+import { MembershipOnboarding } from "./membership-onboarding/MembershipOnboarding";
 
 export default async function ProtectedLayout({
   children,
@@ -46,9 +47,7 @@ export default async function ProtectedLayout({
       <OnboardingNotice onboardingStatus={member.teamOnboardingStatus} />
     );
   } else if (member.memberStatus === "onboarding") {
-    content = (
-      <OnboardingNotice onboardingStatus={member.teamOnboardingStatus} />
-    );
+    content = <MembershipOnboarding />;
   } else {
     content = (
       <SidebarProvider className="bg-sidebar">

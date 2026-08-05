@@ -12,6 +12,7 @@ import { isUnavailableMemberStatus } from "../../members/status";
 import { membershipExecutionDirectory } from "../../s3/keys";
 import { getObjectBuffer, putObject } from "../../s3/storage";
 import { appendMembershipEvent } from "./events";
+import { activateMembershipOnboardingIfComplete } from "./onboardingCompletion";
 import { membershipRequestMetadata } from "./requestMetadata";
 import { createExecutionPdf, decodeSignatureDataUrl } from "./signingPdf";
 
@@ -62,6 +63,7 @@ export async function completeOwnDocument(
   }
   if (execution.status === "completed") {
     await recordCompletionEvent(execution, version);
+    await activateMembershipOnboardingIfComplete(membership._id);
     return;
   }
 
@@ -160,6 +162,7 @@ export async function completeOwnDocument(
     { ...execution, status: "completed", completedAt },
     version,
   );
+  await activateMembershipOnboardingIfComplete(membership._id);
 }
 
 async function recordCompletionEvent(
