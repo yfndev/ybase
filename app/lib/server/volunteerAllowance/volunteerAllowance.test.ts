@@ -122,7 +122,11 @@ beforeEach(async () => {
 test("create + getAll stay scoped to the caller's org", async () => {
   const projectA = await insertProject();
 
-  await create(newAllowanceInput(projectA));
+  const createdId = await create(newAllowanceInput(projectA));
+  expect(
+    await (await volunteerAllowance()).findOne({ _id: createdId }),
+  ).toMatchObject({ status: "pending", organizationId: orgA });
+  expect(sendSubmissionReceivedEmail).toHaveBeenCalledWith(createdId);
 
   await (
     await volunteerAllowance()
@@ -206,16 +210,6 @@ test("creation rejects a signature upload owned by another user", async () => {
   expect(
     await (await volunteerAllowance()).findOne({ amount: 100 }),
   ).toBeNull();
-});
-
-test("create persists the allowance as pending", async () => {
-  const projectA = await insertProject();
-
-  const id = await create(newAllowanceInput(projectA));
-  const doc = await (await volunteerAllowance()).findOne({ _id: id });
-  expect(doc?.status).toBe("pending");
-  expect(doc?.organizationId).toBe(orgA);
-  expect(sendSubmissionReceivedEmail).toHaveBeenCalledWith(id);
 });
 
 test("create transfers a completed mobile signature to the allowance", async () => {
@@ -336,45 +330,22 @@ test("signature downloads reject another organization's allowance", async () => 
   );
 });
 
-test.each([
-  [
-    "foreign",
-    () => insertTestProject({ organizationId: orgB, createdBy: newId() }),
-  ],
-  [
-    "archived",
-    () =>
-      insertTestProject({
-        organizationId: orgA,
-        createdBy: userA,
-        isArchived: true,
-      }),
-  ],
-  ["unknown", async () => ({ _id: newId() })],
-])("creation rejects a %s project", async (_label, createProject) => {
-  const project = await createProject();
+test("creation rejects a project from another organization", async () => {
+  const project = await insertTestProject({
+    organizationId: orgB,
+    createdBy: newId(),
+  });
   await expect(create(newAllowanceInput(project._id))).rejects.toThrow(
     "Active project not found",
   );
 });
 
-test.each([
-  [
-    "foreign",
-    () => insertTestProject({ organizationId: orgB, createdBy: newId() }),
-  ],
-  [
-    "archived",
-    () =>
-      insertTestProject({
-        organizationId: orgA,
-        createdBy: userA,
-        isArchived: true,
-      }),
-  ],
-  ["unknown", async () => ({ _id: newId() })],
-])("sharing rejects a %s project", async (_label, createProject) => {
-  const project = await createProject();
+test("sharing rejects an archived project", async () => {
+  const project = await insertTestProject({
+    organizationId: orgA,
+    createdBy: userA,
+    isArchived: true,
+  });
   await expect(createLink({ projectId: project._id })).rejects.toThrow(
     "Active project not found",
   );

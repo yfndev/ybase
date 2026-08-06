@@ -1,15 +1,12 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
-import { afterAll, beforeAll, beforeEach, expect, test, vi } from "vitest";
+import { expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({ requirePermission: vi.fn() }));
 
 import type { Application, ApplicationFile } from "../../db/application";
 import { applications } from "../../db/collections";
-import { getClient, getDb } from "../../db/client";
 import { newId } from "../../db/ids";
+import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { importApplicationFile } from "./fileImport";
-
-let mongod: MongoMemoryServer;
 
 async function insertApplication() {
   const applicationFile: ApplicationFile = {
@@ -66,21 +63,7 @@ async function findFile(applicationId: string) {
   return stored?.files[0];
 }
 
-beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  process.env.MONGODB_URI = mongod.getUri();
-  process.env.MONGODB_DB = "ybase_file_import_test";
-}, 120_000);
-
-afterAll(async () => {
-  const client = await getClient();
-  await client.close();
-  await mongod.stop();
-}, 30_000);
-
-beforeEach(async () => {
-  await (await getDb()).dropDatabase();
-});
+setupTestDatabase();
 
 test("imports a valid PDF under a deterministic storage key", async () => {
   const { application, applicationFile } = await insertApplication();

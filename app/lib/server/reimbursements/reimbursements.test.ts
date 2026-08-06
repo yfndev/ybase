@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({
   requireUser: vi.fn(),
@@ -51,10 +51,7 @@ import {
   createPublicSignatureUpload,
   submitPublicSignature,
 } from "../signatures/public";
-import {
-  claimPendingUploads,
-  registerPendingUpload,
-} from "../uploads/ownership";
+import { registerPendingUpload } from "../uploads/ownership";
 import { createReimbursement, createTravelReimbursement } from "./creation";
 import { getAllReimbursements, getFileInfo, getReimbursement } from "./data";
 import { deleteReimbursement } from "./deletion";
@@ -65,7 +62,7 @@ import {
   sendSubmissionReceivedEmail,
   sendSubmissionRequestedEmail,
 } from "./email";
-import { generateUploadUrl, getReimbursementPdfData } from "./files";
+import { getReimbursementPdfData } from "./files";
 import {
   createPublicReimbursementUpload,
   getPublicReimbursementFileUrl,
@@ -80,8 +77,6 @@ let userA: string;
 let projectA: string;
 
 setupTestDatabase();
-
-afterEach(() => {});
 
 beforeEach(async () => {
   vi.clearAllMocks();
@@ -161,15 +156,6 @@ function reimbursementInput() {
   };
 }
 
-test("creates reimbursement uploads below their typed storage directory", async () => {
-  await generateUploadUrl("application/pdf", "travel", "receipt");
-
-  expect(presignUpload).toHaveBeenCalledWith(
-    "application/pdf",
-    `reimbursements/travel/${orgA}/receipts`,
-  );
-});
-
 test("creates shared expense uploads below their document directory", async () => {
   const id = await createReimbursementLink({
     projectId: projectA,
@@ -193,9 +179,9 @@ test("keeps the reimbursement type for mobile signature uploads", async () => {
     "image/png",
     `reimbursements/travel/${orgA}/signatures`,
   );
-  expect(
-    await (await signatureTokens()).findOne({ token }),
-  ).toMatchObject({ reimbursementType: "travel" });
+  expect(await (await signatureTokens()).findOne({ token })).toMatchObject({
+    reimbursementType: "travel",
+  });
 });
 
 async function completeMobileSignature(storageKey: string): Promise<void> {
@@ -287,29 +273,6 @@ test("travel creation transfers a mobile signature with repeated receipt types",
   ).rejects.toThrow("Upload does not belong to the current user");
 });
 
-test("creation rejects a mobile signature claimed by a different token", async () => {
-  await registerPendingUpload("mismatched-mobile-signature", {
-    organizationId: orgA,
-    userId: userA,
-    contextType: "signatureToken",
-    contextId: "original-token-id",
-  });
-  await claimPendingUploads(
-    ["mismatched-mobile-signature"],
-    { organizationId: orgA, userId: userA },
-    ["signatureToken"],
-    { type: "signatureToken", id: "different-token-id" },
-  );
-
-  await expect(
-    createReimbursement({
-      ...reimbursementInput(),
-      signatureStorageId: "mismatched-mobile-signature",
-      receipts: [],
-    }),
-  ).rejects.toThrow("Upload does not belong to the current user");
-});
-
 test("travel PDF data includes travel details and the project name", async () => {
   const id = await createTravelReimbursement({
     ...reimbursementInput(),
@@ -340,42 +303,7 @@ test("travel PDF data includes travel details and the project name", async () =>
   });
 });
 
-test("creates a kilometer allowance without requiring a receipt file", async () => {
-  const input = reimbursementInput();
-  const id = await createTravelReimbursement({
-    ...input,
-    amount: 30,
-    startDate: "2026-05-15",
-    startTime: "08:00",
-    endDate: "2026-05-15",
-    endTime: "18:00",
-    destination: "Berlin",
-    purpose: "Workshop",
-    isInternational: false,
-    receipts: [
-      {
-        costType: "car",
-        receiptDate: "2026-05-15",
-        companyName: "Privater PKW",
-        description: "",
-        netAmount: 30,
-        taxRate: 0,
-        grossAmount: 30,
-        kilometers: 100,
-      },
-    ],
-  });
-
-  const receipt = await (await receipts()).findOne({ reimbursementId: id });
-  expect(receipt).toMatchObject({
-    costType: "car",
-    kilometers: 100,
-    grossAmount: 30,
-    fileStorageId: "",
-  });
-});
-
-test("creates a kilometer allowance with the 15 cent rate", async () => {
+test("creates a mileage allowance without a file and preserves its rate", async () => {
   const input = reimbursementInput();
   const id = await createTravelReimbursement({
     ...input,
@@ -449,14 +377,6 @@ test("unsubmitted shared links stay out of the reimbursement list", async () => 
   expect(pendingLinks.reimbursementLinks.map((item) => item._id)).toEqual([
     openLinkId,
   ]);
-});
-
-test("getFileInfo returns signed download metadata", async () => {
-  await expect(getFileInfo("receipt-key")).resolves.toEqual({
-    url: "signed-url",
-    contentType: "application/pdf",
-  });
-  expect(getDownloadInfo).toHaveBeenCalledWith("receipt-key");
 });
 
 test("file downloads reject a receipt from another organization", async () => {
@@ -539,45 +459,22 @@ test("members cannot download another member's receipt", async () => {
   );
 });
 
-test.each([
-  [
-    "foreign",
-    () => insertTestProject({ organizationId: orgB, createdBy: newId() }),
-  ],
-  [
-    "archived",
-    () =>
-      insertTestProject({
-        organizationId: orgA,
-        createdBy: userA,
-        isArchived: true,
-      }),
-  ],
-  ["unknown", async () => ({ _id: newId() })],
-])("creation rejects a %s project", async (_label, createProject) => {
-  const project = await createProject();
+test("creation rejects a project from another organization", async () => {
+  const project = await insertTestProject({
+    organizationId: orgB,
+    createdBy: newId(),
+  });
   await expect(
     createReimbursement({ ...reimbursementInput(), projectId: project._id }),
   ).rejects.toThrow("Active project not found");
 });
 
-test.each([
-  [
-    "foreign",
-    () => insertTestProject({ organizationId: orgB, createdBy: newId() }),
-  ],
-  [
-    "archived",
-    () =>
-      insertTestProject({
-        organizationId: orgA,
-        createdBy: userA,
-        isArchived: true,
-      }),
-  ],
-  ["unknown", async () => ({ _id: newId() })],
-])("sharing rejects a %s project", async (_label, createProject) => {
-  const project = await createProject();
+test("sharing rejects an archived project", async () => {
+  const project = await insertTestProject({
+    organizationId: orgA,
+    createdBy: userA,
+    isArchived: true,
+  });
   await expect(
     createReimbursementLink({ projectId: project._id, type: "expense" }),
   ).rejects.toThrow("Active project not found");

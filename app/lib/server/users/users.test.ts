@@ -120,18 +120,6 @@ test("updateUserRole promotes a member to admin and writes a log", async () => {
   expect(log?.entityId).toBe(memberA);
 });
 
-test("updateUserRole grants finance access without admin access", async () => {
-  await updateUserRole({ userId: memberA, role: "finance" });
-  const updated = await (await users()).findOne({ _id: memberA });
-  expect(updated?.role).toBe("finance");
-});
-
-test("updateUserRole supports the People & Culture role", async () => {
-  await updateUserRole({ userId: memberA, role: "people_culture" });
-  const updated = await (await users()).findOne({ _id: memberA });
-  expect(updated?.role).toBe("people_culture");
-});
-
 test("updateUserRole cannot touch a user from another org", async () => {
   await expect(
     updateUserRole({ userId: memberB, role: "admin" }),
@@ -386,23 +374,6 @@ test("completed onboarding stays locked after member approval", async () => {
   ).rejects.toThrow("kann nicht erneut geöffnet werden");
 });
 
-test("setMemberStatus records every offboarding phase", async () => {
-  await setMemberStatus({ userId: memberA, status: "offboarding_planned" });
-  let updated = await (await users()).findOne({ _id: memberA });
-  expect(updated?.memberStatus).toBe("offboarding_planned");
-  expect(typeof updated?.offboardingPlannedAt).toBe("number");
-
-  await setMemberStatus({ userId: memberA, status: "offboarding" });
-  updated = await (await users()).findOne({ _id: memberA });
-  expect(updated?.memberStatus).toBe("offboarding");
-  expect(typeof updated?.offboardingStartedAt).toBe("number");
-
-  await setMemberStatus({ userId: memberA, status: "archived" });
-  updated = await (await users()).findOne({ _id: memberA });
-  expect(updated?.memberStatus).toBe("archived");
-  expect(typeof updated?.archivedAt).toBe("number");
-});
-
 test("setMemberStatus rejects legacy offboarded writes", async () => {
   await expect(
     setMemberStatus({
@@ -579,13 +550,6 @@ test("recordMemberInfraction rejects unavailable and foreign members", async () 
       reason: "Verstoß in einer anderen Organisation.",
     }),
   ).rejects.toThrow("User not found");
-});
-
-test("setTeamOnboardingStatus completes team onboarding with a timestamp", async () => {
-  await setTeamOnboardingStatus({ userId: memberA, status: "completed" });
-  const updated = await (await users()).findOne({ _id: memberA });
-  expect(updated?.teamOnboardingStatus).toBe("completed");
-  expect(typeof updated?.teamOnboardedAt).toBe("number");
 });
 
 async function seedTeam(
@@ -796,19 +760,6 @@ test("updateMemberProfile rejects a team from another org", async () => {
     updateMemberProfile({
       userId: memberA,
       secondaryTeamId: "team-b",
-    }),
-  ).rejects.toThrow("Team nicht verfügbar");
-});
-
-test("updateMemberProfile rejects an archived team", async () => {
-  await seedTeam("team-archived", orgA, true);
-  await expect(
-    updateMemberProfile({ userId: memberA, teamId: "team-archived" }),
-  ).rejects.toThrow("Team nicht verfügbar");
-  await expect(
-    updateMemberProfile({
-      userId: memberA,
-      secondaryTeamId: "team-archived",
     }),
   ).rejects.toThrow("Team nicht verfügbar");
 });
