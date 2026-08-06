@@ -95,7 +95,6 @@ beforeEach(async () => {
     }),
   ]);
   await Promise.all([
-    seedVersion("code_of_conduct", "signature"),
     seedVersion("bylaws", "acknowledgement"),
     seedVersion("privacy_notice", "acknowledgement"),
     seedVersion("usage_rights", "signature", [departmentId]),
@@ -118,10 +117,9 @@ test("creates the legal record and returns the documents in reading order", asyn
     "privacy_notice",
     "usage_rights",
     "bylaws",
-    "code_of_conduct",
   ]);
   expect(first.documentsComplete).toBe(false);
-  expect(second.documents).toHaveLength(4);
+  expect(second.documents).toHaveLength(3);
 
   const membership = await (
     await memberships()
@@ -135,7 +133,7 @@ test("creates the legal record and returns the documents in reading order", asyn
     await (
       await documentExecutions()
     ).countDocuments({ membershipId: membership?._id }),
-  ).toBe(4);
+  ).toBe(3);
 });
 
 test("delivers the frozen text inline for open documents only", async () => {

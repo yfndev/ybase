@@ -17,7 +17,6 @@ const publicationSchema = z
   .object({
     kind: z.enum([
       "bylaws",
-      "code_of_conduct",
       "privacy_notice",
       "usage_rights",
       "optional_consent",

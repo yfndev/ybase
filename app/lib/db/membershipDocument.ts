@@ -1,6 +1,5 @@
 export type MembershipDocumentKind =
   | "bylaws"
-  | "code_of_conduct"
   | "privacy_notice"
   | "usage_rights"
   | "optional_consent";

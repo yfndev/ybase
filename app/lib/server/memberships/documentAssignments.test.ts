@@ -73,7 +73,6 @@ beforeEach(async () => {
     teamOnboardingStatus: "completed",
   });
   await seedVersion("bylaws", "acknowledgement");
-  await seedVersion("code_of_conduct", "signature");
   await seedVersion("privacy_notice", "acknowledgement");
 });
 
@@ -89,7 +88,7 @@ test("assigns usage rights through the team's department", async () => {
   const executions = await (await documentExecutions())
     .find({ membershipId: membership._id })
     .toArray();
-  expect(executions).toHaveLength(5);
+  expect(executions).toHaveLength(4);
   expect(executions.map((item) => item.executionType)).toEqual(
     expect.arrayContaining([
       "signature",
@@ -157,7 +156,7 @@ test("keeps only the newest special agreement per department", async () => {
     ).countDocuments({
       membershipId: membership._id,
     }),
-  ).toBe(4);
+  ).toBe(3);
 });
 
 test("blocks admission when the member's department lacks its special agreement", async () => {

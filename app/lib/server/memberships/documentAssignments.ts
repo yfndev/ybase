@@ -92,13 +92,7 @@ async function applicableDocumentVersions(
       organizationId: membership.organizationId,
       isActive: true,
       kind: {
-        $in: [
-          "bylaws",
-          "code_of_conduct",
-          "privacy_notice",
-          "usage_rights",
-          "optional_consent",
-        ],
+        $in: ["bylaws", "privacy_notice", "usage_rights", "optional_consent"],
       },
     })
     .sort({ publishedAt: -1 })
@@ -134,9 +128,6 @@ function assertRequiredDocuments<T extends { kind: string }>(
 ) {
   if (!versions.some((version) => version.kind === "bylaws")) {
     throw new Error("Die Satzung ist noch nicht veröffentlicht.");
-  }
-  if (!versions.some((version) => version.kind === "code_of_conduct")) {
-    throw new Error("Der Code of Conduct ist noch nicht veröffentlicht.");
   }
   if (!versions.some((version) => version.kind === "privacy_notice")) {
     throw new Error("Die Datenschutzhinweise sind noch nicht veröffentlicht.");

@@ -107,7 +107,6 @@ beforeEach(async () => {
   await Promise.all([
     seedVersion("privacy_notice", "acknowledgement", []),
     seedVersion("bylaws", "acknowledgement", []),
-    seedVersion("code_of_conduct", "signature", []),
     seedVersion("usage_rights", "signature", [departmentId]),
   ]);
   vi.mocked(requireAuthenticatedUser).mockResolvedValue(actor);
@@ -195,7 +194,7 @@ async function completeAllDocuments() {
 }
 
 async function seedVersion(
-  kind: "privacy_notice" | "bylaws" | "code_of_conduct" | "usage_rights",
+  kind: "privacy_notice" | "bylaws" | "usage_rights",
   executionType: "acknowledgement" | "signature",
   targetDepartmentIds: string[],
 ) {
