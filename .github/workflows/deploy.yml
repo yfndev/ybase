@@ -1,0 +1,83 @@
+name: Build & Deploy
+
+# Baut das Container-Image auf GitHub-Runnern und laesst Coolify es nur noch
+# ziehen. Auf dem Server wird kein Quellcode mehr kompiliert.
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+# Deployments derselben Umgebung laufen nacheinander. Ein bereits gestartetes
+# Deployment wird nicht abgebrochen, damit der Server nie halb aktualisiert bleibt.
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/yfndev/ybase
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tag aus Commit ableiten
+        id: meta
+        run: echo "tag=sha-$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image bauen und pushen
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          # Der bewegliche Branch-Tag dient als lesbare Referenz, deployed wird
+          # ueber den eindeutigen SHA-Tag.
+          tags: |
+            ${{ env.IMAGE }}:${{ github.ref_name }}
+            ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_APP_URL=${{ vars.NEXT_PUBLIC_APP_URL }}
+            NEXT_PUBLIC_POSTHOG_KEY=${{ vars.NEXT_PUBLIC_POSTHOG_KEY }}
+
+      - name: In Coolify ausrollen
+        env:
+          COOLIFY_URL: ${{ vars.COOLIFY_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_APP_UUID: ${{ vars.COOLIFY_APP_UUID }}
+          IMAGE_TAG: ${{ steps.meta.outputs.tag }}
+          TAG_MODE: image
+        run: ./.github/scripts/coolify-deploy.sh
+
+  cleanup:
+    # Haelt den GHCR-Verbrauch klein. Laeuft auch, wenn das Deployment scheitert,
+    # damit alte Versionen sich nicht ansammeln.
+    needs: build-and-deploy
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - uses: actions/delete-package-versions@v5
+        continue-on-error: true
+        with:
+          package-name: ybase
+          package-type: container
+          min-versions-to-keep: 10
+          delete-only-untagged-versions: false
