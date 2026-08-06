@@ -1,14 +1,22 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import type { MembershipOnboardingContext } from "@/lib/server/memberships/onboardingData";
+import type { DocumentExecutionType } from "@/lib/db/types";
 import { completeOwnDocument } from "@/lib/server/memberships/documentExecution";
-import { CheckCircle2, ExternalLink, Loader2 } from "lucide-react";
+import type { MembershipOnboardingContext } from "@/lib/server/memberships/onboardingData";
 import { useState, useTransition } from "react";
 import toast from "react-hot-toast";
-import { InlineSignature } from "./InlineSignature";
+import { DocumentContent } from "@/components/Documents/DocumentContent";
+import { DocumentAction } from "./DocumentAction";
 
 type DocumentTask = MembershipOnboardingContext["documents"][number];
+
+const DESCRIPTIONS: Record<DocumentExecutionType, string> = {
+  signature: "Lies die Unterlage vollständig und unterschreibe sie unten.",
+  acknowledgement:
+    "Lies die Unterlage vollständig und bestätige unten deine Kenntnisnahme.",
+  optional_consent:
+    "Diese Einwilligung ist freiwillig. Mit beiden Antworten kommst du im Onboarding weiter.",
+};
 
 export function DocumentTasks({
   documents,
@@ -17,25 +25,26 @@ export function DocumentTasks({
   documents: DocumentTask[];
   onComplete: () => Promise<void>;
 }) {
-  const [signingId, setSigningId] = useState<string>();
-  const [pendingId, setPendingId] = useState<string>();
-  const [isPending, startTransition] = useTransition();
+  const [working, setWorking] = useState(false);
+  const [, startTransition] = useTransition();
+  const open = documents.filter(({ status }) => status === "assigned");
+  const current = open[0];
+  if (!current) return null;
+  const step = documents.length - open.length + 1;
 
   function complete(
-    document: DocumentTask,
     signatureDataUrl?: string,
     consentGranted?: boolean,
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      setPendingId(document.executionId);
+      setWorking(true);
       startTransition(async () => {
         try {
           await completeOwnDocument({
-            executionId: document.executionId,
+            executionId: current.executionId,
             signatureDataUrl,
             consentGranted,
           });
-          setSigningId(undefined);
           await onComplete();
           toast.success("Dokument abgeschlossen.");
           resolve();
@@ -45,122 +54,30 @@ export function DocumentTasks({
           );
           reject(error);
         } finally {
-          setPendingId(undefined);
+          setWorking(false);
         }
       });
     });
   }
 
   return (
-    <section aria-labelledby="documents-heading">
+    <section aria-labelledby="document-heading">
       <p className="text-xs font-semibold tracking-[0.16em] text-primary uppercase">
-        Schritt 2 von 2
+        Schritt {step} von {documents.length + 1}
       </p>
-      <h1 id="documents-heading" className="mt-2 text-2xl font-semibold">
-        Unterlagen prüfen und bestätigen
+      <h1 id="document-heading" className="mt-2 text-2xl font-semibold">
+        {current.title}
       </h1>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-        Öffne jede Unterlage, lies sie vollständig und schließe die jeweilige
-        Bestätigung ab. Danach wird dein YBase-Zugang automatisch
-        freigeschaltet.
+        {DESCRIPTIONS[current.type]} Version {current.versionLabel}.
       </p>
-      <div className="mt-7 space-y-4">
-        {documents.map((document) => {
-          const working = isPending && pendingId === document.executionId;
-          return (
-            <article
-              key={document.executionId}
-              className="rounded-xl border bg-card p-5 shadow-sm"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="font-medium">{document.title}</h2>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Version {document.versionLabel}
-                  </p>
-                </div>
-                {document.status === "completed" && (
-                  <CheckCircle2
-                    aria-label="Abgeschlossen"
-                    className="size-5 text-emerald-600"
-                  />
-                )}
-              </div>
-              <a
-                href={document.downloadUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-              >
-                PDF öffnen{" "}
-                <ExternalLink aria-hidden="true" className="size-3.5" />
-              </a>
-              {document.status === "assigned" && (
-                <div className="mt-5">
-                  {document.type === "signature" ? (
-                    signingId === document.executionId ? (
-                      <InlineSignature
-                        onSubmit={(signature) => complete(document, signature)}
-                      />
-                    ) : (
-                      <Button
-                        type="button"
-                        onClick={() => setSigningId(document.executionId)}
-                      >
-                        Unterschreiben
-                      </Button>
-                    )
-                  ) : document.type === "optional_consent" ? (
-                    <div>
-                      <p className="mb-3 text-xs text-muted-foreground">
-                        Diese Einwilligung ist freiwillig. Beide Auswahlen
-                        schließen die Aufgabe ab.
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          type="button"
-                          disabled={working}
-                          onClick={() =>
-                            void complete(document, undefined, true)
-                          }
-                        >
-                          {working && (
-                            <Loader2
-                              aria-hidden="true"
-                              className="animate-spin"
-                            />
-                          )}
-                          Einwilligen
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={working}
-                          onClick={() =>
-                            void complete(document, undefined, false)
-                          }
-                        >
-                          Nicht einwilligen
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <Button
-                      type="button"
-                      disabled={working}
-                      onClick={() => void complete(document)}
-                    >
-                      {working && (
-                        <Loader2 aria-hidden="true" className="animate-spin" />
-                      )}
-                      Kenntnisnahme bestätigen
-                    </Button>
-                  )}
-                </div>
-              )}
-            </article>
-          );
-        })}
+      <DocumentContent html={current.content} />
+      <div className="mt-6">
+        <DocumentAction
+          type={current.type}
+          working={working}
+          onComplete={complete}
+        />
       </div>
     </section>
   );

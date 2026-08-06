@@ -2,6 +2,7 @@
 
 import {
   Coins,
+  FileCheck2,
   FolderKanban,
   LayoutDashboard,
   Megaphone,
@@ -46,6 +47,12 @@ const ADMINISTRATION_NAV_ITEMS: ProtectedNavItem[] = [
     url: "/settings/teams",
     icon: Network,
     permission: USER_PERMISSIONS.organizationStructure,
+  },
+  {
+    name: "Unterlagen",
+    url: "/settings/documents",
+    icon: FileCheck2,
+    permission: USER_PERMISSIONS.members,
   },
   {
     name: "Projekte",

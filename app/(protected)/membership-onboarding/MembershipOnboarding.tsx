@@ -1,24 +1,18 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { signOutWithPostHog } from "@/lib/posthog-client";
 import {
   getOwnMembershipOnboardingContext,
   type MembershipOnboardingContext,
 } from "@/lib/server/memberships/onboardingData";
-import { signOutWithPostHog } from "@/lib/posthog-client";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Circle,
-  FileCheck2,
-  Loader2,
-  LogOut,
-  UserRoundCheck,
-} from "lucide-react";
+import { AlertTriangle, CheckCircle2, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { DocumentTasks } from "./DocumentTasks";
-import { ProfileStep } from "./ProfileStep";
+import { MembershipApplicationStep } from "./MembershipApplicationStep";
+import { OnboardingProgress } from "./OnboardingProgress";
+import { OnboardingSkeleton } from "./OnboardingSkeleton";
 
 export function MembershipOnboarding() {
   const router = useRouter();
@@ -42,9 +36,15 @@ export function MembershipOnboarding() {
 
   useEffect(() => void reload(), [reload]);
 
-  const assignedDocuments =
-    context?.documents.filter(({ status }) => status === "assigned") ?? [];
-  const profileComplete = context?.profile.confirmed === true;
+  const steps = context
+    ? [
+        ...context.documents.map((document) => ({
+          label: document.title,
+          complete: document.status === "completed",
+        })),
+        { label: "Mitgliedsantrag", complete: context.profile.confirmed },
+      ]
+    : [];
 
   return (
     <main className="min-h-svh bg-muted/30 p-4 sm:p-8">
@@ -59,20 +59,7 @@ export function MembershipOnboarding() {
               <br />
               Direkt in YBase.
             </h2>
-            <ol className="mt-8 space-y-5" aria-label="Fortschritt">
-              <ProgressItem
-                complete={profileComplete}
-                current={!profileComplete}
-                icon={UserRoundCheck}
-                label="Mitgliedsdaten"
-              />
-              <ProgressItem
-                complete={profileComplete && assignedDocuments.length === 0}
-                current={profileComplete && assignedDocuments.length > 0}
-                icon={FileCheck2}
-                label="Unterlagen"
-              />
-            </ol>
+            <OnboardingProgress steps={steps} />
           </div>
           <Button
             variant="ghost"
@@ -85,44 +72,27 @@ export function MembershipOnboarding() {
         </aside>
 
         <div className="p-6 sm:p-10 lg:p-14">
-          {!context && !error && (
-            <div className="flex min-h-96 items-center justify-center">
-              <Loader2
-                aria-label="Onboarding wird geladen"
-                className="size-7 animate-spin text-primary"
-              />
-            </div>
-          )}
-          {error && (
-            <section className="max-w-xl" role="alert">
-              <AlertTriangle className="mb-5 size-10 text-amber-600" />
-              <h1 className="text-2xl font-semibold">
-                Onboarding nicht verfügbar
-              </h1>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                {error}
-              </p>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                Bitte wende dich an People &amp; Culture, damit die fehlende
-                Konfiguration ergänzt werden kann.
-              </p>
-            </section>
-          )}
-          {context && !context.profile.confirmed && (
-            <ProfileStep profile={context.profile} onComplete={reload} />
-          )}
-          {context?.profile.confirmed && assignedDocuments.length > 0 && (
+          {!context && !error && <OnboardingSkeleton />}
+          {error && <OnboardingError message={error} />}
+          {context && !context.documentsComplete && (
             <DocumentTasks documents={context.documents} onComplete={reload} />
           )}
-          {context?.profile.confirmed && assignedDocuments.length === 0 && (
+          {context?.documentsComplete && !context.profile.confirmed && (
+            <MembershipApplicationStep
+              profile={context.profile}
+              totalSteps={steps.length}
+              onComplete={reload}
+            />
+          )}
+          {context?.documentsComplete && context.profile.confirmed && (
             <section className="max-w-xl" aria-live="polite">
               <CheckCircle2 className="mb-5 size-10 text-emerald-600" />
               <h1 className="text-2xl font-semibold">
                 Onboarding abgeschlossen
               </h1>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                Deine Angaben und Unterlagen sind vollständig. Dein YBase-Zugang
-                wird jetzt freigeschaltet.
+                Deine Unterlagen und dein Mitgliedsantrag sind vollständig. Dein
+                YBase-Zugang wird jetzt freigeschaltet.
               </p>
             </section>
           )}
@@ -132,29 +102,16 @@ export function MembershipOnboarding() {
   );
 }
 
-function ProgressItem({
-  complete,
-  current,
-  icon: PendingIcon,
-  label,
-}: {
-  complete: boolean;
-  current: boolean;
-  icon: typeof Circle;
-  label: string;
-}) {
-  const Icon = complete ? CheckCircle2 : current ? PendingIcon : Circle;
+function OnboardingError({ message }: { message: string }) {
   return (
-    <li className="flex items-center gap-3 text-sm">
-      <Icon
-        aria-hidden="true"
-        className={
-          complete ? "size-5 text-emerald-400" : "size-5 text-background/70"
-        }
-      />
-      <span className={current ? "font-medium" : "text-background/75"}>
-        {label}
-      </span>
-    </li>
+    <section className="max-w-xl" role="alert">
+      <AlertTriangle className="mb-5 size-10 text-amber-600" />
+      <h1 className="text-2xl font-semibold">Onboarding nicht verfügbar</h1>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">{message}</p>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">
+        Bitte wende dich an People &amp; Culture, damit die fehlende
+        Konfiguration ergänzt werden kann.
+      </p>
+    </section>
   );
 }

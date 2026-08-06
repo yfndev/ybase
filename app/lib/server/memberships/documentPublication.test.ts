@@ -1,13 +1,14 @@
 import { createHash } from "node:crypto";
-import { PDFDocument } from "pdf-lib";
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({ requirePermission: vi.fn() }));
-vi.mock("../../s3/storage", () => ({ putObject: vi.fn() }));
+vi.mock("../../s3/storage", () => ({
+  putObject: vi.fn(),
+  getObjectBuffer: vi.fn(),
+}));
 
 import { requirePermission } from "../../auth/session";
 import { documentVersions } from "../../db/collections";
-import { newId } from "../../db/ids";
 import { putObject } from "../../s3/storage";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
@@ -15,96 +16,97 @@ import { publishMembershipDocument } from "./documentPublication";
 
 setupTestDatabase();
 
+const CONTENT = `<h2>Datenschutz</h2><p>${"Wir verarbeiten deine Daten ausschliesslich fuer die Mitgliederverwaltung. ".repeat(
+  3,
+)}</p>`;
+
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.unstubAllGlobals();
   vi.mocked(requirePermission).mockResolvedValue(
     createTestActor({ organizationId: "organization-1" }),
   );
   vi.mocked(putObject).mockResolvedValue(undefined);
 });
 
-afterEach(() => vi.unstubAllGlobals());
+function storedContent(): string {
+  return Buffer.from(vi.mocked(putObject).mock.calls[0][1]).toString("utf8");
+}
 
-test("freezes and hashes an allowed PDF source", async () => {
-  const pdf = await PDFDocument.create();
-  pdf.addPage();
-  const bytes = await pdf.save();
-  vi.stubGlobal(
-    "fetch",
-    vi.fn().mockResolvedValue(
-      new Response(Uint8Array.from(bytes).buffer, {
-        status: 200,
-        headers: { "content-length": String(bytes.byteLength) },
-      }),
-    ),
-  );
-
+test("stores the document text in object storage and hashes it", async () => {
   const published = await publishMembershipDocument({
     kind: "privacy_notice",
-    title: "Datenschutzhinweise",
+    title: "Interne Datenschutzerklärung",
     versionLabel: "2026-01",
-    sourceUrl: "https://docs.google.com/document.pdf",
-    executionType: "acknowledgement",
+    content: CONTENT,
   });
 
-  const hash = createHash("sha256").update(bytes).digest("hex");
-  expect(published.sha256).toBe(hash);
-  expect(putObject).toHaveBeenCalledWith(
-    `memberships/organization-1/documents/${published.id}/snapshot.pdf`,
-    bytes,
-    "application/pdf",
+  const [key, , contentType] = vi.mocked(putObject).mock.calls[0];
+  expect(key).toBe(
+    `memberships/organization-1/documents/${published.id}/content.html`,
+  );
+  expect(contentType).toContain("text/html");
+  expect(published.sha256).toBe(
+    createHash("sha256").update(storedContent(), "utf8").digest("hex"),
   );
   expect(
     await (await documentVersions()).findOne({ _id: published.id }),
   ).toMatchObject({
     organizationId: "organization-1",
-    sha256: hash,
-    snapshotStorageKey: expect.stringContaining(published.id),
+    contentStorageKey: key,
+    sha256: published.sha256,
+    executionType: "acknowledgement",
     isActive: true,
   });
 });
 
-test("rejects document sources outside the configured host allowlist", async () => {
-  const fetchMock = vi.fn();
-  vi.stubGlobal("fetch", fetchMock);
+test("derives the execution type from the document kind", async () => {
+  const published = await publishMembershipDocument({
+    kind: "code_of_conduct",
+    title: "Code of Conduct",
+    versionLabel: "2026-01",
+    content: CONTENT,
+  });
 
+  expect(
+    await (await documentVersions()).findOne({ _id: published.id }),
+  ).toMatchObject({ executionType: "signature" });
+});
+
+test("strips active markup from the published text", async () => {
+  await publishMembershipDocument({
+    kind: "bylaws",
+    title: "Satzung",
+    versionLabel: "2026-01",
+    content: `${CONTENT}<script>alert(1)</script><img src=x onerror="alert(2)">`,
+  });
+
+  expect(storedContent()).not.toContain("script");
+  expect(storedContent()).not.toContain("onerror");
+});
+
+test("requires a target department for the usage rights agreement", async () => {
   await expect(
     publishMembershipDocument({
-      kind: "code_of_conduct",
-      title: "Code of Conduct",
-      versionLabel: newId(),
-      sourceUrl: "https://example.org/document.pdf",
-      executionType: "signature",
+      kind: "usage_rights",
+      title: "Sondervereinbarung Arbeitsergebnisse",
+      versionLabel: "2026-01",
+      content: CONTENT,
     }),
-  ).rejects.toThrow("nicht freigegeben");
+  ).rejects.toThrow();
 
-  expect(fetchMock).not.toHaveBeenCalled();
   expect(putObject).not.toHaveBeenCalled();
   expect(await (await documentVersions()).countDocuments()).toBe(0);
 });
 
-test("rejects oversized sources before storing a snapshot", async () => {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn().mockResolvedValue(
-      new Response("%PDF-", {
-        status: 200,
-        headers: { "content-length": "10000001" },
-      }),
-    ),
-  );
-
+test("rejects a text too short to be a legal document", async () => {
   await expect(
     publishMembershipDocument({
       kind: "bylaws",
       title: "Satzung",
       versionLabel: "2026-01",
-      sourceUrl: "https://docs.google.com/bylaws.pdf",
-      executionType: "acknowledgement",
+      content: "<p>zu kurz</p>",
     }),
-  ).rejects.toThrow("zu groß");
+  ).rejects.toThrow("zu kurz");
 
   expect(putObject).not.toHaveBeenCalled();
-  expect(await (await documentVersions()).countDocuments()).toBe(0);
 });

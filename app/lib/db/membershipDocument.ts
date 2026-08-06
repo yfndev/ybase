@@ -17,8 +17,7 @@ export interface DocumentVersion {
   kind: MembershipDocumentKind;
   title: string;
   versionLabel: string;
-  sourceUrl: string;
-  snapshotStorageKey: string;
+  contentStorageKey: string;
   sha256: string;
   publishedAt: number;
   publishedBy: string;

@@ -1,27 +1,12 @@
 "use server";
 
-import { z } from "zod";
-import { requireAuthenticatedUser } from "../../auth/session";
-import {
-  documentExecutions,
-  documentVersions,
-  memberships,
-  users,
-} from "../../db/collections";
+import { documentExecutions, documentVersions } from "../../db/collections";
+import type { DocumentExecution, DocumentVersion } from "../../db/types";
+import { documentOrderIndex } from "../../members/documents";
+import { loadDocumentContent } from "./documentContent";
 import { activateMembershipOnboardingIfComplete } from "./onboardingCompletion";
+import { requireOnboardingUser } from "./onboardingActor";
 import { ensureAcceptedApplicantMembership } from "./onboardingMembership";
-import { appendMembershipEvent } from "./events";
-
-const profileSchema = z.object({
-  privateEmail: z.email(),
-  phone: z.string().trim().max(50),
-  street: z.string().trim().min(3).max(150),
-  postalCode: z.string().trim().min(3).max(20),
-  city: z.string().trim().min(2).max(100),
-  country: z.string().trim().min(2).max(100),
-  profileDataConfirmed: z.literal(true),
-  supportsAssociationPurposes: z.literal(true),
-});
 
 export async function getOwnMembershipOnboardingContext() {
   const actor = await requireOnboardingUser(true);
@@ -36,31 +21,29 @@ export async function getOwnMembershipOnboardingContext() {
       organizationId: membership.organizationId,
       membershipId: membership._id,
       userId: actor._id,
+      status: { $ne: "revoked" },
     })
-    .sort({ assignedAt: 1 })
     .toArray();
-  const versions = executions.length
-    ? await (
-        await documentVersions()
-      )
-        .find({
-          organizationId: membership.organizationId,
-          _id: {
-            $in: executions.map(({ documentVersionId }) => documentVersionId),
-          },
-        })
-        .toArray()
-    : [];
-  const versionsById = new Map(
-    versions.map((version) => [version._id, version]),
+  const versions = await loadVersions(membership.organizationId, executions);
+  const ordered = executions.sort(
+    (first, second) =>
+      orderOf(versions.get(first.documentVersionId)) -
+      orderOf(versions.get(second.documentVersionId)),
+  );
+  const documents = await Promise.all(
+    ordered.map((execution) =>
+      toDocumentTask(execution, versions.get(execution.documentVersionId)),
+    ),
   );
 
   return {
     activated,
+    documentsComplete: documents.every(({ status }) => status === "completed"),
     profile: {
       firstName: membership.firstName,
       lastName: membership.lastName,
       dateOfBirth: membership.dateOfBirth,
+      gender: membership.gender,
       privateEmail: membership.privateEmail,
       phone: membership.phone ?? "",
       address: membership.address ?? {
@@ -73,100 +56,51 @@ export async function getOwnMembershipOnboardingContext() {
         membership.profileConfirmedAt && membership.purposesConfirmedAt,
       ),
     },
-    documents: executions.map((execution) => {
-      const version = versionsById.get(execution.documentVersionId);
-      return {
-        executionId: execution._id,
-        title: version?.title ?? "Dokument",
-        versionLabel: version?.versionLabel ?? "",
-        type: execution.executionType,
-        status: execution.status,
-        downloadUrl: `/api/membership-documents/${execution.documentVersionId}/download`,
-      };
-    }),
+    documents,
   };
 }
 
-export async function confirmOwnMembershipProfile(
-  input: z.input<typeof profileSchema>,
-): Promise<{ activated: boolean }> {
-  const parsed = profileSchema.parse(input);
-  const actor = await requireOnboardingUser();
-  const membership = await ensureAcceptedApplicantMembership(actor);
-  const now = Date.now();
-  const phone = parsed.phone || undefined;
-  const result = await (
-    await memberships()
-  ).updateOne(
-    {
-      _id: membership._id,
-      userId: actor._id,
-      organizationId: actor.organizationId,
-      isCurrent: true,
-    },
-    {
-      $set: {
-        privateEmail: parsed.privateEmail.toLowerCase(),
-        address: {
-          street: parsed.street,
-          postalCode: parsed.postalCode,
-          city: parsed.city,
-          country: parsed.country,
-        },
-        profileConfirmedAt: now,
-        purposesConfirmedAt: now,
-        updatedAt: now,
-        ...(phone ? { phone } : {}),
+async function loadVersions(
+  organizationId: string,
+  executions: DocumentExecution[],
+): Promise<Map<string, DocumentVersion>> {
+  if (executions.length === 0) return new Map();
+  const versions = await (
+    await documentVersions()
+  )
+    .find({
+      organizationId,
+      _id: {
+        $in: executions.map(({ documentVersionId }) => documentVersionId),
       },
-      ...(!phone ? { $unset: { phone: "" } } : {}),
-    },
-  );
-  if (result.matchedCount !== 1) {
-    throw new Error("Die Mitgliedsdaten konnten nicht gespeichert werden.");
+    })
+    .toArray();
+  return new Map(versions.map((version) => [version._id, version]));
+}
+
+async function toDocumentTask(
+  execution: DocumentExecution,
+  version?: DocumentVersion,
+) {
+  if (!version) {
+    throw new Error("Die eingefrorene Dokumentversion fehlt.");
   }
-  await (
-    await users()
-  ).updateOne(
-    { _id: actor._id, organizationId: actor.organizationId },
-    {
-      $set: {
-        privateEmail: parsed.privateEmail.toLowerCase(),
-        ...(phone ? { phone } : {}),
-      },
-      ...(!phone ? { $unset: { phone: "" } } : {}),
-    },
-  );
-  await appendMembershipEvent({
-    organizationId: membership.organizationId,
-    membershipId: membership._id,
-    userId: actor._id,
-    actorUserId: actor._id,
-    actorType: "user",
-    type: "onboarding.profile_confirmed",
-    idempotencyKey: `membership:${membership._id}:profile-confirmed`,
-    occurredAt: now,
-    details: {},
-  });
   return {
-    activated: await activateMembershipOnboardingIfComplete(membership._id),
+    executionId: execution._id,
+    kind: version.kind,
+    title: version.title,
+    versionLabel: version.versionLabel,
+    type: execution.executionType,
+    status: execution.status,
+    content:
+      execution.status === "assigned"
+        ? await loadDocumentContent(version.contentStorageKey, version.sha256)
+        : "",
   };
 }
 
-async function requireOnboardingUser(allowCompleted = false) {
-  const actor = await requireAuthenticatedUser();
-  if (!actor.organizationId) throw new Error("User has no organization");
-  if (
-    actor.memberStatus !== "onboarding" &&
-    !(allowCompleted && actor.memberStatus === "active")
-  ) {
-    throw new Error(
-      "Das Mitgliedschafts-Onboarding ist bereits abgeschlossen.",
-    );
-  }
-  if (!actor.memberPlatformUserId) {
-    throw new Error("Das Member-Profil ist noch nicht verknüpft.");
-  }
-  return actor;
+function orderOf(version?: DocumentVersion): number {
+  return version ? documentOrderIndex(version.kind) : Number.MAX_SAFE_INTEGER;
 }
 
 export type MembershipOnboardingContext = Awaited<

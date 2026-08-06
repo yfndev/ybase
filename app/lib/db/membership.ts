@@ -17,6 +17,16 @@ export interface PostalAddress {
   country: string;
 }
 
+export type MembershipGender = "female" | "male" | "diverse";
+
+export interface MembershipApplicationSignature {
+  place: string;
+  signedAt: number;
+  signatureStorageKey: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
 export interface GuardianConsentEvidence {
   representativeName: string;
   representativeEmail: string;
@@ -58,9 +68,11 @@ export interface Membership {
   firstName: string;
   lastName: string;
   dateOfBirth: string;
+  gender?: MembershipGender;
   phone?: string;
   address?: PostalAddress;
   memberPlatformUserId?: string;
+  applicationSignature?: MembershipApplicationSignature;
   profileConfirmedAt?: number;
   purposesConfirmedAt?: number;
   resignationReceivedAt?: number;

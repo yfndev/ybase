@@ -1,6 +1,7 @@
 import { beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({ requireAuthenticatedUser: vi.fn() }));
+vi.mock("./documentContent", () => ({ loadDocumentContent: vi.fn() }));
 
 import { requireAuthenticatedUser } from "../../auth/session";
 import {
@@ -19,16 +20,14 @@ import type {
   User,
 } from "../../db/types";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
-import { activateMembershipOnboardingIfComplete } from "./onboardingCompletion";
-import {
-  confirmOwnMembershipProfile,
-  getOwnMembershipOnboardingContext,
-} from "./onboardingData";
+import { loadDocumentContent } from "./documentContent";
+import { getOwnMembershipOnboardingContext } from "./onboardingData";
 
 setupTestDatabase();
 
 let actor: User & { organizationId: string };
 let application: Application;
+let departmentId: string;
 
 beforeEach(async () => {
   vi.clearAllMocks();
@@ -37,6 +36,7 @@ beforeEach(async () => {
   const teamId = newId();
   const userId = newId();
   const applicationId = newId();
+  departmentId = newId();
   actor = {
     _id: userId,
     _creationTime: now,
@@ -79,21 +79,23 @@ beforeEach(async () => {
       _id: teamId,
       _creationTime: now,
       organizationId,
-      departmentId: newId(),
+      departmentId,
       name: "Operations",
       isArchived: false,
       createdBy: userId,
     }),
   ]);
   await Promise.all([
-    seedVersion("bylaws", "acknowledgement"),
     seedVersion("code_of_conduct", "signature"),
+    seedVersion("bylaws", "acknowledgement"),
     seedVersion("privacy_notice", "acknowledgement"),
+    seedVersion("usage_rights", "signature", [departmentId]),
   ]);
   vi.mocked(requireAuthenticatedUser).mockResolvedValue(actor);
+  vi.mocked(loadDocumentContent).mockResolvedValue("<p>Dokumententext</p>");
 });
 
-test("creates the accepted member's legal record and exposes YBase document tasks", async () => {
+test("creates the legal record and returns the documents in reading order", async () => {
   const first = await getOwnMembershipOnboardingContext();
   const second = await getOwnMembershipOnboardingContext();
 
@@ -103,8 +105,15 @@ test("creates the accepted member's legal record and exposes YBase document task
     dateOfBirth: "2004-01-01",
     confirmed: false,
   });
-  expect(first.documents).toHaveLength(3);
-  expect(second.documents).toHaveLength(3);
+  expect(first.documents.map(({ kind }) => kind)).toEqual([
+    "privacy_notice",
+    "usage_rights",
+    "bylaws",
+    "code_of_conduct",
+  ]);
+  expect(first.documentsComplete).toBe(false);
+  expect(second.documents).toHaveLength(4);
+
   const membership = await (
     await memberships()
   ).findOne({ applicationId: application._id });
@@ -116,63 +125,33 @@ test("creates the accepted member's legal record and exposes YBase document task
   expect(
     await (
       await documentExecutions()
-    ).countDocuments({
-      membershipId: membership?._id,
-    }),
-  ).toBe(3);
-  expect(await (await users()).findOne({ _id: actor._id })).toMatchObject({
-    membershipId: membership?._id,
-    memberStatus: "onboarding",
-  });
+    ).countDocuments({ membershipId: membership?._id }),
+  ).toBe(4);
 });
 
-test("activates access after profile confirmation and all documents without a P&C gate", async () => {
+test("delivers the frozen text inline for open documents only", async () => {
   const context = await getOwnMembershipOnboardingContext();
-  await confirmOwnMembershipProfile({
-    privateEmail: "alex.private@example.org",
-    phone: "+49 30 654321",
-    street: "Beispielstraße 12",
-    postalCode: "10115",
-    city: "Berlin",
-    country: "Deutschland",
-    profileDataConfirmed: true,
-    supportsAssociationPurposes: true,
-  });
-  expect(await (await users()).findOne({ _id: actor._id })).toMatchObject({
-    memberStatus: "onboarding",
-    teamOnboardingStatus: "in_progress",
-  });
-
   await (
     await documentExecutions()
-  ).updateMany(
-    { _id: { $in: context.documents.map(({ executionId }) => executionId) } },
+  ).updateOne(
+    { _id: context.documents[0].executionId },
     { $set: { status: "completed", completedAt: Date.now() } },
   );
-  const membership = await (
-    await memberships()
-  ).findOne({ applicationId: application._id });
-  expect(membership).not.toBeNull();
-  expect(
-    await activateMembershipOnboardingIfComplete(membership?._id ?? ""),
-  ).toBe(true);
 
-  expect(await (await users()).findOne({ _id: actor._id })).toMatchObject({
-    memberStatus: "active",
-    teamOnboardingStatus: "in_progress",
-    privateEmail: "alex.private@example.org",
+  const updated = await getOwnMembershipOnboardingContext();
+
+  expect(updated.documents[0]).toMatchObject({
+    status: "completed",
+    content: "",
   });
-  expect(
-    await (await applications()).findOne({ _id: application._id }),
-  ).toMatchObject({
-    onboardingCompletedAt: expect.any(Number),
-    onboardingCompletedBy: actor._id,
-  });
+  expect(updated.documents[1].content).toBe("<p>Dokumententext</p>");
+  expect(updated.documentsComplete).toBe(false);
 });
 
 async function seedVersion(
   kind: MembershipDocumentKind,
   executionType: DocumentExecutionType,
+  targetDepartmentIds: string[] = [],
 ) {
   const id = newId();
   await (
@@ -184,13 +163,12 @@ async function seedVersion(
     kind,
     title: kind,
     versionLabel: "2026-01",
-    sourceUrl: "https://docs.google.com/example",
-    snapshotStorageKey: `test/${id}.pdf`,
+    contentStorageKey: `test/${id}/content.html`,
     sha256: id.padEnd(64, "0").slice(0, 64),
     publishedAt: Date.now(),
     publishedBy: actor._id,
     targetTeamIds: [],
-    targetDepartmentIds: [],
+    targetDepartmentIds,
     executionType,
     isActive: true,
   });

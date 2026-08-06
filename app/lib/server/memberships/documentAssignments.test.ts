@@ -1,4 +1,4 @@
-import { beforeEach, expect, test, vi } from "vitest";
+import { beforeEach, expect, test } from "vitest";
 import {
   documentExecutions,
   documentVersions,
@@ -24,7 +24,6 @@ let userId: string;
 let membership: Membership;
 
 beforeEach(async () => {
-  vi.unstubAllEnvs();
   organizationId = newId();
   userId = newId();
   const departmentId = newId();
@@ -73,7 +72,6 @@ beforeEach(async () => {
     memberStatus: "onboarding",
     teamOnboardingStatus: "completed",
   });
-  vi.stubEnv("MEMBERSHIP_USAGE_RIGHTS_DEPARTMENT_IDS", departmentId);
   await seedVersion("bylaws", "acknowledgement");
   await seedVersion("code_of_conduct", "signature");
   await seedVersion("privacy_notice", "acknowledgement");
@@ -101,10 +99,77 @@ test("assigns usage rights through the team's department", async () => {
   );
 });
 
-test("blocks admission when a configured department lacks its contract", async () => {
-  await expect(assertRequiredDocumentConfiguration(membership)).rejects.toThrow(
-    "Nutzungsrechtevertrag",
+test("assigns one special agreement per department the member works in", async () => {
+  const team = await (await teams()).findOne({ organizationId });
+  const secondDepartmentId = newId();
+  const secondTeamId = newId();
+  await (
+    await teams()
+  ).insertOne({
+    _id: secondTeamId,
+    _creationTime: Date.now(),
+    name: "Marketing",
+    departmentId: secondDepartmentId,
+    organizationId,
+    isArchived: false,
+    createdBy: userId,
+  });
+  await (
+    await users()
+  ).updateOne({ _id: userId }, { $set: { secondaryTeamId: secondTeamId } });
+  await seedVersion("usage_rights", "signature", {
+    targetDepartmentIds: [team?.departmentId ?? ""],
+  });
+  await seedVersion("usage_rights", "signature", {
+    targetDepartmentIds: [secondDepartmentId],
+  });
+
+  await assignRequiredDocuments(membership);
+
+  const assigned = await (await documentExecutions())
+    .find({ membershipId: membership._id })
+    .toArray();
+  const usageRightsVersions = await (await documentVersions())
+    .find({ kind: "usage_rights" })
+    .toArray();
+  const assignedUsageRights = assigned.filter((execution) =>
+    usageRightsVersions.some(
+      (version) => version._id === execution.documentVersionId,
+    ),
   );
+  expect(assignedUsageRights).toHaveLength(2);
+});
+
+test("keeps only the newest special agreement per department", async () => {
+  const team = await (await teams()).findOne({ organizationId });
+  await seedVersion("usage_rights", "signature", {
+    targetDepartmentIds: [team?.departmentId ?? ""],
+  });
+  await seedVersion("usage_rights", "signature", {
+    targetDepartmentIds: [team?.departmentId ?? ""],
+  });
+
+  await assignRequiredDocuments(membership);
+
+  expect(
+    await (await documentExecutions()).countDocuments({
+      membershipId: membership._id,
+    }),
+  ).toBe(4);
+});
+
+test("blocks admission when the member's department lacks its special agreement", async () => {
+  await expect(assertRequiredDocumentConfiguration(membership)).rejects.toThrow(
+    "Sondervereinbarung",
+  );
+});
+
+test("does not require a special agreement without a department", async () => {
+  await (await users()).updateOne({ _id: userId }, { $unset: { teamId: "" } });
+
+  await expect(
+    assertRequiredDocumentConfiguration(membership),
+  ).resolves.toBeUndefined();
 });
 
 async function seedVersion(
@@ -125,8 +190,7 @@ async function seedVersion(
     kind,
     title: kind,
     versionLabel: "2026-01",
-    sourceUrl: "https://docs.google.com/example",
-    snapshotStorageKey: `test/${id}.pdf`,
+    contentStorageKey: `test/${id}/content.html`,
     sha256: id.padEnd(64, "0").slice(0, 64),
     publishedAt: Date.now(),
     publishedBy: userId,
