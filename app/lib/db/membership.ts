@@ -73,8 +73,6 @@ export interface Membership {
   address?: PostalAddress;
   memberPlatformUserId?: string;
   applicationSignature?: MembershipApplicationSignature;
-  profileConfirmedAt?: number;
-  purposesConfirmedAt?: number;
   resignationReceivedAt?: number;
   scheduledEndAt?: number;
   scheduledEndReason?: Extract<

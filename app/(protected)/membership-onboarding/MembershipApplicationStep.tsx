@@ -12,15 +12,7 @@ import {
   MembershipApplicationFields,
 } from "./MembershipApplicationFields";
 import { OnboardingSignatureField } from "./OnboardingSignatureField";
-import { Confirmation, Field } from "./ProfileFields";
-
-const CONFIRMATION_TEXTS = {
-  profile:
-    "Ich bestätige, dass meine oben angegebenen persönlichen Daten vollständig und richtig sind.",
-  privacy:
-    "Ich habe die Datenschutzgrundverordnung gelesen und akzeptiere sie.",
-  purposes: "Ich unterstütze die in der Satzung festgelegten Vereinszwecke.",
-};
+import { Field } from "./ProfileFields";
 
 export function MembershipApplicationStep({
   profile,
@@ -40,13 +32,7 @@ export function MembershipApplicationStep({
     place: profile.address.city,
   });
   const [signature, setSignature] = useState("");
-  const [confirmed, setConfirmed] = useState({
-    profile: false,
-    privacy: false,
-    purposes: false,
-  });
   const [isPending, startTransition] = useTransition();
-  const allConfirmed = Object.values(confirmed).every(Boolean);
 
   function update(field: keyof ApplicationValues, value: string) {
     setValues((current) => ({ ...current, [field]: value }));
@@ -69,9 +55,6 @@ export function MembershipApplicationStep({
           ...values,
           gender,
           signatureStorageKey: signature,
-          profileDataConfirmed: true,
-          privacyAccepted: true,
-          supportsAssociationPurposes: true,
         });
         await onComplete();
         toast.success("Mitgliedsantrag unterschrieben.");
@@ -95,21 +78,6 @@ export function MembershipApplicationStep({
           update={update}
         />
 
-        <div className="space-y-4 border-2 border-input bg-muted/40 p-4">
-          {Object.entries(CONFIRMATION_TEXTS).map(([key, text]) => (
-            <Confirmation
-              key={key}
-              id={`membership-confirm-${key}`}
-              checked={confirmed[key as keyof typeof confirmed]}
-              onCheckedChange={(checked) =>
-                setConfirmed((current) => ({ ...current, [key]: checked }))
-              }
-            >
-              {text}
-            </Confirmation>
-          ))}
-        </div>
-
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Ort" htmlFor="membership-place">
             <Input
@@ -131,7 +99,7 @@ export function MembershipApplicationStep({
           />
         </Field>
 
-        <Button type="submit" disabled={isPending || !allConfirmed}>
+        <Button type="submit" disabled={isPending}>
           {isPending && <Loader2 aria-hidden="true" className="animate-spin" />}
           Mitgliedsantrag unterschreiben
         </Button>

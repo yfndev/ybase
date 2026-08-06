@@ -51,9 +51,6 @@ const FORM = {
   country: "Deutschland",
   place: "Berlin",
   signatureStorageKey: SIGNATURE_STORAGE_KEY,
-  profileDataConfirmed: true,
-  privacyAccepted: true,
-  supportsAssociationPurposes: true,
 } as const;
 
 let actor: User & { organizationId: string };
@@ -145,7 +142,7 @@ test("blocks the membership form until every document is completed", async () =>
   expect(putObject).not.toHaveBeenCalled();
   expect(
     await (await memberships()).findOne({ _id: membershipId }),
-  ).not.toHaveProperty("profileConfirmedAt");
+  ).not.toHaveProperty("applicationSignature");
 });
 
 test("stores the signed application and activates the account", async () => {
@@ -174,8 +171,6 @@ test("stores the signed application and activates the account", async () => {
       ipAddress: "192.0.2.1",
       signatureStorageKey: SIGNATURE_STORAGE_KEY,
     },
-    profileConfirmedAt: expect.any(Number),
-    purposesConfirmedAt: expect.any(Number),
   });
   expect(await (await users()).findOne({ _id: actor._id })).toMatchObject({
     memberStatus: "active",

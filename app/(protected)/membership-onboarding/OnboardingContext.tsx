@@ -62,14 +62,19 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     error,
     reload,
     current: context?.documents.find(({ status }) => status === "assigned"),
-    done: Boolean(context?.documentsComplete && context.profile.confirmed),
+    done: Boolean(
+      context?.documentsComplete && context.profile.applicationSigned,
+    ),
     steps: context
       ? [
           ...context.documents.map((document) => ({
             label: document.title,
             complete: document.status === "completed",
           })),
-          { label: "Mitgliedsantrag", complete: context.profile.confirmed },
+          {
+            label: "Mitgliedsantrag",
+            complete: context.profile.applicationSigned,
+          },
         ]
       : [],
   };
