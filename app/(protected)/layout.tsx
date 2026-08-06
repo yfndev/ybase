@@ -11,6 +11,8 @@ import { OnboardingNotice } from "./OnboardingNotice";
 import { OffboardedNotice } from "./OffboardedNotice";
 import { PublicProfileSetup } from "./PublicProfileSetup";
 import { MembershipOnboarding } from "./membership-onboarding/MembershipOnboarding";
+import { OnboardingProvider } from "./membership-onboarding/OnboardingContext";
+import { OnboardingSidebarProgress } from "./membership-onboarding/OnboardingSidebarProgress";
 
 export default async function ProtectedLayout({
   children,
@@ -47,9 +49,11 @@ export default async function ProtectedLayout({
     );
   } else if (member.memberStatus === "onboarding") {
     content = (
-      <AppShell locked>
-        <MembershipOnboarding />
-      </AppShell>
+      <OnboardingProvider>
+        <AppShell locked navSlot={<OnboardingSidebarProgress />}>
+          <MembershipOnboarding />
+        </AppShell>
+      </OnboardingProvider>
     );
   } else {
     content = <AppShell>{children}</AppShell>;

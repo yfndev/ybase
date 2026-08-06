@@ -70,8 +70,12 @@ const ADMINISTRATION_NAV_ITEMS: ProtectedNavItem[] = [
 
 export function AppSidebar({
   locked = false,
+  navSlot,
   ...props
-}: React.ComponentProps<typeof Sidebar> & { locked?: boolean }) {
+}: React.ComponentProps<typeof Sidebar> & {
+  locked?: boolean;
+  navSlot?: React.ReactNode;
+}) {
   const role = useCurrentUserRole();
   const homeUrl = role === "member" ? "/reimbursements" : "/dashboard";
   const mainItems: NavItem[] = [
@@ -128,13 +132,13 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <MainNav items={mainItems} locked={locked} />
-        {administrationItems.length > 0 && (
-          <MainNav
-            items={administrationItems}
-            label="Verwaltung"
-            locked={locked}
-          />
+        {navSlot ?? (
+          <>
+            <MainNav items={mainItems} />
+            {administrationItems.length > 0 && (
+              <MainNav items={administrationItems} label="Verwaltung" />
+            )}
+          </>
         )}
       </SidebarContent>
       <SidebarFooter>

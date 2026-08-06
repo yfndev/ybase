@@ -84,7 +84,10 @@ export function MembershipApplicationStep({
   }
 
   return (
-    <section className="max-w-[1024px]" aria-label="Mitgliedsantrag">
+    <section
+      className="mx-auto w-full max-w-[1024px] overflow-y-auto"
+      aria-label="Mitgliedsantrag"
+    >
       <form className="space-y-6" onSubmit={submit}>
         <MembershipApplicationFields
           profile={profile}
