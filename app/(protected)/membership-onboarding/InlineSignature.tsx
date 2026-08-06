@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { SignatureField } from "./SignatureField";
+import { OnboardingSignatureField } from "./OnboardingSignatureField";
 
 export function InlineSignature({
   onSubmit,
 }: {
-  onSubmit: (dataUrl: string) => Promise<void>;
+  onSubmit: (storageKey: string) => Promise<void>;
 }) {
   const [signature, setSignature] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -31,7 +31,10 @@ export function InlineSignature({
 
   return (
     <div className="space-y-3">
-      <SignatureField label="Unterschriftsfeld" onChange={setSignature} />
+      <OnboardingSignatureField
+        storageKey={signature || undefined}
+        onChange={setSignature}
+      />
       <Button type="button" onClick={() => void submit()} disabled={submitting}>
         {submitting && <Loader2 aria-hidden="true" className="animate-spin" />}
         Dokument unterzeichnen

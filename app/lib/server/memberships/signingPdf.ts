@@ -18,9 +18,16 @@ const BLOCK_OPTIONS = {
 export function decodeSignatureDataUrl(dataUrl: string): Uint8Array {
   const match = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl);
   if (!match) throw new Error("Die Unterschrift muss als PNG vorliegen.");
-  const bytes = Buffer.from(match[1], "base64");
+  return validateSignaturePng(Buffer.from(match[1], "base64"));
+}
+
+export function validateSignaturePng(bytes: Uint8Array): Uint8Array {
   if (bytes.byteLength < 100 || bytes.byteLength > 500_000) {
     throw new Error("Die Unterschrift ist leer oder zu groß.");
+  }
+  const pngSignature = [137, 80, 78, 71, 13, 10, 26, 10];
+  if (!pngSignature.every((byte, index) => bytes[index] === byte)) {
+    throw new Error("Die Unterschrift muss als PNG vorliegen.");
   }
   return bytes;
 }

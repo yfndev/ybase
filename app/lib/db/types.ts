@@ -24,7 +24,11 @@ export type {
   MealAllowanceLine,
 } from "./travelTypes";
 export type { SignatureToken } from "./signature";
-export type { UploadContextType, UploadOwnership } from "./upload";
+export type {
+  UploadClaimType,
+  UploadContextType,
+  UploadOwnership,
+} from "./upload";
 export type * from "./membership";
 export type * from "./membershipAdmission";
 export type * from "./membershipCase";

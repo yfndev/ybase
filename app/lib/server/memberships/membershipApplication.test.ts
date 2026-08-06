@@ -1,7 +1,16 @@
 import { beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({ requireAuthenticatedUser: vi.fn() }));
-vi.mock("../../s3/storage", () => ({ putObject: vi.fn() }));
+vi.mock("../../s3/storage", () => ({
+  getObjectBuffer: vi.fn(async () =>
+    Buffer.concat([
+      Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+      Buffer.alloc(120),
+    ]),
+  ),
+  getObjectSize: vi.fn(async () => 128),
+  putObject: vi.fn(),
+}));
 vi.mock("./requestMetadata", () => ({ membershipRequestMetadata: vi.fn() }));
 vi.mock("./membershipApplicationPdf", () => ({
   createMembershipApplicationPdf: vi.fn(),
@@ -14,6 +23,7 @@ import {
   documentVersions,
   memberships,
   teams,
+  uploadOwnerships,
   users,
 } from "../../db/collections";
 import { newId } from "../../db/ids";
@@ -25,10 +35,11 @@ import { submitOwnMembershipApplication } from "./membershipApplication";
 import { createMembershipApplicationPdf } from "./membershipApplicationPdf";
 import { ensureAcceptedApplicantMembership } from "./onboardingMembership";
 import { membershipRequestMetadata } from "./requestMetadata";
+import { registerPendingUpload } from "../uploads/ownership";
 
 setupTestDatabase();
 
-const SIGNATURE = `data:image/png;base64,${"A".repeat(200)}`;
+const SIGNATURE_STORAGE_KEY = "membership-signature-key";
 
 const FORM = {
   privateEmail: "Alex.Private@Example.org",
@@ -39,7 +50,7 @@ const FORM = {
   city: "Berlin",
   country: "Deutschland",
   place: "Berlin",
-  signatureDataUrl: SIGNATURE,
+  signatureStorageKey: SIGNATURE_STORAGE_KEY,
   profileDataConfirmed: true,
   privacyAccepted: true,
   supportsAssociationPurposes: true,
@@ -118,6 +129,12 @@ beforeEach(async () => {
     new Uint8Array([1, 2, 3]),
   );
   membershipId = (await ensureAcceptedApplicantMembership(actor))._id;
+  await registerPendingUpload(SIGNATURE_STORAGE_KEY, {
+    organizationId: actor.organizationId,
+    userId: actor._id,
+    contextType: "user",
+    contextId: actor._id,
+  });
 });
 
 test("blocks the membership form until every document is completed", async () => {
@@ -140,11 +157,6 @@ test("stores the signed application and activates the account", async () => {
 
   const directory = `memberships/${actor.organizationId}/applications/${membershipId}/membership-form`;
   expect(putObject).toHaveBeenCalledWith(
-    `${directory}/signature.png`,
-    expect.anything(),
-    "image/png",
-  );
-  expect(putObject).toHaveBeenCalledWith(
     `${directory}/membership-application.pdf`,
     expect.anything(),
     "application/pdf",
@@ -160,7 +172,7 @@ test("stores the signed application and activates the account", async () => {
     applicationSignature: {
       place: "Berlin",
       ipAddress: "192.0.2.1",
-      signatureStorageKey: `${directory}/signature.png`,
+      signatureStorageKey: SIGNATURE_STORAGE_KEY,
     },
     profileConfirmedAt: expect.any(Number),
     purposesConfirmedAt: expect.any(Number),
@@ -169,13 +181,19 @@ test("stores the signed application and activates the account", async () => {
     memberStatus: "active",
     privateEmail: "alex.private@example.org",
   });
+  expect(
+    await (await uploadOwnerships()).findOne({ _id: SIGNATURE_STORAGE_KEY }),
+  ).toMatchObject({
+    claimedByType: "membershipApplication",
+    claimedById: membershipId,
+  });
 });
 
 test("rejects a submission without a usable signature", async () => {
   await completeAllDocuments();
 
   await expect(
-    submitOwnMembershipApplication({ ...FORM, signatureDataUrl: "" }),
+    submitOwnMembershipApplication({ ...FORM, signatureStorageKey: "" }),
   ).rejects.toThrow();
 
   expect(putObject).not.toHaveBeenCalled();

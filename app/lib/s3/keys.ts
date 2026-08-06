@@ -51,6 +51,15 @@ export function membershipApplicationDirectory(
   return `memberships/${organizationId}/applications/${membershipId}/membership-form`;
 }
 
+export function membershipSignatureUploadDirectory(
+  organizationId: string,
+  userId: string,
+): string {
+  assertSafePathSegment(organizationId, "organization ID");
+  assertSafePathSegment(userId, "user ID");
+  return `memberships/${organizationId}/signature-uploads/${userId}`;
+}
+
 export function membershipExecutionDirectory(
   organizationId: string,
   executionId: string,

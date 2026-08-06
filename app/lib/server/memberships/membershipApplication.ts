@@ -8,11 +8,11 @@ import { putObject } from "../../s3/storage";
 import { requiredDocumentsComplete } from "./documentAssignments";
 import { appendMembershipEvent } from "./events";
 import { createMembershipApplicationPdf } from "./membershipApplicationPdf";
+import { loadAndClaimMembershipSignature } from "./membershipSignatures";
 import { requireOnboardingUser } from "./onboardingActor";
 import { activateMembershipOnboardingIfComplete } from "./onboardingCompletion";
 import { ensureAcceptedApplicantMembership } from "./onboardingMembership";
 import { membershipRequestMetadata } from "./requestMetadata";
-import { decodeSignatureDataUrl } from "./signingPdf";
 
 const applicationSchema = z.object({
   privateEmail: z.email(),
@@ -23,7 +23,7 @@ const applicationSchema = z.object({
   city: z.string().trim().min(2).max(100),
   country: z.string().trim().min(2).max(100),
   place: z.string().trim().min(2).max(100),
-  signatureDataUrl: z.string().min(1),
+  signatureStorageKey: z.string().min(1),
   profileDataConfirmed: z.literal(true),
   privacyAccepted: z.literal(true),
   supportsAssociationPurposes: z.literal(true),
@@ -45,7 +45,11 @@ export async function submitOwnMembershipApplication(
   ).findOne({ _id: membership.organizationId });
   if (!organization) throw new Error("Die Organisation wurde nicht gefunden.");
 
-  const signature = decodeSignatureDataUrl(parsed.signatureDataUrl);
+  const signature = await loadAndClaimMembershipSignature(
+    parsed.signatureStorageKey,
+    actor,
+    { type: "membershipApplication", id: membership._id },
+  );
   const signedAt = Date.now();
   const privateEmail = parsed.privateEmail.toLowerCase();
   const address = {
@@ -76,9 +80,7 @@ export async function submitOwnMembershipApplication(
     membership.organizationId,
     membership._id,
   );
-  const signatureStorageKey = `${directory}/signature.png`;
   const evidenceStorageKey = `${directory}/membership-application.pdf`;
-  await putObject(signatureStorageKey, signature, "image/png");
   await putObject(evidenceStorageKey, pdf, "application/pdf");
 
   const result = await (
@@ -99,7 +101,7 @@ export async function submitOwnMembershipApplication(
         applicationSignature: {
           place: parsed.place,
           signedAt,
-          signatureStorageKey,
+          signatureStorageKey: parsed.signatureStorageKey,
           ...(await membershipRequestMetadata()),
         },
         admissionEvidenceStorageKey: evidenceStorageKey,

@@ -18,7 +18,7 @@ export function DocumentStep({
   const [, startTransition] = useTransition();
 
   function complete(
-    signatureDataUrl?: string,
+    signatureStorageKey?: string,
     consentGranted?: boolean,
   ): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -27,7 +27,7 @@ export function DocumentStep({
         try {
           await completeOwnDocument({
             executionId: document.executionId,
-            signatureDataUrl,
+            signatureStorageKey,
             consentGranted,
           });
           await onComplete();

@@ -13,13 +13,14 @@ import { membershipExecutionDirectory } from "../../s3/keys";
 import { putObject } from "../../s3/storage";
 import { loadDocumentContent } from "./documentContent";
 import { appendMembershipEvent } from "./events";
+import { loadAndClaimMembershipSignature } from "./membershipSignatures";
 import { activateMembershipOnboardingIfComplete } from "./onboardingCompletion";
 import { membershipRequestMetadata } from "./requestMetadata";
-import { createExecutionPdf, decodeSignatureDataUrl } from "./signingPdf";
+import { createExecutionPdf } from "./signingPdf";
 
 const completionSchema = z.object({
   executionId: z.string().min(1),
-  signatureDataUrl: z.string().optional(),
+  signatureStorageKey: z.string().min(1).optional(),
   consentGranted: z.boolean().optional(),
 });
 
@@ -68,10 +69,17 @@ export async function completeOwnDocument(
     return;
   }
 
-  const signature =
+  const signatureStorageKey =
     execution.executionType === "signature"
-      ? decodeSignatureDataUrl(parsed.signatureDataUrl ?? "")
+      ? z.string().min(1).parse(parsed.signatureStorageKey)
       : undefined;
+  const signature = signatureStorageKey
+    ? await loadAndClaimMembershipSignature(
+        signatureStorageKey,
+        { _id: actor._id, organizationId: actor.organizationId },
+        { type: "membershipDocument", id: execution._id },
+      )
+    : undefined;
   if (
     execution.executionType === "optional_consent" &&
     parsed.consentGranted === undefined
@@ -120,11 +128,7 @@ export async function completeOwnDocument(
       actor.organizationId,
       execution._id,
     );
-    const signatureStorageKey = `${directory}/signature.png`;
     const completedPdfStorageKey = `${directory}/completed.pdf`;
-    if (signature) {
-      await putObject(signatureStorageKey, signature, "image/png");
-    }
     await putObject(completedPdfStorageKey, completedPdf, "application/pdf");
     const requestMetadata = await membershipRequestMetadata();
     const result = await executions.updateOne(
