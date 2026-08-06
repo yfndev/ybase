@@ -61,10 +61,11 @@ test("stores the document text in object storage and hashes it", async () => {
 
 test("derives the execution type from the document kind", async () => {
   const published = await publishMembershipDocument({
-    kind: "code_of_conduct",
-    title: "Code of Conduct",
+    kind: "usage_rights",
+    title: "Sondervereinbarung Arbeitsergebnisse",
     versionLabel: "2026-01",
     content: CONTENT,
+    targetDepartmentIds: ["department-1"],
   });
 
   expect(
