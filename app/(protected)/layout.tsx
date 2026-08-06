@@ -44,7 +44,7 @@ export default async function ProtectedLayout({
     content = linkingData ? (
       <MemberPlatformLinking data={linkingData} />
     ) : (
-      <OnboardingNotice onboardingStatus={member.teamOnboardingStatus} />
+      <OnboardingNotice />
     );
   } else if (member.memberStatus === "onboarding") {
     content = <MembershipOnboarding />;
