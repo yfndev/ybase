@@ -152,7 +152,9 @@ test("keeps only the newest special agreement per department", async () => {
   await assignRequiredDocuments(membership);
 
   expect(
-    await (await documentExecutions()).countDocuments({
+    await (
+      await documentExecutions()
+    ).countDocuments({
       membershipId: membership._id,
     }),
   ).toBe(4);

@@ -21,7 +21,16 @@ import type {
 } from "../../db/types";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { loadDocumentContent } from "./documentContent";
-import { getOwnMembershipOnboardingContext } from "./onboardingData";
+import {
+  getOwnMembershipOnboardingContext,
+  type MembershipOnboardingContext,
+} from "./onboardingData";
+
+async function loadContext(): Promise<MembershipOnboardingContext> {
+  const context = await getOwnMembershipOnboardingContext();
+  if ("blocked" in context) throw new Error(`blocked: ${context.blocked}`);
+  return context;
+}
 
 setupTestDatabase();
 
@@ -96,8 +105,8 @@ beforeEach(async () => {
 });
 
 test("creates the legal record and returns the documents in reading order", async () => {
-  const first = await getOwnMembershipOnboardingContext();
-  const second = await getOwnMembershipOnboardingContext();
+  const first = await loadContext();
+  const second = await loadContext();
 
   expect(first.profile).toMatchObject({
     firstName: "Alex",
@@ -130,7 +139,7 @@ test("creates the legal record and returns the documents in reading order", asyn
 });
 
 test("delivers the frozen text inline for open documents only", async () => {
-  const context = await getOwnMembershipOnboardingContext();
+  const context = await loadContext();
   await (
     await documentExecutions()
   ).updateOne(
@@ -138,7 +147,7 @@ test("delivers the frozen text inline for open documents only", async () => {
     { $set: { status: "completed", completedAt: Date.now() } },
   );
 
-  const updated = await getOwnMembershipOnboardingContext();
+  const updated = await loadContext();
 
   expect(updated.documents[0]).toMatchObject({
     status: "completed",
