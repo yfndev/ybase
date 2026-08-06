@@ -1,4 +1,4 @@
-import { beforeEach, expect, test } from "vitest";
+import { beforeAll, expect, test } from "vitest";
 import { setupTestDatabase } from "../test/setupTestDatabase";
 import {
   documentExecutions,
@@ -12,7 +12,7 @@ import type { Membership } from "./types";
 
 setupTestDatabase();
 
-beforeEach(async () => {
+beforeAll(async () => {
   await ensureIndexes();
 });
 

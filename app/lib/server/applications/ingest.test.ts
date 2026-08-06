@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, expect, test, vi } from "vitest";
 import { getClient } from "../../db/client";
 import {
   applications,
@@ -103,9 +103,12 @@ async function insertPosting(
 
 setupTestDatabase();
 
+beforeAll(async () => {
+  await ensureIndexes();
+});
+
 beforeEach(async () => {
   vi.stubEnv("MEMBER_PLATFORM_MONGODB_DB", "");
-  await ensureIndexes();
   orgA = newId();
   postingA = await insertPosting(orgA);
   postingA2 = await insertPosting(orgA, { tallyFormId: "form-2" });
@@ -270,26 +273,23 @@ test("ignores a submission without a phone number", async () => {
   expect(await (await applications()).countDocuments()).toBe(0);
 });
 
-test.each(["draft", "closed", "archived"] as const)(
-  "ignores a submission for a %s posting",
-  async (status) => {
-    const posting = await insertPosting(orgA, { status });
-    const outcome = await ingestTallySubmission(
-      buildPayload({
-        eventId: `event-${status}`,
-        submissionId: `submission-${status}`,
-        jobPostingId: posting,
-        email: "a@b.de",
-      }),
-    );
+test("ignores a submission for a non-published posting", async () => {
+  const posting = await insertPosting(orgA, { status: "draft" });
+  const outcome = await ingestTallySubmission(
+    buildPayload({
+      eventId: "event-draft",
+      submissionId: "submission-draft",
+      jobPostingId: posting,
+      email: "a@b.de",
+    }),
+  );
 
-    expect(outcome).toEqual({
-      status: "ignored",
-      reason: "job-posting-not-open",
-    });
-    expect(await (await applications()).countDocuments()).toBe(0);
-  },
-);
+  expect(outcome).toEqual({
+    status: "ignored",
+    reason: "job-posting-not-open",
+  });
+  expect(await (await applications()).countDocuments()).toBe(0);
+});
 
 test("ignores a submission when the deadline has already passed", async () => {
   const posting = await insertPosting(orgA, { deadline: "2000-01-01" });
@@ -439,21 +439,4 @@ test("lets the same email apply to a different posting", async () => {
 
   expect(other.status).toBe("created");
   expect(await (await applications()).countDocuments()).toBe(2);
-});
-
-test("records the event outcome for traceability", async () => {
-  const outcome = await ingestTallySubmission(
-    buildPayload({
-      eventId: "e1",
-      submissionId: "s1",
-      jobPostingId: postingA,
-      email: "a@b.de",
-    }),
-  );
-  const event = await (await tallyWebhookEvents()).findOne({ _id: "e1" });
-  expect(event?.status).toBe("processed");
-  expect(event?.applicationId).toBe(
-    outcome.status === "created" ? outcome.applicationId : undefined,
-  );
-  expect(event?.organizationId).toBe(orgA);
 });

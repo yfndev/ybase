@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["app/**/*.test.ts"],
-    fileParallelism: !process.env.CI,
+    globalSetup: ["app/lib/test/globalSetup.ts"],
+    maxWorkers: process.env.CI ? 2 : undefined,
   },
 });

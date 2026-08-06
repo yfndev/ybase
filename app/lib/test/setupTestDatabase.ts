@@ -1,23 +1,28 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
-import { afterAll, beforeAll, beforeEach } from "vitest";
+import { randomUUID } from "node:crypto";
+import { afterAll, beforeAll, beforeEach, inject } from "vitest";
 import { getClient, getDb } from "../db/client";
 
 export function setupTestDatabase() {
-  let server: MongoMemoryServer;
+  const databaseName = `ybase_test_${randomUUID().replaceAll("-", "")}`;
 
   beforeAll(async () => {
-    server = await MongoMemoryServer.create();
-    process.env.MONGODB_URI = server.getUri();
-    process.env.MONGODB_DB = "ybase_test";
-  }, 120_000);
+    process.env.MONGODB_URI = inject("mongoUri");
+    process.env.MONGODB_DB = databaseName;
+  });
 
   afterAll(async () => {
     const client = await getClient();
+    await client.db(databaseName).dropDatabase();
     await client.close();
-    await server.stop();
   }, 30_000);
 
   beforeEach(async () => {
-    await (await getDb()).dropDatabase();
+    const db = await getDb();
+    const collections = await db
+      .listCollections({}, { nameOnly: true })
+      .toArray();
+    await Promise.all(
+      collections.map(({ name }) => db.collection(name).deleteMany({})),
+    );
   });
 }
