@@ -23,12 +23,10 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
-
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
 export function CreateJobPostingDialog({ open, onOpenChange }: Props) {
   const router = useRouter();
   const { departments } = useDepartments();
@@ -91,14 +89,12 @@ export function CreateJobPostingDialog({ open, onOpenChange }: Props) {
       toast.error("Fehler beim Erstellen");
     }
   };
-
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Neue Ausschreibung</DialogTitle>
         </DialogHeader>
-
         {departments.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Bitte lege zuerst ein aktives Department an.

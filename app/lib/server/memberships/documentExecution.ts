@@ -10,8 +10,10 @@ import {
 import type { DocumentExecution, DocumentVersion } from "../../db/types";
 import { isUnavailableMemberStatus } from "../../members/status";
 import { membershipExecutionDirectory } from "../../s3/keys";
-import { getObjectBuffer, putObject } from "../../s3/storage";
+import { putObject } from "../../s3/storage";
+import { loadDocumentContent } from "./documentContent";
 import { appendMembershipEvent } from "./events";
+import { activateMembershipOnboardingIfComplete } from "./onboardingCompletion";
 import { membershipRequestMetadata } from "./requestMetadata";
 import { createExecutionPdf, decodeSignatureDataUrl } from "./signingPdf";
 
@@ -48,7 +50,7 @@ export async function completeOwnDocument(
     userId: actor._id,
   });
   if (!execution || execution.status === "revoked") {
-    throw new Error("Dokumentaufgabe nicht gefunden.");
+    throw new Error("Diese Unterlage wurde nicht gefunden.");
   }
   const version = await (
     await documentVersions()
@@ -62,6 +64,7 @@ export async function completeOwnDocument(
   }
   if (execution.status === "completed") {
     await recordCompletionEvent(execution, version);
+    await activateMembershipOnboardingIfComplete(membership._id);
     return;
   }
 
@@ -94,13 +97,16 @@ export async function completeOwnDocument(
     { $set: { processingStartedAt: completedAt } },
   );
   if (reservation.modifiedCount !== 1) {
-    throw new Error("Die Dokumentaufgabe wird bereits verarbeitet.");
+    throw new Error("Diese Unterlage wird bereits verarbeitet.");
   }
 
   try {
-    const source = await getObjectBuffer(version.snapshotStorageKey);
+    const contentHtml = await loadDocumentContent(
+      version.contentStorageKey,
+      version.sha256,
+    );
     const completedPdf = await createExecutionPdf({
-      snapshotPdf: source,
+      contentHtml,
       signaturePng: signature,
       title: version.title,
       versionLabel: version.versionLabel,
@@ -142,7 +148,7 @@ export async function completeOwnDocument(
       },
     );
     if (result.modifiedCount !== 1) {
-      throw new Error("Die Dokumentaufgabe wurde parallel geändert.");
+      throw new Error("Diese Unterlage wurde parallel geändert.");
     }
   } catch (error) {
     await executions.updateOne(
@@ -160,6 +166,7 @@ export async function completeOwnDocument(
     { ...execution, status: "completed", completedAt },
     version,
   );
+  await activateMembershipOnboardingIfComplete(membership._id);
 }
 
 async function recordCompletionEvent(

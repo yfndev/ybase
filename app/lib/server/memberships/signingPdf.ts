@@ -1,4 +1,19 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import type { DocumentBlockStyle } from "./documentText";
+import { htmlToDocumentBlocks } from "./documentText";
+import type { WriteOptions } from "./pdfLayout";
+import {
+  createPdfWriter,
+  drawSignatureImage,
+  writeGap,
+  writeText,
+} from "./pdfLayout";
+
+const BLOCK_OPTIONS = {
+  heading: { size: 13, bold: true, gap: 6 },
+  subheading: { size: 11, bold: true, gap: 4 },
+  body: { size: 10, gap: 7 },
+  listitem: { size: 10, indent: 16, gap: 4 },
+} as const satisfies Record<DocumentBlockStyle, WriteOptions>;
 
 export function decodeSignatureDataUrl(dataUrl: string): Uint8Array {
   const match = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl);
@@ -11,7 +26,7 @@ export function decodeSignatureDataUrl(dataUrl: string): Uint8Array {
 }
 
 export async function createExecutionPdf(input: {
-  snapshotPdf: Uint8Array;
+  contentHtml: string;
   signaturePng?: Uint8Array;
   title: string;
   versionLabel: string;
@@ -21,25 +36,44 @@ export async function createExecutionPdf(input: {
   completedAt: number;
   consentGranted?: boolean;
 }): Promise<Uint8Array> {
-  const source = await PDFDocument.load(input.snapshotPdf);
-  const output = await PDFDocument.create();
-  const pages = await output.copyPages(source, source.getPageIndices());
-  for (const page of pages) output.addPage(page);
+  const writer = await createPdfWriter();
+  writeText(writer, input.title, { size: 18, bold: true, gap: 4 });
+  writeText(writer, `Version ${input.versionLabel}`, { size: 9, gap: 18 });
+  for (const block of htmlToDocumentBlocks(input.contentHtml)) {
+    writeText(writer, block.text, BLOCK_OPTIONS[block.style]);
+  }
 
-  const page = output.addPage([595, 842]);
-  const font = await output.embedFont(StandardFonts.Helvetica);
-  const bold = await output.embedFont(StandardFonts.HelveticaBold);
-  page.drawText("Nachweis der Ausführung", {
-    x: 52,
-    y: 780,
-    size: 18,
-    font: bold,
-    color: rgb(0.08, 0.1, 0.14),
+  writeGap(writer, 26);
+  writeText(writer, "Nachweis der Ausführung", {
+    size: 13,
+    bold: true,
+    gap: 8,
   });
-  const lines = [
-    `Dokument: ${input.title}`,
+  for (const line of evidenceLines(input)) {
+    writeText(writer, line, { size: 9, gap: 3 });
+  }
+  if (input.signaturePng) {
+    writeGap(writer, 14);
+    writeText(writer, "Unterschrift", { size: 10, bold: true, gap: 8 });
+    await drawSignatureImage(writer, input.signaturePng);
+  } else {
+    writeGap(writer, 10);
+    writeText(writer, "Elektronisch zur Kenntnis genommen.", { size: 10 });
+  }
+  return writer.document.save();
+}
+
+function evidenceLines(input: {
+  versionLabel: string;
+  documentHash: string;
+  membershipId: string;
+  userId: string;
+  completedAt: number;
+  consentGranted?: boolean;
+}): string[] {
+  return [
     `Version: ${input.versionLabel}`,
-    `SHA-256: ${input.documentHash}`,
+    `SHA-256 des Dokumententexts: ${input.documentHash}`,
     `Membership-ID: ${input.membershipId}`,
     `User-ID: ${input.userId}`,
     `Zeitpunkt: ${new Date(input.completedAt).toISOString()}`,
@@ -51,26 +85,4 @@ export async function createExecutionPdf(input: {
           }`,
         ]),
   ];
-  lines.forEach((line, index) => {
-    page.drawText(line, { x: 52, y: 730 - index * 24, size: 10, font });
-  });
-  if (input.signaturePng) {
-    const signature = await output.embedPng(input.signaturePng);
-    const scale = Math.min(260 / signature.width, 110 / signature.height, 1);
-    page.drawText("Unterschrift", { x: 52, y: 570, size: 10, font: bold });
-    page.drawImage(signature, {
-      x: 52,
-      y: 440,
-      width: signature.width * scale,
-      height: signature.height * scale,
-    });
-  } else {
-    page.drawText("Elektronisch zur Kenntnis genommen.", {
-      x: 52,
-      y: 550,
-      size: 11,
-      font,
-    });
-  }
-  return output.save();
 }

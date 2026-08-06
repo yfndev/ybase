@@ -122,15 +122,9 @@ async function applicableDocumentVersions(
       version.targetDepartmentIds.some((id) => departmentIds.includes(id))
     );
   });
-  const configuredTeams = configuredIds("MEMBERSHIP_USAGE_RIGHTS_TEAM_IDS");
-  const configuredDepartments = configuredIds(
-    "MEMBERSHIP_USAGE_RIGHTS_DEPARTMENT_IDS",
-  );
   return {
     versions: applicable,
-    requiresUsageRights:
-      assignedTeamIds.some((id) => configuredTeams.has(id)) ||
-      departmentIds.some((id) => configuredDepartments.has(id)),
+    requiresUsageRights: departmentIds.length > 0,
   };
 }
 
@@ -152,28 +146,35 @@ function assertRequiredDocuments<T extends { kind: string }>(
     !versions.some((version) => version.kind === "usage_rights")
   ) {
     throw new Error(
-      "Für das zugewiesene Team fehlt der Nutzungsrechtevertrag.",
+      "Für das zugewiesene Department fehlt die Sondervereinbarung zu Arbeitsergebnissen.",
     );
   }
 }
 
-function configuredIds(name: string) {
-  return new Set(
-    (process.env[name] ?? "")
-      .split(",")
-      .map((id) => id.trim())
-      .filter(Boolean),
-  );
-}
+type TargetedVersion = {
+  kind: string;
+  targetTeamIds: string[];
+  targetDepartmentIds: string[];
+};
 
-function versionsToAssign<T extends { kind: string }>(versions: T[]): T[] {
+function versionsToAssign<T extends TargetedVersion>(versions: T[]): T[] {
   const seen = new Set<string>();
   return versions.filter((version) => {
     if (version.kind === "optional_consent") return true;
-    if (seen.has(version.kind)) return false;
-    seen.add(version.kind);
+    const key = assignmentKey(version);
+    if (seen.has(key)) return false;
+    seen.add(key);
     return true;
   });
+}
+
+function assignmentKey(version: TargetedVersion): string {
+  if (version.kind !== "usage_rights") return version.kind;
+  const targets = [
+    ...version.targetDepartmentIds,
+    ...version.targetTeamIds,
+  ].sort();
+  return `usage_rights:${targets.join(",")}`;
 }
 
 export async function requiredDocumentsComplete(

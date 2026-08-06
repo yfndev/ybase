@@ -114,9 +114,8 @@ erDiagram
         string organizationId
         string kind
         string versionLabel
-        string sourceUrl
-        string snapshotStorageKey
-        string sha256
+        string contentStorageKey "sanitized HTML in object storage"
+        string sha256 "hash of the document text"
         array targetTeamIds
         array targetDepartmentIds
     }
