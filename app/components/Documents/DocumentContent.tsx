@@ -4,7 +4,7 @@ const PROSE_CLASSES =
 export function DocumentContent({ html }: { html: string }) {
   return (
     <section
-      className={`mt-6 max-h-[26rem] overflow-y-auto rounded-xl border bg-card p-6 text-sm leading-6 ${PROSE_CLASSES}`}
+      className={`max-h-[60vh] overflow-y-auto border-2 border-input bg-card p-6 text-sm leading-6 ${PROSE_CLASSES}`}
       aria-label="Dokumententext"
       // biome-ignore lint/security/noDangerouslySetInnerHtml: text is sanitized server-side and hash-verified before delivery
       dangerouslySetInnerHTML={{ __html: html }}

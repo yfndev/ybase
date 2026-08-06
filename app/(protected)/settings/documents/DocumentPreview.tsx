@@ -36,7 +36,11 @@ export function DocumentPreview({ versionId }: { versionId: string }) {
         {isPending && <Loader2 aria-hidden="true" className="animate-spin" />}
         {content === undefined ? "Text anzeigen" : "Text ausblenden"}
       </Button>
-      {content !== undefined && <DocumentContent html={content} />}
+      {content !== undefined && (
+        <div className="mt-3">
+          <DocumentContent html={content} />
+        </div>
+      )}
     </div>
   );
 }
