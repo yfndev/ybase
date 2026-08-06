@@ -1,25 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { DOCUMENT_STEP_DESCRIPTIONS } from "@/lib/members/documents";
 import { signOutWithPostHog } from "@/lib/posthog-client";
 import {
   getOwnMembershipOnboardingContext,
   type MembershipOnboardingContext,
 } from "@/lib/server/memberships/onboardingData";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  ClipboardCheck,
-  LogOut,
-} from "lucide-react";
+import { AlertTriangle, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { DocumentStep } from "./DocumentStep";
@@ -66,72 +54,65 @@ export function MembershipOnboarding() {
   const done = context?.documentsComplete && context.profile.confirmed;
 
   return (
-    <main className="flex min-h-screen items-start justify-center bg-muted/30 p-6">
-      <Card className="w-full max-w-3xl">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary-foreground">
-            <HeaderIcon done={Boolean(done)} failed={Boolean(error)} />
-          </div>
-          <CardTitle className="text-2xl">
-            {error
-              ? "Onboarding nicht verfügbar"
-              : done
-                ? "Onboarding abgeschlossen"
-                : current
-                  ? current.title
-                  : "Mitgliedsantrag ausfüllen"}
-          </CardTitle>
-          <CardDescription className="text-base leading-relaxed">
-            {error ??
-              (done
-                ? "Deine Unterlagen und dein Mitgliedsantrag sind vollständig. Dein YBase-Zugang wird jetzt freigeschaltet."
-                : current
-                  ? `${DOCUMENT_STEP_DESCRIPTIONS[current.type]} Version ${current.versionLabel}.`
-                  : "Ergänze deine Angaben und unterschreibe den Antrag direkt hier.")}
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="space-y-8">
-          {!context && !error && <OnboardingSkeleton />}
-          {error && (
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              Bitte wende dich an People &amp; Culture, damit die fehlende
-              Konfiguration ergänzt werden kann.
+    <main className="flex min-h-svh flex-col bg-sidebar p-2 sm:p-3 lg:p-4">
+      <div className="flex flex-1 flex-col rounded-[0.25rem] border bg-background p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+              YBase Onboarding
             </p>
-          )}
-          {context && !error && (
-            <>
-              <OnboardingProgress steps={steps} />
-              {current && (
-                <DocumentStep document={current} onComplete={reload} />
-              )}
-              {!current && !context.profile.confirmed && (
-                <MembershipApplicationStep
-                  profile={context.profile}
-                  onComplete={reload}
+            <h1 className="mt-2 flex items-center gap-2 text-xl font-bold">
+              {error && (
+                <AlertTriangle
+                  aria-hidden="true"
+                  className="size-5 shrink-0 text-destructive"
                 />
               )}
-            </>
-          )}
-
-          <div className="border-t pt-6 text-center">
-            <Button variant="outline" onClick={() => void signOutWithPostHog()}>
-              <LogOut aria-hidden="true" />
-              Abmelden
-            </Button>
+              {error
+                ? "Onboarding nicht verfügbar"
+                : done
+                  ? "Onboarding abgeschlossen"
+                  : current
+                    ? current.title
+                    : "Mitgliedsantrag ausfüllen"}
+            </h1>
+            <p className="mt-2 max-w-[46rem] text-sm text-muted-foreground">
+              {error ??
+                (done
+                  ? "Deine Unterlagen und dein Mitgliedsantrag sind vollständig. Dein YBase-Zugang wird jetzt freigeschaltet."
+                  : current
+                    ? `${DOCUMENT_STEP_DESCRIPTIONS[current.type]} Version ${current.versionLabel}.`
+                    : "Ergänze deine Angaben und unterschreibe den Antrag direkt hier.")}
+            </p>
           </div>
-        </CardContent>
-      </Card>
+          <Button variant="outline" onClick={() => void signOutWithPostHog()}>
+            <LogOut aria-hidden="true" />
+            Abmelden
+          </Button>
+        </div>
+
+        <div className="mt-8 grid flex-1 items-start gap-8 lg:grid-cols-[15rem_1fr]">
+          <OnboardingProgress steps={steps} />
+          <div className="max-w-[1024px]">
+            {!context && !error && <OnboardingSkeleton />}
+            {error && (
+              <p className="text-sm text-muted-foreground">
+                Bitte wende dich an People &amp; Culture, damit die fehlende
+                Konfiguration ergänzt werden kann.
+              </p>
+            )}
+            {context && !error && current && (
+              <DocumentStep document={current} onComplete={reload} />
+            )}
+            {context && !error && !current && !context.profile.confirmed && (
+              <MembershipApplicationStep
+                profile={context.profile}
+                onComplete={reload}
+              />
+            )}
+          </div>
+        </div>
+      </div>
     </main>
   );
-}
-
-function HeaderIcon({ done, failed }: { done: boolean; failed: boolean }) {
-  if (failed) {
-    return <AlertTriangle aria-hidden="true" className="size-6" />;
-  }
-  if (done) {
-    return <CheckCircle2 aria-hidden="true" className="size-6" />;
-  }
-  return <ClipboardCheck aria-hidden="true" className="size-6" />;
 }
