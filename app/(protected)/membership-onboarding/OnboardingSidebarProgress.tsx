@@ -53,7 +53,7 @@ export function OnboardingSidebarProgress() {
                         aria-hidden="true"
                         className={
                           step.complete
-                            ? "mt-0.5 text-emerald-600"
+                            ? "mt-0.5 fill-primary text-foreground"
                             : "mt-0.5 text-sidebar-foreground/60"
                         }
                       />
