@@ -68,7 +68,10 @@ const ADMINISTRATION_NAV_ITEMS: ProtectedNavItem[] = [
   },
 ];
 
-export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({
+  locked = false,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & { locked?: boolean }) {
   const role = useCurrentUserRole();
   const homeUrl = role === "member" ? "/reimbursements" : "/dashboard";
   const mainItems: NavItem[] = [
@@ -95,20 +98,43 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href={homeUrl}>
-                <Image src="/AppIcon.png" alt="YBase" width={32} height={32} />
-                <div className="grid flex-1 text-left leading-tight">
-                  <span className="truncate text-base font-bold">YBase</span>
-                </div>
-              </Link>
+              {locked ? (
+                <span>
+                  <Image
+                    src="/AppIcon.png"
+                    alt="YBase"
+                    width={32}
+                    height={32}
+                  />
+                  <div className="grid flex-1 text-left leading-tight">
+                    <span className="truncate text-base font-bold">YBase</span>
+                  </div>
+                </span>
+              ) : (
+                <Link href={homeUrl}>
+                  <Image
+                    src="/AppIcon.png"
+                    alt="YBase"
+                    width={32}
+                    height={32}
+                  />
+                  <div className="grid flex-1 text-left leading-tight">
+                    <span className="truncate text-base font-bold">YBase</span>
+                  </div>
+                </Link>
+              )}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <MainNav items={mainItems} />
+        <MainNav items={mainItems} locked={locked} />
         {administrationItems.length > 0 && (
-          <MainNav items={administrationItems} label="Verwaltung" />
+          <MainNav
+            items={administrationItems}
+            label="Verwaltung"
+            locked={locked}
+          />
         )}
       </SidebarContent>
       <SidebarFooter>

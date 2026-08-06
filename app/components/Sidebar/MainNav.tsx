@@ -22,10 +22,12 @@ export function MainNav({
   items,
   id,
   label,
+  locked = false,
 }: {
   items: NavItem[];
   id?: string;
   label?: string;
+  locked?: boolean;
 }) {
   const pathname = usePathname();
 
@@ -42,16 +44,29 @@ export function MainNav({
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton
               asChild
-              tooltip={item.name}
+              tooltip={
+                locked ? `${item.name} – erst nach dem Onboarding` : item.name
+              }
+              aria-disabled={locked || undefined}
               className="h-10 px-3 font-medium text-sidebar-foreground/75 data-[active=true]:text-sidebar-foreground"
-              isActive={[item.url, ...(item.activeUrls ?? [])].some(
-                (url) => pathname === url || pathname.startsWith(`${url}/`),
-              )}
+              isActive={
+                !locked &&
+                [item.url, ...(item.activeUrls ?? [])].some(
+                  (url) => pathname === url || pathname.startsWith(`${url}/`),
+                )
+              }
             >
-              <Link href={item.url}>
-                <item.icon />
-                <span>{item.name}</span>
-              </Link>
+              {locked ? (
+                <span>
+                  <item.icon />
+                  <span>{item.name}</span>
+                </span>
+              ) : (
+                <Link href={item.url}>
+                  <item.icon />
+                  <span>{item.name}</span>
+                </Link>
+              )}
             </SidebarMenuButton>
           </SidebarMenuItem>
         ))}
