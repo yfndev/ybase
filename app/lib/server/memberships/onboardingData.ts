@@ -1,16 +1,55 @@
 "use server";
 
 import { documentExecutions, documentVersions } from "../../db/collections";
-import type { DocumentExecution, DocumentVersion } from "../../db/types";
+import type {
+  DocumentExecution,
+  DocumentExecutionType,
+  DocumentVersion,
+  MembershipDocumentKind,
+  MembershipGender,
+  PostalAddress,
+} from "../../db/types";
 import { documentOrderIndex } from "../../members/documents";
+
+export interface MembershipOnboardingDocument {
+  executionId: string;
+  kind: MembershipDocumentKind;
+  title: string;
+  versionLabel: string;
+  type: DocumentExecutionType;
+  status: DocumentExecution["status"];
+  content: string;
+}
+
+export interface MembershipOnboardingContext {
+  activated: boolean;
+  documentsComplete: boolean;
+  profile: {
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    gender?: MembershipGender;
+    privateEmail: string;
+    phone: string;
+    address: PostalAddress;
+    confirmed: boolean;
+  };
+  documents: MembershipOnboardingDocument[];
+}
 import { loadDocumentContent } from "./documentContent";
 import { activateMembershipOnboardingIfComplete } from "./onboardingCompletion";
 import { requireOnboardingUser } from "./onboardingActor";
 import { ensureAcceptedApplicantMembership } from "./onboardingMembership";
 
-export async function getOwnMembershipOnboardingContext() {
+export async function getOwnMembershipOnboardingContext(): Promise<
+  { blocked: string } | MembershipOnboardingContext
+> {
   const actor = await requireOnboardingUser(true);
-  const membership = await ensureAcceptedApplicantMembership(actor);
+  const membership = await ensureAcceptedApplicantMembership(actor).catch(
+    (error: unknown) => (error instanceof Error ? error.message : null),
+  );
+  if (typeof membership === "string") return { blocked: membership };
+  if (!membership) return { blocked: "Das Onboarding ist nicht verfügbar." };
   const activated = await activateMembershipOnboardingIfComplete(
     membership._id,
   );
@@ -81,7 +120,7 @@ async function loadVersions(
 async function toDocumentTask(
   execution: DocumentExecution,
   version?: DocumentVersion,
-) {
+): Promise<MembershipOnboardingDocument> {
   if (!version) {
     throw new Error("Die eingefrorene Dokumentversion fehlt.");
   }
@@ -102,7 +141,3 @@ async function toDocumentTask(
 function orderOf(version?: DocumentVersion): number {
   return version ? documentOrderIndex(version.kind) : Number.MAX_SAFE_INTEGER;
 }
-
-export type MembershipOnboardingContext = Awaited<
-  ReturnType<typeof getOwnMembershipOnboardingContext>
->;

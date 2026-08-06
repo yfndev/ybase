@@ -24,11 +24,9 @@ const CONFIRMATION_TEXTS = {
 
 export function MembershipApplicationStep({
   profile,
-  totalSteps,
   onComplete,
 }: {
   profile: MembershipOnboardingContext["profile"];
-  totalSteps: number;
   onComplete: () => Promise<void>;
 }) {
   const [values, setValues] = useState<ApplicationValues>({
@@ -86,26 +84,15 @@ export function MembershipApplicationStep({
   }
 
   return (
-    <section aria-labelledby="application-heading">
-      <p className="text-xs font-semibold tracking-[0.16em] text-primary uppercase">
-        Schritt {totalSteps} von {totalSteps}
-      </p>
-      <h1 id="application-heading" className="mt-2 text-2xl font-semibold">
-        Mitgliedsantrag ausfüllen
-      </h1>
-      <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-        Ergänze deine Angaben und unterschreibe den Antrag direkt hier. Name und
-        Geburtsdatum stammen aus deinem verknüpften Member-Profil.
-      </p>
-
-      <form className="mt-7 space-y-6" onSubmit={submit}>
+    <section aria-label="Mitgliedsantrag">
+      <form className="space-y-6" onSubmit={submit}>
         <MembershipApplicationFields
           profile={profile}
           values={values}
           update={update}
         />
 
-        <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
+        <div className="space-y-4 border-2 border-input bg-muted/40 p-4">
           {Object.entries(CONFIRMATION_TEXTS).map(([key, text]) => (
             <Confirmation
               key={key}
