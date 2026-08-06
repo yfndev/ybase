@@ -6,17 +6,17 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { signStatus } from "@/(public)/_lib/signatures";
 import { Button } from "@/components/ui/button";
-import type { ReimbursementStorageType } from "@/lib/s3/keys";
 import { createToken } from "@/lib/server/signatures/actions";
+import type { SignatureUploadContext } from "@/lib/signatures/context";
 
 const POLL_INTERVAL_MS = 2000;
 
 export function SignatureQRPanel({
   onSignatureComplete,
-  reimbursementType,
+  signatureContext,
 }: {
   onSignatureComplete: (key: string) => void;
-  reimbursementType: ReimbursementStorageType;
+  signatureContext: SignatureUploadContext;
 }) {
   const [token, setToken] = useState<string | null>(null);
   const [tokenFailed, setTokenFailed] = useState(false);
@@ -26,7 +26,7 @@ export function SignatureQRPanel({
 
   useEffect(() => {
     let active = true;
-    createToken(reimbursementType)
+    createToken(signatureContext)
       .then((value) => {
         if (active) setToken(value);
       })
@@ -36,7 +36,7 @@ export function SignatureQRPanel({
     return () => {
       active = false;
     };
-  }, [reimbursementType]);
+  }, [signatureContext]);
 
   useEffect(() => {
     if (!token) return;
@@ -63,7 +63,10 @@ export function SignatureQRPanel({
   if (!token) {
     return (
       <div className="flex h-40 items-center justify-center rounded-lg border sm:h-48">
-        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+        <Loader2
+          aria-hidden="true"
+          className="size-5 animate-spin text-muted-foreground"
+        />
       </div>
     );
   }
@@ -91,6 +94,7 @@ export function SignatureQRPanel({
       </div>
       <div className="flex w-full max-w-sm gap-2">
         <input
+          aria-label="Signatur-Link"
           readOnly
           value={signatureUrl}
           className="flex-1 px-3 py-2 text-sm border rounded-md bg-muted truncate"
@@ -103,11 +107,15 @@ export function SignatureQRPanel({
           aria-label="Link kopieren"
           title="Link kopieren"
         >
-          {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+          {copied ? (
+            <Check aria-hidden="true" className="size-4" />
+          ) : (
+            <Copy aria-hidden="true" className="size-4" />
+          )}
         </Button>
       </div>
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" />
+        <Loader2 aria-hidden="true" className="size-4 animate-spin" />
         Warte auf Unterschrift...
       </div>
     </div>

@@ -11,8 +11,8 @@ import {
   type ApplicationValues,
   MembershipApplicationFields,
 } from "./MembershipApplicationFields";
+import { OnboardingSignatureField } from "./OnboardingSignatureField";
 import { Confirmation, Field } from "./ProfileFields";
-import { SignatureField } from "./SignatureField";
 
 const CONFIRMATION_TEXTS = {
   profile:
@@ -68,7 +68,7 @@ export function MembershipApplicationStep({
         await submitOwnMembershipApplication({
           ...values,
           gender,
-          signatureDataUrl: signature,
+          signatureStorageKey: signature,
           profileDataConfirmed: true,
           privacyAccepted: true,
           supportsAssociationPurposes: true,
@@ -125,8 +125,8 @@ export function MembershipApplicationStep({
         </div>
 
         <Field label="Unterschrift Mitglied">
-          <SignatureField
-            label="Unterschrift Mitglied"
+          <OnboardingSignatureField
+            storageKey={signature || undefined}
             onChange={setSignature}
           />
         </Field>

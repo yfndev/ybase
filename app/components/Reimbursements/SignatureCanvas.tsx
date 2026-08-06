@@ -71,7 +71,10 @@ export function SignatureCanvas({
           ref={padRef}
           minWidth={2}
           maxWidth={3}
-          canvasProps={{ className: "h-48 w-full sm:h-64" }}
+          canvasProps={{
+            className: "h-48 w-full sm:h-64",
+            "aria-label": "Unterschriftsfeld",
+          }}
         />
       </div>
       <div className="flex gap-2">
@@ -81,7 +84,7 @@ export function SignatureCanvas({
           className="h-11 flex-1 px-3 sm:h-10 sm:flex-none"
           onClick={() => padRef.current?.clear()}
         >
-          <RotateCcw className="size-4 mr-1" />
+          <RotateCcw aria-hidden="true" className="size-4 mr-1" />
           Löschen
         </Button>
         <Button
@@ -90,7 +93,9 @@ export function SignatureCanvas({
           onClick={handleSave}
           disabled={uploading}
         >
-          {uploading && <Loader2 className="size-4 animate-spin mr-1" />}
+          {uploading && (
+            <Loader2 aria-hidden="true" className="size-4 animate-spin mr-1" />
+          )}
           Unterschrift speichern
         </Button>
       </div>

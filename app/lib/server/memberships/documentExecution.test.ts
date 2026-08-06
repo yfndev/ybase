@@ -1,12 +1,16 @@
 import { beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({ requireAuthenticatedUser: vi.fn() }));
-vi.mock("../../s3/storage", () => ({ putObject: vi.fn() }));
+vi.mock("../../s3/storage", () => ({
+  getObjectBuffer: vi.fn(async () => Buffer.alloc(128)),
+  getObjectSize: vi.fn(async () => 128),
+  putObject: vi.fn(),
+}));
 vi.mock("./documentContent", () => ({ loadDocumentContent: vi.fn() }));
 vi.mock("./requestMetadata", () => ({ membershipRequestMetadata: vi.fn() }));
 vi.mock("./signingPdf", () => ({
   createExecutionPdf: vi.fn(),
-  decodeSignatureDataUrl: vi.fn(),
+  validateSignaturePng: vi.fn((bytes: Uint8Array) => bytes),
 }));
 
 import { requireAuthenticatedUser } from "../../auth/session";
@@ -15,6 +19,7 @@ import {
   documentVersions,
   membershipEvents,
   memberships,
+  uploadOwnerships,
 } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { DocumentExecution, Membership } from "../../db/types";
@@ -25,6 +30,7 @@ import { loadDocumentContent } from "./documentContent";
 import { completeOwnDocument } from "./documentExecution";
 import { membershipRequestMetadata } from "./requestMetadata";
 import { createExecutionPdf } from "./signingPdf";
+import { registerPendingUpload } from "../uploads/ownership";
 
 setupTestDatabase();
 
@@ -156,6 +162,46 @@ test("rejects consent data on a regular acknowledgement", async () => {
     completeOwnDocument({ executionId: execution._id, consentGranted: true }),
   ).rejects.toThrow("keine freiwillige Einwilligung");
   expect(putObject).not.toHaveBeenCalled();
+});
+
+test("claims and stores an uploaded signature for a signature document", async () => {
+  await Promise.all([
+    (await documentExecutions()).updateOne(
+      { _id: execution._id },
+      { $set: { executionType: "signature" } },
+    ),
+    (await documentVersions()).updateOne(
+      { _id: execution.documentVersionId },
+      { $set: { executionType: "signature" } },
+    ),
+  ]);
+  await registerPendingUpload("signature-key", {
+    organizationId: membership.organizationId,
+    userId: actor._id,
+    contextType: "user",
+    contextId: actor._id,
+  });
+
+  await completeOwnDocument({
+    executionId: execution._id,
+    signatureStorageKey: "signature-key",
+  });
+
+  expect(createExecutionPdf).toHaveBeenCalledWith(
+    expect.objectContaining({ signaturePng: expect.any(Uint8Array) }),
+  );
+  expect(
+    await (await documentExecutions()).findOne({ _id: execution._id }),
+  ).toMatchObject({
+    status: "completed",
+    signatureStorageKey: "signature-key",
+  });
+  expect(
+    await (await uploadOwnerships()).findOne({ _id: "signature-key" }),
+  ).toMatchObject({
+    claimedByType: "membershipDocument",
+    claimedById: execution._id,
+  });
 });
 
 test("repairs a missing audit event without regenerating the document", async () => {

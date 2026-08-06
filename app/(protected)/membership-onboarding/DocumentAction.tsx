@@ -13,7 +13,7 @@ export function DocumentAction({
   type: DocumentExecutionType;
   working: boolean;
   onComplete: (
-    signatureDataUrl?: string,
+    signatureStorageKey?: string,
     consentGranted?: boolean,
   ) => Promise<void>;
 }) {
