@@ -37,9 +37,10 @@ export function DocumentPreview({ versionId }: { versionId: string }) {
         {content === undefined ? "Text anzeigen" : "Text ausblenden"}
       </Button>
       {content !== undefined && (
-        <div className="mt-3">
-          <DocumentContent html={content} />
-        </div>
+        <DocumentContent
+          html={content}
+          className="mt-3 max-h-[60vh] overflow-y-auto border-2 border-input bg-card p-6"
+        />
       )}
     </div>
   );
