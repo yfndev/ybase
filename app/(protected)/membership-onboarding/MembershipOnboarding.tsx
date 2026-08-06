@@ -91,27 +91,28 @@ export function MembershipOnboarding() {
           </Button>
         </div>
 
-        <div className="mt-8 grid flex-1 items-start gap-8 lg:grid-cols-[15rem_1fr]">
-          <OnboardingProgress steps={steps} />
-          <div className="max-w-[1024px]">
-            {!context && !error && <OnboardingSkeleton />}
-            {error && (
-              <p className="text-sm text-muted-foreground">
-                Bitte wende dich an People &amp; Culture, damit die fehlende
-                Konfiguration ergänzt werden kann.
-              </p>
-            )}
-            {context && !error && current && (
-              <DocumentStep document={current} onComplete={reload} />
-            )}
-            {context && !error && !current && !context.profile.confirmed && (
-              <MembershipApplicationStep
-                profile={context.profile}
-                onComplete={reload}
-              />
-            )}
+        {error ? (
+          <p className="mt-6 max-w-[46rem] text-sm text-muted-foreground">
+            Bitte wende dich an People &amp; Culture, damit die fehlende
+            Konfiguration ergänzt werden kann.
+          </p>
+        ) : (
+          <div className="mt-8 grid flex-1 items-start gap-8 lg:grid-cols-[15rem_1fr]">
+            <OnboardingProgress steps={steps} />
+            <div className="max-w-[1024px]">
+              {!context && <OnboardingSkeleton />}
+              {context && current && (
+                <DocumentStep document={current} onComplete={reload} />
+              )}
+              {context && !current && !context.profile.confirmed && (
+                <MembershipApplicationStep
+                  profile={context.profile}
+                  onComplete={reload}
+                />
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </main>
   );
