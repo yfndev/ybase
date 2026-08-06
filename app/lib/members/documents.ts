@@ -24,14 +24,6 @@ export const MEMBERSHIP_DOCUMENT_LABELS = {
   optional_consent: "Freiwillige Einwilligung",
 } as const satisfies Record<MembershipDocumentKind, string>;
 
-export const DOCUMENT_STEP_DESCRIPTIONS = {
-  signature: "Lies die Unterlage vollständig und unterschreibe sie unten.",
-  acknowledgement:
-    "Lies die Unterlage vollständig und bestätige unten deine Kenntnisnahme.",
-  optional_consent:
-    "Diese Einwilligung ist freiwillig. Mit beiden Antworten kommst du weiter.",
-} as const satisfies Record<DocumentExecutionType, string>;
-
 export function documentOrderIndex(kind: MembershipDocumentKind): number {
   return MEMBERSHIP_DOCUMENT_ORDER.indexOf(kind);
 }

@@ -84,7 +84,7 @@ export function MembershipApplicationStep({
   }
 
   return (
-    <section aria-label="Mitgliedsantrag">
+    <section className="max-w-[1024px]" aria-label="Mitgliedsantrag">
       <form className="space-y-6" onSubmit={submit}>
         <MembershipApplicationFields
           profile={profile}

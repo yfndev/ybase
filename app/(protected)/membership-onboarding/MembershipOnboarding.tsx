@@ -1,6 +1,5 @@
 "use client";
 
-import { DOCUMENT_STEP_DESCRIPTIONS } from "@/lib/members/documents";
 import {
   getOwnMembershipOnboardingContext,
   type MembershipOnboardingContext,
@@ -53,44 +52,32 @@ export function MembershipOnboarding() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <div>
-        <p className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-          YBase Onboarding
-        </p>
-        <h1 className="mt-2 flex items-center gap-2 text-xl font-bold">
-          {error && (
-            <AlertTriangle
-              aria-hidden="true"
-              className="size-5 shrink-0 text-destructive"
-            />
-          )}
-          {error
-            ? "Onboarding nicht verfügbar"
-            : done
-              ? "Onboarding abgeschlossen"
-              : current
-                ? current.title
-                : "Mitgliedsantrag ausfüllen"}
-        </h1>
-        <p className="mt-2 max-w-[46rem] text-sm text-muted-foreground">
-          {error ??
-            (done
-              ? "Deine Unterlagen und dein Mitgliedsantrag sind vollständig. Dein YBase-Zugang wird jetzt freigeschaltet."
-              : current
-                ? `${DOCUMENT_STEP_DESCRIPTIONS[current.type]} Version ${current.versionLabel}.`
-                : "Ergänze deine Angaben und unterschreibe den Antrag direkt hier.")}
-        </p>
-      </div>
+      <h1 className="flex shrink-0 items-center gap-2 text-xl font-bold">
+        {error && (
+          <AlertTriangle
+            aria-hidden="true"
+            className="size-5 shrink-0 text-destructive"
+          />
+        )}
+        {error
+          ? "Onboarding nicht verfügbar"
+          : done
+            ? "Onboarding abgeschlossen"
+            : "Onboarding"}
+      </h1>
 
       {error ? (
-        <p className="mt-6 max-w-[46rem] text-sm text-muted-foreground">
-          Bitte wende dich an People &amp; Culture, damit die fehlende
-          Konfiguration ergänzt werden kann.
-        </p>
+        <div className="mt-4 max-w-[46rem] space-y-3 text-sm text-muted-foreground">
+          <p>{error}</p>
+          <p>
+            Bitte wende dich an People &amp; Culture, damit die fehlende
+            Konfiguration ergänzt werden kann.
+          </p>
+        </div>
       ) : (
-        <div className="mt-8 grid flex-1 items-start gap-8 lg:grid-cols-[15rem_1fr]">
+        <div className="mt-6 grid min-h-0 flex-1 gap-8 lg:grid-cols-[15rem_1fr]">
           <OnboardingProgress steps={steps} />
-          <div className="max-w-[1024px]">
+          <div className="flex min-h-0 flex-col">
             {!context && <OnboardingSkeleton />}
             {context && current && (
               <DocumentStep document={current} onComplete={reload} />
@@ -100,6 +87,12 @@ export function MembershipOnboarding() {
                 profile={context.profile}
                 onComplete={reload}
               />
+            )}
+            {done && (
+              <p className="max-w-[46rem] text-sm text-muted-foreground">
+                Deine Unterlagen und dein Mitgliedsantrag sind vollständig. Dein
+                YBase-Zugang wird jetzt freigeschaltet.
+              </p>
             )}
           </div>
         </div>
