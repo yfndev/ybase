@@ -3,14 +3,14 @@ const PROSE_CLASSES =
 
 export function DocumentContent({
   html,
-  className = "max-h-[60vh]",
+  className = "",
 }: {
   html: string;
   className?: string;
 }) {
   return (
     <section
-      className={`overflow-y-auto border-2 border-input bg-card p-6 text-sm leading-6 ${PROSE_CLASSES} ${className}`}
+      className={`text-sm leading-6 ${PROSE_CLASSES} ${className}`}
       aria-label="Dokumententext"
       // biome-ignore lint/security/noDangerouslySetInnerHtml: text is sanitized server-side and hash-verified before delivery
       dangerouslySetInnerHTML={{ __html: html }}
