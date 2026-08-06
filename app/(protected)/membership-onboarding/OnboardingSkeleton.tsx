@@ -1,15 +1,21 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
+const SKELETON_ROWS = ["one", "two", "three", "four"];
+
 export function OnboardingSkeleton() {
   return (
-    <div aria-busy="true">
+    <div className="space-y-8" aria-busy="true">
       <span className="sr-only">Onboarding wird geladen</span>
-      <Skeleton className="h-3 w-28" />
-      <Skeleton className="mt-4 h-8 w-80 max-w-full" />
-      <Skeleton className="mt-5 h-4 w-full max-w-2xl" />
-      <Skeleton className="mt-2 h-4 w-2/3 max-w-xl" />
-      <Skeleton className="mt-6 h-72 w-full rounded-xl" />
-      <Skeleton className="mt-6 h-10 w-48" />
+      <div className="space-y-3">
+        {SKELETON_ROWS.map((row) => (
+          <div key={row} className="flex items-center gap-3">
+            <Skeleton className="size-5 shrink-0" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+        ))}
+      </div>
+      <Skeleton className="h-64 w-full" />
+      <Skeleton className="h-11 w-48" />
     </div>
   );
 }
