@@ -24,7 +24,6 @@ export interface MembershipApplicationPdfInput {
   phone: string;
   privateEmail: string;
   address: PostalAddress;
-  place: string;
   signedAt: number;
   signaturePng: Uint8Array;
   guardianConsent?: GuardianConsentEvidence;
@@ -49,11 +48,6 @@ export async function createMembershipApplicationPdf(
   }
 
   writeGap(writer, 20);
-  writeText(
-    writer,
-    `Ort: ${input.place}    Datum: ${formatDate(input.signedAt)}`,
-    { size: 10, gap: 12 },
-  );
   writeText(writer, "Unterschrift Mitglied", { size: 10, bold: true, gap: 8 });
   await drawSignatureImage(writer, input.signaturePng);
 

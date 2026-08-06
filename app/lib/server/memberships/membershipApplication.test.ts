@@ -49,7 +49,6 @@ const FORM = {
   postalCode: "10115",
   city: "Berlin",
   country: "Deutschland",
-  place: "Berlin",
   signatureStorageKey: SIGNATURE_STORAGE_KEY,
 } as const;
 
@@ -167,7 +166,6 @@ test("stores the signed application and activates the account", async () => {
     address: { street: "Beispielstraße 12", city: "Berlin" },
     admissionEvidenceStorageKey: `${directory}/membership-application.pdf`,
     applicationSignature: {
-      place: "Berlin",
       ipAddress: "192.0.2.1",
       signatureStorageKey: SIGNATURE_STORAGE_KEY,
     },

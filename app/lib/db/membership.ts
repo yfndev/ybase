@@ -20,7 +20,6 @@ export interface PostalAddress {
 export type MembershipGender = "female" | "male" | "diverse";
 
 export interface MembershipApplicationSignature {
-  place: string;
   signedAt: number;
   signatureStorageKey: string;
   ipAddress?: string;
