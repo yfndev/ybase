@@ -46,19 +46,14 @@ export function DocumentStep({
   }
 
   return (
-    <section
-      className="flex min-h-0 flex-1 flex-col"
-      aria-label={document.title}
-    >
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <DocumentContent html={document.content} />
-        <div className="mt-10 border-t-2 border-input pt-6">
-          <DocumentAction
-            type={document.type}
-            working={working}
-            onComplete={complete}
-          />
-        </div>
+    <section aria-label={document.title}>
+      <DocumentContent html={document.content} />
+      <div className="mt-10 border-t-2 border-input pt-6">
+        <DocumentAction
+          type={document.type}
+          working={working}
+          onComplete={complete}
+        />
       </div>
     </section>
   );

@@ -10,8 +10,8 @@ export function MembershipOnboarding() {
   const { context, error, current, done, reload } = useOnboarding();
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <h1 className="flex shrink-0 items-center gap-2 text-xl font-bold">
+    <div>
+      <h1 className="flex items-center gap-2 text-xl font-bold">
         {error && (
           <AlertTriangle
             aria-hidden="true"
@@ -25,7 +25,7 @@ export function MembershipOnboarding() {
             : "Onboarding"}
       </h1>
 
-      <div className="mt-6 flex min-h-0 flex-1 flex-col">
+      <div className="mt-6">
         {error && (
           <div className="max-w-[46rem] space-y-3 text-sm text-muted-foreground">
             <p>{error}</p>
