@@ -70,6 +70,9 @@ jobs:
     # damit alte Versionen sich nicht ansammeln.
     needs: build-and-deploy
     if: always()
+    # Aufraeumen darf den Lauf nie rot faerben: ein erfolgreiches Deployment
+    # soll nicht wie ein Fehlschlag aussehen, nur weil die Retention haengt.
+    continue-on-error: true
     runs-on: ubuntu-latest
     permissions:
       packages: write
