@@ -16,7 +16,7 @@ export async function activateMembershipOnboardingIfComplete(
     isCurrent: true,
     legalStatus: { $in: ["active", "resigning"] },
   });
-  if (!membership?.profileConfirmedAt || !membership.purposesConfirmedAt) {
+  if (!membership?.applicationSignature) {
     return false;
   }
   const assignedDocuments = await (

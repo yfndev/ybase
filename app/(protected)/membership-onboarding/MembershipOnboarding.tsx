@@ -39,12 +39,15 @@ export function MembershipOnboarding() {
         {context && !error && current && (
           <DocumentStep document={current} onComplete={reload} />
         )}
-        {context && !error && !current && !context.profile.confirmed && (
-          <MembershipApplicationStep
-            profile={context.profile}
-            onComplete={reload}
-          />
-        )}
+        {context &&
+          !error &&
+          !current &&
+          !context.profile.applicationSigned && (
+            <MembershipApplicationStep
+              profile={context.profile}
+              onComplete={reload}
+            />
+          )}
         {done && (
           <p className="max-w-[46rem] text-sm text-muted-foreground">
             Deine Unterlagen und dein Mitgliedsantrag sind vollständig. Dein

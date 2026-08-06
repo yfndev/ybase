@@ -111,7 +111,7 @@ test("creates the legal record and returns the documents in reading order", asyn
     firstName: "Alex",
     lastName: "Beispiel",
     dateOfBirth: "2004-01-01",
-    confirmed: false,
+    applicationSigned: false,
   });
   expect(first.documents.map(({ kind }) => kind)).toEqual([
     "privacy_notice",

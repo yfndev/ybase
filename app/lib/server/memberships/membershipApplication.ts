@@ -24,9 +24,6 @@ const applicationSchema = z.object({
   country: z.string().trim().min(2).max(100),
   place: z.string().trim().min(2).max(100),
   signatureStorageKey: z.string().min(1),
-  profileDataConfirmed: z.literal(true),
-  privacyAccepted: z.literal(true),
-  supportsAssociationPurposes: z.literal(true),
 });
 
 export async function submitOwnMembershipApplication(
@@ -105,8 +102,6 @@ export async function submitOwnMembershipApplication(
           ...(await membershipRequestMetadata()),
         },
         admissionEvidenceStorageKey: evidenceStorageKey,
-        profileConfirmedAt: signedAt,
-        purposesConfirmedAt: signedAt,
         updatedAt: signedAt,
       },
     },

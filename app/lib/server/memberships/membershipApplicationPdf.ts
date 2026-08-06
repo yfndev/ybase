@@ -12,12 +12,6 @@ import {
   writeText,
 } from "./pdfLayout";
 
-const CONFIRMATIONS = [
-  "Ich habe die Datenschutzgrundverordnung gelesen und akzeptiere sie.",
-  "Ich unterstütze die in der Satzung festgelegten Vereinszwecke.",
-  "Ich bestätige, dass meine oben angegebenen persönlichen Daten vollständig und richtig sind.",
-];
-
 export interface MembershipApplicationPdfInput {
   organization: Organization;
   membershipNumber: string;
@@ -52,12 +46,6 @@ export async function createMembershipApplicationPdf(
   writeGap(writer, 20);
   for (const [label, value] of applicantFields(input)) {
     writeText(writer, `${label}: ${value}`, { size: 10, gap: 4 });
-  }
-
-  writeGap(writer, 18);
-  writeText(writer, "DSGVO und Vereinszweck", { size: 13, bold: true, gap: 8 });
-  for (const confirmation of CONFIRMATIONS) {
-    writeText(writer, `• ${confirmation}`, { size: 10, indent: 8, gap: 4 });
   }
 
   writeGap(writer, 20);

@@ -32,7 +32,7 @@ export interface MembershipOnboardingContext {
     privateEmail: string;
     phone: string;
     address: PostalAddress;
-    confirmed: boolean;
+    applicationSigned: boolean;
   };
   documents: MembershipOnboardingDocument[];
 }
@@ -91,9 +91,7 @@ export async function getOwnMembershipOnboardingContext(): Promise<
         city: "",
         country: "Deutschland",
       },
-      confirmed: Boolean(
-        membership.profileConfirmedAt && membership.purposesConfirmedAt,
-      ),
+      applicationSigned: Boolean(membership.applicationSignature),
     },
     documents,
   };
