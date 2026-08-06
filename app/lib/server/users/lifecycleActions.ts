@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { users } from "../../db/collections";
 import { addLog } from "../logs";
-import { loadManagedMember, requireActiveOrganizationTeam } from "./access";
+import { loadManagedMember } from "./access";
 import { memberStatusPatch, teamOnboardingPatch } from "./memberLifecycle";
 
 const memberStatusSchema = z.enum(["onboarding", "active", "offboarded"]);
@@ -26,18 +26,6 @@ export async function setMemberStatus(input: {
       "Das Teammitglied kann erst nach Abschluss aller Onboarding-Aufgaben freigegeben werden.",
     );
   }
-  if (status === "active") {
-    if (!target.teamId || !target.name?.trim() || !target.positionTitle?.trim()) {
-      throw new Error(
-        "Aktive Mitglieder benötigen einen Namen, ein aktives Team und eine Position.",
-      );
-    }
-    await requireActiveOrganizationTeam(
-      target.teamId,
-      currentUser.organizationId,
-    );
-  }
-
   const patch = memberStatusPatch(target.memberStatus, status, Date.now());
   await (await users()).updateOne({ _id: target._id }, { $set: patch });
   await addLog(
