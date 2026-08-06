@@ -24,7 +24,6 @@ export interface ApplicationValues {
   postalCode: string;
   city: string;
   country: string;
-  place: string;
 }
 
 export function MembershipApplicationFields({

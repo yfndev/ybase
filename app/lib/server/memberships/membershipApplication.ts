@@ -22,7 +22,6 @@ const applicationSchema = z.object({
   postalCode: z.string().trim().min(3).max(20),
   city: z.string().trim().min(2).max(100),
   country: z.string().trim().min(2).max(100),
-  place: z.string().trim().min(2).max(100),
   signatureStorageKey: z.string().min(1),
 });
 
@@ -67,7 +66,6 @@ export async function submitOwnMembershipApplication(
     phone: parsed.phone,
     privateEmail,
     address,
-    place: parsed.place,
     signedAt,
     signaturePng: signature,
     guardianConsent: membership.guardianConsent,
@@ -96,7 +94,6 @@ export async function submitOwnMembershipApplication(
         gender: parsed.gender,
         address,
         applicationSignature: {
-          place: parsed.place,
           signedAt,
           signatureStorageKey: parsed.signatureStorageKey,
           ...(await membershipRequestMetadata()),

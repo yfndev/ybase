@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { submitOwnMembershipApplication } from "@/lib/server/memberships/membershipApplication";
 import type { MembershipOnboardingContext } from "@/lib/server/memberships/onboardingData";
 import { Loader2 } from "lucide-react";
@@ -29,7 +28,6 @@ export function MembershipApplicationStep({
     postalCode: profile.address.postalCode,
     city: profile.address.city,
     country: profile.address.country,
-    place: profile.address.city,
   });
   const [signature, setSignature] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -77,20 +75,6 @@ export function MembershipApplicationStep({
           values={values}
           update={update}
         />
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Ort" htmlFor="membership-place">
-            <Input
-              id="membership-place"
-              required
-              value={values.place}
-              onChange={(event) => update("place", event.target.value)}
-            />
-          </Field>
-          <Field label="Datum">
-            <Input value={new Date().toLocaleDateString("de-DE")} disabled />
-          </Field>
-        </div>
 
         <Field label="Unterschrift Mitglied">
           <OnboardingSignatureField
