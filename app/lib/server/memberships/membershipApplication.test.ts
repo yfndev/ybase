@@ -182,6 +182,30 @@ test("stores the signed application and activates the account", async () => {
   });
 });
 
+test("activates a manually added member without an application record", async () => {
+  delete actor.applicationId;
+  await Promise.all([
+    (await users()).updateOne(
+      { _id: actor._id },
+      { $unset: { applicationId: "" } },
+    ),
+    (await memberships()).updateOne(
+      { _id: membershipId },
+      { $unset: { applicationId: "" } },
+    ),
+    (await applications()).deleteMany({ organizationId: actor.organizationId }),
+  ]);
+  vi.mocked(requireAuthenticatedUser).mockResolvedValue(actor);
+  await completeAllDocuments();
+
+  await expect(submitOwnMembershipApplication(FORM)).resolves.toEqual({
+    activated: true,
+  });
+  await expect(
+    (await users()).findOne({ _id: actor._id }),
+  ).resolves.toMatchObject({ memberStatus: "active" });
+});
+
 test("rejects a submission without a usable signature", async () => {
   await completeAllDocuments();
 

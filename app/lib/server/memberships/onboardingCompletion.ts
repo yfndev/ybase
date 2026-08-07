@@ -40,20 +40,23 @@ export async function activateMembershipOnboardingIfComplete(
     return user?.memberStatus === "active";
   }
 
-  await Promise.all([
-    (await applications()).updateOne(
-      {
-        _id: membership.applicationId,
-        onboardingCompletedAt: { $exists: false },
-      },
-      {
-        $set: {
-          onboardingCompletedAt: now,
-          onboardingCompletedBy: membership.userId,
-          updatedAt: now,
+  const applicationUpdate = membership.applicationId
+    ? (await applications()).updateOne(
+        {
+          _id: membership.applicationId,
+          onboardingCompletedAt: { $exists: false },
         },
-      },
-    ),
+        {
+          $set: {
+            onboardingCompletedAt: now,
+            onboardingCompletedBy: membership.userId,
+            updatedAt: now,
+          },
+        },
+      )
+    : Promise.resolve();
+  await Promise.all([
+    applicationUpdate,
     appendMembershipEvent({
       organizationId: membership.organizationId,
       membershipId: membership._id,
