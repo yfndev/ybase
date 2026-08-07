@@ -89,7 +89,6 @@ erDiagram
         string scheduledEndReason
         number endedAt
         string endReason
-        array handoverTasks
     }
 
     membershipCases {
@@ -295,7 +294,7 @@ membership workflows. `membershipEvents` is append-only; sensitive case content
 remains in `membershipCases` and is intentionally absent from the general
 `logs` collection. `membershipCases` is limited to warnings and exclusion
 proceedings. Resignation, age limit and death are termination facts on the
-membership itself; the handover checklist is attached to that membership.
+membership itself.
 
 The authoritative field definitions live in
 [`app/lib/db/types.ts`](../app/lib/db/types.ts), while indexes are defined in

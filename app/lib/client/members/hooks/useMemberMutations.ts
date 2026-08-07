@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { recordMembershipResignation } from "@/lib/server/memberships/resignation";
 import { createMember } from "@/lib/server/users/creation";
 import {
   setMemberStatus,
@@ -23,6 +24,10 @@ export function useMemberMutations() {
     }),
     recordInfraction: useMutation({
       mutationFn: recordMemberInfraction,
+      onSuccess,
+    }),
+    recordResignation: useMutation({
+      mutationFn: recordMembershipResignation,
       onSuccess,
     }),
     updateRole: useMutation({ mutationFn: updateUserRole, onSuccess }),

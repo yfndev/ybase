@@ -231,7 +231,6 @@ function buildMembership(user: User, application: Application): Membership {
       ? { phone: application.applicantPhone.trim() }
       : {}),
     memberPlatformUserId: application.memberPlatformUserId,
-    handoverTasks: [],
     updatedAt: now,
   };
 }

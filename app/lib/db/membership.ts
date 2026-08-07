@@ -36,21 +36,6 @@ export interface GuardianConsentEvidence {
   userAgent?: string;
 }
 
-export interface HandoverTask {
-  _id: string;
-  category:
-    | "successor"
-    | "responsibilities"
-    | "files"
-    | "shared_access"
-    | "reimbursements"
-    | "external_accounts";
-  title: string;
-  ownerUserId?: string;
-  completedAt?: number;
-  completedBy?: string;
-}
-
 export interface Membership {
   _id: string;
   _creationTime: number;
@@ -82,8 +67,6 @@ export interface Membership {
   endReason?: MembershipEndReason;
   endEvidenceStorageKey?: string;
   rightsSuspendedAt?: number;
-  handoverStartedAt?: number;
-  handoverTasks: HandoverTask[];
   userLifecycleSyncedAt?: number;
   workspaceSuspendedAt?: number;
   workspaceSuspensionPendingAt?: number;

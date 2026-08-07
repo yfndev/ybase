@@ -48,7 +48,6 @@ beforeEach(async () => {
       city: "Berlin",
       country: "DE",
     },
-    handoverTasks: [],
     updatedAt: Date.now(),
   };
   await (

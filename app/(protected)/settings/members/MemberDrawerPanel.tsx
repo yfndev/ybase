@@ -8,6 +8,7 @@ import { getInitials } from "@/lib/formatters/getInitials";
 import { memberStageForStatus } from "@/lib/members/stages";
 import { profileAvatarUrl } from "@/lib/profile/avatar";
 import { LabeledSelect } from "./LabeledSelect";
+import { MemberDepartureSection } from "./MemberDepartureSection";
 import { MemberInfractionsSection } from "./MemberInfractionsSection";
 import { MemberStatusField } from "./MemberStatusField";
 import { ROLE_OPTIONS } from "./memberLabels";
@@ -79,7 +80,9 @@ export function MemberDrawerPanel({
             infractionCount={member.memberInfractions?.length ?? 0}
             onChange={form.setStatus}
           />
-        ) : null}
+        ) : (
+          <MemberDepartureSection member={member} />
+        )}
         <LabeledSelect
           id="member-role"
           label="Berechtigungen"
