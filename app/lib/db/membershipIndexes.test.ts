@@ -36,7 +36,6 @@ function membership(
     firstName: "Alex",
     lastName: "Example",
     dateOfBirth: "2005-01-01",
-    handoverTasks: [],
     updatedAt: now,
     ...overrides,
   };

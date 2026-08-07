@@ -36,7 +36,6 @@ test("does not suspend a replacement membership account during retries", async (
     firstName: "Alex",
     lastName: "Example",
     dateOfBirth: "2005-01-01",
-    handoverTasks: [],
     updatedAt: now,
   };
   await (await memberships()).insertOne(membership);

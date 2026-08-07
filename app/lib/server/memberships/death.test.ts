@@ -37,7 +37,6 @@ beforeEach(async () => {
     firstName: "Alex",
     lastName: "Example",
     dateOfBirth: "2005-01-01",
-    handoverTasks: [],
     updatedAt: now,
   };
   await (await memberships()).insertOne(membership);

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import { formatBerlinIsoDate, parseBerlinDate } from "./berlinDate";
 import {
   ageLimitAt,
   ageOnDate,
@@ -39,6 +40,16 @@ describe("membership legal dates in Europe/Berlin", () => {
     expect(
       new Date(resignationEndAt(berlinMidnight(iso(received)))).toISOString(),
     ).toBe(expected);
+  });
+
+  test("parses and formats calendar dates in Europe/Berlin", () => {
+    const timestamp = parseBerlinDate("2026-08-07");
+
+    expect(new Date(timestamp).toISOString()).toBe("2026-08-06T22:00:00.000Z");
+    expect(formatBerlinIsoDate(timestamp)).toBe("2026-08-07");
+    expect(() => parseBerlinDate("2026-02-30")).toThrow(
+      "Ungültiges Kalenderdatum",
+    );
   });
 
   test("moves a one-month deadline from a weekend to the next business day", () => {

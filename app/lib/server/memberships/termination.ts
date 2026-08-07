@@ -1,8 +1,7 @@
-import { memberships } from "../../db/collections";
+import { memberships, users } from "../../db/collections";
 import type { Membership, MembershipEndReason } from "../../db/types";
 import { syncEndedMembershipAccess } from "./accessClosure";
 import { appendMembershipEvent } from "./events";
-import { ensureMembershipHandover } from "./handover";
 
 type ScheduledEndReason = Extract<
   MembershipEndReason,
@@ -66,6 +65,10 @@ export async function scheduleMembershipEnd(input: {
   }
 
   if (!isChanged && !isAlreadyScheduled) return false;
+  await projectScheduledEndToMember(
+    membership,
+    Math.min(recordedAt, scheduledEndAt),
+  );
   await appendMembershipEvent({
     organizationId: membership.organizationId,
     membershipId: membership._id,
@@ -77,12 +80,29 @@ export async function scheduleMembershipEnd(input: {
     occurredAt: recordedAt,
     details: { reason, scheduledEndAt },
   });
-  await ensureMembershipHandover(
-    membership,
-    Math.min(recordedAt, scheduledEndAt),
-    input.actorUserId,
-  );
   return isChanged;
+}
+
+async function projectScheduledEndToMember(
+  membership: Membership,
+  plannedAt: number,
+): Promise<void> {
+  await (
+    await users()
+  ).updateOne(
+    {
+      _id: membership.userId,
+      organizationId: membership.organizationId,
+      membershipId: membership._id,
+      memberStatus: { $in: ["onboarding", "active"] },
+    },
+    {
+      $set: {
+        memberStatus: "offboarding_planned",
+        offboardingPlannedAt: plannedAt,
+      },
+    },
+  );
 }
 
 export async function finalizeMembershipEnd(

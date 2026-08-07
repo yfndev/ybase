@@ -42,7 +42,6 @@ async function seedMembership(
     firstName: "Alex",
     lastName: "Example",
     dateOfBirth: input.dateOfBirth ?? "2005-07-01",
-    handoverTasks: [],
     updatedAt: now,
     ...input.membership,
   };
@@ -64,25 +63,23 @@ async function seedMembership(
   return membership;
 }
 
-test("schedules age-out and creates the handover thirty days early", async () => {
+test("schedules age-out thirty days early", async () => {
   const now = Date.parse("2030-06-01T10:00:00Z");
   const membership = await seedMembership();
 
   const result = await processDailyMemberships(now);
 
   expect(result).toMatchObject({ ageOutsScheduled: 1, membershipsEnded: 0 });
-  expect(
-    await (await memberships()).findOne({ _id: membership._id }),
-  ).toMatchObject({
+  const updatedMembership = await (
+    await memberships()
+  ).findOne({ _id: membership._id });
+  expect(updatedMembership).toMatchObject({
     legalStatus: "resigning",
     scheduledEndAt: ageLimitAt("2005-07-01"),
     scheduledEndReason: "age_limit",
-    handoverStartedAt: expect.any(Number),
-    handoverTasks: expect.arrayContaining([
-      expect.objectContaining({ category: "successor" }),
-      expect.objectContaining({ category: "external_accounts" }),
-    ]),
   });
+  expect(updatedMembership).not.toHaveProperty("handoverStartedAt");
+  expect(updatedMembership).not.toHaveProperty("handoverTasks");
   expect(
     await (await users()).findOne({ _id: membership.userId }),
   ).toMatchObject({
@@ -94,9 +91,7 @@ test("schedules age-out and creates the handover thirty days early", async () =>
     await (
       await membershipEvents()
     ).distinct("type", { membershipId: membership._id }),
-  ).toEqual(
-    expect.arrayContaining(["handover.started", "membership.end_scheduled"]),
-  );
+  ).toEqual(["membership.end_scheduled"]);
 });
 
 test("ends an age-limited membership and removes operational roles", async () => {

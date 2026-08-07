@@ -61,7 +61,6 @@ beforeEach(async () => {
     firstName: "Alex",
     lastName: "Example",
     dateOfBirth: "2005-01-01",
-    handoverTasks: [],
     updatedAt: now,
   };
   const versionId = newId();
