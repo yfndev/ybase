@@ -97,9 +97,7 @@ test("allows manual memberships without weakening application uniqueness", async
   await collection.insertMany([firstManual, secondManual]);
 
   const applicationId = newId();
-  await collection.insertOne(
-    membership(newId(), newId(), { applicationId }),
-  );
+  await collection.insertOne(membership(newId(), newId(), { applicationId }));
   await expect(
     collection.insertOne(membership(newId(), newId(), { applicationId })),
   ).rejects.toMatchObject({ code: 11_000 });

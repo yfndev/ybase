@@ -193,8 +193,7 @@ function buildMembership(user: User, application: Application): Membership {
   }
   const now = Date.now();
   const { firstName, lastName } = splitMemberName(
-    application.applicantName ??
-      user.name,
+    application.applicantName ?? user.name,
   );
   const guardian = application.guardianConsent;
   return {

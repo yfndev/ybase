@@ -143,10 +143,9 @@ test("creates the legal record and returns the documents in reading order", asyn
 test("creates the legal record for a manually added member without an application", async () => {
   const manualActor = { ...actor, applicationId: undefined };
   delete manualActor.applicationId;
-  await (await users()).updateOne(
-    { _id: actor._id },
-    { $unset: { applicationId: "" } },
-  );
+  await (
+    await users()
+  ).updateOne({ _id: actor._id }, { $unset: { applicationId: "" } });
   vi.mocked(requireAuthenticatedUser).mockResolvedValue(manualActor);
   vi.mocked(loadApplicationMemberPlatformSnapshot).mockResolvedValue({
     memberPlatformUserId: "member-platform-profile",
