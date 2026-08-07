@@ -2,6 +2,9 @@ import { beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({ requireAuthenticatedUser: vi.fn() }));
 vi.mock("./documentContent", () => ({ loadDocumentContent: vi.fn() }));
+vi.mock("../applications/memberPlatformCandidates", () => ({
+  loadApplicationMemberPlatformSnapshot: vi.fn(),
+}));
 
 import { requireAuthenticatedUser } from "../../auth/session";
 import {
@@ -20,6 +23,7 @@ import type {
   User,
 } from "../../db/types";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
+import { loadApplicationMemberPlatformSnapshot } from "../applications/memberPlatformCandidates";
 import { loadDocumentContent } from "./documentContent";
 import {
   getOwnMembershipOnboardingContext,
@@ -134,6 +138,34 @@ test("creates the legal record and returns the documents in reading order", asyn
       await documentExecutions()
     ).countDocuments({ membershipId: membership?._id }),
   ).toBe(3);
+});
+
+test("creates the legal record for a manually added member without an application", async () => {
+  const manualActor = { ...actor, applicationId: undefined };
+  delete manualActor.applicationId;
+  await (
+    await users()
+  ).updateOne({ _id: actor._id }, { $unset: { applicationId: "" } });
+  vi.mocked(requireAuthenticatedUser).mockResolvedValue(manualActor);
+  vi.mocked(loadApplicationMemberPlatformSnapshot).mockResolvedValue({
+    memberPlatformUserId: "member-platform-profile",
+    memberPlatformSyncedAt: Date.now(),
+    dateOfBirth: "2004-01-01",
+  });
+
+  const context = await loadContext();
+
+  expect(context.documents).toHaveLength(3);
+  expect(context.profile).toMatchObject({
+    firstName: "Alex",
+    lastName: "Beispiel",
+    dateOfBirth: "2004-01-01",
+  });
+  const membership = await (await memberships()).findOne({ userId: actor._id });
+  expect(membership).toMatchObject({
+    memberPlatformUserId: actor.memberPlatformUserId,
+  });
+  expect(membership).not.toHaveProperty("applicationId");
 });
 
 test("delivers the frozen text inline for open documents only", async () => {

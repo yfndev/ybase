@@ -56,7 +56,7 @@ export interface Membership {
   _creationTime: number;
   organizationId: string;
   userId: string;
-  applicationId: string;
+  applicationId?: string;
   membershipNumber: string;
   isCurrent: boolean;
   legalStatus: MembershipLegalStatus;

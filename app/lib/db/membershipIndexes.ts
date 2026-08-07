@@ -1,14 +1,15 @@
 import type { Db } from "mongodb";
 
 export async function ensureMembershipIndexes(db: Db): Promise<void> {
-  await db.collection("memberships").createIndexes([
+  const membershipCollection = db.collection("memberships");
+  await ensureApplicationIndexAllowsManualMemberships(db);
+  await membershipCollection.createIndexes([
     {
       key: { organizationId: 1, userId: 1 },
       unique: true,
       partialFilterExpression: { isCurrent: true },
     },
     { key: { organizationId: 1, membershipNumber: 1 }, unique: true },
-    { key: { applicationId: 1 }, unique: true },
     {
       key: { memberPlatformUserId: 1 },
       unique: true,
@@ -68,4 +69,33 @@ export async function ensureMembershipIndexes(db: Db): Promise<void> {
       partialFilterExpression: { idempotencyKey: { $type: "string" } },
     },
   ]);
+}
+
+async function ensureApplicationIndexAllowsManualMemberships(
+  db: Db,
+): Promise<void> {
+  const collection = db.collection("memberships");
+  const collectionExists = await db
+    .listCollections({ name: "memberships" }, { nameOnly: true })
+    .hasNext();
+  if (!collectionExists) {
+    await collection.createIndex(
+      { applicationId: 1 },
+      { unique: true, sparse: true },
+    );
+    return;
+  }
+
+  const applicationIndex = (await collection.indexes()).find(
+    (index) =>
+      index.key.applicationId === 1 && Object.keys(index.key).length === 1,
+  );
+  if (applicationIndex?.unique && applicationIndex.sparse) return;
+  if (applicationIndex?.name) {
+    await collection.dropIndex(applicationIndex.name);
+  }
+  await collection.createIndex(
+    { applicationId: 1 },
+    { unique: true, sparse: true },
+  );
 }

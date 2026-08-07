@@ -62,7 +62,7 @@ erDiagram
         boolean isTeamLead
         boolean isSecondaryTeamLead
         object boardMembership "departmentId, isChair"
-        string applicationId
+        string applicationId "only for application-based admissions"
         string membershipId
         string memberStatus
         string teamOnboardingStatus
@@ -77,7 +77,7 @@ erDiagram
         string _id
         string organizationId
         string userId
-        string applicationId
+        string applicationId "only for application-based admissions"
         string membershipNumber
         boolean isCurrent
         string legalStatus
@@ -250,6 +250,10 @@ first matching Google login links the application to the onboarding user,
 copies team and position from the job posting, and sets `cleanupEligibleAt` for
 the retention workflow. Link conflicts stay on the application for correction
 by P&C.
+
+Members added manually have no recruiting application. Their membership uses
+the confirmed member-platform profile for the birth-date snapshot and is linked
+directly to the YBase user before the same onboarding documents are assigned.
 
 For new ordinary YFN members, `memberships` is the legal source of truth.
 A membership is created at the recorded admission time and contains the durable

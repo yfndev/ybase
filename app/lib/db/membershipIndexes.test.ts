@@ -1,5 +1,6 @@
 import { beforeAll, expect, test } from "vitest";
 import { setupTestDatabase } from "../test/setupTestDatabase";
+import { getDb } from "./client";
 import {
   documentExecutions,
   membershipEvents,
@@ -71,6 +72,34 @@ test("allows a new membership episode after an earlier membership ended", async 
     collection.insertOne(
       membership(organizationId, newId(), { memberPlatformUserId }),
     ),
+  ).rejects.toMatchObject({ code: 11_000 });
+});
+
+test("migrates the legacy application index for manual memberships", async () => {
+  const collection = (await getDb()).collection<Membership>("memberships");
+  await collection.dropIndex("applicationId_1");
+  await collection.createIndex({ applicationId: 1 }, { unique: true });
+
+  await ensureIndexes();
+
+  const applicationIndex = (await collection.indexes()).find(
+    (index) => index.name === "applicationId_1",
+  );
+  expect(applicationIndex).toMatchObject({ unique: true, sparse: true });
+});
+
+test("allows manual memberships without weakening application uniqueness", async () => {
+  const collection = await memberships();
+  const firstManual = membership(newId(), newId());
+  const secondManual = membership(newId(), newId());
+  delete firstManual.applicationId;
+  delete secondManual.applicationId;
+  await collection.insertMany([firstManual, secondManual]);
+
+  const applicationId = newId();
+  await collection.insertOne(membership(newId(), newId(), { applicationId }));
+  await expect(
+    collection.insertOne(membership(newId(), newId(), { applicationId })),
   ).rejects.toMatchObject({ code: 11_000 });
 });
 
