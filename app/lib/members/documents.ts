@@ -9,6 +9,9 @@ export const MEMBERSHIP_DOCUMENT_ORDER = [
   "bylaws",
 ] as const satisfies readonly MembershipDocumentKind[];
 
+export type PublishableMembershipDocumentKind =
+  (typeof MEMBERSHIP_DOCUMENT_ORDER)[number];
+
 export const DOCUMENT_EXECUTION_TYPE = {
   privacy_notice: "acknowledgement",
   usage_rights: "signature",

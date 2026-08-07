@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { requirePermission } from "../../auth/session";
-import { documentVersions } from "../../db/collections";
+import { documentExecutions, documentVersions } from "../../db/collections";
 import { newId } from "../../db/ids";
 import { DOCUMENT_EXECUTION_TYPE } from "../../members/documents";
 import { membershipDocumentDirectory } from "../../s3/keys";
@@ -12,35 +12,7 @@ import {
   normalizeDocumentContent,
   storeDocumentContent,
 } from "./documentContent";
-
-const publicationSchema = z
-  .object({
-    kind: z.enum([
-      "bylaws",
-      "privacy_notice",
-      "usage_rights",
-      "optional_consent",
-    ]),
-    title: z.string().trim().min(2).max(150),
-    versionLabel: z.string().trim().min(1).max(50),
-    content: z.string().min(1),
-    targetTeamIds: z.array(z.string().min(1)).default([]),
-    targetDepartmentIds: z.array(z.string().min(1)).default([]),
-  })
-  .superRefine((document, context) => {
-    if (
-      document.kind === "usage_rights" &&
-      document.targetTeamIds.length === 0 &&
-      document.targetDepartmentIds.length === 0
-    ) {
-      context.addIssue({
-        code: "custom",
-        path: ["targetDepartmentIds"],
-        message:
-          "Die Sondervereinbarung braucht mindestens ein Ziel-Department oder Team.",
-      });
-    }
-  });
+import { publicationSchema } from "./documentPublicationSchema";
 
 export async function publishMembershipDocument(
   input: z.input<typeof publicationSchema>,
@@ -107,6 +79,34 @@ export async function getMembershipDocumentContent(input: {
       version.contentStorageKey,
       version.sha256,
     ),
+  };
+}
+
+export async function getMembershipDocumentForEditing(input: {
+  versionId: string;
+}) {
+  const { versionId } = z.object({ versionId: z.string().min(1) }).parse(input);
+  const actor = await requirePermission("manage_members");
+  const version = await (
+    await documentVersions()
+  ).findOne({ _id: versionId, organizationId: actor.organizationId });
+  if (!version) throw new Error("Dokumentversion nicht gefunden.");
+  const [content, assignmentCount] = await Promise.all([
+    loadDocumentContent(version.contentStorageKey, version.sha256),
+    (await documentExecutions()).countDocuments({
+      organizationId: actor.organizationId,
+      documentVersionId: version._id,
+    }),
+  ]);
+  return {
+    id: version._id,
+    kind: version.kind,
+    title: version.title,
+    versionLabel: version.versionLabel,
+    content,
+    targetTeamIds: version.targetTeamIds,
+    targetDepartmentIds: version.targetDepartmentIds,
+    hasAssignments: assignmentCount > 0,
   };
 }
 
