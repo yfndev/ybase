@@ -7,7 +7,6 @@ export const MEMBERSHIP_DOCUMENT_ORDER = [
   "privacy_notice",
   "usage_rights",
   "bylaws",
-  "optional_consent",
 ] as const satisfies readonly MembershipDocumentKind[];
 
 export const DOCUMENT_EXECUTION_TYPE = {
@@ -25,5 +24,8 @@ export const MEMBERSHIP_DOCUMENT_LABELS = {
 } as const satisfies Record<MembershipDocumentKind, string>;
 
 export function documentOrderIndex(kind: MembershipDocumentKind): number {
-  return MEMBERSHIP_DOCUMENT_ORDER.indexOf(kind);
+  const index = (
+    MEMBERSHIP_DOCUMENT_ORDER as readonly MembershipDocumentKind[]
+  ).indexOf(kind);
+  return index === -1 ? Number.MAX_SAFE_INTEGER : index;
 }
