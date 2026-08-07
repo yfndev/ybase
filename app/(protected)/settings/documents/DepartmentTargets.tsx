@@ -18,7 +18,8 @@ export function DepartmentTargets({
   const { departments, isLoading } = useDepartments();
 
   return (
-    <div className="space-y-2">
+    <fieldset className="space-y-3 border bg-muted/20 p-4">
+      <legend className="sr-only">Ziel-Departments</legend>
       <p className="text-sm font-medium">
         Ziel-Departments{required ? "*" : " (optional)"}
       </p>
@@ -38,7 +39,7 @@ export function DepartmentTargets({
           ))}
         </div>
       )}
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
         {departments.map((department) => (
           <div key={department._id} className="flex items-center gap-2">
             <Checkbox
@@ -57,6 +58,6 @@ export function DepartmentTargets({
           </div>
         ))}
       </div>
-    </div>
+    </fieldset>
   );
 }

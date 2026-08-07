@@ -2,72 +2,171 @@
 
 import { Button } from "@/components/ui/button";
 import { useDepartments } from "@/lib/client/departments/hooks/useDepartments";
-import { MEMBERSHIP_DOCUMENT_LABELS } from "@/lib/members/documents";
 import type { MembershipDocumentVersionSummary } from "@/lib/server/memberships/documentPublication";
+import { Archive, ChevronRight, FileText, Loader2, Pencil } from "lucide-react";
+import { DocumentDetails } from "./DocumentDetails";
 import { DocumentPreview } from "./DocumentPreview";
+
+type Props = {
+  versions: MembershipDocumentVersionSummary[];
+  loadingVersionId?: string;
+  onEdit: (versionId: string) => Promise<void>;
+  onDeactivate: (versionId: string) => Promise<void>;
+};
 
 export function DocumentVersionsList({
   versions,
+  loadingVersionId,
+  onEdit,
   onDeactivate,
-}: {
-  versions: MembershipDocumentVersionSummary[];
-  onDeactivate: (versionId: string) => Promise<void>;
-}) {
+}: Props) {
   const { departments } = useDepartments();
   const names = new Map(
     departments.map((department) => [department._id, department.name]),
   );
+  const activeVersions = versions.filter((version) => version.isActive);
+  const archivedVersions = versions.filter((version) => !version.isActive);
 
   if (versions.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Noch keine Unterlagen veröffentlicht. Ohne Datenschutzerklärung, Satzung
-        und Code of Conduct kann kein Mitglied das Onboarding starten.
-      </p>
+      <div className="border-2 border-dashed px-6 py-12 text-center">
+        <FileText
+          aria-hidden="true"
+          className="mx-auto size-9 text-muted-foreground"
+        />
+        <h3 className="mt-4 font-semibold">Noch keine Unterlagen</h3>
+        <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">
+          Veröffentliche die benötigten Unterlagen, bevor neue Mitglieder das
+          Onboarding starten.
+        </p>
+      </div>
     );
   }
 
   return (
-    <ul className="space-y-3">
-      {versions.map((version) => (
-        <li
-          key={version.id}
-          className="rounded-xl border bg-card p-4 text-sm shadow-sm"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="font-medium">{version.title}</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {MEMBERSHIP_DOCUMENT_LABELS[version.kind]} · Version{" "}
-                {version.versionLabel} ·{" "}
-                {version.isActive ? "aktiv" : "deaktiviert"}
-              </p>
-              {version.targetDepartmentIds.length > 0 && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Departments:{" "}
-                  {version.targetDepartmentIds
-                    .map((id) => names.get(id) ?? id)
-                    .join(", ")}
-                </p>
+    <div className="space-y-7">
+      <section aria-labelledby="active-documents-heading">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 id="active-documents-heading" className="font-semibold">
+            Aktive Unterlagen
+          </h2>
+          <span className="text-xs text-muted-foreground">
+            {activeVersions.length}{" "}
+            {activeVersions.length === 1 ? "Fassung" : "Fassungen"}
+          </span>
+        </div>
+        {activeVersions.length > 0 ? (
+          <ul className="divide-y border-2">
+            {activeVersions.map((version) => (
+              <DocumentRow
+                key={version.id}
+                version={version}
+                departmentNames={names}
+                isLoading={loadingVersionId === version.id}
+                onEdit={onEdit}
+                onDeactivate={onDeactivate}
+              />
+            ))}
+          </ul>
+        ) : (
+          <p className="border border-dashed px-5 py-8 text-center text-sm text-muted-foreground">
+            Zurzeit ist keine Unterlage aktiv.
+          </p>
+        )}
+      </section>
+
+      {archivedVersions.length > 0 && (
+        <details className="group border-t pt-4">
+          <summary className="flex list-none cursor-pointer items-center gap-2 font-medium marker:hidden">
+            <ChevronRight
+              aria-hidden="true"
+              className="size-4 transition-transform group-open:rotate-90"
+            />
+            Frühere Fassungen
+            <span className="text-xs font-normal text-muted-foreground">
+              ({archivedVersions.length})
+            </span>
+          </summary>
+          <ul className="mt-3 divide-y border bg-muted/20">
+            {archivedVersions.map((version) => (
+              <ArchivedDocumentRow
+                key={version.id}
+                version={version}
+                departmentNames={names}
+              />
+            ))}
+          </ul>
+        </details>
+      )}
+    </div>
+  );
+}
+
+function DocumentRow({
+  version,
+  departmentNames,
+  isLoading,
+  onEdit,
+  onDeactivate,
+}: {
+  version: MembershipDocumentVersionSummary;
+  departmentNames: Map<string, string>;
+  isLoading: boolean;
+  onEdit: Props["onEdit"];
+  onDeactivate: Props["onDeactivate"];
+}) {
+  return (
+    <li className="border-l-4 border-l-primary bg-background p-5 text-sm">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <DocumentDetails
+          version={version}
+          departmentNames={departmentNames}
+          active
+        />
+        <div className="flex shrink-0 flex-wrap items-center gap-1">
+          {version.kind !== "optional_consent" && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isLoading}
+              onClick={() => void onEdit(version.id)}
+            >
+              {isLoading ? (
+                <Loader2 aria-hidden="true" className="animate-spin" />
+              ) : (
+                <Pencil aria-hidden="true" />
               )}
-              <p className="mt-1 font-mono text-xs text-muted-foreground">
-                SHA-256 {version.sha256.slice(0, 16)}…
-              </p>
-            </div>
-            {version.isActive && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => void onDeactivate(version.id)}
-              >
-                Deaktivieren
-              </Button>
-            )}
-          </div>
-          <DocumentPreview versionId={version.id} />
-        </li>
-      ))}
-    </ul>
+              Bearbeiten
+            </Button>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => void onDeactivate(version.id)}
+          >
+            <Archive aria-hidden="true" />
+            Archivieren
+          </Button>
+        </div>
+      </div>
+      <DocumentPreview versionId={version.id} />
+    </li>
+  );
+}
+
+function ArchivedDocumentRow({
+  version,
+  departmentNames,
+}: {
+  version: MembershipDocumentVersionSummary;
+  departmentNames: Map<string, string>;
+}) {
+  return (
+    <li className="p-4 text-sm">
+      <DocumentDetails version={version} departmentNames={departmentNames} />
+      <DocumentPreview versionId={version.id} />
+    </li>
   );
 }
