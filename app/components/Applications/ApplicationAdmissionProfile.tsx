@@ -9,7 +9,6 @@ interface ApplicationAdmissionProfileProps {
   canSync: boolean;
   candidates: ApplicationMemberPlatformCandidate[] | null;
   isPending: boolean;
-  isSigned: boolean;
   isSearching: boolean;
   searchError: boolean;
   selectedProfileId?: string;
@@ -24,7 +23,6 @@ export function ApplicationAdmissionProfile({
   canSync,
   candidates,
   isPending,
-  isSigned,
   isSearching,
   searchError,
   selectedProfileId,
@@ -59,7 +57,7 @@ export function ApplicationAdmissionProfile({
           <span>{formatFieldValue(dateOfBirth, "INPUT_DATE")}</span>
         </div>
       </div>
-      {canSync && !isSigned ? (
+      {canSync ? (
         <ApplicationAdmissionProfileSearch
           candidates={candidates}
           isPending={isPending}

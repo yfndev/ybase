@@ -61,7 +61,6 @@ function buildMembership(user: User, application: Application): Membership {
   const { firstName, lastName } = splitMemberName(
     application.applicantName ?? user.name,
   );
-  const guardian = application.guardianConsent;
   return {
     _id: newId(),
     _creationTime: now,
@@ -76,19 +75,6 @@ function buildMembership(user: User, application: Application): Membership {
       application.onboardingStartedAt ??
       application.updatedAt ??
       now,
-    ...(guardian?.signedAt
-      ? {
-          guardianConsent: {
-            representativeName: guardian.representativeName,
-            representativeEmail: guardian.representativeEmail,
-            signedAt: guardian.signedAt,
-            signatureStorageKey: guardian.signatureStorageKey,
-            completedPdfStorageKey: guardian.completedPdfStorageKey,
-            ipAddress: guardian.ipAddress,
-            userAgent: guardian.userAgent,
-          },
-        }
-      : {}),
     privateEmail: application.applicantEmailNormalized,
     firstName,
     lastName,

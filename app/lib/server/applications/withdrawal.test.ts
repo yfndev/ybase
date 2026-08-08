@@ -43,15 +43,6 @@ beforeEach(async () => {
     dateOfBirth: "2009-01-01",
     memberPlatformUserId: "member-platform-secret",
     memberPlatformSyncedAt: Date.now(),
-    guardianConsent: {
-      representativeName: "Secret Guardian",
-      representativeEmail: "guardian@example.com",
-      tokenHash: "secret-guardian-token",
-      expiresAt: Date.now() + 60_000,
-      signedAt: Date.now(),
-      signatureStorageKey: "applications/guardian-signature.png",
-      completedPdfStorageKey: "applications/guardian-consent.pdf",
-    },
     fields: [
       {
         key: "motivation",
@@ -142,7 +133,6 @@ test("anonymizes personal data, locks the application and removes files", async 
   expect(stored).not.toHaveProperty("dateOfBirth");
   expect(stored).not.toHaveProperty("memberPlatformUserId");
   expect(stored).not.toHaveProperty("memberPlatformSyncedAt");
-  expect(stored).not.toHaveProperty("guardianConsent");
   expect(stored).not.toHaveProperty("ownerIds");
   expect(stored).not.toHaveProperty("withdrawalTokenHash");
   expect(stored).not.toHaveProperty("yfnEmail");
@@ -154,15 +144,9 @@ test("anonymizes personal data, locks the application and removes files", async 
   expect(stored).not.toHaveProperty("onboardingCompletedAt");
   expect(stored).not.toHaveProperty("onboardingCompletedBy");
   expect(JSON.stringify(stored)).not.toMatch(
-    /Secret Person|secret@example.com|secret answer|tally-event-secret|guardian@example.com|member-platform-secret/,
+    /Secret Person|secret@example.com|secret answer|tally-event-secret|member-platform-secret/,
   );
   expect(deleteObject).toHaveBeenCalledWith("applications/secret-cv.pdf");
-  expect(deleteObject).toHaveBeenCalledWith(
-    "applications/guardian-signature.png",
-  );
-  expect(deleteObject).toHaveBeenCalledWith(
-    "applications/guardian-consent.pdf",
-  );
   expect(
     await (await tallyWebhookEvents()).countDocuments({ applicationId }),
   ).toBe(0);

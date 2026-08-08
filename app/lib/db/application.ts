@@ -2,8 +2,6 @@ import type { LegalDelivery } from "./legalDelivery";
 import type {
   AdmissionAppealDecision,
   AdmissionDecision,
-  GuardianConsent,
-  GuardianConsentView,
 } from "./membershipAdmission";
 
 export type ApplicationStatus =
@@ -32,8 +30,6 @@ export interface ApplicationField {
 export type ApplicationHistoryType =
   | "status_changed"
   | "management_updated"
-  | "guardian_consent_requested"
-  | "guardian_consent_recorded"
   | "admission_decision_recorded"
   | "rejection_delivered"
   | "appeal_received"
@@ -118,7 +114,6 @@ export interface Application {
   onboardingStartedBy?: string;
   onboardingCompletedAt?: number;
   onboardingCompletedBy?: string;
-  guardianConsent?: GuardianConsent;
   admissionDecision?: AdmissionDecision;
   rejectionDelivery?: LegalDelivery;
   appealTokenHash?: string;
@@ -146,7 +141,6 @@ export type ApplicationWithFiles = Omit<
   | "withdrawalTokenHash"
   | "yfnEmailNormalized"
   | "workspaceUserId"
-  | "guardianConsent"
   | "admissionDecision"
   | "rejectionDelivery"
   | "appealTokenHash"
@@ -161,7 +155,6 @@ export type ApplicationWithFiles = Omit<
   files: ApplicationFileView[];
   jobPostingTitle: string;
   ownerIds: string[];
-  guardianConsent?: GuardianConsentView;
 };
 
 export type TallyWebhookEventStatus = "processed" | "duplicate" | "ignored";

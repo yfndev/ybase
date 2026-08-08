@@ -1,11 +1,16 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { ageOnDate } from "@/lib/members/legalDates";
 import { submitOwnMembershipApplication } from "@/lib/server/memberships/membershipApplication";
 import type { MembershipOnboardingContext } from "@/lib/server/memberships/onboardingData";
 import { Loader2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import toast from "react-hot-toast";
+import {
+  GuardianConsentFields,
+  type GuardianValues,
+} from "./GuardianConsentFields";
 import {
   type ApplicationValues,
   MembershipApplicationFields,
@@ -30,10 +35,20 @@ export function MembershipApplicationStep({
     country: profile.address.country,
   });
   const [signature, setSignature] = useState("");
+  const [guardian, setGuardian] = useState<GuardianValues>({
+    name: "",
+    email: "",
+    signature: "",
+  });
   const [isPending, startTransition] = useTransition();
+  const isMinor = ageOnDate(profile.dateOfBirth, Date.now()) < 18;
 
   function update(field: keyof ApplicationValues, value: string) {
     setValues((current) => ({ ...current, [field]: value }));
+  }
+
+  function updateGuardian(field: keyof GuardianValues, value: string) {
+    setGuardian((current) => ({ ...current, [field]: value }));
   }
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -47,12 +62,23 @@ export function MembershipApplicationStep({
       toast.error("Bitte unterschreibe den Mitgliedsantrag.");
       return;
     }
+    if (isMinor && !guardian.signature) {
+      toast.error("Bitte lass deine gesetzliche Vertretung unterschreiben.");
+      return;
+    }
     startTransition(async () => {
       try {
         await submitOwnMembershipApplication({
           ...values,
           gender,
           signatureStorageKey: signature,
+          ...(isMinor
+            ? {
+                guardianName: guardian.name,
+                guardianEmail: guardian.email,
+                guardianSignatureStorageKey: guardian.signature,
+              }
+            : {}),
         });
         await onComplete();
         toast.success("Mitgliedsantrag unterschrieben.");
@@ -82,6 +108,10 @@ export function MembershipApplicationStep({
             onChange={setSignature}
           />
         </Field>
+
+        {isMinor && (
+          <GuardianConsentFields values={guardian} update={updateGuardian} />
+        )}
 
         <Button type="submit" disabled={isPending}>
           {isPending && <Loader2 aria-hidden="true" className="animate-spin" />}

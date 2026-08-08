@@ -1,34 +1,18 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({ requirePermission: vi.fn() }));
-vi.mock("../../email/brevo", () => ({ sendMail: vi.fn() }));
 vi.mock("./memberPlatformAtlasSearch", () => ({
   searchMemberPlatformProfilesWithAtlas: vi.fn(),
 }));
-vi.mock("../../email/templates", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../email/templates")>();
-  return {
-    ...actual,
-    BREVO_TEMPLATE_IDS: {
-      ...actual.BREVO_TEMPLATE_IDS,
-      MEMBERSHIP_GUARDIAN_CONSENT: 999,
-    },
-  };
-});
 
 import { requirePermission } from "../../auth/session";
 import { getClient } from "../../db/client";
 import { applications } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { Application } from "../../db/types";
-import { sendMail } from "../../email/brevo";
-import { BREVO_TEMPLATE_IDS } from "../../email/templates";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
-import {
-  requestGuardianConsent,
-  syncApplicationMemberPlatformProfile,
-} from "./admissionRequirements";
+import { syncApplicationMemberPlatformProfile } from "./admissionRequirements";
 import {
   searchApplicationMemberPlatformProfilesAction,
   selectApplicationMemberPlatformProfileAction,
@@ -71,11 +55,6 @@ beforeEach(async () => {
   vi.mocked(requirePermission).mockResolvedValue(
     createTestActor({ organizationId, role: "people_culture" }),
   );
-  vi.mocked(sendMail).mockResolvedValue({
-    status: "sent",
-    messageId: "message-1",
-  });
-  vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://ybase.example");
 });
 
 afterEach(() => {
@@ -101,21 +80,6 @@ test("imports the birth date from one eligible member-platform profile", async (
       contact: { email: "ALEX@example.com" },
     },
   ]);
-  await (
-    await applications()
-  ).updateOne(
-    { _id: application._id },
-    {
-      $set: {
-        guardianConsent: {
-          representativeName: "Previous",
-          representativeEmail: "previous@example.com",
-          tokenHash: "pending-token",
-          expiresAt: now + 1_000,
-        },
-      },
-    },
-  );
   await expect(
     selectApplicationMemberPlatformProfileAction({
       applicationId: application._id,
@@ -130,9 +94,6 @@ test("imports the birth date from one eligible member-platform profile", async (
     memberPlatformUserId: "platform-adult",
     memberPlatformSyncedAt: now,
   });
-  expect(
-    await (await applications()).findOne({ _id: application._id }),
-  ).not.toHaveProperty("guardianConsent");
 });
 
 test("prefers an exact applicant name when the private email differs", async () => {
@@ -220,66 +181,6 @@ test("reports the email fallback when an application has no name", async () => {
       applicationId: application._id,
     }),
   ).rejects.toThrow("private Bewerbungs-E-Mail");
-});
-
-test("sends a secure guardian link and stores only its hash", async () => {
-  await seedMemberPlatformSnapshot("2009-01-01");
-  await requestGuardianConsent({
-    applicationId: application._id,
-    representativeName: "Erika Beispiel",
-    representativeEmail: "ERIKA@example.com",
-  });
-
-  const message = vi.mocked(sendMail).mock.calls[0]?.[0];
-  const consentUrl = String(message?.params?.consentUrl);
-  const token = consentUrl.split("/").at(-1);
-  const stored = await (await applications()).findOne({ _id: application._id });
-  expect(message).toMatchObject({
-    to: [{ email: "erika@example.com", name: "Erika Beispiel" }],
-    templateId: BREVO_TEMPLATE_IDS.MEMBERSHIP_GUARDIAN_CONSENT,
-  });
-  expect(token).toBeTruthy();
-  expect(stored).toMatchObject({
-    dateOfBirth: "2009-01-01",
-    guardianConsent: {
-      representativeEmail: "erika@example.com",
-      lastSentAt: now,
-    },
-  });
-  expect(stored?.guardianConsent?.tokenHash).not.toBe(token);
-});
-
-test("restores the previous request when email delivery fails", async () => {
-  application.guardianConsent = {
-    representativeName: "Previous",
-    representativeEmail: "previous@example.com",
-    tokenHash: "previous-token-hash",
-    expiresAt: now + 1_000,
-  };
-  application.dateOfBirth = "2009-02-02";
-  application.memberPlatformUserId = "platform-minor";
-  application.memberPlatformSyncedAt = now;
-  await (
-    await applications()
-  ).replaceOne({ _id: application._id }, application);
-  vi.mocked(sendMail).mockResolvedValue({
-    status: "skipped",
-    reason: "disabled",
-  });
-
-  await expect(
-    requestGuardianConsent({
-      applicationId: application._id,
-      representativeName: "Erika Beispiel",
-      representativeEmail: "erika@example.com",
-    }),
-  ).rejects.toThrow("E-Mail");
-  expect(
-    await (await applications()).findOne({ _id: application._id }),
-  ).toMatchObject({
-    dateOfBirth: "2009-02-02",
-    guardianConsent: application.guardianConsent,
-  });
 });
 
 test("returns no candidates when no active member profile matches", async () => {
@@ -396,15 +297,6 @@ test("checks every matching profile before accepting a unique claim", async () =
     }),
   ).rejects.toThrow("Mehrere aktive");
 });
-
-async function seedMemberPlatformSnapshot(dateOfBirth: string): Promise<void> {
-  application.dateOfBirth = dateOfBirth;
-  application.memberPlatformUserId = "platform-minor";
-  application.memberPlatformSyncedAt = now;
-  await (
-    await applications()
-  ).replaceOne({ _id: application._id }, application);
-}
 
 async function insertPlatformProfile(input: {
   id: string;

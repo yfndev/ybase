@@ -40,6 +40,7 @@ import { registerPendingUpload } from "../uploads/ownership";
 setupTestDatabase();
 
 const SIGNATURE_STORAGE_KEY = "membership-signature-key";
+const GUARDIAN_SIGNATURE_STORAGE_KEY = "guardian-signature-key";
 
 const FORM = {
   privateEmail: "Alex.Private@Example.org",
@@ -218,6 +219,77 @@ test("rejects a submission without a usable signature", async () => {
     memberStatus: "onboarding",
   });
 });
+
+test("blocks a minor without the consent of their legal representative", async () => {
+  await makeMemberAMinor();
+  await completeAllDocuments();
+
+  await expect(submitOwnMembershipApplication(FORM)).rejects.toThrow(
+    "gesetzlichen Vertretung",
+  );
+
+  expect(putObject).not.toHaveBeenCalled();
+  expect(await (await users()).findOne({ _id: actor._id })).toMatchObject({
+    memberStatus: "onboarding",
+  });
+});
+
+test("stores the guardian consent a minor collected with their application", async () => {
+  await makeMemberAMinor();
+  await completeAllDocuments();
+  await registerPendingUpload(GUARDIAN_SIGNATURE_STORAGE_KEY, {
+    organizationId: actor.organizationId,
+    userId: actor._id,
+    contextType: "user",
+    contextId: actor._id,
+  });
+
+  await expect(
+    submitOwnMembershipApplication({
+      ...FORM,
+      guardianName: "Erika Beispiel",
+      guardianEmail: "Erika@Example.org",
+      guardianSignatureStorageKey: GUARDIAN_SIGNATURE_STORAGE_KEY,
+    }),
+  ).resolves.toEqual({ activated: true });
+
+  expect(
+    await (await memberships()).findOne({ _id: membershipId }),
+  ).toMatchObject({
+    guardianConsent: {
+      representativeName: "Erika Beispiel",
+      representativeEmail: "erika@example.org",
+      signatureStorageKey: GUARDIAN_SIGNATURE_STORAGE_KEY,
+      ipAddress: "192.0.2.1",
+    },
+  });
+  expect(createMembershipApplicationPdf).toHaveBeenCalledWith(
+    expect.objectContaining({
+      guardian: expect.objectContaining({
+        representativeName: "Erika Beispiel",
+        representativeEmail: "erika@example.org",
+      }),
+    }),
+  );
+  expect(
+    await (
+      await uploadOwnerships()
+    ).findOne({ _id: GUARDIAN_SIGNATURE_STORAGE_KEY }),
+  ).toMatchObject({
+    claimedByType: "membershipApplication",
+    claimedById: membershipId,
+  });
+});
+
+async function makeMemberAMinor() {
+  const birthYear = new Date().getUTCFullYear() - 17;
+  await (
+    await memberships()
+  ).updateOne(
+    { _id: membershipId },
+    { $set: { dateOfBirth: `${birthYear}-01-01` } },
+  );
+}
 
 async function completeAllDocuments() {
   await (
