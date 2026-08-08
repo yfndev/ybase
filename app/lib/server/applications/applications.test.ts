@@ -133,12 +133,6 @@ test("loads one application without internal identifiers", async () => {
         dateOfBirth: "2004-01-01",
         memberPlatformUserId: "platform-alex",
         memberPlatformSyncedAt: Date.now(),
-        guardianConsent: {
-          representativeName: "Erika Beispiel",
-          representativeEmail: "erika@example.com",
-          tokenHash: "secret-guardian-hash",
-          expiresAt: Date.now() + 86_400_000,
-        },
         admissionDecision: {
           result: "admitted",
           decidedAt: Date.now(),
@@ -188,14 +182,6 @@ test("loads one application without internal identifiers", async () => {
   expect(application).not.toHaveProperty("tallyResponseId");
   expect(application).not.toHaveProperty("tallyFormId");
   expect(application).not.toHaveProperty("withdrawalTokenHash");
-  expect(application.guardianConsent).toEqual({
-    representativeName: "Erika Beispiel",
-    representativeEmail: "erika@example.com",
-    expiresAt: expect.any(Number),
-  });
-  expect(JSON.stringify(application.guardianConsent)).not.toContain(
-    "secret-guardian-hash",
-  );
   expect(application).not.toHaveProperty("admissionDecision");
   expect(application).not.toHaveProperty("rejectionDelivery");
   expect(application).not.toHaveProperty("appealTokenHash");

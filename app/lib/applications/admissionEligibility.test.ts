@@ -25,23 +25,14 @@ test.each(["2011-08-01", "2001-07-31"])(
   },
 );
 
-test("requires guardian consent for an eligible minor", () => {
-  expect(
-    getApplicationAdmissionIssue(
-      { dateOfBirth: "2009-01-01", memberPlatformUserId: "platform-1" },
-      decidedAt,
-    ),
-  ).toBe(APPLICATION_ADMISSION_ERRORS.GUARDIAN_CONSENT_REQUIRED);
-});
-
-test.each([
-  { dateOfBirth: "2009-01-01", guardianConsent: { signedAt: decidedAt } },
-  { dateOfBirth: "2004-01-01" },
-])("accepts completed requirements", (input) => {
-  expect(
-    getApplicationAdmissionIssue(
-      { ...input, memberPlatformUserId: "platform-1" },
-      decidedAt,
-    ),
-  ).toBeUndefined();
-});
+test.each(["2009-01-01", "2004-01-01"])(
+  "accepts an eligible birth date %s",
+  (dateOfBirth) => {
+    expect(
+      getApplicationAdmissionIssue(
+        { dateOfBirth, memberPlatformUserId: "platform-1" },
+        decidedAt,
+      ),
+    ).toBeUndefined();
+  },
+);
