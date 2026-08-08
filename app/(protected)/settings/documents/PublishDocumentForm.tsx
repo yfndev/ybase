@@ -104,14 +104,7 @@ export function PublishDocumentForm({
     <form className="border bg-background" onSubmit={submit}>
       <div className="border-b bg-muted/40 px-5 py-4">
         <p className="font-semibold">
-          {isEditing
-            ? "Unterlage bearbeiten"
-            : "Neue Unterlage veröffentlichen"}
-        </p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {isEditing
-            ? MEMBERSHIP_DOCUMENT_LABELS[kind]
-            : "Titel, Gültigkeitsbereich und Inhalt festlegen."}
+          {isEditing ? "Unterlage bearbeiten" : "Neue Unterlage"}
         </p>
       </div>
 

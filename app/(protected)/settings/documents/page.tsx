@@ -1,6 +1,7 @@
 import { AccessDenied } from "@/components/Settings/AccessDenied";
 import { auth } from "@/lib/auth";
 import { hasPermission, USER_PERMISSIONS } from "@/lib/auth/roles";
+import { listMembershipDocumentVersions } from "@/lib/server/memberships/documentPublication";
 import { DocumentsClient } from "./DocumentsClient";
 
 export default async function MembershipDocumentsPage() {
@@ -9,5 +10,5 @@ export default async function MembershipDocumentsPage() {
     return <AccessDenied title="Unterlagen" />;
   }
 
-  return <DocumentsClient />;
+  return <DocumentsClient versions={await listMembershipDocumentVersions()} />;
 }

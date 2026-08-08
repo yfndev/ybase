@@ -1,5 +1,9 @@
 import type { PublishableMembershipDocumentKind } from "@/lib/members/documents";
 
+export const DOCUMENT_DATE_FORMAT = new Intl.DateTimeFormat("de-DE", {
+  dateStyle: "medium",
+});
+
 export type EditableMembershipDocument = {
   id: string;
   kind: PublishableMembershipDocumentKind;
