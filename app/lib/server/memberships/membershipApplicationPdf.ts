@@ -1,10 +1,10 @@
 import type {
-  GuardianConsentEvidence,
   MembershipGender,
   Organization,
   PostalAddress,
 } from "../../db/types";
 import { MEMBERSHIP_GENDER_LABELS } from "../../members/gender";
+import { GUARDIAN_CONSENT_TEXT } from "../../members/guardianConsent";
 import {
   createPdfWriter,
   drawSignatureImage,
@@ -26,7 +26,11 @@ export interface MembershipApplicationPdfInput {
   address: PostalAddress;
   signedAt: number;
   signaturePng: Uint8Array;
-  guardianConsent?: GuardianConsentEvidence;
+  guardian?: {
+    representativeName: string;
+    representativeEmail: string;
+    signaturePng: Uint8Array;
+  };
 }
 
 export async function createMembershipApplicationPdf(
@@ -51,16 +55,23 @@ export async function createMembershipApplicationPdf(
   writeText(writer, "Unterschrift Mitglied", { size: 10, bold: true, gap: 8 });
   await drawSignatureImage(writer, input.signaturePng);
 
-  if (input.guardianConsent) {
+  if (input.guardian) {
     writeGap(writer, 16);
-    writeText(writer, "Zustimmung des gesetzlichen Vertreters", {
+    writeText(writer, "Zustimmung der gesetzlichen Vertretung", {
       size: 10,
       bold: true,
       gap: 6,
     });
-    for (const line of guardianLines(input.guardianConsent)) {
-      writeText(writer, line, { size: 9, gap: 3 });
-    }
+    writeText(writer, GUARDIAN_CONSENT_TEXT, { size: 9, gap: 6 });
+    writeText(writer, `Name: ${input.guardian.representativeName}`, {
+      size: 9,
+      gap: 3,
+    });
+    writeText(writer, `E-Mail: ${input.guardian.representativeEmail}`, {
+      size: 9,
+      gap: 8,
+    });
+    await drawSignatureImage(writer, input.guardian.signaturePng);
   }
 
   writeGap(writer, 18);
@@ -98,14 +109,6 @@ function applicantFields(
   ];
 }
 
-function guardianLines(consent: GuardianConsentEvidence): string[] {
-  return [
-    `Name: ${consent.representativeName}`,
-    `E-Mail: ${consent.representativeEmail}`,
-    `Unterschrieben am: ${formatDate(consent.signedAt)}`,
-  ];
-}
-
 function evidenceLines(input: MembershipApplicationPdfInput): string[] {
   return [
     `Mitgliedsnummer: ${input.membershipNumber}`,
@@ -113,10 +116,4 @@ function evidenceLines(input: MembershipApplicationPdfInput): string[] {
     `User-ID: ${input.userId}`,
     `Zeitpunkt: ${new Date(input.signedAt).toISOString()}`,
   ];
-}
-
-function formatDate(timestamp: number): string {
-  return new Date(timestamp).toLocaleDateString("de-DE", {
-    timeZone: "Europe/Berlin",
-  });
 }
