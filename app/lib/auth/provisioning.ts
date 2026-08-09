@@ -14,7 +14,6 @@ type SignInProfile = {
   lastName?: string;
   googlePhotoIsDefault?: boolean;
 };
-
 export async function ensureAppUser(profile: SignInProfile): Promise<User> {
   const usersCol = await users();
   const normalizedEmail = profile.email.trim().toLowerCase();
@@ -82,9 +81,31 @@ export async function ensureAppUser(profile: SignInProfile): Promise<User> {
         : {}),
     };
 
-    if (Object.keys(profileUpdates).length > 0) {
-      await usersCol.updateOne({ _id: user._id }, { $set: profileUpdates });
-      user = { ...user, ...profileUpdates };
+    const restoresDeletedWorkspaceAccount = Boolean(
+      googleWorkspaceUserId && user.workspaceAccountDeletedAt,
+    );
+    if (
+      Object.keys(profileUpdates).length > 0 ||
+      restoresDeletedWorkspaceAccount
+    ) {
+      await usersCol.updateOne(
+        { _id: user._id },
+        {
+          ...(Object.keys(profileUpdates).length > 0
+            ? { $set: profileUpdates }
+            : {}),
+          ...(restoresDeletedWorkspaceAccount
+            ? { $unset: { workspaceAccountDeletedAt: "" } }
+            : {}),
+        },
+      );
+      user = {
+        ...user,
+        ...profileUpdates,
+        ...(restoresDeletedWorkspaceAccount
+          ? { workspaceAccountDeletedAt: undefined }
+          : {}),
+      };
     }
   }
 

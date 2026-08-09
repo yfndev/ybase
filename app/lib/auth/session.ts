@@ -9,13 +9,20 @@ import {
   type UserPermission,
 } from "./roles";
 
-export async function requireAuthenticatedUser() {
+export async function requireAuthenticatedUser({
+  allowDeletedWorkspaceAccount = false,
+}: {
+  allowDeletedWorkspaceAccount?: boolean;
+} = {}) {
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) throw new Error("Unauthorized user");
 
   const user = await (await users()).findOne({ _id: userId });
   if (!user) throw new Error("User not found");
+  if (user.workspaceAccountDeletedAt && !allowDeletedWorkspaceAccount) {
+    throw new Error("User is unavailable");
+  }
 
   return user;
 }

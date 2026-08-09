@@ -4,6 +4,7 @@ import {
   endGettingToKnow,
 } from "@/lib/server/memberships/gettingToKnow";
 import { recordMembershipResignation } from "@/lib/server/memberships/resignation";
+import { deleteMemberWorkspaceAccount } from "@/lib/server/users/accountDeletion";
 import { createMember } from "@/lib/server/users/creation";
 import {
   setMemberStatus,
@@ -39,6 +40,10 @@ export function useMemberMutations() {
       onSuccess,
     }),
     endGettingToKnow: useMutation({ mutationFn: endGettingToKnow, onSuccess }),
+    deleteWorkspaceAccount: useMutation({
+      mutationFn: deleteMemberWorkspaceAccount,
+      onSuccess,
+    }),
     updateRole: useMutation({ mutationFn: updateUserRole, onSuccess }),
   };
 }

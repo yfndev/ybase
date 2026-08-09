@@ -23,10 +23,14 @@ export default async function ProtectedLayout({
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  const member = await requireAuthenticatedUser();
+  const member = await requireAuthenticatedUser({
+    allowDeletedWorkspaceAccount: true,
+  });
 
   let content: ReactNode;
-  if (isUnavailableMemberStatus(member.memberStatus)) {
+  if (member.workspaceAccountDeletedAt) {
+    content = <OffboardedNotice isAccountDeleted />;
+  } else if (isUnavailableMemberStatus(member.memberStatus)) {
     content = <OffboardedNotice />;
   } else if (
     member.publicProfileSetupRequired === true &&

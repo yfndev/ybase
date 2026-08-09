@@ -60,6 +60,7 @@ export interface User {
   firstName?: string;
   lastName?: string;
   googleWorkspaceUserId?: string;
+  workspaceAccountDeletedAt?: number;
   organizationId?: string;
   role?: UserRole;
   iban?: string;

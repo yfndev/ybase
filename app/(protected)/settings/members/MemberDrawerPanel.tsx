@@ -9,7 +9,7 @@ import { isInGettingToKnow } from "@/lib/members/gettingToKnow";
 import { memberStageForStatus } from "@/lib/members/stages";
 import { profileAvatarUrl } from "@/lib/profile/avatar";
 import { LabeledSelect } from "./LabeledSelect";
-import { MemberDepartureSection } from "./MemberDepartureSection";
+import { MemberActionsMenu } from "./MemberActionsMenu";
 import { MemberGettingToKnowSection } from "./MemberGettingToKnowSection";
 import { MemberInfractionsSection } from "./MemberInfractionsSection";
 import { MemberStatusField } from "./MemberStatusField";
@@ -75,6 +75,10 @@ export function MemberDrawerPanel({
             ) : null}
           </div>
         </div>
+        <MemberActionsMenu
+          member={member}
+          canDeleteAccount={form.canEditRoles}
+        />
       </div>
 
       <div className="flex flex-1 flex-col gap-4 px-6">
@@ -88,9 +92,7 @@ export function MemberDrawerPanel({
             infractionCount={member.memberInfractions?.length ?? 0}
             onChange={form.setStatus}
           />
-        ) : (
-          <MemberDepartureSection member={member} />
-        )}
+        ) : null}
         <LabeledSelect
           id="member-role"
           label="Berechtigungen"

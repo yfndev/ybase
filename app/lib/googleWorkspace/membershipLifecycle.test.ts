@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { WorkspaceApiError } from "./client";
 import {
   createWorkspaceLifecycleDirectory,
+  deleteWorkspaceUser,
   restoreWorkspaceUser,
   suspendWorkspaceUser,
   type WorkspaceLifecycleDirectory,
@@ -22,6 +23,7 @@ function directory(): WorkspaceLifecycleDirectory {
   return {
     suspendUser: vi.fn().mockResolvedValue(undefined),
     restoreUser: vi.fn().mockResolvedValue(undefined),
+    deleteUser: vi.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -50,6 +52,25 @@ describe("workspace membership lifecycle", () => {
       method: "PATCH",
       data: { suspended: false },
     });
+  });
+
+  test("deletes an account through the directory adapter", async () => {
+    const workspace = createWorkspaceLifecycleDirectory(request);
+
+    await deleteWorkspaceUser("google/user-1", workspace);
+
+    expect(request).toHaveBeenCalledWith("users/google%2Fuser-1", {
+      method: "DELETE",
+    });
+  });
+
+  test("treats an already deleted account as a successful retry", async () => {
+    request.mockRejectedValue(new WorkspaceApiError(404));
+    const workspace = createWorkspaceLifecycleDirectory(request);
+
+    await expect(
+      deleteWorkspaceUser("google-user-1", workspace),
+    ).resolves.toBeUndefined();
   });
 
   test("reports missing Google permissions as a lifecycle error", async () => {
