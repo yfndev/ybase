@@ -8,7 +8,9 @@ export async function addLog(
   entityId: string,
   details?: string,
 ): Promise<void> {
-  await (await logs()).insertOne({
+  await (
+    await logs()
+  ).insertOne({
     _id: newId(),
     _creationTime: Date.now(),
     organizationId,
