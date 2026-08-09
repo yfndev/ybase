@@ -16,26 +16,7 @@ export async function buildAcceptedApplicantMembership(
   if (!application) {
     throw new Error("Die angenommene Bewerbung wurde nicht gefunden.");
   }
-  if (!application.dateOfBirth || !application.memberPlatformUserId) {
-    throw new Error("Geburtsdatum oder Member-Profil fehlen.");
-  }
-  const now = Date.now();
-  const { firstName, lastName } = splitMemberName(
-    application.applicantName ?? user.name,
-  );
-  return {
-    ...baseMembership(user, now),
-    applicationId: application._id,
-    ...guardianConsentOf(application),
-    privateEmail: application.applicantEmailNormalized,
-    firstName,
-    lastName,
-    dateOfBirth: application.dateOfBirth,
-    ...(application.applicantPhone?.trim()
-      ? { phone: application.applicantPhone.trim() }
-      : {}),
-    memberPlatformUserId: application.memberPlatformUserId,
-  };
+  return buildMembership(user, application);
 }
 
 export async function buildManualMembership(
@@ -54,21 +35,6 @@ export async function buildManualMembership(
   const now = Date.now();
   const { firstName, lastName } = splitMemberName(user.name);
   return {
-    ...baseMembership(user, now),
-    privateEmail,
-    firstName,
-    lastName,
-    dateOfBirth: snapshot.dateOfBirth,
-    ...(user.phone?.trim() ? { phone: user.phone.trim() } : {}),
-    memberPlatformUserId: snapshot.memberPlatformUserId,
-  };
-}
-
-function baseMembership(
-  user: User & { organizationId: string },
-  now: number,
-): Membership {
-  return {
     _id: newId(),
     _creationTime: now,
     organizationId: user.organizationId,
@@ -76,29 +42,49 @@ function baseMembership(
     membershipNumber: newMembershipNumber(now),
     isCurrent: true,
     legalStatus: "active",
-    admittedAt: user.gettingToKnow?.decidedAt ?? now,
-    privateEmail: "",
-    firstName: "",
-    lastName: "",
-    dateOfBirth: "",
+    admittedAt: admittedAt(user),
+    privateEmail,
+    firstName,
+    lastName,
+    dateOfBirth: snapshot.dateOfBirth,
+    ...(user.phone?.trim() ? { phone: user.phone.trim() } : {}),
+    memberPlatformUserId: snapshot.memberPlatformUserId,
     updatedAt: now,
   };
 }
 
-function guardianConsentOf(application: Application) {
-  const guardian = application.guardianConsent;
-  if (!guardian?.signedAt) return {};
+function buildMembership(user: User, application: Application): Membership {
+  if (!application.dateOfBirth || !application.memberPlatformUserId) {
+    throw new Error("Geburtsdatum oder Member-Profil fehlen.");
+  }
+  const now = Date.now();
+  const { firstName, lastName } = splitMemberName(
+    application.applicantName ?? user.name,
+  );
   return {
-    guardianConsent: {
-      representativeName: guardian.representativeName,
-      representativeEmail: guardian.representativeEmail,
-      signedAt: guardian.signedAt,
-      signatureStorageKey: guardian.signatureStorageKey,
-      completedPdfStorageKey: guardian.completedPdfStorageKey,
-      ipAddress: guardian.ipAddress,
-      userAgent: guardian.userAgent,
-    },
+    _id: newId(),
+    _creationTime: now,
+    organizationId: application.organizationId,
+    userId: user._id,
+    applicationId: application._id,
+    membershipNumber: newMembershipNumber(now),
+    isCurrent: true,
+    legalStatus: "active",
+    admittedAt: admittedAt(user),
+    privateEmail: application.applicantEmailNormalized,
+    firstName,
+    lastName,
+    dateOfBirth: application.dateOfBirth,
+    ...(application.applicantPhone?.trim()
+      ? { phone: application.applicantPhone.trim() }
+      : {}),
+    memberPlatformUserId: application.memberPlatformUserId,
+    updatedAt: now,
   };
+}
+
+function admittedAt(user: User): number {
+  return user.gettingToKnow?.decidedAt ?? Date.now();
 }
 
 function splitMemberName(name?: string): {

@@ -2,7 +2,9 @@
 
 import { z } from "zod";
 import { memberships, organizations, users } from "../../db/collections";
+import type { GuardianConsentEvidence, User } from "../../db/types";
 import { MEMBERSHIP_GENDERS } from "../../members/gender";
+import { ageOnDate } from "../../members/legalDates";
 import { membershipApplicationDirectory } from "../../s3/keys";
 import { putObject } from "../../s3/storage";
 import { membershipDocumentsComplete } from "./documentAssignments";
@@ -23,6 +25,9 @@ const applicationSchema = z.object({
   city: z.string().trim().min(2).max(100),
   country: z.string().trim().min(2).max(100),
   signatureStorageKey: z.string().min(1),
+  guardianName: z.string().trim().min(2).max(200).optional(),
+  guardianEmail: z.email().max(320).optional(),
+  guardianSignatureStorageKey: z.string().min(1).optional(),
 });
 
 export async function submitOwnMembershipApplication(
@@ -41,12 +46,19 @@ export async function submitOwnMembershipApplication(
   ).findOne({ _id: membership.organizationId });
   if (!organization) throw new Error("Die Organisation wurde nicht gefunden.");
 
+  const signedAt = Date.now();
+  const guardian = await resolveGuardianConsent({
+    form: parsed,
+    actor,
+    dateOfBirth: membership.dateOfBirth,
+    membershipId: membership._id,
+    signedAt,
+  });
   const signature = await loadAndClaimMembershipSignature(
     parsed.signatureStorageKey,
     actor,
     { type: "membershipApplication", id: membership._id },
   );
-  const signedAt = Date.now();
   const privateEmail = parsed.privateEmail.toLowerCase();
   const address = {
     street: parsed.street,
@@ -68,7 +80,9 @@ export async function submitOwnMembershipApplication(
     address,
     signedAt,
     signaturePng: signature,
-    guardianConsent: membership.guardianConsent,
+    guardian: guardian
+      ? { ...guardian.consent, signaturePng: guardian.signaturePng }
+      : undefined,
   });
 
   const directory = membershipApplicationDirectory(
@@ -98,6 +112,7 @@ export async function submitOwnMembershipApplication(
           signatureStorageKey: parsed.signatureStorageKey,
           ...(await membershipRequestMetadata()),
         },
+        ...(guardian ? { guardianConsent: guardian.consent } : {}),
         admissionEvidenceStorageKey: evidenceStorageKey,
         updatedAt: signedAt,
       },
@@ -125,5 +140,41 @@ export async function submitOwnMembershipApplication(
   });
   return {
     activated: await activateMembershipIfComplete(membership._id),
+  };
+}
+
+async function resolveGuardianConsent(input: {
+  form: z.output<typeof applicationSchema>;
+  actor: User & { organizationId: string };
+  dateOfBirth: string;
+  membershipId: string;
+  signedAt: number;
+}): Promise<
+  { consent: GuardianConsentEvidence; signaturePng: Uint8Array } | undefined
+> {
+  if (ageOnDate(input.dateOfBirth, input.signedAt) >= 18) return undefined;
+
+  const { guardianName, guardianEmail, guardianSignatureStorageKey } =
+    input.form;
+  if (!guardianName || !guardianEmail || !guardianSignatureStorageKey) {
+    throw new Error(
+      "Minderjährige benötigen die unterschriebene Zustimmung ihrer gesetzlichen Vertretung.",
+    );
+  }
+
+  const signaturePng = await loadAndClaimMembershipSignature(
+    guardianSignatureStorageKey,
+    input.actor,
+    { type: "membershipApplication", id: input.membershipId },
+  );
+  return {
+    consent: {
+      representativeName: guardianName,
+      representativeEmail: guardianEmail.toLowerCase(),
+      signedAt: input.signedAt,
+      signatureStorageKey: guardianSignatureStorageKey,
+      ...(await membershipRequestMetadata()),
+    },
+    signaturePng,
   };
 }

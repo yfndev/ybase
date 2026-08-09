@@ -30,8 +30,7 @@ export interface GuardianConsentEvidence {
   representativeName: string;
   representativeEmail: string;
   signedAt: number;
-  signatureStorageKey?: string;
-  completedPdfStorageKey?: string;
+  signatureStorageKey: string;
   ipAddress?: string;
   userAgent?: string;
 }

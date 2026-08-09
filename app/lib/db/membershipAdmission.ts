@@ -1,26 +1,3 @@
-export interface GuardianConsent {
-  representativeName: string;
-  representativeEmail: string;
-  tokenHash: string;
-  expiresAt: number;
-  lastSentAt?: number;
-  signingStartedAt?: number;
-  signedAt?: number;
-  signatureStorageKey?: string;
-  completedPdfStorageKey?: string;
-  ipAddress?: string;
-  userAgent?: string;
-}
-
-export type GuardianConsentView = Pick<
-  GuardianConsent,
-  | "representativeName"
-  | "representativeEmail"
-  | "expiresAt"
-  | "lastSentAt"
-  | "signedAt"
->;
-
 export interface AdmissionDecision {
   result: "admitted" | "rejected";
   decidedAt: number;

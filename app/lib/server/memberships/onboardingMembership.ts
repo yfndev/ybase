@@ -10,7 +10,7 @@ import { appendMembershipEvent } from "./events";
 import {
   buildAcceptedApplicantMembership,
   buildManualMembership,
-} from "./membershipBuilder";
+} from "./onboardingMembershipBuilders";
 
 export async function ensureMembershipForAdmission(
   user: User,

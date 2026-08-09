@@ -1,6 +1,5 @@
 import { describe, expect, test } from "vitest";
 import {
-  guardianConsentDirectory,
   membershipDocumentDirectory,
   membershipExecutionDirectory,
   profileImageUploadDirectory,
@@ -45,9 +44,6 @@ describe("membership storage directories", () => {
     expect(membershipExecutionDirectory("org-123", "execution-789")).toBe(
       "memberships/org-123/executions/execution-789",
     );
-    expect(guardianConsentDirectory("org-123", "application-321")).toBe(
-      "memberships/org-123/applications/application-321/guardian-consent",
-    );
   });
 
   test("rejects IDs that could escape the membership directory", () => {
@@ -56,9 +52,6 @@ describe("membership storage directories", () => {
     );
     expect(() => membershipExecutionDirectory("org", "../execution")).toThrow(
       "Invalid document execution ID",
-    );
-    expect(() => guardianConsentDirectory("org", "../application")).toThrow(
-      "Invalid application ID",
     );
   });
 });

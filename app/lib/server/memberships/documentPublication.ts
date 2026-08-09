@@ -54,37 +54,12 @@ export async function listMembershipDocumentVersions() {
     kind: version.kind,
     title: version.title,
     versionLabel: version.versionLabel,
-    sha256: version.sha256,
-    executionType: version.executionType,
-    targetTeamIds: version.targetTeamIds,
-    targetDepartmentIds: version.targetDepartmentIds,
     publishedAt: version.publishedAt,
     isActive: version.isActive,
   }));
 }
 
-export async function getMembershipDocumentContent(input: {
-  versionId: string;
-}): Promise<{ title: string; versionLabel: string; content: string }> {
-  const { versionId } = z.object({ versionId: z.string().min(1) }).parse(input);
-  const actor = await requirePermission("manage_members");
-  const version = await (
-    await documentVersions()
-  ).findOne({ _id: versionId, organizationId: actor.organizationId });
-  if (!version) throw new Error("Dokumentversion nicht gefunden.");
-  return {
-    title: version.title,
-    versionLabel: version.versionLabel,
-    content: await loadDocumentContent(
-      version.contentStorageKey,
-      version.sha256,
-    ),
-  };
-}
-
-export async function getMembershipDocumentForEditing(input: {
-  versionId: string;
-}) {
+export async function getMembershipDocument(input: { versionId: string }) {
   const { versionId } = z.object({ versionId: z.string().min(1) }).parse(input);
   const actor = await requirePermission("manage_members");
   const version = await (
@@ -106,6 +81,8 @@ export async function getMembershipDocumentForEditing(input: {
     content,
     targetTeamIds: version.targetTeamIds,
     targetDepartmentIds: version.targetDepartmentIds,
+    publishedAt: version.publishedAt,
+    isActive: version.isActive,
     hasAssignments: assignmentCount > 0,
   };
 }
@@ -129,3 +106,7 @@ export async function deactivateMembershipDocument(input: {
 export type MembershipDocumentVersionSummary = Awaited<
   ReturnType<typeof listMembershipDocumentVersions>
 >[number];
+
+export type MembershipDocument = Awaited<
+  ReturnType<typeof getMembershipDocument>
+>;

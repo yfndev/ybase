@@ -3,6 +3,7 @@ export interface TeamDirectoryMember {
   name: string;
   role: string;
   isLead: boolean;
+  email?: string;
   imageUrl?: string;
 }
 
@@ -12,6 +13,7 @@ export interface TeamDirectoryBoardMember {
   name: string;
   role: string;
   isChair: boolean;
+  email?: string;
   imageUrl?: string;
 }
 

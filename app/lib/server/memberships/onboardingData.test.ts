@@ -202,6 +202,7 @@ test("creates the legal record for a manually added member without an applicatio
     memberPlatformUserId: actor.memberPlatformUserId,
   });
   expect(membership).not.toHaveProperty("applicationId");
+  expect(membership).not.toHaveProperty("handoverTasks");
 });
 
 test("delivers the frozen text inline for open documents only", async () => {

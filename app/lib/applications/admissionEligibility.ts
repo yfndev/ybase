@@ -5,14 +5,11 @@ export const APPLICATION_ADMISSION_ERRORS = {
     "Vor der Aufnahme muss ein eindeutiges Member-Plattform-Profil mit gültigem Geburtsdatum verknüpft sein.",
   AGE_REQUIRED:
     "Bei der Aufnahmeentscheidung muss die Person mindestens 16 und noch nicht 25 Jahre alt sein.",
-  GUARDIAN_CONSENT_REQUIRED:
-    "Bei Minderjährigen muss die Zustimmung der gesetzlichen Vertretung vorliegen.",
 } as const;
 
 interface AdmissionRequirements {
   dateOfBirth?: string;
   memberPlatformUserId?: string;
-  guardianConsent?: { signedAt?: number };
 }
 
 export function getApplicationAdmissionIssue(
@@ -31,9 +28,6 @@ export function getApplicationAdmissionIssue(
   }
   if (age < 16 || age >= 25) {
     return APPLICATION_ADMISSION_ERRORS.AGE_REQUIRED;
-  }
-  if (age < 18 && !application.guardianConsent?.signedAt) {
-    return APPLICATION_ADMISSION_ERRORS.GUARDIAN_CONSENT_REQUIRED;
   }
   return undefined;
 }

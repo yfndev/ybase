@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { requestGuardianConsent } from "@/lib/server/applications/admissionRequirements";
 import { selectApplicationMemberPlatformProfileAction } from "@/lib/server/applications/admissionRequirementsAction";
 import { submitApplicationDecision } from "@/lib/server/applications/decisionAction";
 import { setApplicationStatus } from "@/lib/server/applications/status";
@@ -39,10 +38,6 @@ export function useApplicationMutations() {
         if (!result.ok)
           throw new Error("Member-Profil konnte nicht zugeordnet werden.");
       },
-      onSuccess: invalidate,
-    }),
-    requestGuardianConsent: useMutation({
-      mutationFn: requestGuardianConsent,
       onSuccess: invalidate,
     }),
   };
