@@ -16,13 +16,6 @@ export interface BoardMembership {
   isChair: boolean;
 }
 
-export interface MemberInfraction {
-  _id: string;
-  reason: string;
-  createdAt: number;
-  createdBy: string;
-}
-
 export type GettingToKnowOutcome =
   | "confirmed"
   | "ended_by_org"
@@ -84,5 +77,4 @@ export interface User {
   archivedAt?: number;
   excludedAt?: number;
   offboardedAt?: number;
-  memberInfractions?: MemberInfraction[];
 }

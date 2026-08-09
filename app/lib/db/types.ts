@@ -38,7 +38,6 @@ export type {
   BoardMembership,
   GettingToKnowOutcome,
   GettingToKnowPhase,
-  MemberInfraction,
   MemberStatus,
   ProfileImageSource,
   StoredMemberStatus,
