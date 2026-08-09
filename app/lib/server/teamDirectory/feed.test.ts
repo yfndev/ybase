@@ -2,15 +2,21 @@ import { beforeEach, expect, test } from "vitest";
 import { departments, teams, users } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { User } from "../../db/types";
+import { insertTestOrganization } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { getTeamDirectory } from "./feed";
 
 const organizationId = "org-team-directory";
+const organizationDomain = "youngfounders.network";
 const publicOrigin = "https://ybase.example";
 
 setupTestDatabase();
 
 beforeEach(async () => {
+  await insertTestOrganization({
+    _id: organizationId,
+    domain: organizationDomain,
+  });
   await (
     await departments()
   ).insertMany([
@@ -81,6 +87,7 @@ test("returns active members directly from their ybase profiles", async () => {
     member({
       _id: "member-visible",
       name: "Ada Beispiel",
+      email: " Ada.Beispiel@Youngfounders.Network ",
       secondaryTeamId: "team-chapter",
       isTeamLead: true,
       isSecondaryTeamLead: true,
@@ -90,6 +97,7 @@ test("returns active members directly from their ybase profiles", async () => {
     member({
       _id: "member-board",
       name: "Board Person",
+      email: "board.person@youngfounders.network",
       teamId: undefined,
       secondaryTeamId: "team-people",
       isSecondaryTeamLead: true,
@@ -112,6 +120,7 @@ test("returns active members directly from their ybase profiles", async () => {
     member({
       _id: "member-defaults",
       name: "Aaron Default",
+      email: "aaron.default@example.com",
     }),
     member({
       _id: "member-planned",
@@ -151,6 +160,7 @@ test("returns active members directly from their ybase profiles", async () => {
       name: "Board Person",
       role: "Operations",
       isChair: true,
+      email: "board.person@youngfounders.network",
       imageUrl: `${publicOrigin}/api/v1/team-directory/images/member-board`,
     },
     {
@@ -181,6 +191,7 @@ test("returns active members directly from their ybase profiles", async () => {
       name: "Ada Beispiel",
       role: "Lead",
       isLead: true,
+      email: "ada.beispiel@youngfounders.network",
       imageUrl: `${publicOrigin}/api/v1/team-directory/images/member-visible`,
     },
     {
@@ -188,6 +199,7 @@ test("returns active members directly from their ybase profiles", async () => {
       name: "Board Person",
       role: "Lead",
       isLead: true,
+      email: "board.person@youngfounders.network",
       imageUrl: `${publicOrigin}/api/v1/team-directory/images/member-board`,
     },
     {
@@ -209,6 +221,7 @@ test("returns active members directly from their ybase profiles", async () => {
       name: "Ada Beispiel",
       role: "",
       isLead: false,
+      email: "ada.beispiel@youngfounders.network",
       imageUrl: `${publicOrigin}/api/v1/team-directory/images/member-visible`,
     },
   ]);
