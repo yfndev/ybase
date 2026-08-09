@@ -18,6 +18,10 @@ describe("user-state Brevo templates", () => {
     expect(Object.keys(USER_STATE_EMAIL_TEMPLATES)).toEqual([
       "team_onboarding_started",
       "workspace_account_ready",
+      "getting_to_know_started",
+      "getting_to_know_due",
+      "getting_to_know_ended",
+      "membership_invitation",
     ]);
     for (const template of Object.values(USER_STATE_EMAIL_TEMPLATES)) {
       expect(template.tag).toMatch(/\S/);

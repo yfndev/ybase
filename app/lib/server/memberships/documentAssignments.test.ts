@@ -10,11 +10,13 @@ import type {
   DocumentExecutionType,
   Membership,
   MembershipDocumentKind,
+  User,
 } from "../../db/types";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import {
-  assertRequiredDocumentConfiguration,
-  assignRequiredDocuments,
+  assertOnboardingDocumentConfiguration,
+  assignMembershipDocuments,
+  assignOnboardingDocuments,
 } from "./documentAssignments";
 
 setupTestDatabase();
@@ -22,6 +24,12 @@ setupTestDatabase();
 let organizationId: string;
 let userId: string;
 let membership: Membership;
+
+async function loadUser(): Promise<User> {
+  const user = await (await users()).findOne({ _id: userId });
+  if (!user) throw new Error("test user missing");
+  return user;
+}
 
 beforeEach(async () => {
   organizationId = newId();
@@ -82,12 +90,15 @@ test("assigns usage rights through the team's department", async () => {
   });
   await seedVersion("optional_consent", "optional_consent");
 
-  await assignRequiredDocuments(membership);
+  await assignOnboardingDocuments(await loadUser());
 
   const executions = await (await documentExecutions())
-    .find({ membershipId: membership._id })
+    .find({ userId })
     .toArray();
-  expect(executions).toHaveLength(4);
+  expect(executions).toHaveLength(3);
+  expect(executions.every((item) => item.membershipId === undefined)).toBe(
+    true,
+  );
   expect(executions.map((item) => item.executionType)).toEqual(
     expect.arrayContaining([
       "signature",
@@ -95,6 +106,32 @@ test("assigns usage rights through the team's department", async () => {
       "optional_consent",
     ]),
   );
+});
+
+test("assigns the bylaws only with the membership package", async () => {
+  const team = await (await teams()).findOne({ organizationId });
+  await seedVersion("usage_rights", "signature", {
+    targetDepartmentIds: [team?.departmentId ?? ""],
+  });
+  await assignOnboardingDocuments(await loadUser());
+  const bylaws = await (await documentVersions()).findOne({ kind: "bylaws" });
+
+  expect(
+    await (
+      await documentExecutions()
+    ).countDocuments({ documentVersionId: bylaws?._id }),
+  ).toBe(0);
+
+  await assignMembershipDocuments(membership);
+
+  expect(
+    await (
+      await documentExecutions()
+    ).countDocuments({
+      documentVersionId: bylaws?._id,
+      membershipId: membership._id,
+    }),
+  ).toBe(1);
 });
 
 test("assigns one special agreement per department the member works in", async () => {
@@ -122,10 +159,10 @@ test("assigns one special agreement per department the member works in", async (
     targetDepartmentIds: [secondDepartmentId],
   });
 
-  await assignRequiredDocuments(membership);
+  await assignOnboardingDocuments(await loadUser());
 
   const assigned = await (await documentExecutions())
-    .find({ membershipId: membership._id })
+    .find({ userId })
     .toArray();
   const usageRightsVersions = await (await documentVersions())
     .find({ kind: "usage_rights" })
@@ -147,28 +184,22 @@ test("keeps only the newest special agreement per department", async () => {
     targetDepartmentIds: [team?.departmentId ?? ""],
   });
 
-  await assignRequiredDocuments(membership);
+  await assignOnboardingDocuments(await loadUser());
 
-  expect(
-    await (
-      await documentExecutions()
-    ).countDocuments({
-      membershipId: membership._id,
-    }),
-  ).toBe(3);
+  expect(await (await documentExecutions()).countDocuments({ userId })).toBe(2);
 });
 
-test("blocks admission when the member's department lacks its special agreement", async () => {
-  await expect(assertRequiredDocumentConfiguration(membership)).rejects.toThrow(
-    "Sondervereinbarung",
-  );
+test("blocks onboarding when the member's department lacks its special agreement", async () => {
+  await expect(
+    assertOnboardingDocumentConfiguration(await loadUser()),
+  ).rejects.toThrow("Sondervereinbarung");
 });
 
 test("does not require a special agreement without a department", async () => {
   await (await users()).updateOne({ _id: userId }, { $unset: { teamId: "" } });
 
   await expect(
-    assertRequiredDocumentConfiguration(membership),
+    assertOnboardingDocumentConfiguration(await loadUser()),
   ).resolves.toBeUndefined();
 });
 

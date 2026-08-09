@@ -2,19 +2,18 @@
 
 import { z } from "zod";
 import { requireAuthenticatedUser } from "../../auth/session";
-import {
-  documentExecutions,
-  documentVersions,
-  memberships,
-} from "../../db/collections";
-import type { DocumentExecution, DocumentVersion } from "../../db/types";
+import { documentExecutions, documentVersions } from "../../db/collections";
+import type { DocumentExecution, DocumentVersion, User } from "../../db/types";
 import { isUnavailableMemberStatus } from "../../members/status";
 import { membershipExecutionDirectory } from "../../s3/keys";
 import { putObject } from "../../s3/storage";
 import { loadDocumentContent } from "./documentContent";
 import { appendMembershipEvent } from "./events";
 import { loadAndClaimMembershipSignature } from "./membershipSignatures";
-import { activateMembershipOnboardingIfComplete } from "./onboardingCompletion";
+import {
+  activateMembershipIfComplete,
+  startGettingToKnowIfComplete,
+} from "./onboardingCompletion";
 import { membershipRequestMetadata } from "./requestMetadata";
 import { createExecutionPdf } from "./signingPdf";
 
@@ -33,21 +32,10 @@ export async function completeOwnDocument(
   if (isUnavailableMemberStatus(actor.memberStatus)) {
     throw new Error("User is unavailable");
   }
-  const membership = await (
-    await memberships()
-  ).findOne({
-    organizationId: actor.organizationId,
-    userId: actor._id,
-    isCurrent: true,
-    legalStatus: { $in: ["active", "resigning"] },
-  });
-  if (!membership) throw new Error("Aktive Mitgliedschaft nicht gefunden.");
-
   const executions = await documentExecutions();
   const execution = await executions.findOne({
     _id: parsed.executionId,
     organizationId: actor.organizationId,
-    membershipId: membership._id,
     userId: actor._id,
   });
   if (!execution || execution.status === "revoked") {
@@ -65,7 +53,7 @@ export async function completeOwnDocument(
   }
   if (execution.status === "completed") {
     await recordCompletionEvent(execution, version);
-    await activateMembershipOnboardingIfComplete(membership._id);
+    await advanceOnboarding(actor, execution);
     return;
   }
 
@@ -119,7 +107,7 @@ export async function completeOwnDocument(
       title: version.title,
       versionLabel: version.versionLabel,
       documentHash: version.sha256,
-      membershipId: membership._id,
+      membershipId: execution.membershipId,
       userId: actor._id,
       completedAt,
       consentGranted: parsed.consentGranted,
@@ -170,7 +158,18 @@ export async function completeOwnDocument(
     { ...execution, status: "completed", completedAt },
     version,
   );
-  await activateMembershipOnboardingIfComplete(membership._id);
+  await advanceOnboarding(actor, execution);
+}
+
+async function advanceOnboarding(
+  actor: User,
+  execution: DocumentExecution,
+): Promise<void> {
+  if (execution.membershipId) {
+    await activateMembershipIfComplete(execution.membershipId);
+    return;
+  }
+  await startGettingToKnowIfComplete(actor);
 }
 
 async function recordCompletionEvent(

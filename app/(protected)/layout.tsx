@@ -3,10 +3,12 @@ import type { ReactNode } from "react";
 import { PostHogIdentity } from "@/components/PostHogIdentity";
 import { auth } from "@/lib/auth";
 import { requireAuthenticatedUser } from "@/lib/auth/session";
+import { isGettingToKnowConfirmed } from "@/lib/members/gettingToKnow";
 import { isUnavailableMemberStatus } from "@/lib/members/status";
 import { getMemberPlatformLinkingData } from "@/lib/server/memberPlatform/linking";
 import { AppShell } from "./AppShell";
 import { MemberPlatformLinking } from "./MemberPlatformLinking";
+import { MembershipPendingNotice } from "./MembershipPendingNotice";
 import { OnboardingNotice } from "./OnboardingNotice";
 import { OffboardedNotice } from "./OffboardedNotice";
 import { PublicProfileSetup } from "./PublicProfileSetup";
@@ -54,6 +56,13 @@ export default async function ProtectedLayout({
           <MembershipOnboarding />
         </AppShell>
       </OnboardingProvider>
+    );
+  } else if (isGettingToKnowConfirmed(member)) {
+    content = (
+      <AppShell>
+        <MembershipPendingNotice />
+        {children}
+      </AppShell>
     );
   } else {
     content = <AppShell>{children}</AppShell>;

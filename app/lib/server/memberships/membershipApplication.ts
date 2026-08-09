@@ -5,13 +5,13 @@ import { memberships, organizations, users } from "../../db/collections";
 import { MEMBERSHIP_GENDERS } from "../../members/gender";
 import { membershipApplicationDirectory } from "../../s3/keys";
 import { putObject } from "../../s3/storage";
-import { requiredDocumentsComplete } from "./documentAssignments";
+import { membershipDocumentsComplete } from "./documentAssignments";
 import { appendMembershipEvent } from "./events";
 import { createMembershipApplicationPdf } from "./membershipApplicationPdf";
 import { loadAndClaimMembershipSignature } from "./membershipSignatures";
 import { requireOnboardingUser } from "./onboardingActor";
-import { activateMembershipOnboardingIfComplete } from "./onboardingCompletion";
-import { ensureAcceptedApplicantMembership } from "./onboardingMembership";
+import { activateMembershipIfComplete } from "./onboardingCompletion";
+import { ensureMembershipForAdmission } from "./onboardingMembership";
 import { membershipRequestMetadata } from "./requestMetadata";
 
 const applicationSchema = z.object({
@@ -30,8 +30,8 @@ export async function submitOwnMembershipApplication(
 ): Promise<{ activated: boolean }> {
   const parsed = applicationSchema.parse(input);
   const actor = await requireOnboardingUser();
-  const membership = await ensureAcceptedApplicantMembership(actor);
-  if (!(await requiredDocumentsComplete(membership._id))) {
+  const membership = await ensureMembershipForAdmission(actor);
+  if (!(await membershipDocumentsComplete(membership._id))) {
     throw new Error(
       "Bitte schließe zuerst alle Unterlagen ab, bevor du den Mitgliedsantrag unterschreibst.",
     );
@@ -124,6 +124,6 @@ export async function submitOwnMembershipApplication(
     details: {},
   });
   return {
-    activated: await activateMembershipOnboardingIfComplete(membership._id),
+    activated: await activateMembershipIfComplete(membership._id),
   };
 }

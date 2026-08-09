@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { submitOwnMembershipApplication } from "@/lib/server/memberships/membershipApplication";
-import type { MembershipOnboardingContext } from "@/lib/server/memberships/onboardingData";
+import type { MembershipOnboardingProfile } from "@/lib/server/memberships/onboardingData";
 import { Loader2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import toast from "react-hot-toast";
@@ -17,7 +17,7 @@ export function MembershipApplicationStep({
   profile,
   onComplete,
 }: {
-  profile: MembershipOnboardingContext["profile"];
+  profile: MembershipOnboardingProfile;
   onComplete: () => Promise<void>;
 }) {
   const [values, setValues] = useState<ApplicationValues>({

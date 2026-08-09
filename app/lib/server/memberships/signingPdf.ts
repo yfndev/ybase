@@ -38,7 +38,7 @@ export async function createExecutionPdf(input: {
   title: string;
   versionLabel: string;
   documentHash: string;
-  membershipId: string;
+  membershipId?: string;
   userId: string;
   completedAt: number;
   consentGranted?: boolean;
@@ -73,7 +73,7 @@ export async function createExecutionPdf(input: {
 function evidenceLines(input: {
   versionLabel: string;
   documentHash: string;
-  membershipId: string;
+  membershipId?: string;
   userId: string;
   completedAt: number;
   consentGranted?: boolean;
@@ -81,7 +81,7 @@ function evidenceLines(input: {
   return [
     `Version: ${input.versionLabel}`,
     `SHA-256 des Dokumententexts: ${input.documentHash}`,
-    `Membership-ID: ${input.membershipId}`,
+    ...(input.membershipId ? [`Membership-ID: ${input.membershipId}`] : []),
     `User-ID: ${input.userId}`,
     `Zeitpunkt: ${new Date(input.completedAt).toISOString()}`,
     ...(input.consentGranted === undefined

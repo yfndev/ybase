@@ -49,7 +49,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       }
       setContext(next);
       setError(undefined);
-      if (next.activated) router.refresh();
+      if (next.activated && next.phase === "membership") router.refresh();
     } catch {
       setError(LOAD_ERROR);
     }
@@ -63,7 +63,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     reload,
     current: context?.documents.find(({ status }) => status === "assigned"),
     done: Boolean(
-      context?.documentsComplete && context.profile.applicationSigned,
+      context?.documentsComplete &&
+      (context.phase === "documents" || context.profile?.applicationSigned),
     ),
     steps: context
       ? [
@@ -71,10 +72,14 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
             label: document.title,
             complete: document.status === "completed",
           })),
-          {
-            label: "Mitgliedsantrag",
-            complete: context.profile.applicationSigned,
-          },
+          ...(context.phase === "membership"
+            ? [
+                {
+                  label: "Mitgliedsantrag",
+                  complete: Boolean(context.profile?.applicationSigned),
+                },
+              ]
+            : []),
         ]
       : [],
   };

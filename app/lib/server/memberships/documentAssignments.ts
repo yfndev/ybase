@@ -1,29 +1,97 @@
-import {
-  documentExecutions,
-  documentVersions,
-  teams,
-  users,
-} from "../../db/collections";
+import { documentExecutions, users } from "../../db/collections";
 import { newId } from "../../db/ids";
-import type { DocumentExecution, Membership, User } from "../../db/types";
+import type {
+  DocumentExecution,
+  DocumentVersion,
+  Membership,
+  User,
+} from "../../db/types";
+import {
+  applicableDocumentVersions,
+  MEMBERSHIP_DOCUMENT_KINDS,
+  ONBOARDING_DOCUMENT_KINDS,
+  versionsToAssign,
+} from "./documentTargeting";
 
-export async function assignRequiredDocuments(
+export async function assignOnboardingDocuments(user: User): Promise<number> {
+  const { versions, requiresUsageRights } = await applicableDocumentVersions(
+    user,
+    ONBOARDING_DOCUMENT_KINDS,
+  );
+  assertOnboardingDocuments(versions, requiresUsageRights);
+  return assign(versionsToAssign(versions), user._id);
+}
+
+export async function assignMembershipDocuments(
   membership: Membership,
 ): Promise<number> {
-  const { versions: applicable, requiresUsageRights } =
-    await applicableDocumentVersions(membership);
-  assertRequiredDocuments(applicable, requiresUsageRights);
+  const user = await requireDocumentUser(membership);
+  const { versions } = await applicableDocumentVersions(
+    user,
+    MEMBERSHIP_DOCUMENT_KINDS,
+  );
+  assertMembershipDocuments(versions);
+  return assign(versionsToAssign(versions), user._id, membership._id);
+}
+
+export async function assertOnboardingDocumentConfiguration(
+  user: User,
+): Promise<void> {
+  const { versions, requiresUsageRights } = await applicableDocumentVersions(
+    user,
+    ONBOARDING_DOCUMENT_KINDS,
+  );
+  assertOnboardingDocuments(versions, requiresUsageRights);
+}
+
+export async function assertMembershipDocumentConfiguration(
+  user: User,
+): Promise<void> {
+  const { versions } = await applicableDocumentVersions(
+    user,
+    MEMBERSHIP_DOCUMENT_KINDS,
+  );
+  assertMembershipDocuments(versions);
+}
+
+export async function onboardingDocumentsComplete(
+  userId: string,
+): Promise<boolean> {
+  const open = await (
+    await documentExecutions()
+  ).countDocuments({
+    userId,
+    membershipId: { $exists: false },
+    status: "assigned",
+  });
+  return open === 0;
+}
+
+export async function membershipDocumentsComplete(
+  membershipId: string,
+): Promise<boolean> {
+  const open = await (
+    await documentExecutions()
+  ).countDocuments({ membershipId, status: "assigned" });
+  return open === 0;
+}
+
+async function assign(
+  versions: DocumentVersion[],
+  userId: string,
+  membershipId?: string,
+): Promise<number> {
   const now = Date.now();
-  let assignmentsCreated = 0;
-  for (const version of versionsToAssign(applicable)) {
+  let created = 0;
+  for (const version of versions) {
     const execution: DocumentExecution = {
       _id: newId(),
       _creationTime: now,
-      organizationId: membership.organizationId,
+      organizationId: version.organizationId,
       documentVersionId: version._id,
       documentHash: version.sha256,
-      membershipId: membership._id,
-      userId: membership.userId,
+      ...(membershipId ? { membershipId } : {}),
+      userId,
       executionType: version.executionType,
       status: "assigned",
       assignedAt: now,
@@ -32,103 +100,33 @@ export async function assignRequiredDocuments(
       await documentExecutions()
     ).updateOne(
       {
-        organizationId: membership.organizationId,
+        organizationId: version.organizationId,
         documentVersionId: version._id,
-        membershipId: membership._id,
+        userId,
       },
       { $setOnInsert: execution },
       { upsert: true },
     );
-    assignmentsCreated += result.upsertedCount;
+    created += result.upsertedCount;
   }
-  return assignmentsCreated;
+  return created;
 }
 
-export async function assertRequiredDocumentConfiguration(
-  membership: Membership,
-  userOverride?: User,
-): Promise<void> {
-  const { versions, requiresUsageRights } = await applicableDocumentVersions(
-    membership,
-    userOverride,
-  );
-  assertRequiredDocuments(versions, requiresUsageRights);
-}
-
-async function applicableDocumentVersions(
-  membership: Membership,
-  userOverride?: User,
-) {
-  const user =
-    userOverride ??
-    (await (
-      await users()
-    ).findOne({
-      _id: membership.userId,
-      organizationId: membership.organizationId,
-    }));
-  if (!user) throw new Error("User der Mitgliedschaft nicht gefunden.");
-  const assignedTeamIds = [user.teamId, user.secondaryTeamId].filter(
-    (id): id is string => Boolean(id),
-  );
-  const assignedTeams = assignedTeamIds.length
-    ? await (
-        await teams()
-      )
-        .find({
-          _id: { $in: assignedTeamIds },
-          organizationId: membership.organizationId,
-        })
-        .toArray()
-    : [];
-  const departmentIds = [
-    ...assignedTeams.map((team) => team.departmentId),
-    ...(user.boardMembership ? [user.boardMembership.departmentId] : []),
-  ];
-  const versions = await (
-    await documentVersions()
-  )
-    .find({
-      organizationId: membership.organizationId,
-      isActive: true,
-      kind: {
-        $in: ["bylaws", "privacy_notice", "usage_rights", "optional_consent"],
-      },
-    })
-    .sort({ publishedAt: -1 })
-    .toArray();
-  const applicable = versions.filter((version) => {
-    if (
-      version.kind !== "usage_rights" &&
-      version.kind !== "optional_consent"
-    ) {
-      return true;
-    }
-    if (
-      version.kind === "optional_consent" &&
-      version.targetTeamIds.length === 0 &&
-      version.targetDepartmentIds.length === 0
-    ) {
-      return true;
-    }
-    return (
-      version.targetTeamIds.some((id) => assignedTeamIds.includes(id)) ||
-      version.targetDepartmentIds.some((id) => departmentIds.includes(id))
-    );
+async function requireDocumentUser(membership: Membership): Promise<User> {
+  const user = await (
+    await users()
+  ).findOne({
+    _id: membership.userId,
+    organizationId: membership.organizationId,
   });
-  return {
-    versions: applicable,
-    requiresUsageRights: departmentIds.length > 0,
-  };
+  if (!user) throw new Error("User der Mitgliedschaft nicht gefunden.");
+  return user;
 }
 
-function assertRequiredDocuments<T extends { kind: string }>(
-  versions: T[],
+function assertOnboardingDocuments(
+  versions: DocumentVersion[],
   requiresUsageRights: boolean,
-) {
-  if (!versions.some((version) => version.kind === "bylaws")) {
-    throw new Error("Die Satzung ist noch nicht veröffentlicht.");
-  }
+): void {
   if (!versions.some((version) => version.kind === "privacy_notice")) {
     throw new Error("Die Datenschutzhinweise sind noch nicht veröffentlicht.");
   }
@@ -142,38 +140,8 @@ function assertRequiredDocuments<T extends { kind: string }>(
   }
 }
 
-type TargetedVersion = {
-  kind: string;
-  targetTeamIds: string[];
-  targetDepartmentIds: string[];
-};
-
-function versionsToAssign<T extends TargetedVersion>(versions: T[]): T[] {
-  const seen = new Set<string>();
-  return versions.filter((version) => {
-    if (version.kind === "optional_consent") return true;
-    const key = assignmentKey(version);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-function assignmentKey(version: TargetedVersion): string {
-  if (version.kind !== "usage_rights") return version.kind;
-  const targets = [
-    ...version.targetDepartmentIds,
-    ...version.targetTeamIds,
-  ].sort();
-  return `usage_rights:${targets.join(",")}`;
-}
-
-export async function requiredDocumentsComplete(
-  membershipId: string,
-): Promise<boolean> {
-  return (
-    (await (
-      await documentExecutions()
-    ).countDocuments({ membershipId, status: "assigned" })) === 0
-  );
+function assertMembershipDocuments(versions: DocumentVersion[]): void {
+  if (!versions.some((version) => version.kind === "bylaws")) {
+    throw new Error("Die Satzung ist noch nicht veröffentlicht.");
+  }
 }
