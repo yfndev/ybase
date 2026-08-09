@@ -1,6 +1,7 @@
 export type UserRole = "admin" | "finance" | "people_culture" | "member";
 export type MemberStatus =
   | "onboarding"
+  | "getting_to_know"
   | "active"
   | "offboarding_planned"
   | "offboarding"
@@ -20,6 +21,20 @@ export interface MemberInfraction {
   reason: string;
   createdAt: number;
   createdBy: string;
+}
+
+export type GettingToKnowOutcome =
+  | "confirmed"
+  | "ended_by_org"
+  | "ended_by_member";
+
+export interface GettingToKnowPhase {
+  startedAt: number;
+  endsAt: number;
+  reminderSentAt?: number;
+  decidedAt?: number;
+  decidedBy?: string;
+  outcome?: GettingToKnowOutcome;
 }
 
 export interface User {
@@ -58,6 +73,7 @@ export interface User {
   applicationId?: string;
   membershipId?: string;
   memberStatus: StoredMemberStatus;
+  gettingToKnow?: GettingToKnowPhase;
   teamOnboardingStatus: TeamOnboardingStatus;
   registeredAt?: number;
   onboardedAt?: number;

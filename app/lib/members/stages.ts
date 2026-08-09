@@ -14,6 +14,7 @@ export const MEMBER_STAGE_OPTIONS = [
   { value: "application", label: "Bewerbung" },
   { value: "interview", label: "Interview" },
   { value: "onboarding", label: "Onboarding" },
+  { value: "getting_to_know", label: "Kennenlernphase" },
   { value: "active", label: "Vereinsmitglied" },
   { value: "offboarding_planned", label: "Offboarding vorgemerkt" },
   { value: "offboarding", label: "Offboarding" },
@@ -53,6 +54,7 @@ const MEMBER_STATUSES_BY_STAGE: Partial<
   Record<MemberStage, readonly MemberStatus[]>
 > = {
   onboarding: ["onboarding"],
+  getting_to_know: ["getting_to_know"],
   active: ["active"],
   offboarding_planned: ["offboarding_planned"],
   offboarding: ["offboarding"],

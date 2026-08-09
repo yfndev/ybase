@@ -1,6 +1,7 @@
 import type { MemberStatus, StoredMemberStatus } from "../db/types";
 
 export const PUBLIC_MEMBER_STATUSES = [
+  "getting_to_know",
   "active",
   "offboarding_planned",
 ] as const satisfies readonly MemberStatus[];

@@ -2,7 +2,7 @@ export interface MembershipEvent {
   _id: string;
   _creationTime: number;
   organizationId: string;
-  membershipId: string;
+  membershipId?: string;
   caseId?: string;
   userId: string;
   actorUserId?: string;

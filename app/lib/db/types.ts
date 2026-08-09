@@ -36,6 +36,8 @@ export type * from "./membershipDocument";
 export type * from "./membershipEvent";
 export type {
   BoardMembership,
+  GettingToKnowOutcome,
+  GettingToKnowPhase,
   MemberInfraction,
   MemberStatus,
   ProfileImageSource,
