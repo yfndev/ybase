@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { departments, teams, users } from "../../db/collections";
+import { departments, organizations, teams, users } from "../../db/collections";
 import type { Department, Team } from "../../db/types";
 import { PUBLIC_MEMBER_STATUSES } from "../../members/status";
 import {
@@ -7,6 +7,7 @@ import {
   byBoardRole,
   byLeadAndName,
   byName,
+  type DirectoryContext,
   type DirectoryUser,
   memberDto,
   profileName,
@@ -29,27 +30,40 @@ export async function getTeamDirectory(
   organizationId: string,
   publicOrigin: string,
 ): Promise<TeamDirectoryFeed> {
-  const [departmentDocs, teamDocs, memberDocs] = await Promise.all([
-    (await departments()).find({ organizationId, isArchived: false }).toArray(),
-    (await teams()).find({ organizationId, isArchived: false }).toArray(),
-    (await users())
-      .find({
-        organizationId,
-        memberStatus: { $in: [...PUBLIC_MEMBER_STATUSES] },
-      })
-      .project<DirectoryUser>({
-        _id: 1,
-        name: 1,
-        teamId: 1,
-        secondaryTeamId: 1,
-        isTeamLead: 1,
-        isSecondaryTeamLead: 1,
-        boardMembership: 1,
-        profileImageStorageKey: 1,
-        publicProfileCompletedAt: 1,
-      })
-      .toArray(),
-  ]);
+  const [organization, departmentDocs, teamDocs, memberDocs] =
+    await Promise.all([
+      (await organizations()).findOne(
+        { _id: organizationId },
+        { projection: { domain: 1 } },
+      ),
+      (await departments())
+        .find({ organizationId, isArchived: false })
+        .toArray(),
+      (await teams()).find({ organizationId, isArchived: false }).toArray(),
+      (await users())
+        .find({
+          organizationId,
+          memberStatus: { $in: [...PUBLIC_MEMBER_STATUSES] },
+        })
+        .project<DirectoryUser>({
+          _id: 1,
+          name: 1,
+          email: 1,
+          teamId: 1,
+          secondaryTeamId: 1,
+          isTeamLead: 1,
+          isSecondaryTeamLead: 1,
+          boardMembership: 1,
+          profileImageStorageKey: 1,
+          publicProfileCompletedAt: 1,
+        })
+        .toArray(),
+    ]);
+  const context: DirectoryContext = {
+    organizationId,
+    publicOrigin,
+    organizationDomain: organization?.domain ?? "",
+  };
 
   const activeDepartments = new Map(
     departmentDocs.map((department) => [department._id, department]),
@@ -73,8 +87,7 @@ export async function getTeamDirectory(
       .flatMap((member) => {
         const boardMember = boardMemberDto(
           member,
-          organizationId,
-          publicOrigin,
+          context,
           member.boardMembership
             ? activeDepartments.get(member.boardMembership.departmentId)
             : undefined,
@@ -88,8 +101,7 @@ export async function getTeamDirectory(
           department,
           teamsByDepartment.get(department._id) ?? [],
           membersByTeam,
-          organizationId,
-          publicOrigin,
+          context,
         ),
       )
       .filter((department) => department.teams.length > 0)
@@ -150,25 +162,19 @@ function departmentDto(
   department: Department,
   departmentTeams: Team[],
   membersByTeam: Map<string, DirectoryMembership[]>,
-  organizationId: string,
-  publicOrigin: string,
+  context: DirectoryContext,
 ): TeamDirectoryDepartment {
   return {
-    id: namespacedId(organizationId, "department", department._id),
+    id: namespacedId(context.organizationId, "department", department._id),
     name: department.name,
     teams: departmentTeams
       .map((team) => ({
-        id: namespacedId(organizationId, "team", team._id),
+        id: namespacedId(context.organizationId, "team", team._id),
         name: team.name,
         isChapter: team.isChapter ?? false,
         members: (membersByTeam.get(team._id) ?? [])
           .map(({ member, isLead }) =>
-            memberDto(
-              member,
-              organizationId,
-              publicOrigin,
-              team.isChapter ? false : isLead,
-            ),
+            memberDto(member, context, team.isChapter ? false : isLead),
           )
           .sort(byLeadAndName),
       }))

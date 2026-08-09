@@ -5,6 +5,7 @@ export type DirectoryUser = Pick<
   User,
   | "_id"
   | "name"
+  | "email"
   | "teamId"
   | "secondaryTeamId"
   | "isTeamLead"
@@ -13,6 +14,12 @@ export type DirectoryUser = Pick<
   | "profileImageStorageKey"
   | "publicProfileCompletedAt"
 >;
+
+export interface DirectoryContext {
+  organizationId: string;
+  publicOrigin: string;
+  organizationDomain: string;
+}
 
 export const byName = (left: { name: string }, right: { name: string }) =>
   left.name.localeCompare(right.name, "de");
@@ -40,34 +47,43 @@ function memberId(organizationId: string, userId: string): string {
 
 function profileImage(
   user: DirectoryUser,
-  publicOrigin: string,
+  context: DirectoryContext,
 ): { imageUrl?: string } {
   return user.profileImageStorageKey && user.publicProfileCompletedAt
     ? {
-        imageUrl: `${publicOrigin}/api/v1/team-directory/images/${encodeURIComponent(user._id)}`,
+        imageUrl: `${context.publicOrigin}/api/v1/team-directory/images/${encodeURIComponent(user._id)}`,
       }
     : {};
 }
 
+function organizationEmail(
+  user: DirectoryUser,
+  context: DirectoryContext,
+): { email?: string } {
+  const email = user.email?.trim().toLowerCase();
+  const domain = context.organizationDomain.trim().toLowerCase();
+  if (!email || !domain || !email.endsWith(`@${domain}`)) return {};
+  return { email };
+}
+
 export function memberDto(
   user: DirectoryUser,
-  organizationId: string,
-  publicOrigin: string,
+  context: DirectoryContext,
   isLead: boolean,
 ): TeamDirectoryMember {
   return {
-    id: memberId(organizationId, user._id),
+    id: memberId(context.organizationId, user._id),
     name: profileName(user),
     role: isLead ? "Lead" : "",
     isLead,
-    ...profileImage(user, publicOrigin),
+    ...organizationEmail(user, context),
+    ...profileImage(user, context),
   };
 }
 
 export function boardMemberDto(
   user: DirectoryUser,
-  organizationId: string,
-  publicOrigin: string,
+  context: DirectoryContext,
   department: Pick<Department, "_id" | "name"> | undefined,
 ): TeamDirectoryBoardMember | null {
   const boardMembership = user.boardMembership;
@@ -75,11 +91,12 @@ export function boardMemberDto(
   if (!boardMembership || !department || !name) return null;
 
   return {
-    id: memberId(organizationId, user._id),
-    departmentId: `ybase:${organizationId}:department:${department._id}`,
+    id: memberId(context.organizationId, user._id),
+    departmentId: `ybase:${context.organizationId}:department:${department._id}`,
     name,
     role: department.name,
     isChair: boardMembership.isChair,
-    ...profileImage(user, publicOrigin),
+    ...organizationEmail(user, context),
+    ...profileImage(user, context),
   };
 }
