@@ -4,6 +4,7 @@ import { isDisplayableWorkspaceError } from "./errors";
 export type WorkspaceLifecycleDirectory = {
   suspendUser(userKey: string): Promise<void>;
   restoreUser(userKey: string): Promise<void>;
+  deleteUser(userKey: string): Promise<void>;
 };
 
 type WorkspaceRequester = (
@@ -25,6 +26,13 @@ export async function restoreWorkspaceUser(
   await directory.restoreUser(userKey);
 }
 
+export async function deleteWorkspaceUser(
+  userKey: string,
+  directory: WorkspaceLifecycleDirectory = createWorkspaceLifecycleDirectory(),
+): Promise<void> {
+  await directory.deleteUser(userKey);
+}
+
 export function createWorkspaceLifecycleDirectory(
   request: WorkspaceRequester = workspaceRequest,
 ): WorkspaceLifecycleDirectory {
@@ -34,6 +42,16 @@ export function createWorkspaceLifecycleDirectory(
     },
     async restoreUser(userKey) {
       await updateWorkspaceSuspension(request, userKey, false);
+    },
+    async deleteUser(userKey) {
+      try {
+        await request(`users/${encodeURIComponent(userKey)}`, {
+          method: "DELETE",
+        });
+      } catch (error) {
+        if (error instanceof WorkspaceApiError && error.status === 404) return;
+        throw workspaceLifecycleApiError(error, "gelöscht");
+      }
     },
   };
 }
@@ -58,7 +76,7 @@ async function updateWorkspaceSuspension(
 
 function workspaceLifecycleApiError(
   error: unknown,
-  action: "gesperrt" | "reaktiviert",
+  action: "gelöscht" | "gesperrt" | "reaktiviert",
 ): Error {
   if (isDisplayableWorkspaceError(error)) {
     return error;
