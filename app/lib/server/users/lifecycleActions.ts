@@ -45,11 +45,6 @@ export async function setMemberStatus(input: {
       "Der Status wird durch die Kennenlernphase und die Vereinsaufnahme gesteuert.",
     );
   }
-  if (status === "active" && (target.memberInfractions?.length ?? 0) >= 2) {
-    throw new Error(
-      "Ein Mitglied mit zwei Verstößen kann nicht erneut aktiviert werden.",
-    );
-  }
   if (status === "active" && target.teamOnboardingStatus !== "completed") {
     throw new Error(
       "Das Teammitglied kann erst nach Abschluss aller Onboarding-Aufgaben freigegeben werden.",
