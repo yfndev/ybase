@@ -8,8 +8,10 @@ import type {
   MembershipDocumentKind,
   MembershipGender,
   PostalAddress,
+  User,
 } from "../../db/types";
 import { documentOrderIndex } from "../../members/documents";
+import { isGettingToKnowConfirmed } from "../../members/gettingToKnow";
 
 export interface MembershipOnboardingDocument {
   executionId: string;
@@ -21,63 +23,88 @@ export interface MembershipOnboardingDocument {
   content: string;
 }
 
+export interface MembershipOnboardingProfile {
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender?: MembershipGender;
+  privateEmail: string;
+  phone: string;
+  address: PostalAddress;
+  applicationSigned: boolean;
+}
+
 export interface MembershipOnboardingContext {
+  phase: "documents" | "membership";
   activated: boolean;
   documentsComplete: boolean;
-  profile: {
-    firstName: string;
-    lastName: string;
-    dateOfBirth: string;
-    gender?: MembershipGender;
-    privateEmail: string;
-    phone: string;
-    address: PostalAddress;
-    applicationSigned: boolean;
-  };
+  gettingToKnowEndsAt?: number;
+  profile?: MembershipOnboardingProfile;
   documents: MembershipOnboardingDocument[];
 }
 import { loadDocumentContent } from "./documentContent";
-import { activateMembershipOnboardingIfComplete } from "./onboardingCompletion";
+import { assignOnboardingDocuments } from "./documentAssignments";
+import {
+  activateMembershipIfComplete,
+  startGettingToKnowIfComplete,
+} from "./onboardingCompletion";
 import { requireOnboardingUser } from "./onboardingActor";
-import { ensureAcceptedApplicantMembership } from "./onboardingMembership";
+import { ensureMembershipForAdmission } from "./onboardingMembership";
 
 export async function getOwnMembershipOnboardingContext(): Promise<
   { blocked: string } | MembershipOnboardingContext
 > {
   const actor = await requireOnboardingUser(true);
-  const membership = await ensureAcceptedApplicantMembership(actor).catch(
-    (error: unknown) => (error instanceof Error ? error.message : null),
-  );
-  if (typeof membership === "string") return { blocked: membership };
-  if (!membership) return { blocked: "Das Onboarding ist nicht verfügbar." };
-  const activated = await activateMembershipOnboardingIfComplete(
-    membership._id,
-  );
-  const executions = await (
-    await documentExecutions()
-  )
-    .find({
-      organizationId: membership.organizationId,
-      membershipId: membership._id,
-      userId: actor._id,
-      status: { $ne: "revoked" },
-    })
-    .toArray();
-  const versions = await loadVersions(membership.organizationId, executions);
-  const ordered = executions.sort(
-    (first, second) =>
-      orderOf(versions.get(first.documentVersionId)) -
-      orderOf(versions.get(second.documentVersionId)),
-  );
-  const documents = await Promise.all(
-    ordered.map((execution) =>
-      toDocumentTask(execution, versions.get(execution.documentVersionId)),
-    ),
-  );
+  const isDocumentPhase =
+    actor.memberStatus !== "active" && !isGettingToKnowConfirmed(actor);
+  try {
+    return isDocumentPhase
+      ? await onboardingDocumentsContext(actor)
+      : await membershipContext(actor);
+  } catch (error) {
+    return {
+      blocked:
+        error instanceof Error
+          ? error.message
+          : "Das Onboarding ist nicht verfügbar.",
+    };
+  }
+}
 
+async function onboardingDocumentsContext(
+  actor: User & { organizationId: string },
+): Promise<MembershipOnboardingContext> {
+  if (actor.memberStatus === "onboarding") {
+    await assignOnboardingDocuments(actor);
+  }
+  const documents = await loadDocuments(actor.organizationId, {
+    userId: actor._id,
+    membershipId: { $exists: false },
+  });
+  const activated = await startGettingToKnowIfComplete(actor);
   return {
+    phase: "documents",
     activated,
     documentsComplete: documents.every(({ status }) => status === "completed"),
+    gettingToKnowEndsAt: actor.gettingToKnow?.endsAt,
+    documents,
+  };
+}
+
+async function membershipContext(
+  actor: User & { organizationId: string },
+): Promise<MembershipOnboardingContext> {
+  const membership = await ensureMembershipForAdmission(actor);
+  const activated = await activateMembershipIfComplete(membership._id);
+  const documents = await loadDocuments(actor.organizationId, {
+    membershipId: membership._id,
+    userId: actor._id,
+  });
+  return {
+    phase: "membership",
+    activated,
+    documentsComplete: documents.every(({ status }) => status === "completed"),
+    gettingToKnowEndsAt: actor.gettingToKnow?.endsAt,
     profile: {
       firstName: membership.firstName,
       lastName: membership.lastName,
@@ -95,6 +122,26 @@ export async function getOwnMembershipOnboardingContext(): Promise<
     },
     documents,
   };
+}
+
+async function loadDocuments(
+  organizationId: string,
+  scope: Record<string, unknown>,
+): Promise<MembershipOnboardingDocument[]> {
+  const executions = await (await documentExecutions())
+    .find({ organizationId, ...scope, status: { $ne: "revoked" } })
+    .toArray();
+  const versions = await loadVersions(organizationId, executions);
+  const ordered = executions.sort(
+    (first, second) =>
+      orderOf(versions.get(first.documentVersionId)) -
+      orderOf(versions.get(second.documentVersionId)),
+  );
+  return Promise.all(
+    ordered.map((execution) =>
+      toDocumentTask(execution, versions.get(execution.documentVersionId)),
+    ),
+  );
 }
 
 async function loadVersions(

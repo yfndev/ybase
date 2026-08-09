@@ -21,10 +21,7 @@ test("delegates to a Workspace admin and updates the user photo", async () => {
     "GOOGLE_WORKSPACE_SERVICE_ACCOUNT_JSON_BASE64",
     encodedCredentials,
   );
-  vi.stubEnv(
-    "GOOGLE_WORKSPACE_ADMIN_EMAIL",
-    "Admin@youngfounders.network ",
-  );
+  vi.stubEnv("GOOGLE_WORKSPACE_ADMIN_EMAIL", "Admin@youngfounders.network ");
 
   const fetchMock = vi
     .fn()

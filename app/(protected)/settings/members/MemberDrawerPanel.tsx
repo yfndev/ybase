@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { SheetFooter } from "@/components/ui/sheet";
 import type { User, UserRole } from "@/lib/db/types";
 import { getInitials } from "@/lib/formatters/getInitials";
+import { isInGettingToKnow } from "@/lib/members/gettingToKnow";
 import { memberStageForStatus } from "@/lib/members/stages";
 import { profileAvatarUrl } from "@/lib/profile/avatar";
 import { LabeledSelect } from "./LabeledSelect";
 import { MemberDepartureSection } from "./MemberDepartureSection";
+import { MemberGettingToKnowSection } from "./MemberGettingToKnowSection";
 import { MemberInfractionsSection } from "./MemberInfractionsSection";
 import { MemberStatusField } from "./MemberStatusField";
 import { ROLE_OPTIONS } from "./memberLabels";
@@ -16,6 +18,10 @@ import { PublicOrganizationFields } from "./PublicOrganizationFields";
 import type { MemberDrawerFormState } from "./useMemberDrawerForm";
 
 const MEMBER_PLATFORM_URL = "https://member.youngfounders.network";
+
+function showsGettingToKnow(member: User): boolean {
+  return !member.membershipId && isInGettingToKnow(member);
+}
 
 interface Props {
   member: User;
@@ -73,7 +79,9 @@ export function MemberDrawerPanel({
 
       <div className="flex flex-1 flex-col gap-4 px-6">
         <PublicOrganizationFields form={form} />
-        {!member.membershipId ? (
+        {showsGettingToKnow(member) ? (
+          <MemberGettingToKnowSection member={member} />
+        ) : !member.membershipId ? (
           <MemberStatusField
             status={form.status}
             onboarding={member.teamOnboardingStatus}
@@ -96,7 +104,7 @@ export function MemberDrawerPanel({
               : "Rollen können nur von Admins geändert werden."
           }
         />
-        {!member.membershipId ? (
+        {!member.membershipId && !showsGettingToKnow(member) ? (
           <MemberInfractionsSection member={member} />
         ) : null}
       </div>

@@ -33,7 +33,7 @@ import { insertTestOrganization } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { submitOwnMembershipApplication } from "./membershipApplication";
 import { createMembershipApplicationPdf } from "./membershipApplicationPdf";
-import { ensureAcceptedApplicantMembership } from "./onboardingMembership";
+import { ensureMembershipForAdmission } from "./onboardingMembership";
 import { membershipRequestMetadata } from "./requestMetadata";
 import { registerPendingUpload } from "../uploads/ownership";
 
@@ -76,7 +76,13 @@ beforeEach(async () => {
     email: "alex@youngfounders.network",
     teamId,
     role: "member",
-    memberStatus: "onboarding",
+    memberStatus: "getting_to_know",
+    gettingToKnow: {
+      startedAt: now,
+      endsAt: now,
+      decidedAt: now,
+      outcome: "confirmed",
+    },
     teamOnboardingStatus: "in_progress",
   };
   const application: Application = {
@@ -125,7 +131,7 @@ beforeEach(async () => {
   vi.mocked(createMembershipApplicationPdf).mockResolvedValue(
     new Uint8Array([1, 2, 3]),
   );
-  membershipId = (await ensureAcceptedApplicantMembership(actor))._id;
+  membershipId = (await ensureMembershipForAdmission(actor))._id;
   await registerPendingUpload(SIGNATURE_STORAGE_KEY, {
     organizationId: actor.organizationId,
     userId: actor._id,
@@ -216,7 +222,7 @@ test("rejects a submission without a usable signature", async () => {
 
   expect(putObject).not.toHaveBeenCalled();
   expect(await (await users()).findOne({ _id: actor._id })).toMatchObject({
-    memberStatus: "onboarding",
+    memberStatus: "getting_to_know",
   });
 });
 
@@ -230,7 +236,7 @@ test("blocks a minor without the consent of their legal representative", async (
 
   expect(putObject).not.toHaveBeenCalled();
   expect(await (await users()).findOne({ _id: actor._id })).toMatchObject({
-    memberStatus: "onboarding",
+    memberStatus: "getting_to_know",
   });
 });
 

@@ -22,6 +22,7 @@ import type {
   MembershipDocumentKind,
   User,
 } from "../../db/types";
+import { oneMonthAfter } from "../../members/legalDates";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { loadApplicationMemberPlatformSnapshot } from "../applications/memberPlatformCandidates";
 import { loadDocumentContent } from "./documentContent";
@@ -107,23 +108,62 @@ beforeEach(async () => {
   vi.mocked(loadDocumentContent).mockResolvedValue("<p>Dokumententext</p>");
 });
 
-test("creates the legal record and returns the documents in reading order", async () => {
+test("assigns the onboarding documents without creating a membership", async () => {
   const first = await loadContext();
   const second = await loadContext();
 
-  expect(first.profile).toMatchObject({
+  expect(first.phase).toBe("documents");
+  expect(first.profile).toBeUndefined();
+  expect(first.documents.map(({ kind }) => kind)).toEqual([
+    "privacy_notice",
+    "usage_rights",
+  ]);
+  expect(first.documentsComplete).toBe(false);
+  expect(second.documents).toHaveLength(2);
+
+  expect(await (await memberships()).countDocuments({})).toBe(0);
+  const executions = await (await documentExecutions())
+    .find({ userId: actor._id })
+    .toArray();
+  expect(executions.every((item) => item.membershipId === undefined)).toBe(
+    true,
+  );
+});
+
+test("starts the getting-to-know phase once the documents are done", async () => {
+  const context = await loadContext();
+  await (
+    await documentExecutions()
+  ).updateMany(
+    { userId: actor._id },
+    { $set: { status: "completed", completedAt: Date.now() } },
+  );
+  expect(context.documents).toHaveLength(2);
+
+  const completed = await loadContext();
+
+  expect(completed.activated).toBe(true);
+  const stored = await (await users()).findOne({ _id: actor._id });
+  expect(stored).toMatchObject({ memberStatus: "getting_to_know" });
+  expect(stored?.gettingToKnow?.endsAt).toBe(
+    oneMonthAfter(stored?.gettingToKnow?.startedAt ?? 0),
+  );
+  expect(await (await memberships()).countDocuments({})).toBe(0);
+});
+
+test("creates the legal record with the bylaws after the getting-to-know phase", async () => {
+  await enterMembershipPhase();
+
+  const context = await loadContext();
+
+  expect(context.phase).toBe("membership");
+  expect(context.profile).toMatchObject({
     firstName: "Alex",
     lastName: "Beispiel",
     dateOfBirth: "2004-01-01",
     applicationSigned: false,
   });
-  expect(first.documents.map(({ kind }) => kind)).toEqual([
-    "privacy_notice",
-    "usage_rights",
-    "bylaws",
-  ]);
-  expect(first.documentsComplete).toBe(false);
-  expect(second.documents).toHaveLength(3);
+  expect(context.documents.map(({ kind }) => kind)).toEqual(["bylaws"]);
 
   const membership = await (
     await memberships()
@@ -137,10 +177,11 @@ test("creates the legal record and returns the documents in reading order", asyn
     await (
       await documentExecutions()
     ).countDocuments({ membershipId: membership?._id }),
-  ).toBe(3);
+  ).toBe(1);
 });
 
 test("creates the legal record for a manually added member without an application", async () => {
+  await enterMembershipPhase();
   const manualActor = { ...actor, applicationId: undefined };
   delete manualActor.applicationId;
   await (
@@ -155,12 +196,7 @@ test("creates the legal record for a manually added member without an applicatio
 
   const context = await loadContext();
 
-  expect(context.documents).toHaveLength(3);
-  expect(context.profile).toMatchObject({
-    firstName: "Alex",
-    lastName: "Beispiel",
-    dateOfBirth: "2004-01-01",
-  });
+  expect(context.documents).toHaveLength(1);
   const membership = await (await memberships()).findOne({ userId: actor._id });
   expect(membership).toMatchObject({
     memberPlatformUserId: actor.memberPlatformUserId,
@@ -187,6 +223,27 @@ test("delivers the frozen text inline for open documents only", async () => {
   expect(updated.documents[1].content).toBe("<p>Dokumententext</p>");
   expect(updated.documentsComplete).toBe(false);
 });
+
+async function enterMembershipPhase() {
+  const confirmed = {
+    startedAt: Date.now(),
+    endsAt: Date.now(),
+    decidedAt: Date.now(),
+    outcome: "confirmed" as const,
+  };
+  await (
+    await users()
+  ).updateOne(
+    { _id: actor._id },
+    { $set: { memberStatus: "getting_to_know", gettingToKnow: confirmed } },
+  );
+  actor = {
+    ...actor,
+    memberStatus: "getting_to_know",
+    gettingToKnow: confirmed,
+  };
+  vi.mocked(requireAuthenticatedUser).mockResolvedValue(actor);
+}
 
 async function seedVersion(
   kind: MembershipDocumentKind,

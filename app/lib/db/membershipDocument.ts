@@ -32,7 +32,7 @@ export interface DocumentExecution {
   organizationId: string;
   documentVersionId: string;
   documentHash: string;
-  membershipId: string;
+  membershipId?: string;
   userId: string;
   executionType: DocumentExecutionType;
   status: "assigned" | "completed" | "revoked";

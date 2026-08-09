@@ -65,6 +65,7 @@ erDiagram
         string applicationId "only for application-based admissions"
         string membershipId
         string memberStatus
+        object gettingToKnow "startedAt, endsAt, reminderSentAt, decidedAt, decidedBy, outcome"
         string teamOnboardingStatus
         number offboardingPlannedAt
         number offboardingStartedAt
@@ -122,7 +123,7 @@ erDiagram
     documentExecutions {
         string _id
         string documentVersionId
-        string membershipId
+        string membershipId "only for membership documents"
         string userId
         string documentHash
         string status
@@ -260,16 +261,22 @@ admission evidence and required guardian consent. Details about who made and
 recorded the decision remain on the application and in its history instead of
 being duplicated on the membership.
 Onboarding then uses the existing `users.memberStatus`: `onboarding` while the
-member confirms personal data and completes required acknowledgements, then
-`active`. Before admission, YBase resolves exactly one active member-platform
+new team member acknowledges the privacy notice and signs the special agreement
+on work results, `getting_to_know` for the one-month getting-to-know phase that
+follows, then `active`. Inside the phase, `users.gettingToKnow.outcome` marks
+the decision: `confirmed` opens the bylaws and the membership application, the
+other outcomes archive the account. No membership record exists before that
+confirmation, so ending the collaboration during the getting-to-know phase is
+immediate and follows no statutory notice period. Before admission, YBase resolves exactly one active member-platform
 profile primarily from the applicant name. The private application email only
 disambiguates people with the same name and remains a fallback for applications
 without a usable name. YBase stores the profile's external ID, birth-date
 snapshot and sync time on the application; the birth date is not a search
 criterion and is not collected again in YBase. A missing or ambiguous profile
 blocks admission; a free global profile search is not exposed. The accepted
-onboarding user inherits the confirmed external ID. All document executions
-reference the membership directly. Individual tasks determine progress without
+onboarding user inherits the confirmed external ID. Onboarding document
+executions reference the user; only the bylaws execution references the
+membership. Individual tasks determine progress without
 introducing a second aggregate operational status. Current board authorization
 continues to use `users.boardMembership`; there is no parallel mandate
 collection. The internal `memberships.legalStatus` supports legal workflows but

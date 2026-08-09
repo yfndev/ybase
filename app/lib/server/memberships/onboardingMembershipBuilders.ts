@@ -42,7 +42,7 @@ export async function buildManualMembership(
     membershipNumber: newMembershipNumber(now),
     isCurrent: true,
     legalStatus: "active",
-    admittedAt: user.registeredAt ?? user._creationTime,
+    admittedAt: admittedAt(user),
     privateEmail,
     firstName,
     lastName,
@@ -70,11 +70,7 @@ function buildMembership(user: User, application: Application): Membership {
     membershipNumber: newMembershipNumber(now),
     isCurrent: true,
     legalStatus: "active",
-    admittedAt:
-      application.admissionDecision?.decidedAt ??
-      application.onboardingStartedAt ??
-      application.updatedAt ??
-      now,
+    admittedAt: admittedAt(user),
     privateEmail: application.applicantEmailNormalized,
     firstName,
     lastName,
@@ -85,6 +81,10 @@ function buildMembership(user: User, application: Application): Membership {
     memberPlatformUserId: application.memberPlatformUserId,
     updatedAt: now,
   };
+}
+
+function admittedAt(user: User): number {
+  return user.gettingToKnow?.decidedAt ?? Date.now();
 }
 
 function splitMemberName(name?: string): {

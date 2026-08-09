@@ -327,6 +327,16 @@ test("setMemberStatus approves a fully onboarded member", async () => {
   expect(log?.entityId).toBe(memberA);
 });
 
+test("setMemberStatus cannot skip the getting-to-know phase", async () => {
+  await (
+    await users()
+  ).updateOne({ _id: memberA }, { $set: { memberStatus: "getting_to_know" } });
+
+  await expect(
+    setMemberStatus({ userId: memberA, status: "active" }),
+  ).rejects.toThrow("Kennenlernphase");
+});
+
 test("setMemberStatus requires a team assignment before activation", async () => {
   await setTeamOnboardingStatus({ userId: memberA, status: "completed" });
 

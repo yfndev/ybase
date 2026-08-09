@@ -6,6 +6,7 @@ import {
   assertAdmissionAge,
   berlinMidnight,
   calendarDaysUntil,
+  oneMonthAfter,
   oneMonthObjectionExpiresAt,
   resignationEndAt,
 } from "./legalDates";
@@ -63,6 +64,18 @@ describe("membership legal dates in Europe/Berlin", () => {
     const delivered = berlinMidnight(iso("2026-03-06"));
     expect(new Date(oneMonthObjectionExpiresAt(delivered)).toISOString()).toBe(
       "2026-04-07T22:00:00.000Z",
+    );
+  });
+
+  test.each([
+    ["2026-01-15", "2026-02-15T00:00:00.000+01:00"],
+    ["2026-01-31", "2026-02-28T00:00:00.000+01:00"],
+    ["2028-01-31", "2028-02-29T00:00:00.000+01:00"],
+    ["2026-12-15", "2027-01-15T00:00:00.000+01:00"],
+    ["2026-03-15", "2026-04-15T00:00:00.000+02:00"],
+  ])("ends the getting-to-know phase one month after %s", (start, expected) => {
+    expect(oneMonthAfter(berlinMidnight(iso(start)))).toBe(
+      Date.parse(expected),
     );
   });
 

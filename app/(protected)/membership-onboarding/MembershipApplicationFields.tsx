@@ -13,7 +13,7 @@ import {
   MEMBERSHIP_GENDERS,
   MEMBERSHIP_GENDER_LABELS,
 } from "@/lib/members/gender";
-import type { MembershipOnboardingContext } from "@/lib/server/memberships/onboardingData";
+import type { MembershipOnboardingProfile } from "@/lib/server/memberships/onboardingData";
 import { Field } from "./ProfileFields";
 
 export interface ApplicationValues {
@@ -31,7 +31,7 @@ export function MembershipApplicationFields({
   values,
   update,
 }: {
-  profile: MembershipOnboardingContext["profile"];
+  profile: MembershipOnboardingProfile;
   values: ApplicationValues;
   update: (field: keyof ApplicationValues, value: string) => void;
 }) {

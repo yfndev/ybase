@@ -79,11 +79,7 @@ export async function createPublicReimbursementUpload(
   if (!documentType) throw new Error("Upload context is required");
   const upload = await presignUpload(
     contentType,
-    reimbursementUploadDirectory(
-      doc.type,
-      doc.organizationId,
-      documentType,
-    ),
+    reimbursementUploadDirectory(doc.type, doc.organizationId, documentType),
   );
   const result = await (
     await reimbursements()

@@ -1,4 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  confirmGettingToKnow,
+  endGettingToKnow,
+} from "@/lib/server/memberships/gettingToKnow";
 import { recordMembershipResignation } from "@/lib/server/memberships/resignation";
 import { createMember } from "@/lib/server/users/creation";
 import {
@@ -30,6 +34,11 @@ export function useMemberMutations() {
       mutationFn: recordMembershipResignation,
       onSuccess,
     }),
+    confirmGettingToKnow: useMutation({
+      mutationFn: confirmGettingToKnow,
+      onSuccess,
+    }),
+    endGettingToKnow: useMutation({ mutationFn: endGettingToKnow, onSuccess }),
     updateRole: useMutation({ mutationFn: updateUserRole, onSuccess }),
   };
 }

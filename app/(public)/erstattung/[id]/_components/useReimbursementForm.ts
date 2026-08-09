@@ -96,8 +96,7 @@ export function useReimbursementForm(id: string) {
       );
 
   const generateUploadUrl = useCallback(
-    (contentType: string) =>
-      reimbursementUploadUrl(id, contentType, "receipt"),
+    (contentType: string) => reimbursementUploadUrl(id, contentType, "receipt"),
     [id],
   );
   const getFileUrl = useCallback(

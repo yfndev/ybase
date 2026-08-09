@@ -1,9 +1,10 @@
 import { documentExecutions, memberships, users } from "../../db/collections";
 import { isDuplicateKeyError } from "../../db/errors";
 import type { Membership, User } from "../../db/types";
+import { isGettingToKnowConfirmed } from "../../members/gettingToKnow";
 import {
-  assertRequiredDocumentConfiguration,
-  assignRequiredDocuments,
+  assertMembershipDocumentConfiguration,
+  assignMembershipDocuments,
 } from "./documentAssignments";
 import { appendMembershipEvent } from "./events";
 import {
@@ -11,7 +12,7 @@ import {
   buildManualMembership,
 } from "./onboardingMembershipBuilders";
 
-export async function ensureAcceptedApplicantMembership(
+export async function ensureMembershipForAdmission(
   user: User,
 ): Promise<Membership> {
   if (!user.organizationId) {
@@ -26,6 +27,11 @@ export async function ensureAcceptedApplicantMembership(
     await recordAdmission(existing);
     return existing;
   }
+  if (!isGettingToKnowConfirmed(user)) {
+    throw new Error(
+      "Die Vereinsmitgliedschaft wird erst nach der Kennenlernphase angelegt.",
+    );
+  }
 
   const membership = user.applicationId
     ? await buildAcceptedApplicantMembership({
@@ -37,7 +43,7 @@ export async function ensureAcceptedApplicantMembership(
         ...user,
         organizationId: user.organizationId,
       });
-  await assertRequiredDocumentConfiguration(membership, user);
+  await assertMembershipDocumentConfiguration(user);
 
   try {
     await (await memberships()).insertOne(membership);
@@ -51,14 +57,15 @@ export async function ensureAcceptedApplicantMembership(
   }
 
   try {
-    await assignRequiredDocuments(membership);
+    await assignMembershipDocuments(membership);
     const linked = await (
       await users()
     ).updateOne(
       {
         _id: user._id,
         organizationId: user.organizationId,
-        memberStatus: "onboarding",
+        memberStatus: "getting_to_know",
+        "gettingToKnow.outcome": "confirmed",
         $or: [
           { membershipId: { $exists: false } },
           { membershipId: membership._id },
@@ -113,7 +120,7 @@ async function linkAndAssignMembership(
   if (membership.userId !== user._id) {
     throw new Error("Die Mitgliedschaft ist bereits anders verknüpft.");
   }
-  await assignRequiredDocuments(membership);
+  await assignMembershipDocuments(membership);
   if (user.membershipId === membership._id) return;
   const result = await (
     await users()

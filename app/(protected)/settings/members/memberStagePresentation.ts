@@ -24,6 +24,11 @@ export const MEMBER_STAGE_EMPTY_TEXT: Partial<Record<MemberStage, EmptyText>> =
       title: "Niemand im Onboarding",
       description: "Neue Mitglieder im Onboarding erscheinen hier.",
     },
+    getting_to_know: {
+      title: "Niemand in der Kennenlernphase",
+      description:
+        "Neue Teammitglieder im ersten Monat vor der Vereinsaufnahme erscheinen hier.",
+    },
     active: {
       title: "Keine Vereinsmitglieder gefunden",
       description: "Passe Suche oder Filter an, um Mitglieder anzuzeigen.",
