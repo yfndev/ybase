@@ -40,6 +40,11 @@ export async function setMemberStatus(input: {
       "Der Status dieses Mitglieds wird durch den Mitgliedschaftsvorgang gesteuert.",
     );
   }
+  if (target.memberStatus === "getting_to_know") {
+    throw new Error(
+      "Der Status wird durch die Kennenlernphase und die Vereinsaufnahme gesteuert.",
+    );
+  }
   if (status === "active" && (target.memberInfractions?.length ?? 0) >= 2) {
     throw new Error(
       "Ein Mitglied mit zwei Verstößen kann nicht erneut aktiviert werden.",

@@ -43,6 +43,28 @@ export async function sendUserStateEmail(input: {
   });
 }
 
+const BERLIN_DATE_FORMAT = new Intl.DateTimeFormat("de-DE", {
+  timeZone: "Europe/Berlin",
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+
+export async function sendGettingToKnowDueEmail(input: {
+  recipient: UserEmailProfile;
+  member: UserEmailProfile;
+  endsAt: number;
+}): Promise<void> {
+  const recipient = userRecipient(input.recipient);
+  if (!recipient) return;
+
+  await sendConfiguredUserEmail("getting_to_know_due", recipient, {
+    memberName: input.member.name ?? "",
+    memberEmail: input.member.email ?? "",
+    endsOn: BERLIN_DATE_FORMAT.format(input.endsAt),
+  });
+}
+
 export async function sendWorkspaceAccountReadyEmail(input: {
   recoveryEmail: string;
   applicantName?: string;
