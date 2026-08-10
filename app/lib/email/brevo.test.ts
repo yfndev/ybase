@@ -80,6 +80,31 @@ describe("Brevo email transport", () => {
     );
   });
 
+  it("sends direct text content with an explicit sender", async () => {
+    await sendMail(
+      {
+        to: [{ email: "user@example.com" }],
+        sender: { name: "YBase", email: "no-reply@example.com" },
+        replyTo: { email: "people@example.com" },
+        subject: "Persönliche Zusage",
+        textContent: "Willkommen im Team!",
+      },
+      {
+        BREVO_API_KEY: "secret",
+        SERVICE_STAGE: "production",
+      },
+    );
+
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(JSON.parse(String(request.body))).toMatchObject({
+      to: [{ email: "user@example.com" }],
+      sender: { name: "YBase", email: "no-reply@example.com" },
+      replyTo: { email: "people@example.com" },
+      subject: "Persönliche Zusage",
+      textContent: "Willkommen im Team!",
+    });
+  });
+
   it("sends to any recipient in production", async () => {
     await sendMail(
       { to: [{ email: "user@example.com" }], templateId: 42 },

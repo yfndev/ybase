@@ -3,20 +3,15 @@ import { BREVO_TEMPLATE_IDS, USER_STATE_EMAIL_TEMPLATES } from "./templates";
 
 describe("user-state Brevo templates", () => {
   it("uses the central static Brevo template catalog", () => {
-    expect(BREVO_TEMPLATE_IDS.TEAM_ONBOARDING_STARTED).toBe(171);
-    expect(BREVO_TEMPLATE_IDS.WORKSPACE_ACCOUNT_READY).toBe(172);
-    expect(USER_STATE_EMAIL_TEMPLATES.team_onboarding_started.templateId).toBe(
-      BREVO_TEMPLATE_IDS.TEAM_ONBOARDING_STARTED,
-    );
-    expect(USER_STATE_EMAIL_TEMPLATES.workspace_account_ready.templateId).toBe(
-      BREVO_TEMPLATE_IDS.WORKSPACE_ACCOUNT_READY,
+    expect(BREVO_TEMPLATE_IDS.TEAM_WELCOME).toBe(175);
+    expect(BREVO_TEMPLATE_IDS.MEMBERSHIP_INVITATION).toBe(176);
+    expect(USER_STATE_EMAIL_TEMPLATES.membership_invitation.templateId).toBe(
+      BREVO_TEMPLATE_IDS.MEMBERSHIP_INVITATION,
     );
   });
 
   it("keeps every user-state event tagged", () => {
     expect(Object.keys(USER_STATE_EMAIL_TEMPLATES)).toEqual([
-      "team_onboarding_started",
-      "workspace_account_ready",
       "getting_to_know_started",
       "getting_to_know_due",
       "getting_to_know_ended",

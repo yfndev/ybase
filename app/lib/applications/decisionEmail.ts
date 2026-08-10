@@ -17,7 +17,7 @@ export function applicationDecisionEmailDefaults(input: {
   if (input.decision === "accepted") {
     return {
       subject: `Zusage für deine Bewerbung als ${input.jobTitle}`,
-      message: `${greeting}\n\nvielen Dank für deine Bewerbung. Wir freuen uns, dir für die Position ${input.jobTitle} eine Zusage zu geben.\n\nDein YFN-Konto wird mit der Zusage eingerichtet. Deine Google-Workspace-Zugangsdaten erhältst du in einer separaten E-Mail.`,
+      message: `${greeting}\n\nherzlichen Glückwunsch! Wir freuen uns, dich offiziell als Teammitglied für die Position ${input.jobTitle} im YFN Team willkommen zu heißen.\n\nDeine Google Workspace-Zugangsdaten und die nächsten Schritte für dein Team-Onboarding erhältst du in einer separaten E-Mail.`,
     };
   }
 

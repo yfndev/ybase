@@ -12,7 +12,8 @@ describe("applicationDecisionEmailDefaults", () => {
     expect(email.subject).toContain("Zusage");
     expect(email.subject).toContain("Fundraising");
     expect(email.message).toContain("Hey Alex Beispiel");
-    expect(email.message).toContain("Zusage");
+    expect(email.message).toContain("offiziell als Teammitglied");
+    expect(email.message).toContain("separaten E-Mail");
   });
 
   test("prefills a rejection email without requiring a name", () => {
