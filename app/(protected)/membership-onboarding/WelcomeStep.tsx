@@ -3,14 +3,14 @@ import Image from "next/image";
 export function WelcomeStep() {
   return (
     <section className="space-y-6" aria-label="Willkommen">
-      <div className="relative h-44 w-full overflow-hidden rounded-[0.25rem] border bg-muted sm:h-52">
+      <div className="relative aspect-[2/1] w-full overflow-hidden rounded-[0.25rem] border bg-muted sm:aspect-[3/1]">
         <Image
           src="/yfn-onboarding-team.jpg"
-          alt="Die Young Founders Network Community bei einer gemeinsamen Veranstaltung"
+          alt="Mitglieder des Young Founders Network bei einem gemeinsamen Teamfoto"
           fill
           priority
           sizes="(max-width: 768px) 100vw, calc(100vw - 16rem)"
-          className="object-cover object-center"
+          className="object-cover object-[center_52%]"
         />
       </div>
       <div className="max-w-[46rem] space-y-3">
