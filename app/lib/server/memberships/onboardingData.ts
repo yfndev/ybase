@@ -38,7 +38,6 @@ export interface MembershipOnboardingContext {
   phase: "documents" | "membership";
   activated: boolean;
   documentsComplete: boolean;
-  gettingToKnowEndsAt?: number;
   profile?: MembershipOnboardingProfile;
   documents: MembershipOnboardingDocument[];
 }
@@ -86,7 +85,6 @@ async function onboardingDocumentsContext(
     phase: "documents",
     activated,
     documentsComplete: documents.every(({ status }) => status === "completed"),
-    gettingToKnowEndsAt: actor.gettingToKnow?.endsAt,
     documents,
   };
 }
@@ -104,7 +102,6 @@ async function membershipContext(
     phase: "membership",
     activated,
     documentsComplete: documents.every(({ status }) => status === "completed"),
-    gettingToKnowEndsAt: actor.gettingToKnow?.endsAt,
     profile: {
       firstName: membership.firstName,
       lastName: membership.lastName,
@@ -176,10 +173,10 @@ async function toDocumentTask(
     versionLabel: version.versionLabel,
     type: execution.executionType,
     status: execution.status,
-    content:
-      execution.status === "assigned"
-        ? await loadDocumentContent(version.contentStorageKey, version.sha256)
-        : "",
+    content: await loadDocumentContent(
+      version.contentStorageKey,
+      version.sha256,
+    ),
   };
 }
 

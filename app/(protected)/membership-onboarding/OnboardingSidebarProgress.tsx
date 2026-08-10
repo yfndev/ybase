@@ -11,11 +11,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle2, Circle, Clock3 } from "lucide-react";
 import { useOnboarding } from "./OnboardingContext";
 
-const SKELETON_ROWS = ["one", "two", "three", "four"];
+const SKELETON_ROWS = ["one", "two", "three"];
 
 export function OnboardingSidebarProgress() {
-  const { steps } = useOnboarding();
-  const currentIndex = steps.findIndex((step) => !step.complete);
+  const { steps, activeStep, goToStep } = useOnboarding();
 
   return (
     <SidebarGroup>
@@ -33,35 +32,36 @@ export function OnboardingSidebarProgress() {
                 </div>
               </SidebarMenuItem>
             ))
-          : steps.map((step, index) => {
-              const current = index === currentIndex;
+          : steps.map((step) => {
+              const current = step.id === activeStep?.id;
               const Icon = step.complete
                 ? CheckCircle2
                 : current
                   ? Clock3
                   : Circle;
               return (
-                <SidebarMenuItem key={`${index}-${step.label}`}>
+                <SidebarMenuItem key={step.id}>
                   <SidebarMenuButton
-                    asChild
+                    type="button"
                     tooltip={step.label}
                     className="h-auto items-start px-3 py-2 font-medium whitespace-normal"
                     isActive={current}
+                    disabled={!step.accessible}
+                    aria-current={current ? "step" : undefined}
+                    onClick={() => goToStep(step.id)}
                   >
-                    <span>
-                      <Icon
-                        aria-hidden="true"
-                        className={
-                          step.complete
-                            ? "mt-0.5 fill-primary text-foreground"
-                            : "mt-0.5 text-sidebar-foreground/60"
-                        }
-                      />
-                      <span
-                        className={current ? "" : "text-sidebar-foreground/75"}
-                      >
-                        {step.label}
-                      </span>
+                    <Icon
+                      aria-hidden="true"
+                      className={
+                        step.complete
+                          ? "mt-0.5 fill-primary text-foreground"
+                          : "mt-0.5 text-sidebar-foreground/60"
+                      }
+                    />
+                    <span
+                      className={current ? "" : "text-sidebar-foreground/75"}
+                    >
+                      {step.label}
                     </span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
