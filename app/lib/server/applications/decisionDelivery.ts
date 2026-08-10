@@ -5,8 +5,8 @@ import { BREVO_TEMPLATE_IDS } from "../../email/templates";
 import { provisionWorkspaceUser } from "../../googleWorkspace/users";
 import { YFN_ORGANIZATION } from "../../organization";
 import {
-  requireWorkspaceAccountReadyTemplateId,
-  sendWorkspaceAccountReadyEmail,
+  requireTeamWelcomeTemplateId,
+  sendTeamWelcomeEmail,
 } from "../users/email";
 import { assertAcceptedApplicantMemberAvailable } from "./memberProvisioning";
 import {
@@ -15,18 +15,17 @@ import {
   recordWorkspaceProvisioningFailure,
   reserveWorkspaceProvisioning,
   workspaceApplicantName,
-  ybaseLoginUrl,
 } from "./workspaceProvisioning";
 
-const templateIds = {
-  accepted: BREVO_TEMPLATE_IDS.APPLICATION_ACCEPTED,
-  rejected: BREVO_TEMPLATE_IDS.APPLICATION_REJECTED,
+const APPLICATION_EMAIL_SENDER = {
+  name: "YBase",
+  email: "no-reply@youngfounders.network",
 };
+const APPLICATION_REPLY_TO = { email: "people@youngfounders.network" };
 
 export type WorkspaceAccessDetails = {
   primaryEmail: string;
   temporaryPassword: string;
-  loginUrl: string;
 };
 
 export async function prepareAcceptance(input: {
@@ -43,8 +42,7 @@ export async function prepareAcceptance(input: {
     application: input.application,
     email: input.yfnEmail,
   });
-  requireWorkspaceAccountReadyTemplateId();
-  const loginUrl = ybaseLoginUrl();
+  requireTeamWelcomeTemplateId();
   const reservation = await reserveWorkspaceProvisioning({
     application: input.application,
     organizationDomain: YFN_ORGANIZATION.domain,
@@ -67,7 +65,6 @@ export async function prepareAcceptance(input: {
     const workspaceAccess: WorkspaceAccessDetails = {
       primaryEmail: account.primaryEmail,
       temporaryPassword: account.temporaryPassword,
-      loginUrl,
     };
     return {
       workspaceUserId: account.userId,
@@ -96,23 +93,32 @@ export async function sendDecisionEmail(input: {
 }): Promise<void> {
   let delivery: Awaited<ReturnType<typeof sendMail>>;
   try {
-    delivery = await sendMail({
-      to: [
-        {
-          email: input.application.applicantEmail,
-          name: input.application.applicantName,
-        },
-      ],
-      templateId: templateIds[input.decision],
-      subject: input.subject,
-      params: {
-        applicantName: input.application.applicantName ?? "",
-        jobTitle: input.jobTitle,
-        organizationName: YFN_ORGANIZATION.name,
-        message: input.message,
-      },
-      tags: ["ybase", "application", `application-${input.decision}`],
-    });
+    const recipient = {
+      email: input.application.applicantEmail,
+      name: input.application.applicantName,
+    };
+    delivery =
+      input.decision === "accepted"
+        ? await sendMail({
+            to: [recipient],
+            sender: APPLICATION_EMAIL_SENDER,
+            replyTo: APPLICATION_REPLY_TO,
+            subject: input.subject,
+            textContent: input.message,
+            tags: ["ybase", "application", "application-accepted"],
+          })
+        : await sendMail({
+            to: [recipient],
+            templateId: BREVO_TEMPLATE_IDS.APPLICATION_REJECTED,
+            subject: input.subject,
+            params: {
+              applicantName: input.application.applicantName ?? "",
+              jobTitle: input.jobTitle,
+              organizationName: YFN_ORGANIZATION.name,
+              message: input.message,
+            },
+            tags: ["ybase", "application", "application-rejected"],
+          });
   } catch (error) {
     await recordDeliveryFailure(input);
     throw error;
@@ -125,12 +131,11 @@ export async function sendDecisionEmail(input: {
 
   if (input.decision === "accepted" && input.workspaceAccess) {
     try {
-      await sendWorkspaceAccountReadyEmail({
+      await sendTeamWelcomeEmail({
         recoveryEmail: input.application.applicantEmail,
-        applicantName: input.application.applicantName,
+        memberName: input.application.applicantName,
         workspaceEmail: input.workspaceAccess.primaryEmail,
         temporaryPassword: input.workspaceAccess.temporaryPassword,
-        loginUrl: input.workspaceAccess.loginUrl,
       });
     } catch (error) {
       await recordDeliveryFailure(input);

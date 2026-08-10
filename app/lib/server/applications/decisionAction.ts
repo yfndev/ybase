@@ -14,7 +14,6 @@ const DISPLAYABLE_DECISION_ERRORS = new Set([
   "Dieser Statuswechsel ist nicht zulässig",
   "Das Workspace-Konto wird bereits eingerichtet",
   "Ausschreibung nicht gefunden",
-  "YBase-URL ist nicht konfiguriert",
   "Diese Workspace-E-Mail ist bereits einer Bewerbung zugeordnet",
   "Diese Workspace-E-Mail gehört bereits zu einem YBase-Profil",
   "Das Member-Profil ist bereits mit einem YBase-Nutzer verknüpft.",

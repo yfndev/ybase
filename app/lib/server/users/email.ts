@@ -1,6 +1,7 @@
-import type { TeamOnboardingStatus, User } from "../../db/types";
+import type { User } from "../../db/types";
 import { type EmailRecipient, sendMail } from "../../email/brevo";
 import {
+  BREVO_TEMPLATE_IDS,
   USER_STATE_EMAIL_TEMPLATES,
   type UserStateEmailEvent,
 } from "../../email/templates";
@@ -8,26 +9,6 @@ import { appUrl } from "../../email/urls";
 import { YFN_ORGANIZATION } from "../../organization";
 
 type UserEmailProfile = Pick<User, "name" | "email" | "privateEmail">;
-
-const TEAM_ONBOARDING_EMAIL_EVENTS: Record<
-  TeamOnboardingStatus,
-  UserStateEmailEvent | undefined
-> = {
-  not_started: undefined,
-  in_progress: "team_onboarding_started",
-  completed: undefined,
-};
-
-export async function notifyTeamOnboardingChange(input: {
-  user: UserEmailProfile;
-  previous: TeamOnboardingStatus;
-  next: TeamOnboardingStatus;
-}): Promise<void> {
-  if (input.previous === input.next) return;
-  const event = TEAM_ONBOARDING_EMAIL_EVENTS[input.next];
-  if (!event) return;
-  await sendUserStateEmail({ user: input.user, event });
-}
 
 export async function sendUserStateEmail(input: {
   user: UserEmailProfile;
@@ -65,40 +46,35 @@ export async function sendGettingToKnowDueEmail(input: {
   });
 }
 
-export async function sendWorkspaceAccountReadyEmail(input: {
+export async function sendTeamWelcomeEmail(input: {
   recoveryEmail: string;
-  applicantName?: string;
+  memberName?: string;
   workspaceEmail: string;
   temporaryPassword: string;
-  loginUrl: string;
 }): Promise<void> {
-  const template = USER_STATE_EMAIL_TEMPLATES.workspace_account_ready;
-  const templateId = requireWorkspaceAccountReadyTemplateId();
+  const templateId = requireTeamWelcomeTemplateId();
 
   const delivery = await sendMail({
-    to: [{ email: input.recoveryEmail, name: input.applicantName }],
+    to: [{ email: input.recoveryEmail, name: input.memberName }],
     templateId,
     params: {
       organizationName: YFN_ORGANIZATION.name,
-      ybaseUrl: safeAppUrl("/"),
-      memberName: input.applicantName ?? "",
+      memberName: input.memberName ?? "",
       workspaceEmail: input.workspaceEmail,
       temporaryPassword: input.temporaryPassword,
-      loginUrl: input.loginUrl,
     },
-    tags: ["ybase", "user-state", template.tag],
+    tags: ["ybase", "user-state", "team-welcome"],
   });
   if (delivery.status !== "sent") {
-    throw new Error("Google-Workspace-Zugang konnte nicht versendet werden");
+    throw new Error("Team-Zugang konnte nicht versendet werden");
   }
 }
 
-export function requireWorkspaceAccountReadyTemplateId(): number {
-  const templateId =
-    USER_STATE_EMAIL_TEMPLATES.workspace_account_ready.templateId;
+export function requireTeamWelcomeTemplateId(): number {
+  const templateId = BREVO_TEMPLATE_IDS.TEAM_WELCOME;
   if (!templateId) {
     throw new Error(
-      "Brevo-Template für Google-Workspace-Zugang ist nicht konfiguriert",
+      "Brevo-Template für den Team-Zugang ist nicht konfiguriert",
     );
   }
   return templateId;

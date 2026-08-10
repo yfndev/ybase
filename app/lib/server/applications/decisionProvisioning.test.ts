@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({ requirePermission: vi.fn() }));
 vi.mock("../../email/brevo", () => ({ sendMail: vi.fn() }));
@@ -15,7 +15,6 @@ import { provisionWorkspaceUser } from "../../googleWorkspace/users";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { sendApplicationDecision } from "./decision";
-import { submitApplicationDecision } from "./decisionAction";
 import { reserveWorkspaceProvisioning } from "./workspaceProvisioning";
 
 setupTestDatabase();
@@ -24,11 +23,8 @@ const organizationId = "workspace-org";
 const actorId = "workspace-actor";
 let applicationId: string;
 
-afterEach(() => vi.unstubAllEnvs());
-
 beforeEach(async () => {
   vi.clearAllMocks();
-  vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://ybase.example");
   applicationId = newId();
   vi.mocked(requirePermission).mockResolvedValue(
     createTestActor({ _id: actorId, organizationId }),
@@ -122,36 +118,4 @@ test("allows only one active provisioning reservation", async () => {
   await expect(reserveWorkspaceProvisioning(input)).rejects.toThrow(
     "bereits eingerichtet",
   );
-});
-
-test("validates the YBase URL before creating an account", async () => {
-  vi.stubEnv("NEXT_PUBLIC_APP_URL", "");
-
-  await expect(
-    sendApplicationDecision({
-      applicationId,
-      decision: "accepted",
-      yfnEmail: "alex@youngfounders.network",
-      subject: "Zusage",
-      message: "Willkommen!",
-    }),
-  ).rejects.toThrow("YBase-URL");
-  expect(provisionWorkspaceUser).not.toHaveBeenCalled();
-});
-
-test("returns expected failures without a masked server action error", async () => {
-  vi.stubEnv("NEXT_PUBLIC_APP_URL", "");
-
-  await expect(
-    submitApplicationDecision({
-      applicationId,
-      decision: "accepted",
-      yfnEmail: "alex@youngfounders.network",
-      subject: "Zusage",
-      message: "Willkommen!",
-    }),
-  ).resolves.toEqual({
-    ok: false,
-    error: "YBase-URL ist nicht konfiguriert",
-  });
 });

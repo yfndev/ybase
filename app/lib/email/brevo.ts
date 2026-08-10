@@ -14,15 +14,30 @@ type BrevoEnvironment = {
   SERVICE_STAGE?: string;
 };
 
-type MailMessage = {
+type MailMessageBase = {
   to: EmailRecipient[];
   cc?: EmailRecipient[];
   replyTo?: EmailRecipient;
-  templateId: number;
-  subject?: string;
-  params?: Record<string, unknown>;
+  sender?: EmailRecipient;
   tags?: string[];
 };
+
+type MailMessage = MailMessageBase &
+  (
+    | {
+        templateId: number;
+        subject?: string;
+        params?: Record<string, unknown>;
+        textContent?: never;
+      }
+    | {
+        sender: EmailRecipient;
+        subject: string;
+        textContent: string;
+        templateId?: never;
+        params?: never;
+      }
+  );
 
 const BREVO_EMAIL_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
 const REQUEST_TIMEOUT_MS = 10_000;

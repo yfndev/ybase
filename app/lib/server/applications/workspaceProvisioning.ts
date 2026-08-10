@@ -17,12 +17,6 @@ export function workspaceApplicantName(application: Application): {
   };
 }
 
-export function ybaseLoginUrl(): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, "");
-  if (!appUrl) throw new Error("YBase-URL ist nicht konfiguriert");
-  return `${appUrl}/login`;
-}
-
 export async function reserveWorkspaceProvisioning(input: {
   application: Application;
   organizationDomain: string;

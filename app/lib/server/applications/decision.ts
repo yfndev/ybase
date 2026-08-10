@@ -5,7 +5,6 @@ import type { ApplicationDecision } from "../../applications/decisionEmail";
 import { isApplicationStatusTransitionAllowed } from "../../applications/transitions";
 import { jobPostings } from "../../db/collections";
 import type { Application } from "../../db/types";
-import { sendUserStateEmail } from "../users/email";
 import { loadOwnedApplication } from "./access";
 import { recordDecisionLogs } from "./decisionAudit";
 import { prepareAcceptance, sendDecisionEmail } from "./decisionDelivery";
@@ -78,12 +77,6 @@ export async function sendApplicationDecision(
       workspaceUserId: prepared.workspaceUserId,
       workspaceAccess: prepared.workspaceAccess,
     });
-    if (acceptedMember) {
-      await sendUserStateEmail({
-        user: acceptedMember.member,
-        event: "team_onboarding_started",
-      });
-    }
     statusDetails = await persistDecision({
       application,
       decision,

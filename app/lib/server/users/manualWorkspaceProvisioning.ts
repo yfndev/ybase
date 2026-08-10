@@ -1,10 +1,5 @@
-import { appUrl } from "../../email/urls";
 import { provisionWorkspaceUser } from "../../googleWorkspace/users";
-import {
-  requireWorkspaceAccountReadyTemplateId,
-  sendUserStateEmail,
-  sendWorkspaceAccountReadyEmail,
-} from "./email";
+import { requireTeamWelcomeTemplateId, sendTeamWelcomeEmail } from "./email";
 
 interface ManualWorkspaceProvisioningInput {
   name: string;
@@ -15,8 +10,7 @@ interface ManualWorkspaceProvisioningInput {
 export async function provisionManualMemberWorkspace(
   input: ManualWorkspaceProvisioningInput,
 ): Promise<{ userId: string }> {
-  requireWorkspaceAccountReadyTemplateId();
-  const loginUrl = appUrl("/login");
+  requireTeamWelcomeTemplateId();
   const { givenName, familyName } = workspaceMemberName(
     input.name,
     input.primaryEmail,
@@ -28,20 +22,11 @@ export async function provisionManualMemberWorkspace(
     givenName,
     familyName,
   });
-  await sendWorkspaceAccountReadyEmail({
+  await sendTeamWelcomeEmail({
     recoveryEmail: input.privateEmail,
-    applicantName: input.name,
+    memberName: input.name,
     workspaceEmail: account.primaryEmail,
     temporaryPassword: account.temporaryPassword,
-    loginUrl,
-  });
-  await sendUserStateEmail({
-    user: {
-      name: input.name,
-      email: input.primaryEmail,
-      privateEmail: input.privateEmail,
-    },
-    event: "team_onboarding_started",
   });
 
   return { userId: account.userId };

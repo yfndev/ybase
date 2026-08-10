@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({ requirePermission: vi.fn() }));
 vi.mock("../../email/brevo", () => ({ sendMail: vi.fn() }));
@@ -6,9 +6,8 @@ vi.mock("../../googleWorkspace/users", () => ({
   provisionWorkspaceUser: vi.fn(),
 }));
 vi.mock("../users/email", () => ({
-  requireWorkspaceAccountReadyTemplateId: vi.fn(),
-  sendUserStateEmail: vi.fn(),
-  sendWorkspaceAccountReadyEmail: vi.fn(),
+  requireTeamWelcomeTemplateId: vi.fn(),
+  sendTeamWelcomeEmail: vi.fn(),
 }));
 
 import { requirePermission } from "../../auth/session";
@@ -28,12 +27,11 @@ import { YFN_ORGANIZATION } from "../../organization";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { sendApplicationDecision } from "./decision";
-import { submitApplicationDecision } from "./decisionAction";
 import {
-  requireWorkspaceAccountReadyTemplateId,
-  sendUserStateEmail,
-  sendWorkspaceAccountReadyEmail,
+  requireTeamWelcomeTemplateId,
+  sendTeamWelcomeEmail,
 } from "../users/email";
+import { submitApplicationDecision } from "./decisionAction";
 
 const organizationId = newId();
 const actorId = newId();
@@ -43,8 +41,6 @@ let applicationId: string;
 let postingTeamId: string;
 
 setupTestDatabase();
-
-afterEach(() => vi.unstubAllEnvs());
 
 beforeEach(async () => {
   vi.clearAllMocks();
@@ -62,10 +58,8 @@ beforeEach(async () => {
     primaryEmail: yfnEmail,
     temporaryPassword: "temporary-password",
   });
-  vi.mocked(sendWorkspaceAccountReadyEmail).mockResolvedValue();
-  vi.mocked(sendUserStateEmail).mockResolvedValue();
-  vi.mocked(requireWorkspaceAccountReadyTemplateId).mockReturnValue(170);
-  vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://ybase.example");
+  vi.mocked(sendTeamWelcomeEmail).mockResolvedValue();
+  vi.mocked(requireTeamWelcomeTemplateId).mockReturnValue(175);
   await (
     await organizations()
   ).insertOne({
@@ -110,7 +104,7 @@ beforeEach(async () => {
   await (await applications()).insertOne(application);
 });
 
-test("sends acceptance, Workspace access, and onboarding instructions in order", async () => {
+test("sends a personal acceptance followed by team access details", async () => {
   await sendApplicationDecision({
     applicationId,
     decision: "accepted",
@@ -123,35 +117,26 @@ test("sends acceptance, Workspace access, and onboarding instructions in order",
     1,
     expect.objectContaining({
       to: [{ email: "alex@example.com", name: "Alex Beispiel" }],
+      sender: {
+        name: "YBase",
+        email: "no-reply@youngfounders.network",
+      },
+      replyTo: { email: "people@youngfounders.network" },
       subject: "Individuelle Zusage",
-      params: expect.objectContaining({
-        message: "Wir freuen uns sehr auf dich.",
-        jobTitle: "Fundraising",
-        organizationName: YFN_ORGANIZATION.name,
-      }),
+      textContent: "Wir freuen uns sehr auf dich.",
     }),
   );
-  expect(sendWorkspaceAccountReadyEmail).toHaveBeenCalledWith({
+  expect(sendTeamWelcomeEmail).toHaveBeenCalledWith({
     recoveryEmail: "alex@example.com",
-    applicantName: "Alex Beispiel",
+    memberName: "Alex Beispiel",
     workspaceEmail: yfnEmail,
     temporaryPassword: "temporary-password",
-    loginUrl: "https://ybase.example/login",
   });
-  expect(sendUserStateEmail).toHaveBeenCalledWith({
-    user: expect.objectContaining({
-      name: "Alex Beispiel",
-      privateEmail: "alex@example.com",
-      teamOnboardingStatus: "in_progress",
-    }),
-    event: "team_onboarding_started",
-  });
+  expect(sendMail).toHaveBeenCalledTimes(1);
+  expect(sendTeamWelcomeEmail).toHaveBeenCalledOnce();
   expect(vi.mocked(sendMail).mock.invocationCallOrder[0]).toBeLessThan(
-    vi.mocked(sendWorkspaceAccountReadyEmail).mock.invocationCallOrder[0],
+    vi.mocked(sendTeamWelcomeEmail).mock.invocationCallOrder[0],
   );
-  expect(
-    vi.mocked(sendWorkspaceAccountReadyEmail).mock.invocationCallOrder[0],
-  ).toBeLessThan(vi.mocked(sendUserStateEmail).mock.invocationCallOrder[0]);
   const stored = await (await applications()).findOne({ _id: applicationId });
   expect(stored).toMatchObject({
     status: "accepted",
@@ -312,8 +297,8 @@ test.each([
   expect(await (await users()).countDocuments({ applicationId })).toBe(0);
 });
 
-test("records a failed Workspace credentials delivery", async () => {
-  vi.mocked(sendWorkspaceAccountReadyEmail).mockRejectedValueOnce(
+test("records a failed team access delivery", async () => {
+  vi.mocked(sendTeamWelcomeEmail).mockRejectedValueOnce(
     new Error("Brevo unavailable"),
   );
 
@@ -327,7 +312,6 @@ test("records a failed Workspace credentials delivery", async () => {
     }),
   ).rejects.toThrow("Brevo unavailable");
 
-  expect(sendUserStateEmail).not.toHaveBeenCalled();
   expect(await (await users()).countDocuments({ applicationId })).toBe(0);
   expect(
     await (await applications()).findOne({ _id: applicationId }),
