@@ -9,6 +9,7 @@ const PROFILE_SKELETON_ROWS = ["first", "second"];
 
 interface ApplicationAdmissionProfileSearchProps {
   candidates: ApplicationMemberPlatformCandidate[] | null;
+  candidateListClassName?: string;
   isPending: boolean;
   isSearching: boolean;
   searchError: boolean;
@@ -20,6 +21,7 @@ interface ApplicationAdmissionProfileSearchProps {
 
 export function ApplicationAdmissionProfileSearch({
   candidates,
+  candidateListClassName,
   isPending,
   isSearching,
   searchError,
@@ -107,7 +109,7 @@ export function ApplicationAdmissionProfileSearch({
       </div>
 
       {candidates.length > 0 ? (
-        <ul className="divide-y border-y">
+        <ul className={cn("divide-y border-y", candidateListClassName)}>
           {candidates.map((candidate) => {
             const isSelected = candidate.id === selectedProfileId;
             return (
