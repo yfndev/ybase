@@ -24,15 +24,6 @@ const DATE_FORMAT = new Intl.DateTimeFormat("de-DE", {
   year: "numeric",
 });
 
-const DAY = 24 * 60 * 60 * 1_000;
-
-function remainingText(endsAt: number): string {
-  const days = Math.ceil((endsAt - Date.now()) / DAY);
-  if (days < 0) return `Entscheidung überfällig seit ${-days} Tagen`;
-  if (days === 0) return "Die Entscheidung ist heute fällig";
-  return `Noch ${days} Tage bis zur Entscheidung`;
-}
-
 export function MemberGettingToKnowSection({ member }: { member: User }) {
   const { confirmGettingToKnow, endGettingToKnow } = useMemberMutations();
   const [isEndOpen, setIsEndOpen] = useState(false);
@@ -84,8 +75,6 @@ export function MemberGettingToKnowSection({ member }: { member: User }) {
             <p className="text-muted-foreground">
               Wartet auf Satzung und Mitgliedsantrag
             </p>
-          ) : endsAt ? (
-            <p className="text-muted-foreground">{remainingText(endsAt)}</p>
           ) : null}
         </div>
       </div>
