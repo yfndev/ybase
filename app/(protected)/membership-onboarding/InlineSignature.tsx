@@ -1,9 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { useState } from "react";
-import toast from "react-hot-toast";
 import { OnboardingSignatureField } from "./OnboardingSignatureField";
 
 export function InlineSignature({
@@ -11,34 +7,11 @@ export function InlineSignature({
 }: {
   onSubmit: (storageKey: string) => Promise<void>;
 }) {
-  const [signature, setSignature] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  async function submit() {
-    if (!signature) {
-      toast.error("Bitte unterschreiben.");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await onSubmit(signature);
-    } catch {
-      // The caller already reports failures to the user.
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   return (
-    <div className="space-y-3">
-      <OnboardingSignatureField
-        storageKey={signature || undefined}
-        onChange={setSignature}
-      />
-      <Button type="button" onClick={() => void submit()} disabled={submitting}>
-        {submitting && <Loader2 aria-hidden="true" className="animate-spin" />}
-        Dokument unterzeichnen
-      </Button>
-    </div>
+    <OnboardingSignatureField
+      onChange={onSubmit}
+      submitLabel="Dokument unterzeichnen"
+      showStatusToast={false}
+    />
   );
 }

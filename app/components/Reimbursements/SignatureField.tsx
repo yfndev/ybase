@@ -12,13 +12,15 @@ import { SignatureCanvas } from "./SignatureCanvas";
 import { SignatureQRPanel } from "./SignatureQRPanel";
 
 interface Props {
-  onSignatureComplete: (key: string) => void;
+  onSignatureComplete: (key: string) => void | Promise<void>;
   storageId?: string;
   uploadSignature?: (blob: Blob) => Promise<string>;
   getFileUrl?: (storageId: string) => Promise<string | null>;
   onClear?: () => void;
   allowMobileHandoff?: boolean;
   signatureContext?: SignatureUploadContext;
+  submitLabel?: string;
+  showStatusToast?: boolean;
 }
 
 export function SignatureField({
@@ -29,6 +31,8 @@ export function SignatureField({
   onClear,
   allowMobileHandoff = true,
   signatureContext,
+  submitLabel,
+  showStatusToast = true,
 }: Props) {
   const [mode, setMode] = useState<"direct" | "mobile">("direct");
   const reimbursementType =
@@ -78,12 +82,15 @@ export function SignatureField({
           onUploadComplete={onSignatureComplete}
           uploadSignature={uploadSignature}
           reimbursementType={reimbursementType}
+          submitLabel={submitLabel}
+          showStatusToast={showStatusToast}
         />
       ) : (
         signatureContext && (
           <SignatureQRPanel
             onSignatureComplete={onSignatureComplete}
             signatureContext={signatureContext}
+            showStatusToast={showStatusToast}
           />
         )
       )}

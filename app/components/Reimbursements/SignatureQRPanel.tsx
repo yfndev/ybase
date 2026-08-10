@@ -14,9 +14,11 @@ const POLL_INTERVAL_MS = 2000;
 export function SignatureQRPanel({
   onSignatureComplete,
   signatureContext,
+  showStatusToast = true,
 }: {
-  onSignatureComplete: (key: string) => void;
+  onSignatureComplete: (key: string) => void | Promise<void>;
   signatureContext: SignatureUploadContext;
+  showStatusToast?: boolean;
 }) {
   const [token, setToken] = useState<string | null>(null);
   const [tokenFailed, setTokenFailed] = useState(false);
@@ -44,11 +46,15 @@ export function SignatureQRPanel({
       const data = await signStatus(token).catch(() => null);
       if (!data?.signatureStorageId) return;
       clearInterval(interval);
-      onComplete.current(data.signatureStorageId);
-      toast.success("Unterschrift empfangen");
+      try {
+        await onComplete.current(data.signatureStorageId);
+        if (showStatusToast) toast.success("Unterschrift empfangen");
+      } catch {
+        return;
+      }
     }, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [token]);
+  }, [showStatusToast, token]);
 
   if (tokenFailed) {
     return (
