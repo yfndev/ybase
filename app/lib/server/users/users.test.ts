@@ -8,6 +8,10 @@ vi.mock("../../auth/session", () => ({
 vi.mock("./manualWorkspaceProvisioning", () => ({
   provisionManualMemberWorkspace: vi.fn(),
 }));
+vi.mock("../applications/memberPlatformCandidates", () => ({
+  loadApplicationMemberPlatformSnapshot: vi.fn(),
+  searchApplicationMemberPlatformCandidates: vi.fn(),
+}));
 
 import {
   requirePermission,
@@ -24,6 +28,10 @@ import {
 import { newId } from "../../db/ids";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
+import {
+  loadApplicationMemberPlatformSnapshot,
+  searchApplicationMemberPlatformCandidates,
+} from "../applications/memberPlatformCandidates";
 import { createMember } from "./creation";
 import { listMembers } from "./data";
 import { setMemberStatus, setTeamOnboardingStatus } from "./lifecycleActions";
@@ -44,6 +52,18 @@ beforeEach(async () => {
   vi.clearAllMocks();
   vi.mocked(provisionManualMemberWorkspace).mockResolvedValue({
     userId: "google-manual-member",
+  });
+  vi.mocked(searchApplicationMemberPlatformCandidates).mockResolvedValue([
+    {
+      id: "platform-manual-member",
+      name: "Manual Member",
+      dateOfBirth: "2000-01-01",
+    },
+  ]);
+  vi.mocked(loadApplicationMemberPlatformSnapshot).mockResolvedValue({
+    memberPlatformUserId: "platform-manual-member",
+    memberPlatformSyncedAt: 1_786_000_000_000,
+    dateOfBirth: "2000-01-01",
   });
   orgA = newId();
   orgB = newId();
@@ -148,6 +168,7 @@ test("createMember starts a member in onboarding and writes a log", async () => 
     email: "  MANUAL@YOUNGFOUNDERS.NETWORK  ",
     privateEmail: "  MANUAL@EXAMPLE.COM  ",
     phone: "  +49 170 1234567  ",
+    memberPlatformUserId: "platform-manual-member",
     teamId: "manual-team",
     isTeamLead: true,
   });
@@ -158,6 +179,8 @@ test("createMember starts a member in onboarding and writes a log", async () => 
     email: "manual@youngfounders.network",
     privateEmail: "manual@example.com",
     phone: "+49 170 1234567",
+    memberPlatformUserId: "platform-manual-member",
+    memberPlatformSyncedAt: 1_786_000_000_000,
     organizationId: orgA,
     role: "member",
     teamId: "manual-team",
@@ -189,6 +212,7 @@ test("createMember rejects invalid domains and duplicate profiles", async () => 
       name: "External Member",
       email: "member@example.org",
       privateEmail: "external@example.org",
+      memberPlatformUserId: "platform-manual-member",
       teamId: "manual-team",
       isTeamLead: false,
     }),
@@ -198,6 +222,7 @@ test("createMember rejects invalid domains and duplicate profiles", async () => 
     name: "Existing Member",
     email: "existing@youngfounders.network",
     privateEmail: "existing@example.com",
+    memberPlatformUserId: "platform-manual-member",
     teamId: "manual-team",
     isTeamLead: false,
   });
@@ -206,10 +231,46 @@ test("createMember rejects invalid domains and duplicate profiles", async () => 
       name: "Existing Member",
       email: "EXISTING@YOUNGFOUNDERS.NETWORK",
       privateEmail: "existing@example.com",
+      memberPlatformUserId: "platform-manual-member",
       teamId: "manual-team",
       isTeamLead: false,
     }),
   ).rejects.toThrow("bereits ein Profil");
+});
+
+test("createMember rejects an unsearched or already linked member profile", async () => {
+  await seedTeam("manual-team", orgA);
+  vi.mocked(searchApplicationMemberPlatformCandidates).mockResolvedValueOnce(
+    [],
+  );
+  await expect(
+    createMember({
+      name: "Unmatched Member",
+      email: "unmatched@youngfounders.network",
+      privateEmail: "unmatched@example.com",
+      memberPlatformUserId: "platform-manual-member",
+      teamId: "manual-team",
+      isTeamLead: false,
+    }),
+  ).rejects.toThrow("gehört nicht zu den Suchergebnissen");
+  expect(provisionManualMemberWorkspace).not.toHaveBeenCalled();
+
+  await (
+    await users()
+  ).updateOne(
+    { _id: memberA },
+    { $set: { memberPlatformUserId: "platform-manual-member" } },
+  );
+  await expect(
+    createMember({
+      name: "Duplicate Profile",
+      email: "duplicate-profile@youngfounders.network",
+      privateEmail: "duplicate-profile@example.com",
+      memberPlatformUserId: "platform-manual-member",
+      teamId: "manual-team",
+      isTeamLead: false,
+    }),
+  ).rejects.toThrow("bereits mit einem YBase-Nutzer verknüpft");
 });
 
 test("createMember rejects leads for chapters", async () => {
@@ -220,6 +281,7 @@ test("createMember rejects leads for chapters", async () => {
       name: "Chapter Lead",
       email: "chapter@youngfounders.network",
       privateEmail: "chapter@example.com",
+      memberPlatformUserId: "platform-manual-member",
       teamId: "manual-chapter",
       isTeamLead: true,
     }),
@@ -237,6 +299,7 @@ test("createMember rolls back the profile when Workspace setup fails", async () 
       name: "Failed Member",
       email: "failed@youngfounders.network",
       privateEmail: "failed@example.com",
+      memberPlatformUserId: "platform-manual-member",
       teamId: "manual-team",
       isTeamLead: false,
     }),
@@ -256,6 +319,7 @@ test("rejects invalid private contact details", async () => {
       name: "Invalid Contact",
       email: "invalid@youngfounders.network",
       privateEmail: "not-an-email",
+      memberPlatformUserId: "platform-manual-member",
       teamId: "manual-team",
       isTeamLead: false,
     }),
