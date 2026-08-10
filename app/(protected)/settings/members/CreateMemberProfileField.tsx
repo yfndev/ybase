@@ -30,6 +30,7 @@ export function CreateMemberProfileField({
       ) : (
         <ApplicationAdmissionProfileSearch
           candidates={profiles.candidates}
+          candidateListClassName="max-h-[38svh] overflow-y-auto overscroll-contain [scrollbar-gutter:stable] sm:max-h-80"
           isPending={disabled || profiles.isSearching}
           isSearching={profiles.isSearching}
           searchError={profiles.isError}
