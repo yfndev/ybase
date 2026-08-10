@@ -66,55 +66,53 @@ export function MemberGettingToKnowSection({ member }: { member: User }) {
   return (
     <div className="grid gap-2">
       <Label>Kennenlernphase</Label>
-      <div className="border-border bg-muted/30 grid gap-3 rounded-md border p-3">
-        <div className="flex gap-3">
-          <CalendarClock
-            aria-hidden="true"
-            className="text-muted-foreground mt-0.5 size-5 shrink-0"
-          />
-          <div className="grid gap-1 text-sm">
-            <p className="font-medium">
-              {isConfirmed
-                ? "Kennenlernphase bestätigt"
-                : endsAt
-                  ? `Endet am ${DATE_FORMAT.format(endsAt)}`
-                  : "Laufende Kennenlernphase"}
+      <div className="flex gap-3 py-1">
+        <CalendarClock
+          aria-hidden="true"
+          className="text-muted-foreground mt-0.5 size-5 shrink-0"
+        />
+        <div className="grid gap-1 text-sm">
+          <p className="font-medium">
+            {isConfirmed
+              ? "Kennenlernphase bestätigt"
+              : endsAt
+                ? `Endet am ${DATE_FORMAT.format(endsAt)}`
+                : "Laufende Kennenlernphase"}
+          </p>
+          {isConfirmed ? (
+            <p className="text-muted-foreground">
+              Wartet auf Satzung und Mitgliedsantrag
             </p>
-            {isConfirmed ? (
-              <p className="text-muted-foreground">
-                Wartet auf Satzung und Mitgliedsantrag
-              </p>
-            ) : endsAt ? (
-              <p className="text-muted-foreground">{remainingText(endsAt)}</p>
-            ) : null}
-          </div>
+          ) : endsAt ? (
+            <p className="text-muted-foreground">{remainingText(endsAt)}</p>
+          ) : null}
         </div>
-        <div className="flex flex-wrap gap-2">
-          {!isConfirmed && (
-            <Button
-              type="button"
-              variant="primary"
-              disabled={isPending}
-              onClick={confirm}
-            >
-              {confirmGettingToKnow.isPending ? (
-                <Loader2 aria-hidden="true" className="animate-spin" />
-              ) : (
-                <UserCheck aria-hidden="true" className="size-4" />
-              )}
-              Mitgliedschaft anstoßen
-            </Button>
-          )}
+      </div>
+      <div className="flex flex-wrap gap-2 pt-1">
+        {!isConfirmed && (
           <Button
             type="button"
-            variant="outline"
+            variant="primary"
             disabled={isPending}
-            onClick={() => setIsEndOpen(true)}
+            onClick={confirm}
           >
-            <LogOut aria-hidden="true" className="size-4" />
-            Zusammenarbeit beenden
+            {confirmGettingToKnow.isPending ? (
+              <Loader2 aria-hidden="true" className="animate-spin" />
+            ) : (
+              <UserCheck aria-hidden="true" className="size-4" />
+            )}
+            Mitgliedschaft anstoßen
           </Button>
-        </div>
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          disabled={isPending}
+          onClick={() => setIsEndOpen(true)}
+        >
+          <LogOut aria-hidden="true" className="size-4" />
+          Zusammenarbeit beenden
+        </Button>
       </div>
 
       <Dialog
