@@ -38,6 +38,7 @@ export function MemberDrawerPanel({
   const memberPlatformProfileUrl = member.memberPlatformUserId
     ? `${MEMBER_PLATFORM_URL}/member/${member.memberPlatformUserId}`
     : undefined;
+  const isGettingToKnow = showsGettingToKnow(member);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
@@ -82,9 +83,7 @@ export function MemberDrawerPanel({
 
       <div className="flex flex-1 flex-col gap-4 px-6">
         <PublicOrganizationFields form={form} />
-        {showsGettingToKnow(member) ? (
-          <MemberGettingToKnowSection member={member} />
-        ) : !member.membershipId ? (
+        {!isGettingToKnow && !member.membershipId ? (
           <MemberStatusField
             status={form.status}
             onboarding={member.teamOnboardingStatus}
@@ -104,6 +103,9 @@ export function MemberDrawerPanel({
               : "Rollen können nur von Admins geändert werden."
           }
         />
+        {isGettingToKnow ? (
+          <MemberGettingToKnowSection member={member} />
+        ) : null}
       </div>
 
       <SheetFooter className="mt-6 border-t px-6 pt-6 pb-6">
