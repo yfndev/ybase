@@ -2,25 +2,39 @@
 
 import { AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { DocumentStep } from "./DocumentStep";
 import { MembershipApplicationStep } from "./MembershipApplicationStep";
 import { useOnboarding } from "./OnboardingContext";
+import { OnboardingNavigation } from "./OnboardingNavigation";
 import { OnboardingSkeleton } from "./OnboardingSkeleton";
-
-const DATE_FORMAT = new Intl.DateTimeFormat("de-DE", {
-  timeZone: "Europe/Berlin",
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-});
+import { WelcomeStep } from "./WelcomeStep";
 
 export function MembershipOnboarding() {
   const router = useRouter();
-  const { context, error, current, done, reload } = useOnboarding();
+  const {
+    context,
+    error,
+    activeStep,
+    canGoPrevious,
+    canGoNext,
+    isLastStep,
+    done,
+    goPrevious,
+    goNext,
+    reload,
+  } = useOnboarding();
   const isMembershipPhase = context?.phase === "membership";
   const profile = context?.profile;
-  const endsAt = context?.gettingToKnowEndsAt;
+  const finishDocuments = Boolean(context?.phase === "documents" && isLastStep);
+
+  function continueOnboarding() {
+    if (finishDocuments && done) {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      router.refresh();
+      return;
+    }
+    goNext();
+  }
 
   return (
     <div>
@@ -33,13 +47,8 @@ export function MembershipOnboarding() {
         )}
         {error
           ? "Onboarding nicht verfügbar"
-          : done
-            ? isMembershipPhase
-              ? "Onboarding abgeschlossen"
-              : "Willkommen im Team"
-            : isMembershipPhase
-              ? "Vereinsmitgliedschaft"
-              : "Onboarding"}
+          : (activeStep?.title ??
+            (isMembershipPhase ? "Vereinsmitgliedschaft" : "Onboarding"))}
       </h1>
 
       <div className="mt-6">
@@ -53,39 +62,31 @@ export function MembershipOnboarding() {
           </div>
         )}
         {!context && !error && <OnboardingSkeleton />}
-        {context && !error && current && (
-          <DocumentStep document={current} onComplete={reload} />
+        {context && !error && activeStep?.kind === "welcome" && <WelcomeStep />}
+        {context && !error && activeStep?.kind === "document" && (
+          <DocumentStep document={activeStep.document} onComplete={reload} />
         )}
         {context &&
           !error &&
-          !current &&
+          activeStep?.kind === "membership-application" &&
           profile &&
           !profile.applicationSigned && (
             <MembershipApplicationStep profile={profile} onComplete={reload} />
           )}
-        {done && !isMembershipPhase && (
-          <div className="grid max-w-[46rem] gap-4">
-            <p className="text-sm text-muted-foreground">
-              Deine Unterlagen sind vollständig. Jetzt startet deine
-              Kennenlernphase
-              {endsAt ? ` bis zum ${DATE_FORMAT.format(endsAt)}` : ""}. Danach
-              besprichst du mit deinem Lead, ob du Vereinsmitglied wirst.
-            </p>
-            <Button
-              type="button"
-              variant="primary"
-              className="w-fit"
-              onClick={() => router.refresh()}
-            >
-              Los geht&apos;s
-            </Button>
-          </div>
-        )}
-        {done && isMembershipPhase && (
+        {done && isMembershipPhase && !activeStep && (
           <p className="max-w-[46rem] text-sm text-muted-foreground">
             Deine Unterlagen und dein Mitgliedsantrag sind vollständig. Dein
             YBase-Zugang wird jetzt freigeschaltet.
           </p>
+        )}
+        {context && !error && activeStep && (
+          <OnboardingNavigation
+            canGoPrevious={canGoPrevious}
+            canGoNext={canGoNext || (finishDocuments && done)}
+            finish={finishDocuments}
+            onPrevious={goPrevious}
+            onNext={continueOnboarding}
+          />
         )}
       </div>
     </div>

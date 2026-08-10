@@ -3,6 +3,7 @@
 import { DocumentContent } from "@/components/Documents/DocumentContent";
 import { completeOwnDocument } from "@/lib/server/memberships/documentExecution";
 import type { MembershipOnboardingDocument } from "@/lib/server/memberships/onboardingData";
+import { CheckCircle2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import toast from "react-hot-toast";
 import { DocumentAction } from "./DocumentAction";
@@ -49,11 +50,21 @@ export function DocumentStep({
     <section aria-label={document.title}>
       <DocumentContent html={document.content} />
       <div className="mt-10 border-t-2 border-input pt-6">
-        <DocumentAction
-          type={document.type}
-          working={working}
-          onComplete={complete}
-        />
+        {document.status === "completed" ? (
+          <p className="flex items-center gap-2 text-sm font-medium">
+            <CheckCircle2
+              aria-hidden="true"
+              className="size-4 fill-primary text-foreground"
+            />
+            Abgeschlossen
+          </p>
+        ) : (
+          <DocumentAction
+            type={document.type}
+            working={working}
+            onComplete={complete}
+          />
+        )}
       </div>
     </section>
   );

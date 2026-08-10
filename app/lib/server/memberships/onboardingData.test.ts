@@ -205,7 +205,7 @@ test("creates the legal record for a manually added member without an applicatio
   expect(membership).not.toHaveProperty("handoverTasks");
 });
 
-test("delivers the frozen text inline for open documents only", async () => {
+test("keeps frozen document text available after completion", async () => {
   const context = await loadContext();
   await (
     await documentExecutions()
@@ -218,7 +218,7 @@ test("delivers the frozen text inline for open documents only", async () => {
 
   expect(updated.documents[0]).toMatchObject({
     status: "completed",
-    content: "",
+    content: "<p>Dokumententext</p>",
   });
   expect(updated.documents[1].content).toBe("<p>Dokumententext</p>");
   expect(updated.documentsComplete).toBe(false);
