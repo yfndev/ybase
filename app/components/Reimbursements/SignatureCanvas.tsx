@@ -10,15 +10,19 @@ import type { ReimbursementStorageType } from "@/lib/s3/keys";
 import { generateUploadUrl } from "@/lib/server/reimbursements/files";
 
 type Props = {
-  onUploadComplete: (key: string) => void;
+  onUploadComplete: (key: string) => void | Promise<void>;
   uploadSignature?: (blob: Blob) => Promise<string>;
   reimbursementType?: ReimbursementStorageType;
+  submitLabel?: string;
+  showStatusToast?: boolean;
 };
 
 export function SignatureCanvas({
   onUploadComplete,
   uploadSignature,
   reimbursementType,
+  submitLabel = "Unterschrift speichern",
+  showStatusToast = true,
 }: Props) {
   const padRef = useRef<SignaturePad>(null);
   const [uploading, setUploading] = useState(false);
@@ -32,12 +36,14 @@ export function SignatureCanvas({
     }
 
     setUploading(true);
+    let signatureUploaded = false;
     try {
       const dataUrl = pad.getTrimmedCanvas().toDataURL("image/png");
       const blob = await (await fetch(dataUrl)).blob();
+      let storageKey: string;
 
       if (uploadSignature) {
-        onUploadComplete(await uploadSignature(blob));
+        storageKey = await uploadSignature(blob);
       } else {
         if (!reimbursementType) {
           throw new Error("Upload context is required");
@@ -53,12 +59,16 @@ export function SignatureCanvas({
           body: blob,
         });
         if (!response.ok) throw new Error();
-        onUploadComplete(key);
+        storageKey = key;
       }
 
-      toast.success("Unterschrift gespeichert");
+      signatureUploaded = true;
+      await onUploadComplete(storageKey);
+      if (showStatusToast) toast.success("Unterschrift gespeichert");
     } catch {
-      toast.error("Speichern fehlgeschlagen");
+      if (showStatusToast || !signatureUploaded) {
+        toast.error("Speichern fehlgeschlagen");
+      }
     } finally {
       setUploading(false);
     }
@@ -96,7 +106,7 @@ export function SignatureCanvas({
           {uploading && (
             <Loader2 aria-hidden="true" className="size-4 animate-spin mr-1" />
           )}
-          Unterschrift speichern
+          {submitLabel}
         </Button>
       </div>
     </div>

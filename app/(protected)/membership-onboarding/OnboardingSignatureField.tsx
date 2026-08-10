@@ -20,9 +20,13 @@ async function uploadSignature(blob: Blob): Promise<string> {
 export function OnboardingSignatureField({
   storageKey,
   onChange,
+  submitLabel,
+  showStatusToast,
 }: {
   storageKey?: string;
-  onChange: (storageKey: string) => void;
+  onChange: (storageKey: string) => void | Promise<void>;
+  submitLabel?: string;
+  showStatusToast?: boolean;
 }) {
   return (
     <SignatureField
@@ -32,6 +36,8 @@ export function OnboardingSignatureField({
       getFileUrl={getMembershipSignatureUrl}
       onClear={() => onChange("")}
       signatureContext="membership-onboarding"
+      submitLabel={submitLabel}
+      showStatusToast={showStatusToast}
     />
   );
 }
