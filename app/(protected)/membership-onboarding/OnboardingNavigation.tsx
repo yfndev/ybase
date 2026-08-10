@@ -20,7 +20,7 @@ export function OnboardingNavigation({
 
   return (
     <nav
-      className="mt-8 flex max-w-[46rem] flex-wrap items-center gap-2"
+      className="mt-8 flex w-full flex-wrap items-center gap-2"
       aria-label="Onboarding-Schritte"
     >
       {canGoPrevious ? (
