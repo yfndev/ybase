@@ -12,12 +12,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMemberMutations } from "@/lib/client/members/hooks/useMemberMutations";
 import type { Department, Team, User } from "@/lib/db/types";
-import { YFN_ORGANIZATION } from "@/lib/organization";
 import { CreateMemberContactFields } from "./CreateMemberContactFields";
+import { CreateMemberIdentityFields } from "./CreateMemberIdentityFields";
+import { CreateMemberProfileField } from "./CreateMemberProfileField";
 import { LabeledSelect } from "./LabeledSelect";
 
 interface Props {
@@ -40,6 +40,7 @@ export function CreateMemberDialog({
   const [email, setEmail] = useState("");
   const [privateEmail, setPrivateEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [memberPlatformUserId, setMemberPlatformUserId] = useState("");
   const [teamId, setTeamId] = useState("");
   const [isTeamLead, setIsTeamLead] = useState(false);
   const activeTeams = teams.filter((team) => !team.isArchived);
@@ -47,12 +48,20 @@ export function CreateMemberDialog({
   const department = departments.find(
     (entry) => entry._id === selectedTeam?.departmentId,
   );
+  const isFormComplete = Boolean(
+    name.trim() &&
+    email.trim() &&
+    privateEmail.trim() &&
+    memberPlatformUserId &&
+    teamId,
+  );
 
   const reset = () => {
     setName("");
     setEmail("");
     setPrivateEmail("");
     setPhone("");
+    setMemberPlatformUserId("");
     setTeamId("");
     setIsTeamLead(false);
   };
@@ -65,15 +74,7 @@ export function CreateMemberDialog({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (
-      !name.trim() ||
-      !email.trim() ||
-      !privateEmail.trim() ||
-      !teamId ||
-      create.isPending
-    ) {
-      return;
-    }
+    if (!isFormComplete || create.isPending) return;
 
     try {
       const member = await create.mutateAsync({
@@ -81,6 +82,7 @@ export function CreateMemberDialog({
         email: email.trim(),
         privateEmail: privateEmail.trim(),
         phone: phone.trim() || undefined,
+        memberPlatformUserId,
         teamId,
         isTeamLead,
       });
@@ -105,36 +107,30 @@ export function CreateMemberDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="manual-member-name">Name*</Label>
-            <Input
-              id="manual-member-name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Vor- und Nachname"
-              autoComplete="name"
-              maxLength={120}
-              required
-              autoFocus
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="manual-member-email">YFN-E-Mail*</Label>
-            <Input
-              id="manual-member-email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder={`vorname.nachname@${YFN_ORGANIZATION.domain}`}
-              autoComplete="email"
-              required
-            />
-          </div>
+          <CreateMemberIdentityFields
+            name={name}
+            email={email}
+            onNameChange={(value) => {
+              setName(value);
+              setMemberPlatformUserId("");
+            }}
+            onEmailChange={setEmail}
+          />
           <CreateMemberContactFields
             privateEmail={privateEmail}
             phone={phone}
-            onPrivateEmailChange={setPrivateEmail}
+            onPrivateEmailChange={(value) => {
+              setPrivateEmail(value);
+              setMemberPlatformUserId("");
+            }}
             onPhoneChange={setPhone}
+          />
+          <CreateMemberProfileField
+            name={name}
+            privateEmail={privateEmail}
+            selectedProfileId={memberPlatformUserId}
+            disabled={create.isPending}
+            onSelect={setMemberPlatformUserId}
           />
           <LabeledSelect
             id="manual-member-team"
@@ -174,13 +170,7 @@ export function CreateMemberDialog({
             <Button
               type="submit"
               variant="primary"
-              disabled={
-                !name.trim() ||
-                !email.trim() ||
-                !privateEmail.trim() ||
-                !teamId ||
-                create.isPending
-              }
+              disabled={!isFormComplete || create.isPending}
             >
               {create.isPending ? (
                 <Loader2 className="size-4 animate-spin" />

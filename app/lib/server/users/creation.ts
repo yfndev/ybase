@@ -8,12 +8,18 @@ import { newId } from "../../db/ids";
 import type { User } from "../../db/types";
 import { YFN_ORGANIZATION } from "../../organization";
 import { addLog } from "../logs";
+import {
+  loadApplicationMemberPlatformSnapshot,
+  searchApplicationMemberPlatformCandidates,
+} from "../applications/memberPlatformCandidates";
 import { requireActiveOrganizationTeam } from "./access";
 import { phoneSchema, privateEmailSchema } from "./contactDetails";
 import { provisionManualMemberWorkspace } from "./manualWorkspaceProvisioning";
 
 const MEMBER_EMAIL_CONFLICT_MESSAGE =
   "Für diese E-Mail-Adresse gibt es bereits ein Profil.";
+const MEMBER_PROFILE_CONFLICT_MESSAGE =
+  "Dieses Member-Profil ist bereits mit einem YBase-Nutzer verknüpft.";
 
 const createMemberSchema = z.object({
   name: z
@@ -32,6 +38,7 @@ const createMemberSchema = z.object({
     ),
   privateEmail: privateEmailSchema,
   phone: phoneSchema.optional(),
+  memberPlatformUserId: z.string().trim().min(1).max(120),
   teamId: z.string().trim().min(1),
   isTeamLead: z.boolean(),
 });
@@ -42,19 +49,43 @@ export async function createMember(input: CreateMemberInput): Promise<User> {
   const actor = await requirePermission("manage_members");
   const memberInput = createMemberSchema.parse(input);
   const usersCollection = await users();
-  const [selectedTeam, existingMember] = await Promise.all([
+  const [
+    selectedTeam,
+    existingByEmail,
+    existingByMemberProfile,
+    memberPlatformCandidates,
+  ] = await Promise.all([
     requireActiveOrganizationTeam(memberInput.teamId, actor.organizationId),
     usersCollection.findOne(
       { email: memberInput.email },
       { projection: { _id: 1 } },
     ),
+    usersCollection.findOne(
+      { memberPlatformUserId: memberInput.memberPlatformUserId },
+      { projection: { _id: 1 } },
+    ),
+    searchApplicationMemberPlatformCandidates({
+      applicantName: memberInput.name,
+      privateEmail: memberInput.privateEmail,
+    }),
   ]);
   if (selectedTeam.isChapter && memberInput.isTeamLead) {
     throw new Error("Chapter haben keine Lead-Position.");
   }
-  if (existingMember) {
+  if (existingByEmail) {
     throw new Error(MEMBER_EMAIL_CONFLICT_MESSAGE);
   }
+  if (existingByMemberProfile) throw new Error(MEMBER_PROFILE_CONFLICT_MESSAGE);
+  if (
+    !memberPlatformCandidates.some(
+      ({ id }) => id === memberInput.memberPlatformUserId,
+    )
+  ) {
+    throw new Error("Member-Profil gehört nicht zu den Suchergebnissen.");
+  }
+  const memberPlatformSnapshot = await loadApplicationMemberPlatformSnapshot(
+    memberInput.memberPlatformUserId,
+  );
 
   const createdAt = Date.now();
   const createdMember: User = {
@@ -63,6 +94,8 @@ export async function createMember(input: CreateMemberInput): Promise<User> {
     name: memberInput.name,
     email: memberInput.email,
     privateEmail: memberInput.privateEmail,
+    memberPlatformUserId: memberPlatformSnapshot.memberPlatformUserId,
+    memberPlatformSyncedAt: memberPlatformSnapshot.memberPlatformSyncedAt,
     ...(memberInput.phone ? { phone: memberInput.phone } : {}),
     organizationId: actor.organizationId,
     role: "member",
