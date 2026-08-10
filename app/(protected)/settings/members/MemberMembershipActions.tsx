@@ -1,16 +1,9 @@
 "use client";
 
-import { Ellipsis, LogOut, UserMinus } from "lucide-react";
+import { LogOut, UserMinus } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { verticalActionMenuClassNames as menu } from "@/components/ui/vertical-action-menu";
 import { useMemberMutations } from "@/lib/client/members/hooks/useMemberMutations";
 import type { User } from "@/lib/db/types";
 import { ExcludeMemberDialog } from "./ExcludeMemberDialog";
@@ -23,12 +16,14 @@ const DATE_FORMAT = new Intl.DateTimeFormat("de-DE", {
   year: "numeric",
 });
 
-export function MemberActionsMenu({
+export function MemberMembershipActions({
   member,
   canExcludeMembers,
+  isFormSaving,
 }: {
   member: User;
   canExcludeMembers: boolean;
+  isFormSaving: boolean;
 }) {
   const { excludeOfficialMember, recordResignation } = useMemberMutations();
   const [resignationOpen, setResignationOpen] = useState(false);
@@ -83,50 +78,34 @@ export function MemberActionsMenu({
 
   const isPending =
     recordResignation.isPending || excludeOfficialMember.isPending;
+  const isDisabled = isFormSaving || isPending;
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className={`${menu.trigger} mt-1 shrink-0`}
-            disabled={isPending}
-            aria-label={`Aktionen für ${member.name ?? member.email ?? "dieses Mitglied"} anzeigen`}
-            title="Aktionen anzeigen"
-          >
-            <Ellipsis aria-hidden="true" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="end"
-          sideOffset={4}
-          className={menu.content}
+      {canRecordResignation ? (
+        <Button
+          type="button"
+          variant="outline"
+          disabled={isDisabled}
+          onClick={() => setResignationOpen(true)}
         >
-          {canRecordResignation ? (
-            <DropdownMenuItem
-              className={menu.item}
-              onSelect={() => setResignationOpen(true)}
-            >
-              <LogOut className="text-current" aria-hidden="true" />
-              Austritt erfassen
-            </DropdownMenuItem>
-          ) : null}
-          {canExcludeMember ? (
-            <DropdownMenuItem
-              className={`${menu.item} ${menu.destructiveItem}`}
-              onSelect={() => setExclusionOpen(true)}
-            >
-              <UserMinus className="text-current" aria-hidden="true" />
-              {isExclusionRetry
-                ? "Ausschluss abschließen"
-                : "Mitglied ausschließen"}
-            </DropdownMenuItem>
-          ) : null}
-        </DropdownMenuContent>
-      </DropdownMenu>
+          <LogOut aria-hidden="true" />
+          Austritt erfassen
+        </Button>
+      ) : null}
+      {canExcludeMember ? (
+        <Button
+          type="button"
+          variant="destructive"
+          disabled={isDisabled}
+          onClick={() => setExclusionOpen(true)}
+        >
+          <UserMinus aria-hidden="true" />
+          {isExclusionRetry
+            ? "Ausschluss abschließen"
+            : "Mitglied ausschließen"}
+        </Button>
+      ) : null}
 
       <MemberResignationDialog
         member={member}

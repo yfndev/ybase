@@ -46,8 +46,7 @@ export function ExcludeMemberDialog({
             {isRetry ? (
               <span className="block">
                 Die Vereinsmitgliedschaft von {memberName} ist bereits beendet.
-                Die ausstehende Löschung des Google Workspace-Kontos wird erneut
-                ausgeführt.
+                Die ausstehende Schließung der Zugänge wird erneut ausgeführt.
               </span>
             ) : (
               <>
@@ -57,8 +56,8 @@ export function ExcludeMemberDialog({
                 </span>
                 <span className="block">
                   Die Vereinsmitgliedschaft wird sofort beendet. Teamzuordnungen
-                  und Berechtigungen werden entfernt und das Google
-                  Workspace-Konto wird dauerhaft gelöscht.
+                  und Berechtigungen werden entfernt und sämtliche Zugänge
+                  geschlossen.
                 </span>
               </>
             )}
