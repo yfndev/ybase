@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, UserMinus } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { useMemberMutations } from "@/lib/client/members/hooks/useMemberMutation
 import type { User } from "@/lib/db/types";
 import { ExcludeMemberDialog } from "./ExcludeMemberDialog";
 import { MemberResignationDialog } from "./MemberResignationDialog";
+import { MembershipEndChoiceDialog } from "./MembershipEndChoiceDialog";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("de-DE", {
   timeZone: "Europe/Berlin",
@@ -15,6 +16,8 @@ const DATE_FORMAT = new Intl.DateTimeFormat("de-DE", {
   month: "2-digit",
   year: "numeric",
 });
+
+type OpenDialog = "choice" | "resignation" | "exclusion";
 
 export function MemberMembershipActions({
   member,
@@ -26,8 +29,7 @@ export function MemberMembershipActions({
   isFormSaving: boolean;
 }) {
   const { excludeOfficialMember, recordResignation } = useMemberMutations();
-  const [resignationOpen, setResignationOpen] = useState(false);
-  const [exclusionOpen, setExclusionOpen] = useState(false);
+  const [openDialog, setOpenDialog] = useState<OpenDialog>();
   const canRecordResignation =
     Boolean(member.membershipId) &&
     (member.memberStatus === "onboarding" || member.memberStatus === "active");
@@ -49,7 +51,7 @@ export function MemberMembershipActions({
         userId: member._id,
         receivedOn,
       });
-      setResignationOpen(false);
+      setOpenDialog(undefined);
       toast.success(
         `Austritt zum ${DATE_FORMAT.format(result.scheduledEndAt - 1)} erfasst`,
       );
@@ -65,7 +67,7 @@ export function MemberMembershipActions({
   const handleExclusion = async () => {
     try {
       await excludeOfficialMember.mutateAsync({ userId: member._id });
-      setExclusionOpen(false);
+      setOpenDialog(undefined);
       toast.success("Mitglied ausgeschlossen");
     } catch (error) {
       toast.error(
@@ -79,47 +81,53 @@ export function MemberMembershipActions({
   const isPending =
     recordResignation.isPending || excludeOfficialMember.isPending;
   const isDisabled = isFormSaving || isPending;
+  const hasMultipleActions = canRecordResignation && canExcludeMember;
+  let triggerLabel = "Mitglied ausschließen";
+  if (canRecordResignation) triggerLabel = "Austritt erfassen";
+  if (hasMultipleActions) triggerLabel = "Mitgliedschaft beenden";
+  if (isExclusionRetry) triggerLabel = "Ausschluss abschließen";
+
+  const openMembershipEnd = () => {
+    if (hasMultipleActions) {
+      setOpenDialog("choice");
+      return;
+    }
+    setOpenDialog(canRecordResignation ? "resignation" : "exclusion");
+  };
 
   return (
     <>
-      {canRecordResignation ? (
-        <Button
-          type="button"
-          variant="outline"
-          disabled={isDisabled}
-          onClick={() => setResignationOpen(true)}
-        >
-          <LogOut aria-hidden="true" />
-          Austritt erfassen
-        </Button>
-      ) : null}
-      {canExcludeMember ? (
-        <Button
-          type="button"
-          variant="destructive"
-          disabled={isDisabled}
-          onClick={() => setExclusionOpen(true)}
-        >
-          <UserMinus aria-hidden="true" />
-          {isExclusionRetry
-            ? "Ausschluss abschließen"
-            : "Mitglied ausschließen"}
-        </Button>
-      ) : null}
+      <Button
+        type="button"
+        variant="outline"
+        disabled={isDisabled}
+        onClick={openMembershipEnd}
+      >
+        <LogOut aria-hidden="true" />
+        {triggerLabel}
+      </Button>
+
+      <MembershipEndChoiceDialog
+        member={member}
+        open={openDialog === "choice"}
+        onOpenChange={(open) => !open && setOpenDialog(undefined)}
+        onChooseResignation={() => setOpenDialog("resignation")}
+        onChooseExclusion={() => setOpenDialog("exclusion")}
+      />
 
       <MemberResignationDialog
         member={member}
-        open={resignationOpen}
+        open={openDialog === "resignation"}
         isPending={recordResignation.isPending}
-        onOpenChange={setResignationOpen}
+        onOpenChange={(open) => !open && setOpenDialog(undefined)}
         onSubmit={handleResignation}
       />
       <ExcludeMemberDialog
         member={member}
-        open={exclusionOpen}
+        open={openDialog === "exclusion"}
         isPending={excludeOfficialMember.isPending}
         isRetry={isExclusionRetry}
-        onOpenChange={setExclusionOpen}
+        onOpenChange={(open) => !open && setOpenDialog(undefined)}
         onConfirm={() => void handleExclusion()}
       />
     </>
