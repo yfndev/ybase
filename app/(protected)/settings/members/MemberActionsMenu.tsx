@@ -1,6 +1,6 @@
 "use client";
 
-import { Ellipsis, LogOut, Trash2 } from "lucide-react";
+import { Ellipsis, LogOut, UserMinus } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import {
 import { verticalActionMenuClassNames as menu } from "@/components/ui/vertical-action-menu";
 import { useMemberMutations } from "@/lib/client/members/hooks/useMemberMutations";
 import type { User } from "@/lib/db/types";
-import { DeleteMemberAccountDialog } from "./DeleteMemberAccountDialog";
+import { ExcludeMemberDialog } from "./ExcludeMemberDialog";
 import { MemberResignationDialog } from "./MemberResignationDialog";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("de-DE", {
@@ -25,24 +25,28 @@ const DATE_FORMAT = new Intl.DateTimeFormat("de-DE", {
 
 export function MemberActionsMenu({
   member,
-  canDeleteAccount,
+  canExcludeMembers,
 }: {
   member: User;
-  canDeleteAccount: boolean;
+  canExcludeMembers: boolean;
 }) {
-  const { deleteWorkspaceAccount, recordResignation } = useMemberMutations();
+  const { excludeOfficialMember, recordResignation } = useMemberMutations();
   const [resignationOpen, setResignationOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [exclusionOpen, setExclusionOpen] = useState(false);
   const canRecordResignation =
     Boolean(member.membershipId) &&
     (member.memberStatus === "onboarding" || member.memberStatus === "active");
-  const canDeleteWorkspaceAccount =
-    canDeleteAccount &&
-    member.role !== "admin" &&
+  const isExclusionRetry =
+    member.memberStatus === "excluded" &&
     !member.workspaceAccountDeletedAt &&
     Boolean(member.googleWorkspaceUserId ?? member.email);
+  const canExcludeMember =
+    canExcludeMembers &&
+    Boolean(member.membershipId) &&
+    member.memberStatus !== "archived" &&
+    (member.memberStatus !== "excluded" || isExclusionRetry);
 
-  if (!canRecordResignation && !canDeleteWorkspaceAccount) return null;
+  if (!canRecordResignation && !canExcludeMember) return null;
 
   const handleResignation = async (receivedOn: string) => {
     try {
@@ -63,22 +67,22 @@ export function MemberActionsMenu({
     }
   };
 
-  const handleAccountDeletion = async () => {
+  const handleExclusion = async () => {
     try {
-      await deleteWorkspaceAccount.mutateAsync({ userId: member._id });
-      setDeleteOpen(false);
-      toast.success("Google Workspace-Konto gelöscht");
+      await excludeOfficialMember.mutateAsync({ userId: member._id });
+      setExclusionOpen(false);
+      toast.success("Mitglied ausgeschlossen");
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Das Workspace-Konto konnte nicht gelöscht werden.",
+          : "Das Mitglied konnte nicht ausgeschlossen werden.",
       );
     }
   };
 
   const isPending =
-    recordResignation.isPending || deleteWorkspaceAccount.isPending;
+    recordResignation.isPending || excludeOfficialMember.isPending;
 
   return (
     <>
@@ -110,13 +114,15 @@ export function MemberActionsMenu({
               Austritt erfassen
             </DropdownMenuItem>
           ) : null}
-          {canDeleteWorkspaceAccount ? (
+          {canExcludeMember ? (
             <DropdownMenuItem
               className={`${menu.item} ${menu.destructiveItem}`}
-              onSelect={() => setDeleteOpen(true)}
+              onSelect={() => setExclusionOpen(true)}
             >
-              <Trash2 className="text-current" aria-hidden="true" />
-              Account löschen
+              <UserMinus className="text-current" aria-hidden="true" />
+              {isExclusionRetry
+                ? "Ausschluss abschließen"
+                : "Mitglied ausschließen"}
             </DropdownMenuItem>
           ) : null}
         </DropdownMenuContent>
@@ -129,12 +135,13 @@ export function MemberActionsMenu({
         onOpenChange={setResignationOpen}
         onSubmit={handleResignation}
       />
-      <DeleteMemberAccountDialog
+      <ExcludeMemberDialog
         member={member}
-        open={deleteOpen}
-        isDeleting={deleteWorkspaceAccount.isPending}
-        onCancel={() => setDeleteOpen(false)}
-        onConfirm={() => void handleAccountDeletion()}
+        open={exclusionOpen}
+        isPending={excludeOfficialMember.isPending}
+        isRetry={isExclusionRetry}
+        onOpenChange={setExclusionOpen}
+        onConfirm={() => void handleExclusion()}
       />
     </>
   );

@@ -3,8 +3,8 @@ import {
   confirmGettingToKnow,
   endGettingToKnow,
 } from "@/lib/server/memberships/gettingToKnow";
+import { excludeOfficialMember } from "@/lib/server/memberships/exclusion";
 import { recordMembershipResignation } from "@/lib/server/memberships/resignation";
-import { deleteMemberWorkspaceAccount } from "@/lib/server/users/accountDeletion";
 import { createMember } from "@/lib/server/users/creation";
 import {
   setMemberStatus,
@@ -35,8 +35,8 @@ export function useMemberMutations() {
       onSuccess,
     }),
     endGettingToKnow: useMutation({ mutationFn: endGettingToKnow, onSuccess }),
-    deleteWorkspaceAccount: useMutation({
-      mutationFn: deleteMemberWorkspaceAccount,
+    excludeOfficialMember: useMutation({
+      mutationFn: excludeOfficialMember,
       onSuccess,
     }),
     updateRole: useMutation({ mutationFn: updateUserRole, onSuccess }),

@@ -77,7 +77,7 @@ export function MemberDrawerPanel({
         </div>
         <MemberActionsMenu
           member={member}
-          canDeleteAccount={form.canEditRoles}
+          canExcludeMembers={form.canEditRoles}
         />
       </div>
 
