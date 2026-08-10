@@ -6,14 +6,16 @@ import { users } from "../../db/collections";
 import { isDuplicateKeyError } from "../../db/errors";
 import { newId } from "../../db/ids";
 import type { User } from "../../db/types";
+import { normalizeEmail } from "../../memberPlatform/suggestions";
 import { YFN_ORGANIZATION } from "../../organization";
-import { addLog } from "../logs";
 import {
   loadApplicationMemberPlatformSnapshot,
   searchApplicationMemberPlatformCandidates,
 } from "../applications/memberPlatformCandidates";
+import { addLog } from "../logs";
+import { findLinkableMemberPlatformProfile } from "../memberPlatform/linking";
 import { requireActiveOrganizationTeam } from "./access";
-import { phoneSchema, privateEmailSchema } from "./contactDetails";
+import { privateEmailSchema } from "./contactDetails";
 import { provisionManualMemberWorkspace } from "./manualWorkspaceProvisioning";
 
 const MEMBER_EMAIL_CONFLICT_MESSAGE =
@@ -36,8 +38,6 @@ const createMemberSchema = z.object({
       (email) => email.endsWith(`@${YFN_ORGANIZATION.domain}`),
       "Bitte gib eine gültige YFN-E-Mail-Adresse an.",
     ),
-  privateEmail: privateEmailSchema,
-  phone: phoneSchema.optional(),
   memberPlatformUserId: z.string().trim().min(1).max(120),
   teamId: z.string().trim().min(1),
   isTeamLead: z.boolean(),
@@ -66,7 +66,7 @@ export async function createMember(input: CreateMemberInput): Promise<User> {
     ),
     searchApplicationMemberPlatformCandidates({
       applicantName: memberInput.name,
-      privateEmail: memberInput.privateEmail,
+      privateEmail: "",
     }),
   ]);
   if (selectedTeam.isChapter && memberInput.isTeamLead) {
@@ -76,27 +76,37 @@ export async function createMember(input: CreateMemberInput): Promise<User> {
     throw new Error(MEMBER_EMAIL_CONFLICT_MESSAGE);
   }
   if (existingByMemberProfile) throw new Error(MEMBER_PROFILE_CONFLICT_MESSAGE);
-  if (
-    !memberPlatformCandidates.some(
-      ({ id }) => id === memberInput.memberPlatformUserId,
-    )
-  ) {
+  const selectedProfile = memberPlatformCandidates.find(
+    ({ id }) => id === memberInput.memberPlatformUserId,
+  );
+  if (!selectedProfile) {
     throw new Error("Member-Profil gehört nicht zu den Suchergebnissen.");
   }
-  const memberPlatformSnapshot = await loadApplicationMemberPlatformSnapshot(
-    memberInput.memberPlatformUserId,
+  const [memberPlatformSnapshot, memberPlatformProfile] = await Promise.all([
+    loadApplicationMemberPlatformSnapshot(memberInput.memberPlatformUserId),
+    findLinkableMemberPlatformProfile(memberInput.memberPlatformUserId),
+  ]);
+  const privateEmailResult = privateEmailSchema.safeParse(
+    normalizeEmail(memberPlatformProfile.contact?.email),
   );
+  if (!privateEmailResult.success) {
+    throw new Error(
+      "Das Member-Profil enthält keine gültige private E-Mail-Adresse.",
+    );
+  }
+  const privateEmail = privateEmailResult.data;
+  const phone = memberPlatformProfile.contact?.phone?.trim();
 
   const createdAt = Date.now();
   const createdMember: User = {
     _id: newId(),
     _creationTime: createdAt,
-    name: memberInput.name,
+    name: selectedProfile.name,
     email: memberInput.email,
-    privateEmail: memberInput.privateEmail,
+    privateEmail,
     memberPlatformUserId: memberPlatformSnapshot.memberPlatformUserId,
     memberPlatformSyncedAt: memberPlatformSnapshot.memberPlatformSyncedAt,
-    ...(memberInput.phone ? { phone: memberInput.phone } : {}),
+    ...(phone ? { phone } : {}),
     organizationId: actor.organizationId,
     role: "member",
     teamId: memberInput.teamId,
@@ -118,9 +128,9 @@ export async function createMember(input: CreateMemberInput): Promise<User> {
 
   try {
     const workspaceAccount = await provisionManualMemberWorkspace({
-      name: memberInput.name,
+      name: selectedProfile.name,
       primaryEmail: memberInput.email,
-      privateEmail: memberInput.privateEmail,
+      privateEmail,
     });
     const result = await usersCollection.updateOne(
       {
@@ -148,7 +158,7 @@ export async function createMember(input: CreateMemberInput): Promise<User> {
     actor._id,
     "member.created",
     createdMember._id,
-    `${memberInput.name} (${memberInput.email})`,
+    `${selectedProfile.name} (${memberInput.email})`,
   );
   return createdMember;
 }

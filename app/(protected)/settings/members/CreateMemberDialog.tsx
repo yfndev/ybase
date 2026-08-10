@@ -15,7 +15,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { useMemberMutations } from "@/lib/client/members/hooks/useMemberMutations";
 import type { Department, Team, User } from "@/lib/db/types";
-import { CreateMemberContactFields } from "./CreateMemberContactFields";
 import { CreateMemberIdentityFields } from "./CreateMemberIdentityFields";
 import { CreateMemberProfileField } from "./CreateMemberProfileField";
 import { LabeledSelect } from "./LabeledSelect";
@@ -38,8 +37,6 @@ export function CreateMemberDialog({
   const { create } = useMemberMutations();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [privateEmail, setPrivateEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [memberPlatformUserId, setMemberPlatformUserId] = useState("");
   const [teamId, setTeamId] = useState("");
   const [isTeamLead, setIsTeamLead] = useState(false);
@@ -49,18 +46,12 @@ export function CreateMemberDialog({
     (entry) => entry._id === selectedTeam?.departmentId,
   );
   const isFormComplete = Boolean(
-    name.trim() &&
-    email.trim() &&
-    privateEmail.trim() &&
-    memberPlatformUserId &&
-    teamId,
+    name.trim() && email.trim() && memberPlatformUserId && teamId,
   );
 
   const reset = () => {
     setName("");
     setEmail("");
-    setPrivateEmail("");
-    setPhone("");
     setMemberPlatformUserId("");
     setTeamId("");
     setIsTeamLead(false);
@@ -80,8 +71,6 @@ export function CreateMemberDialog({
       const member = await create.mutateAsync({
         name: name.trim(),
         email: email.trim(),
-        privateEmail: privateEmail.trim(),
-        phone: phone.trim() || undefined,
         memberPlatformUserId,
         teamId,
         isTeamLead,
@@ -115,23 +104,14 @@ export function CreateMemberDialog({
               setMemberPlatformUserId("");
             }}
             onEmailChange={setEmail}
-          />
-          <CreateMemberContactFields
-            privateEmail={privateEmail}
-            phone={phone}
-            onPrivateEmailChange={(value) => {
-              setPrivateEmail(value);
-              setMemberPlatformUserId("");
-            }}
-            onPhoneChange={setPhone}
-          />
-          <CreateMemberProfileField
-            name={name}
-            privateEmail={privateEmail}
-            selectedProfileId={memberPlatformUserId}
-            disabled={create.isPending}
-            onSelect={setMemberPlatformUserId}
-          />
+          >
+            <CreateMemberProfileField
+              name={name}
+              selectedProfileId={memberPlatformUserId}
+              disabled={create.isPending}
+              onSelect={setMemberPlatformUserId}
+            />
+          </CreateMemberIdentityFields>
           <LabeledSelect
             id="manual-member-team"
             label="Team*"

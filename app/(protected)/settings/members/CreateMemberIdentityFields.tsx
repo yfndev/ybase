@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { YFN_ORGANIZATION } from "@/lib/organization";
@@ -5,6 +6,7 @@ import { YFN_ORGANIZATION } from "@/lib/organization";
 interface Props {
   name: string;
   email: string;
+  children: ReactNode;
   onNameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
 }
@@ -12,6 +14,7 @@ interface Props {
 export function CreateMemberIdentityFields({
   name,
   email,
+  children,
   onNameChange,
   onEmailChange,
 }: Props) {
@@ -30,6 +33,7 @@ export function CreateMemberIdentityFields({
           autoFocus
         />
       </div>
+      {children}
       <div className="flex flex-col gap-2">
         <Label htmlFor="manual-member-email">YFN-E-Mail*</Label>
         <Input

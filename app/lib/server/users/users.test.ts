@@ -12,6 +12,9 @@ vi.mock("../applications/memberPlatformCandidates", () => ({
   loadApplicationMemberPlatformSnapshot: vi.fn(),
   searchApplicationMemberPlatformCandidates: vi.fn(),
 }));
+vi.mock("../memberPlatform/linking", () => ({
+  findLinkableMemberPlatformProfile: vi.fn(),
+}));
 
 import {
   requirePermission,
@@ -32,6 +35,7 @@ import {
   loadApplicationMemberPlatformSnapshot,
   searchApplicationMemberPlatformCandidates,
 } from "../applications/memberPlatformCandidates";
+import { findLinkableMemberPlatformProfile } from "../memberPlatform/linking";
 import { createMember } from "./creation";
 import { listMembers } from "./data";
 import { setMemberStatus, setTeamOnboardingStatus } from "./lifecycleActions";
@@ -64,6 +68,13 @@ beforeEach(async () => {
     memberPlatformUserId: "platform-manual-member",
     memberPlatformSyncedAt: 1_786_000_000_000,
     dateOfBirth: "2000-01-01",
+  });
+  vi.mocked(findLinkableMemberPlatformProfile).mockResolvedValue({
+    id: "platform-manual-member",
+    contact: {
+      email: "PROFILE@EXAMPLE.COM",
+      phone: "+49 170 1234567",
+    },
   });
   orgA = newId();
   orgB = newId();
@@ -164,10 +175,8 @@ test("addUserToOrganization cannot pull in a user from another org", async () =>
 test("createMember starts a member in onboarding and writes a log", async () => {
   await seedTeam("manual-team", orgA);
   const member = await createMember({
-    name: "  Manual Member  ",
+    name: "  Manual Membor  ",
     email: "  MANUAL@YOUNGFOUNDERS.NETWORK  ",
-    privateEmail: "  MANUAL@EXAMPLE.COM  ",
-    phone: "  +49 170 1234567  ",
     memberPlatformUserId: "platform-manual-member",
     teamId: "manual-team",
     isTeamLead: true,
@@ -177,7 +186,7 @@ test("createMember starts a member in onboarding and writes a log", async () => 
   expect(created).toMatchObject({
     name: "Manual Member",
     email: "manual@youngfounders.network",
-    privateEmail: "manual@example.com",
+    privateEmail: "profile@example.com",
     phone: "+49 170 1234567",
     memberPlatformUserId: "platform-manual-member",
     memberPlatformSyncedAt: 1_786_000_000_000,
@@ -194,7 +203,7 @@ test("createMember starts a member in onboarding and writes a log", async () => 
   expect(provisionManualMemberWorkspace).toHaveBeenCalledWith({
     name: "Manual Member",
     primaryEmail: "manual@youngfounders.network",
-    privateEmail: "manual@example.com",
+    privateEmail: "profile@example.com",
   });
 
   const log = await (await logs()).findOne({ action: "member.created" });
@@ -211,7 +220,6 @@ test("createMember rejects invalid domains and duplicate profiles", async () => 
     createMember({
       name: "External Member",
       email: "member@example.org",
-      privateEmail: "external@example.org",
       memberPlatformUserId: "platform-manual-member",
       teamId: "manual-team",
       isTeamLead: false,
@@ -221,7 +229,6 @@ test("createMember rejects invalid domains and duplicate profiles", async () => 
   await createMember({
     name: "Existing Member",
     email: "existing@youngfounders.network",
-    privateEmail: "existing@example.com",
     memberPlatformUserId: "platform-manual-member",
     teamId: "manual-team",
     isTeamLead: false,
@@ -230,7 +237,6 @@ test("createMember rejects invalid domains and duplicate profiles", async () => 
     createMember({
       name: "Existing Member",
       email: "EXISTING@YOUNGFOUNDERS.NETWORK",
-      privateEmail: "existing@example.com",
       memberPlatformUserId: "platform-manual-member",
       teamId: "manual-team",
       isTeamLead: false,
@@ -247,7 +253,6 @@ test("createMember rejects an unsearched or already linked member profile", asyn
     createMember({
       name: "Unmatched Member",
       email: "unmatched@youngfounders.network",
-      privateEmail: "unmatched@example.com",
       memberPlatformUserId: "platform-manual-member",
       teamId: "manual-team",
       isTeamLead: false,
@@ -265,7 +270,6 @@ test("createMember rejects an unsearched or already linked member profile", asyn
     createMember({
       name: "Duplicate Profile",
       email: "duplicate-profile@youngfounders.network",
-      privateEmail: "duplicate-profile@example.com",
       memberPlatformUserId: "platform-manual-member",
       teamId: "manual-team",
       isTeamLead: false,
@@ -280,7 +284,6 @@ test("createMember rejects leads for chapters", async () => {
     createMember({
       name: "Chapter Lead",
       email: "chapter@youngfounders.network",
-      privateEmail: "chapter@example.com",
       memberPlatformUserId: "platform-manual-member",
       teamId: "manual-chapter",
       isTeamLead: true,
@@ -298,7 +301,6 @@ test("createMember rolls back the profile when Workspace setup fails", async () 
     createMember({
       name: "Failed Member",
       email: "failed@youngfounders.network",
-      privateEmail: "failed@example.com",
       memberPlatformUserId: "platform-manual-member",
       teamId: "manual-team",
       isTeamLead: false,
@@ -312,22 +314,28 @@ test("createMember rolls back the profile when Workspace setup fails", async () 
 });
 
 test("rejects invalid private contact details", async () => {
+  await expect(
+    updateMemberProfile({ userId: memberA, phone: "call me" }),
+  ).rejects.toThrow("gültige Telefonnummer");
+});
+
+test("createMember rejects an invalid private email from the member profile", async () => {
   await seedTeam("manual-team", orgA);
+  vi.mocked(findLinkableMemberPlatformProfile).mockResolvedValueOnce({
+    id: "platform-manual-member",
+    contact: { email: "invalid" },
+  });
 
   await expect(
     createMember({
-      name: "Invalid Contact",
-      email: "invalid@youngfounders.network",
-      privateEmail: "not-an-email",
+      name: "Manual Member",
+      email: "invalid-profile@youngfounders.network",
       memberPlatformUserId: "platform-manual-member",
       teamId: "manual-team",
       isTeamLead: false,
     }),
-  ).rejects.toThrow("gültige private E-Mail-Adresse");
-
-  await expect(
-    updateMemberProfile({ userId: memberA, phone: "call me" }),
-  ).rejects.toThrow("gültige Telefonnummer");
+  ).rejects.toThrow("keine gültige private E-Mail-Adresse");
+  expect(provisionManualMemberWorkspace).not.toHaveBeenCalled();
 });
 
 test("updateBankDetails updates the caller's own bank details", async () => {
