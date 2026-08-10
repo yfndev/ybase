@@ -1,28 +1,36 @@
-import { useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { searchManualMemberPlatformProfiles } from "@/lib/server/users/manualMemberPlatformProfiles";
 
-interface Lookup {
-  name: string;
-  privateEmail: string;
-}
+const SEARCH_DELAY_MS = 300;
 
-function lookupKey({ name, privateEmail }: Lookup): string {
-  return `${name.trim()}\n${privateEmail.trim().toLowerCase()}`;
-}
+export function useManualMemberPlatformProfiles(name: string) {
+  const normalizedName = name.trim();
+  const [debouncedName, setDebouncedName] = useState("");
 
-export function useManualMemberPlatformProfiles(lookup: Lookup) {
-  const search = useMutation({
-    mutationFn: searchManualMemberPlatformProfiles,
+  useEffect(() => {
+    const timer = setTimeout(
+      () => setDebouncedName(normalizedName),
+      SEARCH_DELAY_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [normalizedName]);
+
+  const isEnabled = debouncedName.length >= 2;
+  const isWaiting =
+    normalizedName.length >= 2 && normalizedName !== debouncedName;
+  const result = useQuery({
+    queryKey: ["manual-member-platform-profiles", debouncedName],
+    queryFn: () => searchManualMemberPlatformProfiles({ name: debouncedName }),
+    enabled: isEnabled,
+    retry: false,
+    staleTime: 30_000,
   });
-  const isCurrentResult = search.variables
-    ? lookupKey(search.variables) === lookupKey(lookup)
-    : false;
 
   return {
-    candidates: isCurrentResult && search.isSuccess ? search.data : null,
-    isError: isCurrentResult && search.isError,
-    isSearching: isCurrentResult && search.isPending,
-    isPending: search.isPending,
-    search: () => search.mutate(lookup),
+    candidates: isEnabled && !isWaiting ? (result.data ?? null) : null,
+    isError: !isWaiting && result.isError,
+    isSearching: isWaiting || result.isFetching,
+    refetch: result.refetch,
   };
 }

@@ -18,20 +18,19 @@ test("searches confirmed profiles only after checking member permissions", async
   await expect(
     searchManualMemberPlatformProfiles({
       name: "  Inês Torres Ferreira  ",
-      privateEmail: "  INES@EXAMPLE.COM  ",
     }),
   ).resolves.toEqual([]);
 
   expect(requirePermission).toHaveBeenCalledWith("manage_members");
   expect(searchApplicationMemberPlatformCandidates).toHaveBeenCalledWith({
     applicantName: "Inês Torres Ferreira",
-    privateEmail: "ines@example.com",
+    privateEmail: "",
   });
 });
 
 test("rejects invalid lookup data before querying member profiles", async () => {
   await expect(
-    searchManualMemberPlatformProfiles({ name: "I", privateEmail: "invalid" }),
+    searchManualMemberPlatformProfiles({ name: "I" }),
   ).rejects.toThrow();
   expect(searchApplicationMemberPlatformCandidates).not.toHaveBeenCalled();
 });
