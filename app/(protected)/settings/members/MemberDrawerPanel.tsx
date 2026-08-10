@@ -9,8 +9,8 @@ import { isInGettingToKnow } from "@/lib/members/gettingToKnow";
 import { memberStageForStatus } from "@/lib/members/stages";
 import { profileAvatarUrl } from "@/lib/profile/avatar";
 import { LabeledSelect } from "./LabeledSelect";
-import { MemberActionsMenu } from "./MemberActionsMenu";
 import { MemberGettingToKnowSection } from "./MemberGettingToKnowSection";
+import { MemberMembershipActions } from "./MemberMembershipActions";
 import { MemberStatusField } from "./MemberStatusField";
 import { ROLE_OPTIONS } from "./memberLabels";
 import { PublicOrganizationFields } from "./PublicOrganizationFields";
@@ -75,10 +75,6 @@ export function MemberDrawerPanel({
             ) : null}
           </div>
         </div>
-        <MemberActionsMenu
-          member={member}
-          canExcludeMembers={form.canEditRoles}
-        />
       </div>
 
       <div className="flex flex-1 flex-col gap-4 px-6">
@@ -120,6 +116,11 @@ export function MemberDrawerPanel({
         <Button variant="outline" onClick={onClose} disabled={form.isSaving}>
           Abbrechen
         </Button>
+        <MemberMembershipActions
+          member={member}
+          canExcludeMembers={form.canEditRoles}
+          isFormSaving={form.isSaving}
+        />
       </SheetFooter>
     </div>
   );
