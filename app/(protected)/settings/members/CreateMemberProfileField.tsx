@@ -21,12 +21,7 @@ export function CreateMemberProfileField({
 
   return (
     <section className="space-y-3">
-      <div className="space-y-1">
-        <h3 className="text-sm font-semibold">Member-Profil*</h3>
-        <p className="text-xs text-muted-foreground">
-          Die Suche aktualisiert sich automatisch während der Namenseingabe.
-        </p>
-      </div>
+      <h3 className="text-sm font-semibold">Member-Profil*</h3>
 
       {!canSearch ? (
         <p className="text-sm text-muted-foreground">
@@ -35,6 +30,7 @@ export function CreateMemberProfileField({
       ) : (
         <ApplicationAdmissionProfileSearch
           candidates={profiles.candidates}
+          candidateListClassName="max-h-[38svh] overflow-y-auto overscroll-contain [scrollbar-gutter:stable] sm:max-h-80"
           isPending={disabled || profiles.isSearching}
           isSearching={profiles.isSearching}
           searchError={profiles.isError}
