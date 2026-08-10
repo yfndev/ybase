@@ -18,6 +18,7 @@ export interface BoardMembership {
 
 export type GettingToKnowOutcome =
   | "confirmed"
+  | "ended"
   | "ended_by_org"
   | "ended_by_member";
 

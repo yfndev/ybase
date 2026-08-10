@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -51,9 +52,9 @@ export function MemberGettingToKnowSection({ member }: { member: User }) {
     }
   };
 
-  const end = async (outcome: "ended_by_org" | "ended_by_member") => {
+  const end = async () => {
     try {
-      await endGettingToKnow.mutateAsync({ userId: member._id, outcome });
+      await endGettingToKnow.mutateAsync({ userId: member._id });
       setIsEndOpen(false);
       toast.success("Zusammenarbeit beendet");
     } catch (error) {
@@ -123,27 +124,32 @@ export function MemberGettingToKnowSection({ member }: { member: User }) {
       >
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Zusammenarbeit beenden</DialogTitle>
+            <DialogTitle>Zusammenarbeit beenden?</DialogTitle>
+            <DialogDescription>
+              Die Person wird archiviert, aus ihren Teams entfernt und ihr
+              Zugriff wird gesperrt.
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
               disabled={endGettingToKnow.isPending}
-              onClick={() => end("ended_by_member")}
+              onClick={() => setIsEndOpen(false)}
             >
-              Person hat abgesagt
+              Abbrechen
             </Button>
             <Button
               type="button"
-              variant="primary"
+              variant="destructive"
               disabled={endGettingToKnow.isPending}
-              onClick={() => end("ended_by_org")}
+              aria-busy={endGettingToKnow.isPending}
+              onClick={() => void end()}
             >
               {endGettingToKnow.isPending ? (
                 <Loader2 aria-hidden="true" className="animate-spin" />
               ) : null}
-              Wir setzen nicht fort
+              Beenden bestätigen
             </Button>
           </DialogFooter>
         </DialogContent>

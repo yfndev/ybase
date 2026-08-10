@@ -62,14 +62,14 @@ test("confirming the phase opens the membership onboarding", async () => {
 });
 
 test("ending the phase archives the account without a membership", async () => {
-  await endGettingToKnow({ userId: memberId, outcome: "ended_by_org" });
+  await endGettingToKnow({ userId: memberId });
 
   const member = await (await users()).findOne({ _id: memberId });
   expect(member).toMatchObject({
     memberStatus: "archived",
     archivedAt: expect.any(Number),
   });
-  expect(member?.gettingToKnow?.outcome).toBe("ended_by_org");
+  expect(member?.gettingToKnow?.outcome).toBe("ended");
   expect(member).not.toHaveProperty("teamId");
   expect(member).not.toHaveProperty("isTeamLead");
   expect(await (await memberships()).countDocuments({})).toBe(0);
@@ -79,19 +79,10 @@ test("ending the phase archives the account without a membership", async () => {
   ]);
 });
 
-test("a resignation in the phase ends it immediately as well", async () => {
-  await endGettingToKnow({ userId: memberId, outcome: "ended_by_member" });
-
-  expect(await (await users()).findOne({ _id: memberId })).toMatchObject({
-    memberStatus: "archived",
-    gettingToKnow: expect.objectContaining({ outcome: "ended_by_member" }),
-  });
-});
-
 test("ends a confirmed phase that never reached the membership form", async () => {
   await confirmGettingToKnow({ userId: memberId });
 
-  await endGettingToKnow({ userId: memberId, outcome: "ended_by_org" });
+  await endGettingToKnow({ userId: memberId });
 
   expect(await (await users()).findOne({ _id: memberId })).toMatchObject({
     memberStatus: "archived",
@@ -117,9 +108,9 @@ test("only members inside the phase can be decided on", async () => {
   await expect(confirmGettingToKnow({ userId: memberId })).rejects.toThrow(
     "nicht in der Kennenlernphase",
   );
-  await expect(
-    endGettingToKnow({ userId: memberId, outcome: "ended_by_org" }),
-  ).rejects.toThrow("nicht in der Kennenlernphase");
+  await expect(endGettingToKnow({ userId: memberId })).rejects.toThrow(
+    "nicht in der Kennenlernphase",
+  );
 });
 
 test("cannot decide across organizations", async () => {

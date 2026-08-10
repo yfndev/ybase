@@ -10,10 +10,6 @@ import { sendUserStateEmail } from "../users/email";
 
 const decisionSchema = z.object({ userId: z.string().min(1) });
 
-const endSchema = decisionSchema.extend({
-  outcome: z.enum(["ended_by_org", "ended_by_member"]),
-});
-
 export async function confirmGettingToKnow(input: {
   userId: string;
 }): Promise<void> {
@@ -53,10 +49,8 @@ export async function confirmGettingToKnow(input: {
 
 export async function endGettingToKnow(input: {
   userId: string;
-  outcome: "ended_by_org" | "ended_by_member";
 }): Promise<void> {
-  const parsed = endSchema.parse(input);
-  const { currentUser, target } = await loadPhaseMember(parsed);
+  const { currentUser, target } = await loadPhaseMember(input);
   const endedAt = Date.now();
   const result = await (
     await users()
@@ -68,7 +62,7 @@ export async function endGettingToKnow(input: {
         archivedAt: endedAt,
         "gettingToKnow.decidedAt": endedAt,
         "gettingToKnow.decidedBy": currentUser._id,
-        "gettingToKnow.outcome": parsed.outcome,
+        "gettingToKnow.outcome": "ended" satisfies GettingToKnowOutcome,
       },
       $unset: {
         teamId: "",
@@ -86,7 +80,7 @@ export async function endGettingToKnow(input: {
     currentUser._id,
     "member.getting_to_know_ended",
     target._id,
-    `${target.name ?? target.email}: Kennenlernphase beendet (${parsed.outcome})`,
+    `${target.name ?? target.email}: Kennenlernphase beendet`,
   );
   await sendUserStateEmail({ user: target, event: "getting_to_know_ended" });
   await suspendGettingToKnowAccess(target);
