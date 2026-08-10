@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, Loader2, LogOut, UserCheck } from "lucide-react";
+import { CalendarClock, Loader2 } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
@@ -89,19 +89,18 @@ export function MemberGettingToKnowSection({ member }: { member: User }) {
           ) : null}
         </div>
       </div>
-      <div className="flex flex-wrap gap-2 pt-1">
+      <div className="grid gap-2 pt-1">
         {!isConfirmed && (
           <Button
             type="button"
             variant="primary"
             disabled={isPending}
+            aria-busy={confirmGettingToKnow.isPending}
             onClick={confirm}
           >
             {confirmGettingToKnow.isPending ? (
               <Loader2 aria-hidden="true" className="animate-spin" />
-            ) : (
-              <UserCheck aria-hidden="true" className="size-4" />
-            )}
+            ) : null}
             Mitgliedschaft anstoßen
           </Button>
         )}
@@ -111,7 +110,6 @@ export function MemberGettingToKnowSection({ member }: { member: User }) {
           disabled={isPending}
           onClick={() => setIsEndOpen(true)}
         >
-          <LogOut aria-hidden="true" className="size-4" />
           Zusammenarbeit beenden
         </Button>
       </div>
