@@ -12,6 +12,8 @@ import {
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import { formatDate } from "@/lib/formatters/formatDate";
 import { STATUS_DISPLAY } from "@/lib/reimbursementStatus";
+import type { OwnMembershipOverview } from "@/lib/server/memberships/selfServiceResignation";
+import { MembershipDashboardWidget } from "./MembershipDashboardWidget";
 
 const STATUS_CARDS = [
   { status: "pending", title: "Offen" },
@@ -56,7 +58,8 @@ function BreakdownCard({
             >
               <span className="truncate">{row.label}</span>
               <span className="shrink-0 text-sm text-muted-foreground">
-                {row.count} · {formatCurrency(row.sum)}
+                {row.count} {row.count === 1 ? "Vorgang" : "Vorgänge"},{" "}
+                {formatCurrency(row.sum)}
               </span>
             </div>
           ))
@@ -66,7 +69,13 @@ function BreakdownCard({
   );
 }
 
-export function DashboardPageUI({ entries }: { entries: DashboardEntry[] }) {
+export function DashboardPageUI({
+  entries,
+  membership,
+}: {
+  entries: DashboardEntry[];
+  membership: OwnMembershipOverview | null;
+}) {
   const totals = statusTotals(entries);
   const projectRows: BreakdownRow[] = sumByProject(entries).map((row) => ({
     key: row.projectName,
@@ -89,7 +98,8 @@ export function DashboardPageUI({ entries }: { entries: DashboardEntry[] }) {
       <PageHeader title="Dashboard" />
 
       <div className="flex flex-col gap-6">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+          <MembershipDashboardWidget membership={membership} />
           {STATUS_CARDS.map((card) => (
             <Card key={card.status}>
               <CardHeader className="pb-2">
