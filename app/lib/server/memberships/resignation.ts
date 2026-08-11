@@ -53,6 +53,10 @@ export async function recordMembershipResignation(input: {
     scheduledEndAt,
     resignationReceivedAt: receivedAt,
     actorUserId: currentUser._id,
+    eventDetails: {
+      source: "admin_recorded",
+      receivedOn: parsed.receivedOn,
+    },
   });
   if (!isScheduled) {
     const stored = await (await memberships()).findOne({ _id: membership._id });

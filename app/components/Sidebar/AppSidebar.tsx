@@ -31,12 +31,8 @@ import { MainNav, type NavItem } from "./MainNav";
 import { NavUser } from "./UserNav";
 
 const MEMBER_NAV_ITEMS: NavItem[] = [
-  { name: "Erstattungen", url: "/reimbursements", icon: Coins },
-];
-
-const STAFF_NAV_ITEMS: NavItem[] = [
   { name: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  ...MEMBER_NAV_ITEMS,
+  { name: "Erstattungen", url: "/reimbursements", icon: Coins },
 ];
 
 type ProtectedNavItem = NavItem & { permission: UserPermission };
@@ -77,9 +73,9 @@ export function AppSidebar({
   navSlot?: React.ReactNode;
 }) {
   const role = useCurrentUserRole();
-  const homeUrl = role === "member" ? "/reimbursements" : "/dashboard";
+  const homeUrl = "/dashboard";
   const mainItems: NavItem[] = [
-    ...(role === "member" ? MEMBER_NAV_ITEMS : STAFF_NAV_ITEMS),
+    ...MEMBER_NAV_ITEMS,
     ...(hasPermission(role, USER_PERMISSIONS.recruiting)
       ? [
           { name: "Ausschreibungen", url: "/recruiting", icon: Megaphone },

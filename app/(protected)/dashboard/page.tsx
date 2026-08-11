@@ -1,7 +1,6 @@
-import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { normalizeUserRole } from "@/lib/auth/roles";
 import type { DashboardEntry } from "@/lib/dashboardStats";
+import { getOwnMembershipOverview } from "@/lib/server/memberships/selfServiceResignation";
 import { getAllReimbursements } from "@/lib/server/reimbursements/data";
 import { getAll } from "@/lib/server/volunteerAllowance/data";
 import { DashboardPageUI } from "./DashboardPageUI";
@@ -14,13 +13,11 @@ const REIMBURSEMENT_LABEL = {
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.organizationId) return null;
-  if (normalizeUserRole(session.user.role) === "member") {
-    redirect("/reimbursements");
-  }
 
-  const [reimbursements, allowances] = await Promise.all([
+  const [reimbursements, allowances, membership] = await Promise.all([
     getAllReimbursements(),
     getAll(),
+    getOwnMembershipOverview(),
   ]);
 
   const entries: DashboardEntry[] = [
@@ -45,5 +42,5 @@ export default async function DashboardPage() {
     })),
   ];
 
-  return <DashboardPageUI entries={entries} />;
+  return <DashboardPageUI entries={entries} membership={membership} />;
 }

@@ -10,6 +10,7 @@ import type {
   Membership,
   MembershipCase,
   MembershipEvent,
+  MembershipResignationRequest,
   Organization,
   Project,
   Receipt,
@@ -112,4 +113,10 @@ export async function documentExecutions() {
 
 export async function membershipEvents() {
   return (await getDb()).collection<MembershipEvent>("membershipEvents");
+}
+
+export async function membershipResignationRequests() {
+  return (await getDb()).collection<MembershipResignationRequest>(
+    "membershipResignationRequests",
+  );
 }

@@ -34,6 +34,7 @@ export type * from "./membershipAdmission";
 export type * from "./membershipCase";
 export type * from "./membershipDocument";
 export type * from "./membershipEvent";
+export type * from "./membershipResignation";
 export type {
   BoardMembership,
   GettingToKnowOutcome,
