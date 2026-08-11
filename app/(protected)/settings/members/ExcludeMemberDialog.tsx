@@ -51,7 +51,7 @@ export function ExcludeMemberDialog({
             ) : (
               <>
                 <span className="block">
-                  Damit bestätigst du, dass der Ausschluss von {memberName}
+                  Damit bestätigst du, dass der Ausschluss von {memberName}{" "}
                   bereits satzungsgemäß beschlossen wurde.
                 </span>
                 <span className="block">
