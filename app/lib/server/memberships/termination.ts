@@ -1,5 +1,9 @@
 import { memberships, users } from "../../db/collections";
-import type { Membership, MembershipEndReason } from "../../db/types";
+import type {
+  Membership,
+  MembershipEndReason,
+  MembershipEvent,
+} from "../../db/types";
 import { syncEndedMembershipAccess } from "./accessClosure";
 import { appendMembershipEvent } from "./events";
 
@@ -13,8 +17,10 @@ export async function scheduleMembershipEnd(input: {
   reason: ScheduledEndReason;
   scheduledEndAt: number;
   actorUserId?: string;
+  actorType?: MembershipEvent["actorType"];
   resignationReceivedAt?: number;
   recordedAt?: number;
+  eventDetails?: MembershipEvent["details"];
 }): Promise<boolean> {
   const { membership, reason, scheduledEndAt } = input;
   const recordedAt = input.recordedAt ?? Date.now();
@@ -74,11 +80,11 @@ export async function scheduleMembershipEnd(input: {
     membershipId: membership._id,
     userId: membership.userId,
     actorUserId: input.actorUserId,
-    actorType: input.actorUserId ? "user" : "system",
+    actorType: input.actorType ?? (input.actorUserId ? "user" : "system"),
     type: "membership.end_scheduled",
     idempotencyKey: `membership:${membership._id}:scheduled:${reason}:${scheduledEndAt}`,
     occurredAt: recordedAt,
-    details: { reason, scheduledEndAt },
+    details: { reason, scheduledEndAt, ...input.eventDetails },
   });
   return isChanged;
 }

@@ -7,6 +7,7 @@ const PUBLIC_PREFIXES = [
   "/ehrenamtspauschale",
   "/sign",
   "/withdraw-application",
+  "/membership/resignation",
   "/impressum",
   "/datenschutz",
 ];

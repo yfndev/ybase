@@ -68,6 +68,14 @@ export async function ensureMembershipIndexes(db: Db): Promise<void> {
       partialFilterExpression: { idempotencyKey: { $type: "string" } },
     },
   ]);
+  await db.collection("membershipResignationRequests").createIndexes([
+    { key: { organizationId: 1, userId: 1, requestedAt: -1 } },
+    {
+      key: { guardianTokenHash: 1 },
+      unique: true,
+      partialFilterExpression: { guardianTokenHash: { $type: "string" } },
+    },
+  ]);
 }
 
 async function ensureApplicationIndexAllowsManualMemberships(
