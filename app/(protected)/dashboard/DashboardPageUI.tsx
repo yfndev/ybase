@@ -13,7 +13,7 @@ import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import { formatDate } from "@/lib/formatters/formatDate";
 import { STATUS_DISPLAY } from "@/lib/reimbursementStatus";
 import type { OwnMembershipOverview } from "@/lib/server/memberships/selfServiceResignation";
-import { MembershipDashboardWidget } from "./MembershipDashboardWidget";
+import { MembershipWelcomeBanner } from "./MembershipWelcomeBanner";
 
 const STATUS_CARDS = [
   { status: "pending", title: "Offen" },
@@ -98,8 +98,9 @@ export function DashboardPageUI({
       <PageHeader title="Dashboard" />
 
       <div className="flex flex-col gap-6">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-          <MembershipDashboardWidget membership={membership} />
+        <MembershipWelcomeBanner membership={membership} />
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
           {STATUS_CARDS.map((card) => (
             <Card key={card.status}>
               <CardHeader className="pb-2">
