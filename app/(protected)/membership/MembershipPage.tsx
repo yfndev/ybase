@@ -28,11 +28,15 @@ const DATE_FORMAT = new Intl.DateTimeFormat("de-DE", {
 
 export function MembershipPage({
   membership,
+  openResignation = false,
 }: {
   membership: OwnMembershipOverview | null;
+  openResignation?: boolean;
 }) {
   const router = useRouter();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(
+    openResignation && membership?.legalStatus === "active",
+  );
   const [isPending, startTransition] = useTransition();
 
   if (!membership) {
