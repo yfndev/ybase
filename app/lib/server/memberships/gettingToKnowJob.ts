@@ -49,9 +49,11 @@ async function notifyDecisionMakers(member: User): Promise<void> {
   )
     .find({
       organizationId: member.organizationId,
-      teamId: member.teamId,
-      isTeamLead: true,
       memberStatus: { $nin: [...UNAVAILABLE_MEMBER_STATUSES] },
+      $or: [
+        { teamId: member.teamId, isTeamLead: true },
+        { role: "people_culture" },
+      ],
     })
     .toArray();
   for (const recipient of recipients) {
