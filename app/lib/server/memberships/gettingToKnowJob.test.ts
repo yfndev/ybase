@@ -67,6 +67,43 @@ test("reminds the team lead once when the decision comes up", async () => {
   expect(vi.mocked(sendGettingToKnowDueEmail)).toHaveBeenCalledTimes(1);
 });
 
+test("notifies the people and culture lead of the same organization", async () => {
+  await (
+    await users()
+  ).insertOne({
+    _id: newId(),
+    _creationTime: Date.now(),
+    organizationId,
+    name: "People Culture Lead",
+    privateEmail: "people@example.org",
+    role: "people_culture",
+    memberStatus: "active",
+    teamOnboardingStatus: "completed",
+  });
+  await (
+    await users()
+  ).insertOne({
+    _id: newId(),
+    _creationTime: Date.now(),
+    organizationId: newId(),
+    name: "Other Org Lead",
+    privateEmail: "other@example.org",
+    role: "people_culture",
+    memberStatus: "active",
+    teamOnboardingStatus: "completed",
+  });
+  await insertMember(3 * DAY);
+
+  await processGettingToKnowPhases();
+
+  const recipientNames = vi
+    .mocked(sendGettingToKnowDueEmail)
+    .mock.calls.map(([input]) => input.recipient.name);
+  expect(recipientNames).toHaveLength(2);
+  expect(recipientNames).toContain("Lead Example");
+  expect(recipientNames).toContain("People Culture Lead");
+});
+
 test("keeps quiet while the phase is still running", async () => {
   await insertMember(20 * DAY);
 
