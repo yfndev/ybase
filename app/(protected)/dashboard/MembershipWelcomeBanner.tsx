@@ -22,51 +22,45 @@ export function MembershipWelcomeBanner({
   return (
     <section
       aria-labelledby="membership-welcome-title"
-      className="overflow-hidden border-2 bg-card"
+      className="overflow-hidden rounded-[0.25rem] border bg-card"
     >
-      <div className="grid md:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
-        <div className="flex min-h-56 flex-col justify-center px-6 py-7 sm:px-8 lg:px-10">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <p className="text-sm font-semibold">Young Founders Network</p>
-            <span className="text-muted-foreground" aria-hidden="true">
-              ·
-            </span>
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span
-                aria-hidden="true"
-                className={`size-2 rounded-full ${presentation.dot}`}
-              />
-              {presentation.statusLabel}
-            </p>
-          </div>
+      <div className="grid md:grid-cols-[minmax(0,1fr)_16rem] xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-h-52 flex-col justify-center px-6 py-6 sm:px-8">
+          <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <span
+              aria-hidden="true"
+              className={`size-1.5 rounded-full ${presentation.dot}`}
+            />
+            {presentation.statusLabel}
+          </p>
 
           <h2
             id="membership-welcome-title"
-            className="mt-4 text-2xl leading-tight font-bold tracking-tight sm:text-3xl"
+            className="mt-3 text-xl leading-tight font-semibold tracking-tight sm:text-2xl"
           >
             {presentation.heading}
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+          <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">
             {presentation.description}
           </p>
 
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
             {canResign ? (
-              <Button asChild variant="outline">
+              <Button asChild size="sm" variant="outline">
                 <Link href="/membership?resign=1">
                   <LogOut aria-hidden="true" />
                   Mitgliedschaft beenden
                 </Link>
               </Button>
             ) : membership ? (
-              <Button asChild variant="outline">
+              <Button asChild size="sm" variant="outline">
                 <Link href="/membership">
                   {presentation.actionLabel}
                   <ArrowRight aria-hidden="true" />
                 </Link>
               </Button>
             ) : (
-              <Button asChild variant="outline">
+              <Button asChild size="sm" variant="outline">
                 <a
                   href="https://youngfounders.network"
                   target="_blank"
@@ -85,18 +79,14 @@ export function MembershipWelcomeBanner({
           </div>
         </div>
 
-        <div className="relative min-h-48 border-t-2 md:min-h-full md:border-t-0 md:border-l-2">
+        <div className="relative min-h-40 border-t md:min-h-full md:border-t-0 md:border-l">
           <Image
             src="/yfn-onboarding-team.jpg"
             alt="Mitglieder des Young Founders Network bei einem gemeinsamen Teamfoto"
             fill
             priority
-            sizes="(max-width: 767px) 100vw, (max-width: 1279px) 18rem, 24rem"
+            sizes="(max-width: 767px) 100vw, (max-width: 1279px) 16rem, 20rem"
             className="object-cover object-[center_52%]"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute right-0 bottom-0 h-2 w-24 bg-primary"
           />
         </div>
       </div>
