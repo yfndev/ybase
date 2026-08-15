@@ -796,7 +796,7 @@ test("deleteReimbursement removes a mileage reimbursement without a receipt file
   const input = reimbursementInput();
   const id = await createTravelReimbursement({
     ...input,
-    amount: 1.5,
+    amount: 0.75,
     startDate: "2026-05-15",
     startTime: "08:00",
     endDate: "2026-05-15",
@@ -810,9 +810,9 @@ test("deleteReimbursement removes a mileage reimbursement without a receipt file
         receiptDate: "2026-05-15",
         companyName: "Privater PKW",
         description: "",
-        netAmount: 1.5,
+        netAmount: 0.75,
         taxRate: 0,
-        grossAmount: 1.5,
+        grossAmount: 0.75,
         kilometers: 5,
       },
     ],
