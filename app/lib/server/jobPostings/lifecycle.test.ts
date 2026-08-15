@@ -250,6 +250,21 @@ test("closeExpiredJobPostings closes only expired published postings across orgs
   expect(log?.userId).toBe("system");
 });
 
+test("reopening demands the publish permission, closing does not", async () => {
+  const reopenable = await insertPosting(orgA, {
+    status: "closed",
+    deadline: FUTURE,
+  });
+  const publishable = await insertPosting(orgA, { status: "published" });
+
+  await reopenJobPosting({ jobPostingId: reopenable });
+  expect(requirePermission).toHaveBeenCalledWith("publish_job_postings");
+
+  vi.mocked(requirePermission).mockClear();
+  await closeJobPosting({ jobPostingId: publishable });
+  expect(requirePermission).toHaveBeenCalledWith("manage_recruiting");
+});
+
 test("lifecycle actions refuse a posting from another org", async () => {
   const foreign = await insertPosting(orgB, { status: "published" });
   await expect(closeJobPosting({ jobPostingId: foreign })).rejects.toThrow(

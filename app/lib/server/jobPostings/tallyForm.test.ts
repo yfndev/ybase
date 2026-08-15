@@ -535,3 +535,13 @@ test("rejects an unauthorized role", async () => {
     "Insufficient permissions",
   );
 });
+
+test("publishing demands the publish permission", async () => {
+  const client = useClient(fakeClient());
+  const id = await insertDraft(orgA);
+
+  await generateTallyForm({ jobPostingId: id });
+
+  expect(requirePermission).toHaveBeenCalledWith("publish_job_postings");
+  expect(client.publishForm).toHaveBeenCalled();
+});

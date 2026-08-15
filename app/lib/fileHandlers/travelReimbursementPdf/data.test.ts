@@ -64,7 +64,7 @@ test("maps domestic travel data and aggregates supported cost types", () => {
   });
 });
 
-test("uses the selected 15 cent mileage rate", () => {
+test("uses the fixed 15 cent mileage rate", () => {
   const data = buildTravelPdfData(reimbursement({ amount: 15 }), [
     {
       costType: "car",

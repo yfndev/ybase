@@ -14,7 +14,11 @@ import {
 import { JOB_POSTING_TIME_COMMITMENTS } from "../../jobPostings/timeCommitment";
 import { UNAVAILABLE_MEMBER_STATUSES } from "../../members/status";
 import { addLog } from "../logs";
-import { requireOwnedJobPosting } from "./access";
+import {
+  canManageJobPostingTeam,
+  type RecruitingActor,
+  requireOwnedJobPosting,
+} from "./access";
 import { sanitizeRichText } from "./sanitize";
 import { provisionTallyFormDraft } from "./tallyFormProvisioning";
 import { requireRecruitingTallyTemplate } from "./tallyTemplates";
@@ -88,7 +92,7 @@ export async function createJobPostingDraft(input: {
     })
     .parse(input);
   await Promise.all([
-    requireActiveTeam(teamId, user.organizationId),
+    requireActiveTeam(teamId, user),
     requireRecruitingTallyTemplate(tallyTemplateFormId),
   ]);
 
@@ -126,11 +130,8 @@ export async function updateJobPosting(
     throw new Error(JOB_POSTING_DEADLINE_ERROR);
   }
 
-  const posting = await requireOwnedJobPosting(
-    jobPostingId,
-    user.organizationId,
-  );
-  await requireActiveTeam(content.teamId, user.organizationId);
+  const posting = await requireOwnedJobPosting(jobPostingId, user);
+  await requireActiveTeam(content.teamId, user);
   const contactUserIds = [...new Set(content.contactUserIds ?? [])];
   await requireContactMembers(contactUserIds, user.organizationId);
   const documentFields = toDocumentFields(content, contactUserIds);
@@ -180,11 +181,11 @@ async function requireContactMembers(
   }
 }
 
-async function requireActiveTeam(teamId: string, organizationId: string) {
+async function requireActiveTeam(teamId: string, user: RecruitingActor) {
   const team = await (await teams()).findOne({ _id: teamId });
   const isUsable =
-    team && team.organizationId === organizationId && !team.isArchived;
-  if (!isUsable) {
+    team && team.organizationId === user.organizationId && !team.isArchived;
+  if (!isUsable || !canManageJobPostingTeam(user, teamId)) {
     throw new Error("Team nicht verfügbar");
   }
   return team;

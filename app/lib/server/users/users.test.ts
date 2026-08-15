@@ -707,6 +707,39 @@ test("updateMemberProfile rejects a team from another org", async () => {
   ).rejects.toThrow("Team nicht verfügbar");
 });
 
+test("listMembers hides bank and private contact data from team leads", async () => {
+  await (
+    await users()
+  ).updateOne(
+    { _id: memberA },
+    { $set: { iban: "DE02120300000000202051", phone: "+49 170 1111111" } },
+  );
+
+  vi.mocked(requireUser).mockResolvedValue(
+    createTestActor({ _id: adminA, organizationId: orgA, role: "team_lead" }),
+  );
+  const forTeamLead = await listMembers();
+  const seenByTeamLead = forTeamLead.find(({ _id }) => _id === memberA);
+  expect(seenByTeamLead?.iban).toBeUndefined();
+  expect(seenByTeamLead?.phone).toBeUndefined();
+  expect(seenByTeamLead?.email).toBe("member@a.org");
+
+  vi.mocked(requireUser).mockResolvedValue(
+    createTestActor({ _id: adminA, organizationId: orgA, role: "admin" }),
+  );
+  const forAdmin = await listMembers();
+  expect(forAdmin.find(({ _id }) => _id === memberA)?.iban).toBe(
+    "DE02120300000000202051",
+  );
+});
+
+test("listMembers refuses members without recruiting or member access", async () => {
+  vi.mocked(requireUser).mockResolvedValue(
+    createTestActor({ _id: memberA, organizationId: orgA, role: "member" }),
+  );
+  await expect(listMembers()).rejects.toThrow("Insufficient permissions");
+});
+
 test("listMembers keeps archived profiles visible", async () => {
   await setMemberStatus({ userId: memberA, status: "archived" });
   const members = await listMembers();

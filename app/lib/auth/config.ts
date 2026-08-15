@@ -61,6 +61,8 @@ export const authConfig = {
         token.userId = appUser._id;
         token.organizationId = appUser.organizationId;
         token.role = appUser.role;
+        token.teamId = appUser.teamId;
+        token.secondaryTeamId = appUser.secondaryTeamId;
         token.email = appUser.email;
         token.profileImageStorageKey = appUser.profileImageStorageKey;
         token.publicProfileCompletedAt = appUser.publicProfileCompletedAt;
@@ -74,6 +76,10 @@ export const authConfig = {
           | string
           | undefined;
         session.user.role = normalizeOptionalUserRole(token.role);
+        session.user.teamId = token.teamId as string | undefined;
+        session.user.secondaryTeamId = token.secondaryTeamId as
+          | string
+          | undefined;
         session.user.profileImageStorageKey = token.profileImageStorageKey as
           | string
           | undefined;

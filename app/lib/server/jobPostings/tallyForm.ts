@@ -11,6 +11,7 @@ import {
 } from "../../jobPostings/deadline";
 import { addLog } from "../logs";
 import { createConfiguredTallyClient } from "../tally/client";
+import { requireOwnedJobPosting } from "./access";
 import {
   provisionTallyFormDraft,
   recordTallyFormError,
@@ -32,11 +33,8 @@ function assertPublishable(posting: JobPosting): void {
 }
 
 async function requireDraft(jobPostingId: string) {
-  const user = await requirePermission(USER_PERMISSIONS.recruiting);
-  const posting = await (await jobPostings()).findOne({ _id: jobPostingId });
-  if (!posting || posting.organizationId !== user.organizationId) {
-    throw new Error("Access denied");
-  }
+  const user = await requirePermission(USER_PERMISSIONS.publishJobPostings);
+  const posting = await requireOwnedJobPosting(jobPostingId, user);
   if (posting.status !== "draft") {
     return {
       user,

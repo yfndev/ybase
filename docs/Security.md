@@ -17,8 +17,10 @@ keeps authentication, authorization and organization isolation on the server.
 
 - Every protected operation requires an authenticated user.
 - Database access is scoped by `organizationId`.
-- Explicit role permissions distinguish members, finance, People & Culture and
-  administrators. Unknown roles safely receive member access.
+- Explicit role permissions distinguish members, finance, team leads, People &
+  Culture and administrators. Unknown roles safely receive member access.
+- Team leads reach only the job postings and applications of their own teams and
+  cannot publish or reopen a posting.
 - Server-side Zod validation protects action and API inputs.
 - Uploaded objects use generated keys and time-limited download URLs.
 - Audit logs record important organization and reimbursement actions.

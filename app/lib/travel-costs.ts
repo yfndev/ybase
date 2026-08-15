@@ -24,23 +24,17 @@ export const DEFAULT_TAX_RATES: Record<CostType, number> = {
 
 export const COST_TYPES = Object.keys(COST_LABELS) as CostType[];
 
-export const CAR_ALLOWANCE_RATES_EUR_PER_KM = [
-  0.3, 0.15,
-] as const satisfies readonly CarAllowanceRate[];
-
-export const CAR_ALLOWANCE_RATE_EUR_PER_KM = CAR_ALLOWANCE_RATES_EUR_PER_KM[0];
+export const CAR_ALLOWANCE_RATE_EUR_PER_KM = 0.15 satisfies CarAllowanceRate;
+const LEGACY_CAR_ALLOWANCE_RATE_EUR_PER_KM = 0.3 satisfies CarAllowanceRate;
 
 export function getCarAllowanceRate(receipt: {
   mileageRate?: CarAllowanceRate;
 }): CarAllowanceRate {
-  return receipt.mileageRate ?? CAR_ALLOWANCE_RATE_EUR_PER_KM;
+  return receipt.mileageRate ?? LEGACY_CAR_ALLOWANCE_RATE_EUR_PER_KM;
 }
 
-export function calculateCarAllowance(
-  kilometers: number,
-  mileageRate: CarAllowanceRate,
-): number {
-  return Math.round(kilometers * mileageRate * 100) / 100;
+export function calculateCarAllowance(kilometers: number): number {
+  return Math.round(kilometers * CAR_ALLOWANCE_RATE_EUR_PER_KM * 100) / 100;
 }
 
 export const MEAL_ALLOWANCE_PARTIAL_DAY_EUR = 14;
