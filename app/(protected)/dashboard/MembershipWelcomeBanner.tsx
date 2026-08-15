@@ -22,7 +22,7 @@ export function MembershipWelcomeBanner({
   return (
     <section
       aria-labelledby="membership-welcome-title"
-      className="overflow-hidden border-2 bg-card"
+      className="overflow-hidden rounded-none border-4 bg-card"
     >
       <div className="grid md:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="flex min-h-56 flex-col justify-center px-6 py-7 sm:px-8 lg:px-10">
@@ -85,7 +85,7 @@ export function MembershipWelcomeBanner({
           </div>
         </div>
 
-        <div className="relative min-h-48 border-t-2 md:min-h-full md:border-t-0 md:border-l-2">
+        <div className="relative min-h-48 border-t-4 md:min-h-full md:border-t-0 md:border-l-4">
           <Image
             src="/yfn-onboarding-team.jpg"
             alt="Mitglieder des Young Founders Network bei einem gemeinsamen Teamfoto"
