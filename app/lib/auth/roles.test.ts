@@ -5,16 +5,24 @@ import {
   hasRoleAccess,
   normalizeOptionalUserRole,
   normalizeUserRole,
+  recruitingTeamIds,
   USER_PERMISSIONS,
   type UserPermission,
 } from "./roles";
 
-const roles: UserRole[] = ["member", "finance", "people_culture", "admin"];
+const roles: UserRole[] = [
+  "member",
+  "finance",
+  "team_lead",
+  "people_culture",
+  "admin",
+];
 
 const expectedRoleAccess: Record<UserRole, UserRole[]> = {
   member: ["member"],
   finance: ["member", "finance"],
-  people_culture: ["member", "people_culture"],
+  team_lead: ["member", "team_lead"],
+  people_culture: ["member", "team_lead", "people_culture"],
   admin: roles,
 };
 
@@ -22,8 +30,10 @@ const permissions = Object.values(USER_PERMISSIONS);
 const expectedPermissions: Record<UserRole, UserPermission[]> = {
   member: [],
   finance: [USER_PERMISSIONS.finance],
+  team_lead: [USER_PERMISSIONS.recruiting],
   people_culture: [
     USER_PERMISSIONS.recruiting,
+    USER_PERMISSIONS.publishJobPostings,
     USER_PERMISSIONS.members,
     USER_PERMISSIONS.organizationStructure,
   ],
@@ -61,6 +71,21 @@ describe.each(roles)("%s permissions", (role) => {
       expectedPermissions[role].includes(permission),
     );
   });
+});
+
+test("team leads recruit only for their own teams", () => {
+  expect(
+    recruitingTeamIds({
+      role: "team_lead",
+      teamId: "t1",
+      secondaryTeamId: "t2",
+    }),
+  ).toEqual(["t1", "t2"]);
+  expect(recruitingTeamIds({ role: "team_lead" })).toEqual([]);
+  expect(
+    recruitingTeamIds({ role: "people_culture", teamId: "t1" }),
+  ).toBeNull();
+  expect(recruitingTeamIds({ role: "admin", teamId: "t1" })).toBeNull();
 });
 
 test("unknown roles only receive member permissions", () => {

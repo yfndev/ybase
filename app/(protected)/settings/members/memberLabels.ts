@@ -30,5 +30,6 @@ export const ROLE_OPTIONS: Option<UserRole>[] = [
   { value: "admin", label: "Admin" },
   { value: "finance", label: "Finance" },
   { value: "people_culture", label: "People & Culture" },
+  { value: "team_lead", label: "Team Lead" },
   { value: "member", label: "Teammitglied" },
 ];

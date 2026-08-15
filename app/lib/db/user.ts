@@ -1,4 +1,9 @@
-export type UserRole = "admin" | "finance" | "people_culture" | "member";
+export type UserRole =
+  | "admin"
+  | "finance"
+  | "people_culture"
+  | "team_lead"
+  | "member";
 export type MemberStatus =
   | "onboarding"
   | "getting_to_know"

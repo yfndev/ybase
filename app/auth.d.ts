@@ -7,6 +7,8 @@ declare module "next-auth" {
       id: string;
       organizationId?: string;
       role?: UserRole;
+      teamId?: string;
+      secondaryTeamId?: string;
       profileImageStorageKey?: string;
       publicProfileCompletedAt?: number;
     } & DefaultSession["user"];
@@ -23,6 +25,8 @@ declare module "next-auth/jwt" {
     userId?: string;
     organizationId?: string;
     role?: UserRole;
+    teamId?: string;
+    secondaryTeamId?: string;
     profileImageStorageKey?: string;
     publicProfileCompletedAt?: number;
   }
