@@ -77,8 +77,10 @@ export function AppSidebar({
   const mainItems: NavItem[] = [
     ...MEMBER_NAV_ITEMS,
     ...(hasPermission(role, USER_PERMISSIONS.recruiting)
+      ? [{ name: "Ausschreibungen", url: "/recruiting", icon: Megaphone }]
+      : []),
+    ...(hasPermission(role, USER_PERMISSIONS.members)
       ? [
-          { name: "Ausschreibungen", url: "/recruiting", icon: Megaphone },
           {
             name: "Mitglieder",
             url: "/members",
