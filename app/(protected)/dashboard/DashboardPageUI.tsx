@@ -20,7 +20,6 @@ const STATUS_CARDS = [
   { status: "changes_requested", title: "Änderungen angefordert" },
   { status: "approved", title: "Genehmigt" },
   { status: "paid", title: "Bezahlt" },
-  { status: "declined", title: "Abgelehnt" },
 ] as const;
 
 type BreakdownRow = { key: string; label: string; count: number; sum: number };
@@ -100,28 +99,27 @@ export function DashboardPageUI({
       <div className="flex flex-col gap-6">
         <MembershipWelcomeBanner membership={membership} />
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Anträge nach Status</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
-            {STATUS_CARDS.map((card) => (
-              <div key={card.status}>
-                <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {STATUS_CARDS.map((card) => (
+            <Card key={card.status}>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <StatusDot status={card.status} />
                   {card.title}
-                </p>
-                <p className="mt-2 text-2xl font-semibold">
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-semibold">
                   {formatCurrency(totals[card.status].sum)}
-                </p>
+                </div>
                 <p className="text-sm text-muted-foreground">
                   {totals[card.status].count}{" "}
                   {totals[card.status].count === 1 ? "Antrag" : "Anträge"}
                 </p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <BreakdownCard
