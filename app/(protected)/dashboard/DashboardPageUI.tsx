@@ -103,10 +103,7 @@ export function DashboardPageUI({
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {STATUS_CARDS.map((card) => (
-            <Card
-              key={card.status}
-              className={DASHBOARD_CARD_CLASS_NAME}
-            >
+            <Card key={card.status} className={DASHBOARD_CARD_CLASS_NAME}>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <StatusDot status={card.status} />
