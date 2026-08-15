@@ -81,6 +81,18 @@ async function insertMember(
   return _id;
 }
 
+function becomeTeamLead(teamId: string, secondaryTeamId?: string) {
+  const actor = createTestActor({
+    _id: userA,
+    organizationId: orgA,
+    role: "team_lead",
+    teamId,
+    secondaryTeamId,
+  });
+  vi.mocked(requireUser).mockResolvedValue(actor);
+  vi.mocked(requirePermission).mockResolvedValue(actor);
+}
+
 setupTestDatabase();
 
 beforeEach(async () => {
@@ -453,6 +465,67 @@ test("updateJobPosting keeps planned offboarding contacts available", async () =
   });
 
   expect((await getJobPostingById(id)).contactUserIds).toEqual([contactId]);
+});
+
+test("a team lead only sees and edits postings of their own teams", async () => {
+  const secondaryTeam = await insertTeam(orgA);
+  const otherTeam = await insertTeam(orgA);
+  const ownPosting = await createJobPostingDraft({
+    title: "Eigenes Team",
+    teamId: teamA,
+    tallyTemplateFormId: "template-1",
+  });
+  const secondaryPosting = await createJobPostingDraft({
+    title: "Zweitteam",
+    teamId: secondaryTeam,
+    tallyTemplateFormId: "template-1",
+  });
+  const foreignPosting = await createJobPostingDraft({
+    title: "Fremdes Team",
+    teamId: otherTeam,
+    tallyTemplateFormId: "template-1",
+  });
+  becomeTeamLead(teamA, secondaryTeam);
+
+  const list = await getJobPostings();
+  expect(list.map(({ _id }) => _id).sort()).toEqual(
+    [ownPosting, secondaryPosting].sort(),
+  );
+  await expect(getJobPostingById(foreignPosting)).rejects.toThrow("No access");
+  await expect(
+    updateJobPosting({
+      jobPostingId: foreignPosting,
+      title: "Hack",
+      teamId: otherTeam,
+    }),
+  ).rejects.toThrow("Access denied");
+  await expect(
+    updateJobPosting({
+      jobPostingId: ownPosting,
+      title: "Verschoben",
+      teamId: otherTeam,
+    }),
+  ).rejects.toThrow("Team nicht verfügbar");
+});
+
+test("a team lead cannot create a draft for another team", async () => {
+  const otherTeam = await insertTeam(orgA);
+  becomeTeamLead(teamA);
+
+  await expect(
+    createJobPostingDraft({
+      title: "Fremd",
+      teamId: otherTeam,
+      tallyTemplateFormId: "template-1",
+    }),
+  ).rejects.toThrow("Team nicht verfügbar");
+  await expect(
+    createJobPostingDraft({
+      title: "Eigen",
+      teamId: teamA,
+      tallyTemplateFormId: "template-1",
+    }),
+  ).resolves.toEqual(expect.any(String));
 });
 
 test("cannot touch or read a posting from another org", async () => {

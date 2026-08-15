@@ -312,6 +312,45 @@ test("blocks management changes after a withdrawal", async () => {
   ).rejects.toThrow("nicht bearbeitet");
 });
 
+test("a team lead only reaches applications of their own teams", async () => {
+  const ownTeamId = newId();
+  const ownPostingId = newId();
+  await (
+    await jobPostings()
+  ).insertOne({
+    _id: ownPostingId,
+    _creationTime: Date.now(),
+    organizationId,
+    teamId: ownTeamId,
+    status: "published",
+    title: "Eigenes Team",
+    createdBy: actorId,
+  });
+  const ownApplication = await insertApplication({
+    jobPostingId: ownPostingId,
+    applicantEmail: "own@example.com",
+    applicantEmailNormalized: "own@example.com",
+  });
+  vi.mocked(requirePermission).mockResolvedValue(
+    createTestActor({
+      _id: actorId,
+      organizationId,
+      role: "team_lead",
+      teamId: ownTeamId,
+    }),
+  );
+
+  const list = await getApplications();
+  expect(list.map(({ _id }) => _id)).toEqual([ownApplication._id]);
+  await expect(getApplication(ownApplication._id)).resolves.toMatchObject({
+    jobPostingTitle: "Eigenes Team",
+  });
+  await expect(getApplication(applicationId)).rejects.toThrow("Access denied");
+  await expect(
+    setApplicationStatus({ applicationId, status: "review" }),
+  ).rejects.toThrow("Access denied");
+});
+
 test("cannot read or update an application from another organization", async () => {
   vi.mocked(requirePermission).mockResolvedValue(
     createTestActor({ organizationId: foreignOrganizationId }),

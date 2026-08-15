@@ -1,11 +1,12 @@
 "use server";
 
 import { z } from "zod";
-import { USER_PERMISSIONS } from "../../auth/roles";
+import { recruitingTeamIds, USER_PERMISSIONS } from "../../auth/roles";
 import { requirePermission } from "../../auth/session";
 import { applications, jobPostings, users } from "../../db/collections";
 import type { ApplicationWithFiles } from "../../db/types";
 import { UNAVAILABLE_MEMBER_STATUSES } from "../../members/status";
+import { jobPostingScopeFilter } from "../jobPostings/access";
 import { addLog } from "../logs";
 import {
   loadOwnedApplication,
@@ -17,19 +18,29 @@ import { toApplicationView } from "./view";
 
 export async function getApplications(): Promise<ApplicationWithFiles[]> {
   const user = await requirePermission(USER_PERMISSIONS.recruiting);
-  const [records, postings] = await Promise.all([
-    (await applications())
-      .find({ organizationId: user.organizationId })
-      .sort({ _creationTime: -1 })
-      .toArray(),
-    (await jobPostings())
-      .find({ organizationId: user.organizationId })
-      .project({ _id: 1, title: 1 })
-      .toArray(),
-  ]);
+  const postings = await (
+    await jobPostings()
+  )
+    .find({
+      organizationId: user.organizationId,
+      ...jobPostingScopeFilter(user),
+    })
+    .project({ _id: 1, title: 1 })
+    .toArray();
   const titles = new Map(
     postings.map((posting) => [posting._id, posting.title]),
   );
+  const records = await (
+    await applications()
+  )
+    .find({
+      organizationId: user.organizationId,
+      ...(recruitingTeamIds(user)
+        ? { jobPostingId: { $in: [...titles.keys()] } }
+        : {}),
+    })
+    .sort({ _creationTime: -1 })
+    .toArray();
   return records.map((application) =>
     toApplicationView(
       application,

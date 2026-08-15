@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { USER_PERMISSIONS } from "../../auth/roles";
+import { USER_PERMISSIONS, type UserPermission } from "../../auth/roles";
 import { requirePermission } from "../../auth/session";
 import {
   isDeadlineInFuture,
@@ -13,13 +13,13 @@ import { applyStatusTransition, syncTallyClosed } from "./tallySync";
 
 const idSchema = z.object({ jobPostingId: z.string() });
 
-async function loadOwnedForAction(input: { jobPostingId: string }) {
-  const user = await requirePermission(USER_PERMISSIONS.recruiting);
+async function loadOwnedForAction(
+  input: { jobPostingId: string },
+  permission: UserPermission = USER_PERMISSIONS.recruiting,
+) {
+  const user = await requirePermission(permission);
   const { jobPostingId } = idSchema.parse(input);
-  const posting = await requireOwnedJobPosting(
-    jobPostingId,
-    user.organizationId,
-  );
+  const posting = await requireOwnedJobPosting(jobPostingId, user);
   return { user, posting };
 }
 
@@ -45,7 +45,10 @@ export async function closeJobPosting(input: {
 export async function reopenJobPosting(input: {
   jobPostingId: string;
 }): Promise<void> {
-  const { user, posting } = await loadOwnedForAction(input);
+  const { user, posting } = await loadOwnedForAction(
+    input,
+    USER_PERMISSIONS.publishJobPostings,
+  );
   if (posting.status !== "closed") {
     throw new Error(
       "Nur geschlossene Ausschreibungen können wieder geöffnet werden",
