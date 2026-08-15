@@ -14,11 +14,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useDepartments } from "@/lib/client/departments/hooks/useDepartments";
 import { useJobPostingMutations } from "@/lib/client/jobPostings/hooks/useJobPostingMutations";
 import { useTallyTemplates } from "@/lib/client/tallyTemplates/hooks/useTallyTemplates";
-import { useTeams } from "@/lib/client/teams/hooks/useTeams";
 import type { JobPostingUrgency } from "@/lib/db/types";
+import { useRecruitingTeamOptions } from "@/lib/hooks/useRecruitingTeamOptions";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -29,8 +28,7 @@ interface Props {
 }
 export function CreateJobPostingDialog({ open, onOpenChange }: Props) {
   const router = useRouter();
-  const { departments } = useDepartments();
-  const { teams } = useTeams();
+  const { departments, teams } = useRecruitingTeamOptions();
   const {
     templates,
     isLoading: templatesLoading,

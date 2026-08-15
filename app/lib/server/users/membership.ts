@@ -5,7 +5,13 @@ import { requireRole } from "../../auth/session";
 import { users } from "../../db/collections";
 import type { UserRole } from "../../db/types";
 
-const roleSchema = z.enum(["admin", "finance", "people_culture", "member"]);
+const roleSchema = z.enum([
+  "admin",
+  "finance",
+  "people_culture",
+  "team_lead",
+  "member",
+]);
 
 export async function addUserToOrganization(input: {
   userId: string;

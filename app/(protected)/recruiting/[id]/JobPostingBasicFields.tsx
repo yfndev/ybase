@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useMembers } from "@/lib/client/members/hooks/useMembers";
 import { useTeamDirectory } from "@/lib/client/teams/hooks/useTeamDirectory";
+import { useRecruitingTeamIds } from "@/lib/hooks/useCurrentUserRole";
 import { berlinTomorrow } from "@/lib/jobPostings/deadline";
 import type { JobPostingFormValues } from "@/lib/jobPostings/form";
 
@@ -20,6 +21,10 @@ interface Props {
 export function JobPostingBasicFields({ values, onChange }: Props) {
   const { teams, lookup } = useTeamDirectory();
   const { members, isLoading: areMembersLoading } = useMembers();
+  const allowedTeamIds = useRecruitingTeamIds();
+  const selectableTeams = allowedTeamIds
+    ? teams.filter((team) => allowedTeamIds.includes(team._id))
+    : teams;
   const departmentName = lookup.get(values.teamId)?.departmentName ?? "–";
 
   return (
@@ -48,7 +53,7 @@ export function JobPostingBasicFields({ values, onChange }: Props) {
           <Label htmlFor="jp-team">Team*</Label>
           <SelectTeam
             id="jp-team"
-            teams={teams}
+            teams={selectableTeams}
             value={values.teamId || undefined}
             onValueChange={(teamId) => onChange({ teamId })}
           />

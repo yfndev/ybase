@@ -6,7 +6,13 @@ import { users } from "../../db/collections";
 import type { UserRole } from "../../db/types";
 import { addLog } from "../logs";
 
-const roleSchema = z.enum(["admin", "finance", "people_culture", "member"]);
+const roleSchema = z.enum([
+  "admin",
+  "finance",
+  "people_culture",
+  "team_lead",
+  "member",
+]);
 
 export async function updateUserRole(input: {
   userId: string;

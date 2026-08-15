@@ -65,7 +65,10 @@ pnpm exec playwright test e2e/reimbursements.spec.ts
 - `purpose-operations` (Zweckbetrieb)
 - `commercial-operations` (Wirtschaftlicher Geschäftsbetrieb)
 
-**User Roles:** `admin`, `finance`, `people_culture`, `member`
+**User Roles:** `admin`, `finance`, `people_culture`, `team_lead`, `member`
+
+`team_lead` manages job postings and applications of their own teams (`teamId`,
+`secondaryTeamId`) but cannot publish or reopen them.
 
 ## Testing
 

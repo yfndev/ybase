@@ -21,10 +21,7 @@ export async function deleteJobPosting(input: {
     .object({ jobPostingId: z.string().min(1) })
     .parse(input);
   const user = await requirePermission(USER_PERMISSIONS.recruiting);
-  const posting = await requireOwnedJobPosting(
-    jobPostingId,
-    user.organizationId,
-  );
+  const posting = await requireOwnedJobPosting(jobPostingId, user);
   const applicationRecords = await (
     await applications()
   )
