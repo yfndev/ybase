@@ -41,6 +41,16 @@ export const travelReceiptSchema = z
   .superRefine((receipt, context) => {
     if (receipt.costType === "car") {
       const kilometers = receipt.kilometers ?? 0;
+      if (
+        receipt.mileageRate !== undefined &&
+        receipt.mileageRate !== CAR_ALLOWANCE_RATE_EUR_PER_KM
+      ) {
+        context.addIssue({
+          code: "custom",
+          path: ["mileageRate"],
+          message: "Ungültige Kilometerpauschale",
+        });
+      }
       if (kilometers <= 0) {
         context.addIssue({
           code: "custom",
@@ -48,10 +58,7 @@ export const travelReceiptSchema = z
           message: "Kilometer erforderlich",
         });
       }
-      const expected = calculateCarAllowance(
-        kilometers,
-        receipt.mileageRate ?? CAR_ALLOWANCE_RATE_EUR_PER_KM,
-      );
+      const expected = calculateCarAllowance(kilometers);
       if (receipt.grossAmount !== expected || receipt.netAmount !== expected) {
         context.addIssue({
           code: "custom",
