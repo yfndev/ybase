@@ -5,7 +5,7 @@ export function WelcomeStep() {
     <section className="space-y-6" aria-label="Willkommen">
       <div className="relative aspect-[2/1] w-full overflow-hidden rounded-[0.25rem] border bg-muted sm:aspect-[3/1]">
         <Image
-          src="/yfn-onboarding-team.jpg"
+          src="/yfn-onboarding-celebration.jpg"
           alt="Mitglieder des Young Founders Network bei einem gemeinsamen Teamfoto"
           fill
           priority
