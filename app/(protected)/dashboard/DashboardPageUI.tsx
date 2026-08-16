@@ -15,6 +15,8 @@ import { STATUS_DISPLAY } from "@/lib/reimbursementStatus";
 import type { OwnMembershipOverview } from "@/lib/server/memberships/selfServiceResignation";
 import { MembershipWelcomeBanner } from "./MembershipWelcomeBanner";
 
+const DASHBOARD_CARD_CLASS_NAME = "rounded-none border";
+
 const STATUS_CARDS = [
   { status: "pending", title: "Offen" },
   { status: "changes_requested", title: "Änderungen angefordert" },
@@ -42,7 +44,7 @@ function BreakdownCard({
   emptyText: string;
 }) {
   return (
-    <Card>
+    <Card className={DASHBOARD_CARD_CLASS_NAME}>
       <CardHeader>
         <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
@@ -101,7 +103,7 @@ export function DashboardPageUI({
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {STATUS_CARDS.map((card) => (
-            <Card key={card.status}>
+            <Card key={card.status} className={DASHBOARD_CARD_CLASS_NAME}>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <StatusDot status={card.status} />
@@ -134,7 +136,7 @@ export function DashboardPageUI({
           />
         </div>
 
-        <Card>
+        <Card className={DASHBOARD_CARD_CLASS_NAME}>
           <CardHeader>
             <CardTitle className="text-base">Letzte Aktivität</CardTitle>
           </CardHeader>
