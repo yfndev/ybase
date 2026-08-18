@@ -81,7 +81,7 @@ export function MembershipWelcomeBanner({
 
         <div className="relative min-h-40 border-t md:min-h-full md:border-t-0 md:border-l">
           <Image
-            src="/yfn-onboarding-team.jpg"
+            src="/yfn-onboarding-celebration.jpg"
             alt="Mitglieder des Young Founders Network bei einem gemeinsamen Teamfoto"
             fill
             priority
