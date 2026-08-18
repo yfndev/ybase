@@ -18,6 +18,10 @@ export function MembershipWelcomeBanner({
 }) {
   const presentation = membershipPresentation(membership);
   const canResign = membership?.legalStatus === "active";
+  const membershipActionLabel =
+    membership?.legalStatus === "resigning"
+      ? "Austritt ansehen"
+      : "Mitgliedschaft ansehen";
 
   return (
     <section
@@ -55,7 +59,7 @@ export function MembershipWelcomeBanner({
             ) : membership ? (
               <Button asChild size="sm" variant="outline">
                 <Link href="/membership">
-                  {presentation.actionLabel}
+                  {membershipActionLabel}
                   <ArrowRight aria-hidden="true" />
                 </Link>
               </Button>
@@ -96,7 +100,6 @@ function membershipPresentation(membership: OwnMembershipOverview | null) {
       description:
         "Hier findest du deine Anträge, Abrechnungen und alles, was du für deine Arbeit im YFN brauchst.",
       statusLabel: "YBase-Konto",
-      actionLabel: "",
       dot: "bg-secondary",
     };
   }
@@ -112,7 +115,6 @@ function membershipPresentation(membership: OwnMembershipOverview | null) {
       description:
         "Dein Austritt ist vorgemerkt. Bis zum Mitgliedschaftsende bleiben deine Mitgliedschaft und deine Zugänge bestehen.",
       statusLabel: "Ende vorgemerkt",
-      actionLabel: "Austritt ansehen",
       dot: "bg-amber-500",
     };
   }
@@ -131,7 +133,6 @@ function membershipPresentation(membership: OwnMembershipOverview | null) {
         </>
       ),
       statusLabel: "Aktive Mitgliedschaft",
-      actionLabel: "",
       dot: "bg-emerald-500",
     };
   }
@@ -143,7 +144,6 @@ function membershipPresentation(membership: OwnMembershipOverview | null) {
       ? "Deine Mitgliedschaft ruht aktuell. Deine hinterlegten Daten kannst du weiterhin einsehen."
       : "Deine frühere Mitgliedschaft ist weiterhin dokumentiert und für dich einsehbar.",
     statusLabel: suspended ? "Mitgliedschaft ruhend" : "Mitgliedschaft beendet",
-    actionLabel: "Mitgliedschaft ansehen",
     dot: "bg-muted-foreground",
   };
 }
