@@ -71,11 +71,6 @@ export function MembershipWelcomeBanner({
                 </a>
               </Button>
             )}
-            {membership ? (
-              <span className="text-xs text-muted-foreground">
-                {presentation.detail}
-              </span>
-            ) : null}
           </div>
         </div>
 
@@ -101,7 +96,6 @@ function membershipPresentation(membership: OwnMembershipOverview | null) {
       description:
         "Hier findest du deine Anträge, Abrechnungen und alles, was du für deine Arbeit im YFN brauchst.",
       statusLabel: "YBase-Konto",
-      detail: "",
       actionLabel: "",
       dot: "bg-secondary",
     };
@@ -118,9 +112,6 @@ function membershipPresentation(membership: OwnMembershipOverview | null) {
       description:
         "Dein Austritt ist vorgemerkt. Bis zum Mitgliedschaftsende bleiben deine Mitgliedschaft und deine Zugänge bestehen.",
       statusLabel: "Ende vorgemerkt",
-      detail: membership.scheduledEndAt
-        ? `Mitglied bis ${formatEndDate(membership.scheduledEndAt)}`
-        : membership.membershipNumber,
       actionLabel: "Austritt ansehen",
       dot: "bg-amber-500",
     };
@@ -129,10 +120,17 @@ function membershipPresentation(membership: OwnMembershipOverview | null) {
   if (membership.legalStatus === "active") {
     return {
       heading,
-      description:
-        "Schön, dass du Teil unserer Community bist. Hier kannst du deine Mitgliedschaft einsehen und verwalten.",
+      description: (
+        <>
+          Schön, dass du seit dem{" "}
+          <strong className="font-semibold text-foreground">
+            {DATE_FORMAT.format(membership.admittedAt)}
+          </strong>{" "}
+          Mitglied unserer Community bist. Hier kannst du deine Mitgliedschaft
+          einsehen und verwalten.
+        </>
+      ),
       statusLabel: "Aktive Mitgliedschaft",
-      detail: `Mitglied seit ${DATE_FORMAT.format(membership.admittedAt)}`,
       actionLabel: "",
       dot: "bg-emerald-500",
     };
@@ -145,12 +143,7 @@ function membershipPresentation(membership: OwnMembershipOverview | null) {
       ? "Deine Mitgliedschaft ruht aktuell. Deine hinterlegten Daten kannst du weiterhin einsehen."
       : "Deine frühere Mitgliedschaft ist weiterhin dokumentiert und für dich einsehbar.",
     statusLabel: suspended ? "Mitgliedschaft ruhend" : "Mitgliedschaft beendet",
-    detail: membership.membershipNumber,
     actionLabel: "Mitgliedschaft ansehen",
     dot: "bg-muted-foreground",
   };
-}
-
-function formatEndDate(scheduledEndAt: number) {
-  return DATE_FORMAT.format(scheduledEndAt - 1);
 }
