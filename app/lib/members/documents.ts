@@ -1,0 +1,34 @@
+import type {
+  DocumentExecutionType,
+  MembershipDocumentKind,
+} from "../db/types";
+
+export const MEMBERSHIP_DOCUMENT_ORDER = [
+  "privacy_notice",
+  "usage_rights",
+  "bylaws",
+] as const satisfies readonly MembershipDocumentKind[];
+
+export type PublishableMembershipDocumentKind =
+  (typeof MEMBERSHIP_DOCUMENT_ORDER)[number];
+
+export const DOCUMENT_EXECUTION_TYPE = {
+  privacy_notice: "acknowledgement",
+  usage_rights: "signature",
+  bylaws: "acknowledgement",
+  optional_consent: "optional_consent",
+} as const satisfies Record<MembershipDocumentKind, DocumentExecutionType>;
+
+export const MEMBERSHIP_DOCUMENT_LABELS = {
+  privacy_notice: "Interne Datenschutzerklärung",
+  usage_rights: "Sondervereinbarung Arbeitsergebnisse",
+  bylaws: "Satzung",
+  optional_consent: "Freiwillige Einwilligung",
+} as const satisfies Record<MembershipDocumentKind, string>;
+
+export function documentOrderIndex(kind: MembershipDocumentKind): number {
+  const index = (
+    MEMBERSHIP_DOCUMENT_ORDER as readonly MembershipDocumentKind[]
+  ).indexOf(kind);
+  return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+}

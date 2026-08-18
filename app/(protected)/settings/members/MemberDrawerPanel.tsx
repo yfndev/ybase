@@ -1,21 +1,26 @@
+import { ExternalLink, Loader2 } from "lucide-react";
+import { MemberStageBadge } from "@/components/Members/MemberStageBadge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { SheetFooter } from "@/components/ui/sheet";
-import type { TeamOnboardingStatus, User, UserRole } from "@/lib/db/types";
+import type { User, UserRole } from "@/lib/db/types";
 import { getInitials } from "@/lib/formatters/getInitials";
-import { Loader2 } from "lucide-react";
+import { isInGettingToKnow } from "@/lib/members/gettingToKnow";
+import { memberStageForStatus } from "@/lib/members/stages";
+import { profileAvatarUrl } from "@/lib/profile/avatar";
 import { LabeledSelect } from "./LabeledSelect";
+import { MemberGettingToKnowSection } from "./MemberGettingToKnowSection";
+import { MemberMembershipActions } from "./MemberMembershipActions";
 import { MemberStatusField } from "./MemberStatusField";
-import {
-  memberStatusLabel,
-  memberStatusVariant,
-  ROLE_OPTIONS,
-  TEAM_ONBOARDING_OPTIONS,
-} from "./memberLabels";
+import { ROLE_OPTIONS } from "./memberLabels";
+import { PublicOrganizationFields } from "./PublicOrganizationFields";
 import type { MemberDrawerFormState } from "./useMemberDrawerForm";
+
+const MEMBER_PLATFORM_URL = "https://member.youngfounders.network";
+
+function showsGettingToKnow(member: User): boolean {
+  return !member.membershipId && isInGettingToKnow(member);
+}
 
 interface Props {
   member: User;
@@ -30,12 +35,17 @@ export function MemberDrawerPanel({
   form,
   onClose,
 }: Props) {
+  const memberPlatformProfileUrl = member.memberPlatformUserId
+    ? `${MEMBER_PLATFORM_URL}/member/${member.memberPlatformUserId}`
+    : undefined;
+  const isGettingToKnow = showsGettingToKnow(member);
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
       <div className="flex flex-row items-center gap-5 px-6 pt-8 pb-6 text-left">
         <Avatar className="size-24">
           <AvatarImage
-            src={member.image}
+            src={profileAvatarUrl(member)}
             alt={`Profilbild von ${displayName}`}
             className="object-cover"
           />
@@ -50,49 +60,35 @@ export function MemberDrawerPanel({
           <p className="text-muted-foreground max-w-full truncate text-base">
             {member.email || "Keine E-Mail hinterlegt"}
           </p>
-          <Badge className="mt-1" variant={memberStatusVariant(form.status)}>
-            {memberStatusLabel(form.status)}
-          </Badge>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <MemberStageBadge stage={memberStageForStatus(form.status)} />
+            {memberPlatformProfileUrl ? (
+              <a
+                href={memberPlatformProfileUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1 text-sm underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-2 focus-visible:outline-none"
+              >
+                Member-Profil
+                <ExternalLink aria-hidden="true" className="size-3.5" />
+              </a>
+            ) : null}
+          </div>
         </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-4 px-6">
-        <LabeledSelect
-          id="member-team"
-          label="Team"
-          value={form.teamId}
-          onValueChange={form.setTeamId}
-          options={form.teamOptions}
-          placeholder="Team wählen"
-          hint={`Department: ${form.department?.name ?? "—"}`}
-        />
-        <div className="grid gap-1.5">
-          <Label htmlFor="member-position">Position</Label>
-          <Input
-            id="member-position"
-            value={form.position}
-            onChange={(event) => form.setPosition(event.target.value)}
-            placeholder="z. B. Tech Lead"
+        <PublicOrganizationFields form={form} />
+        {!isGettingToKnow && !member.membershipId ? (
+          <MemberStatusField
+            status={form.status}
+            onboarding={member.teamOnboardingStatus}
+            onChange={form.setStatus}
           />
-        </div>
-        <MemberStatusField
-          status={form.status}
-          onboarding={form.onboarding}
-          onChange={form.setStatus}
-        />
-        <LabeledSelect
-          id="member-onboarding"
-          label="Onboarding-Aufgaben"
-          value={form.onboarding}
-          onValueChange={(value) =>
-            form.setOnboarding(value as TeamOnboardingStatus)
-          }
-          options={TEAM_ONBOARDING_OPTIONS}
-          disabled={member.memberStatus === "active"}
-        />
+        ) : null}
         <LabeledSelect
           id="member-role"
-          label="Rolle"
+          label="Berechtigungen"
           value={form.role}
           onValueChange={(value) => form.setRole(value as UserRole)}
           options={ROLE_OPTIONS}
@@ -103,6 +99,9 @@ export function MemberDrawerPanel({
               : "Rollen können nur von Admins geändert werden."
           }
         />
+        {isGettingToKnow ? (
+          <MemberGettingToKnowSection member={member} />
+        ) : null}
       </div>
 
       <SheetFooter className="mt-6 border-t px-6 pt-6 pb-6">
@@ -117,6 +116,11 @@ export function MemberDrawerPanel({
         <Button variant="outline" onClick={onClose} disabled={form.isSaving}>
           Abbrechen
         </Button>
+        <MemberMembershipActions
+          member={member}
+          canExcludeMembers={form.canEditRoles}
+          isFormSaving={form.isSaving}
+        />
       </SheetFooter>
     </div>
   );

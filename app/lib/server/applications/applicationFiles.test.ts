@@ -1,5 +1,4 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
-import { afterAll, beforeAll, beforeEach, expect, test, vi } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({ requirePermission: vi.fn() }));
 vi.mock("../../s3/storage", () => ({
@@ -7,18 +6,17 @@ vi.mock("../../s3/storage", () => ({
 }));
 
 import { requirePermission } from "../../auth/session";
-import { getClient, getDb } from "../../db/client";
 import { applications, jobPostings } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { Application, ApplicationFile } from "../../db/types";
 import { presignNamedDownload } from "../../s3/storage";
+import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { getApplicationFileDownloadUrl } from "./files";
 import {
   getApplicationsForJobPosting,
   queueApplicationFileRetry,
 } from "./management";
 
-let mongod: MongoMemoryServer;
 let organizationId: string;
 let jobPostingId: string;
 
@@ -72,20 +70,9 @@ async function insertApplication(files: ApplicationFile[]) {
   return application;
 }
 
-beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  process.env.MONGODB_URI = mongod.getUri();
-  process.env.MONGODB_DB = "ybase_application_files_test";
-}, 120_000);
-
-afterAll(async () => {
-  const client = await getClient();
-  await client.close();
-  await mongod.stop();
-}, 30_000);
+setupTestDatabase();
 
 beforeEach(async () => {
-  await (await getDb()).dropDatabase();
   organizationId = newId();
   jobPostingId = newId();
   vi.mocked(requirePermission).mockResolvedValue(actor());

@@ -78,4 +78,51 @@ describe("filterApplications", () => {
       }),
     ).toEqual([firstAssigned, secondAssigned]);
   });
+
+  test("filters accepted applications by their onboarding progress", () => {
+    const accepted = application({ _id: "accepted", status: "accepted" });
+    const registered = application({
+      _id: "registered",
+      status: "accepted",
+      onboardingUserId: "user-1",
+    });
+    const completed = application({
+      _id: "completed",
+      status: "accepted",
+      onboardingUserId: "user-2",
+      onboardingStartedAt: 21,
+      onboardingCompletedAt: 42,
+    });
+    const onboarding = application({
+      _id: "onboarding",
+      status: "accepted",
+      onboardingUserId: "user-3",
+      onboardingStartedAt: 21,
+    });
+
+    expect(
+      filterApplications([accepted, registered, onboarding, completed], {
+        ...filters,
+        status: "accepted",
+      }),
+    ).toEqual([accepted]);
+    expect(
+      filterApplications([accepted, registered, onboarding, completed], {
+        ...filters,
+        status: "ybase_registered",
+      }),
+    ).toEqual([registered]);
+    expect(
+      filterApplications([accepted, registered, onboarding, completed], {
+        ...filters,
+        status: "onboarding_active",
+      }),
+    ).toEqual([onboarding]);
+    expect(
+      filterApplications([accepted, registered, onboarding, completed], {
+        ...filters,
+        status: "onboarding_completed",
+      }),
+    ).toEqual([completed]);
+  });
 });

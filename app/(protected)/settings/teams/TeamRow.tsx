@@ -2,12 +2,18 @@
 
 import { SelectDepartment } from "@/components/Selectors/SelectDepartment";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { TableCell, TableRow } from "@/components/ui/table";
 import type { Department, Team } from "@/lib/db/types";
 import { Archive, Check, Pencil, X } from "lucide-react";
 
-type EditValues = { name: string; departmentId: string };
+type EditValues = {
+  name: string;
+  departmentId: string;
+  isChapter: boolean;
+};
 
 export function TeamRow({
   team,
@@ -65,6 +71,24 @@ export function TeamRow({
           />
         ) : (
           <span className="text-muted-foreground">{departmentName}</span>
+        )}
+      </TableCell>
+      <TableCell>
+        {isEditing ? (
+          <div className="flex items-center gap-3">
+            <Checkbox
+              id={`team-chapter-${team._id}`}
+              checked={editValues.isChapter}
+              onCheckedChange={(checked) =>
+                onEditValuesChange({ isChapter: checked === true })
+              }
+            />
+            <Label htmlFor={`team-chapter-${team._id}`}>Chapter</Label>
+          </div>
+        ) : (
+          <span className="text-muted-foreground">
+            {team.isChapter ? "Ja" : "Nein"}
+          </span>
         )}
       </TableCell>
       <TableCell className="pr-6">

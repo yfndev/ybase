@@ -1,5 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  confirmGettingToKnow,
+  endGettingToKnow,
+} from "@/lib/server/memberships/gettingToKnow";
+import { excludeOfficialMember } from "@/lib/server/memberships/exclusion";
+import { recordMembershipResignation } from "@/lib/server/memberships/resignation";
+import { createMember } from "@/lib/server/users/creation";
+import {
   setMemberStatus,
   setTeamOnboardingStatus,
 } from "@/lib/server/users/lifecycleActions";
@@ -12,10 +19,24 @@ export function useMemberMutations() {
     queryClient.invalidateQueries({ queryKey: ["members"] });
 
   return {
+    create: useMutation({ mutationFn: createMember, onSuccess }),
     updateProfile: useMutation({ mutationFn: updateMemberProfile, onSuccess }),
     setStatus: useMutation({ mutationFn: setMemberStatus, onSuccess }),
     setOnboarding: useMutation({
       mutationFn: setTeamOnboardingStatus,
+      onSuccess,
+    }),
+    recordResignation: useMutation({
+      mutationFn: recordMembershipResignation,
+      onSuccess,
+    }),
+    confirmGettingToKnow: useMutation({
+      mutationFn: confirmGettingToKnow,
+      onSuccess,
+    }),
+    endGettingToKnow: useMutation({ mutationFn: endGettingToKnow, onSuccess }),
+    excludeOfficialMember: useMutation({
+      mutationFn: excludeOfficialMember,
       onSuccess,
     }),
     updateRole: useMutation({ mutationFn: updateUserRole, onSuccess }),

@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { getBankDetailsError } from "@/lib/bank-utils";
 import { createTravelReimbursement } from "@/lib/server/reimbursements/creation";
 import {
+  CAR_ALLOWANCE_RATE_EUR_PER_KM,
   type CostType,
   createMealAllowance,
   DEFAULT_TAX_RATES,
@@ -60,6 +61,7 @@ export function useTravelForm(defaultBankDetails: BankDetails) {
         grossAmount: 0,
         fileStorageId: "",
         kilometers: type === "car" ? 0 : undefined,
+        mileageRate: type === "car" ? CAR_ALLOWANCE_RATE_EUR_PER_KM : undefined,
       },
     ]);
   };

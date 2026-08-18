@@ -1,5 +1,9 @@
 import { z } from "zod";
 import {
+  calculateCarAllowance,
+  CAR_ALLOWANCE_RATE_EUR_PER_KM,
+} from "../../travel-costs";
+import {
   getTravelDateRangeError,
   TRAVEL_DATE_RANGE_ERROR,
 } from "../../travelDates";
@@ -32,10 +36,21 @@ export const travelReceiptSchema = z
       "incidental",
     ]),
     kilometers: z.number().optional(),
+    mileageRate: z.union([z.literal(0.3), z.literal(0.15)]).optional(),
   })
   .superRefine((receipt, context) => {
     if (receipt.costType === "car") {
       const kilometers = receipt.kilometers ?? 0;
+      if (
+        receipt.mileageRate !== undefined &&
+        receipt.mileageRate !== CAR_ALLOWANCE_RATE_EUR_PER_KM
+      ) {
+        context.addIssue({
+          code: "custom",
+          path: ["mileageRate"],
+          message: "Ungültige Kilometerpauschale",
+        });
+      }
       if (kilometers <= 0) {
         context.addIssue({
           code: "custom",
@@ -43,7 +58,7 @@ export const travelReceiptSchema = z
           message: "Kilometer erforderlich",
         });
       }
-      const expected = Math.round(kilometers * 30) / 100;
+      const expected = calculateCarAllowance(kilometers);
       if (receipt.grossAmount !== expected || receipt.netAmount !== expected) {
         context.addIssue({
           code: "custom",

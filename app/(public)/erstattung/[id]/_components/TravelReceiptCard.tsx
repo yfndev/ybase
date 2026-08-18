@@ -13,7 +13,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Trash2 } from "lucide-react";
-import { CAR_ALLOWANCE_RATE_EUR_PER_KM } from "@/lib/travel-costs";
+import {
+  calculateCarAllowance,
+  CAR_ALLOWANCE_RATE_EUR_PER_KM,
+} from "@/lib/travel-costs";
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import type { TravelReceipt } from "./types";
 
@@ -95,12 +98,10 @@ export function TravelReceiptCard(props: Props) {
                     0,
                     Math.floor(parseFloat(e.target.value) || 0),
                   );
-                  const amount =
-                    Math.round(
-                      kilometers * CAR_ALLOWANCE_RATE_EUR_PER_KM * 100,
-                    ) / 100;
+                  const amount = calculateCarAllowance(kilometers);
                   props.onUpdate({
                     kilometers,
+                    mileageRate: CAR_ALLOWANCE_RATE_EUR_PER_KM,
                     grossAmount: amount,
                     netAmount: amount,
                   });

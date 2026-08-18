@@ -1,9 +1,13 @@
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("../../auth/session", () => ({ requirePermission: vi.fn() }));
 vi.mock("../../email/brevo", () => ({ sendMail: vi.fn() }));
 vi.mock("../../googleWorkspace/users", () => ({
   provisionWorkspaceUser: vi.fn(),
+}));
+vi.mock("../users/email", () => ({
+  requireTeamWelcomeTemplateId: vi.fn(),
+  sendTeamWelcomeEmail: vi.fn(),
 }));
 
 import { requirePermission } from "../../auth/session";
@@ -12,6 +16,7 @@ import {
   jobPostings,
   logs,
   organizations,
+  users,
 } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { Application } from "../../db/types";
@@ -22,20 +27,25 @@ import { YFN_ORGANIZATION } from "../../organization";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { sendApplicationDecision } from "./decision";
+import {
+  requireTeamWelcomeTemplateId,
+  sendTeamWelcomeEmail,
+} from "../users/email";
+import { submitApplicationDecision } from "./decisionAction";
 
 const organizationId = newId();
 const actorId = newId();
 const postingId = newId();
 const yfnEmail = `alex@${YFN_ORGANIZATION.domain}`;
 let applicationId: string;
+let postingTeamId: string;
 
 setupTestDatabase();
-
-afterEach(() => vi.unstubAllEnvs());
 
 beforeEach(async () => {
   vi.clearAllMocks();
   applicationId = newId();
+  postingTeamId = newId();
   vi.mocked(requirePermission).mockResolvedValue(
     createTestActor({ _id: actorId, organizationId }),
   );
@@ -48,7 +58,8 @@ beforeEach(async () => {
     primaryEmail: yfnEmail,
     temporaryPassword: "temporary-password",
   });
-  vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://ybase.example");
+  vi.mocked(sendTeamWelcomeEmail).mockResolvedValue();
+  vi.mocked(requireTeamWelcomeTemplateId).mockReturnValue(175);
   await (
     await organizations()
   ).insertOne({
@@ -64,7 +75,7 @@ beforeEach(async () => {
     _id: postingId,
     _creationTime: Date.now(),
     organizationId,
-    teamId: newId(),
+    teamId: postingTeamId,
     status: "published",
     title: "Fundraising",
     createdBy: actorId,
@@ -78,6 +89,10 @@ beforeEach(async () => {
     applicantName: "Alex Beispiel",
     applicantEmail: "alex@example.com",
     applicantEmailNormalized: "alex@example.com",
+    applicantPhone: "+49 170 1234567",
+    dateOfBirth: "2004-01-01",
+    memberPlatformUserId: "platform-alex",
+    memberPlatformSyncedAt: Date.now(),
     fields: [],
     files: [],
     tallyEventId: newId(),
@@ -89,7 +104,7 @@ beforeEach(async () => {
   await (await applications()).insertOne(application);
 });
 
-test("sends the edited acceptance email before changing the status", async () => {
+test("sends a personal acceptance followed by team access details", async () => {
   await sendApplicationDecision({
     applicationId,
     decision: "accepted",
@@ -98,15 +113,29 @@ test("sends the edited acceptance email before changing the status", async () =>
     message: "Wir freuen uns sehr auf dich.",
   });
 
-  expect(sendMail).toHaveBeenCalledWith(
+  expect(sendMail).toHaveBeenNthCalledWith(
+    1,
     expect.objectContaining({
+      to: [{ email: "alex@example.com", name: "Alex Beispiel" }],
+      sender: {
+        name: "YBase",
+        email: "no-reply@youngfounders.network",
+      },
+      replyTo: { email: "people@youngfounders.network" },
       subject: "Individuelle Zusage",
-      params: expect.objectContaining({
-        message: expect.stringContaining("temporary-password"),
-        jobTitle: "Fundraising",
-        organizationName: YFN_ORGANIZATION.name,
-      }),
+      textContent: "Wir freuen uns sehr auf dich.",
     }),
+  );
+  expect(sendTeamWelcomeEmail).toHaveBeenCalledWith({
+    recoveryEmail: "alex@example.com",
+    memberName: "Alex Beispiel",
+    workspaceEmail: yfnEmail,
+    temporaryPassword: "temporary-password",
+  });
+  expect(sendMail).toHaveBeenCalledTimes(1);
+  expect(sendTeamWelcomeEmail).toHaveBeenCalledOnce();
+  expect(vi.mocked(sendMail).mock.invocationCallOrder[0]).toBeLessThan(
+    vi.mocked(sendTeamWelcomeEmail).mock.invocationCallOrder[0],
   );
   const stored = await (await applications()).findOne({ _id: applicationId });
   expect(stored).toMatchObject({
@@ -114,15 +143,110 @@ test("sends the edited acceptance email before changing the status", async () =>
     yfnEmail,
     workspaceUserId: "google-user-1",
     workspaceProvisioningStatus: "invited",
+    onboardingUserId: expect.any(String),
+    onboardingStartedAt: expect.any(Number),
+    onboardingStartedBy: actorId,
   });
   expect(JSON.stringify(stored)).not.toContain("temporary-password");
-  expect(stored?.history?.at(-1)).toMatchObject({
-    fromStatus: "review",
-    toStatus: "accepted",
-  });
+  expect(stored?.history).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        fromStatus: "review",
+        toStatus: "accepted",
+      }),
+    ]),
+  );
   expect(
-    await (await logs()).findOne({ entityId: applicationId }),
+    await (
+      await logs()
+    ).findOne({
+      entityId: applicationId,
+      action: "application.status_change",
+    }),
   ).toMatchObject({ action: "application.status_change" });
+  const onboardingMember = await (await users()).findOne({ applicationId });
+  expect(onboardingMember).toMatchObject({
+    _id: stored?.onboardingUserId,
+    name: "Alex Beispiel",
+    email: yfnEmail,
+    privateEmail: "alex@example.com",
+    phone: "+49 170 1234567",
+    memberPlatformUserId: "platform-alex",
+    memberPlatformSyncedAt: expect.any(Number),
+    googleWorkspaceUserId: "google-user-1",
+    organizationId,
+    role: "member",
+    teamId: postingTeamId,
+    memberStatus: "onboarding",
+    teamOnboardingStatus: "in_progress",
+  });
+  expect(onboardingMember).not.toHaveProperty("publicProfileSetupRequired");
+});
+
+test("blocks acceptance before external side effects without a member-platform snapshot", async () => {
+  await (
+    await applications()
+  ).updateOne(
+    { _id: applicationId },
+    {
+      $unset: {
+        dateOfBirth: "",
+        memberPlatformUserId: "",
+        memberPlatformSyncedAt: "",
+      },
+    },
+  );
+
+  await expect(
+    sendApplicationDecision({
+      applicationId,
+      decision: "accepted",
+      yfnEmail,
+      subject: "Zusage",
+      message: "Willkommen!",
+    }),
+  ).rejects.toThrow("Member-Plattform-Profil");
+  expect(provisionWorkspaceUser).not.toHaveBeenCalled();
+  expect(sendMail).not.toHaveBeenCalled();
+});
+
+test("rejects an already linked member profile before external side effects", async () => {
+  await (
+    await users()
+  ).createIndex({ memberPlatformUserId: 1 }, { unique: true, sparse: true });
+  await (
+    await users()
+  ).insertOne({
+    _id: newId(),
+    _creationTime: Date.now(),
+    name: "Existing Profile",
+    email: "existing@youngfounders.network",
+    privateEmail: "existing@example.com",
+    memberPlatformUserId: "platform-alex",
+    organizationId,
+    role: "member",
+    memberStatus: "onboarding",
+    teamOnboardingStatus: "not_started",
+  });
+
+  await expect(
+    submitApplicationDecision({
+      applicationId,
+      decision: "accepted",
+      yfnEmail,
+      subject: "Zusage",
+      message: "Willkommen!",
+    }),
+  ).resolves.toEqual({
+    ok: false,
+    error: "Das Member-Profil ist bereits mit einem YBase-Nutzer verknüpft.",
+  });
+
+  expect(provisionWorkspaceUser).not.toHaveBeenCalled();
+  expect(sendMail).not.toHaveBeenCalled();
+  expect(
+    await (await applications()).findOne({ _id: applicationId }),
+  ).not.toHaveProperty("workspaceProvisioningStatus");
 });
 
 test("sends a rejection with its dedicated template and then rejects", async () => {
@@ -170,6 +294,33 @@ test.each([
   expect(stored?.status).toBe("review");
   expect(stored?.history).toBeUndefined();
   expect(stored?.workspaceProvisioningStatus).toBe("provisioned");
+  expect(await (await users()).countDocuments({ applicationId })).toBe(0);
+});
+
+test("records a failed team access delivery", async () => {
+  vi.mocked(sendTeamWelcomeEmail).mockRejectedValueOnce(
+    new Error("Brevo unavailable"),
+  );
+
+  await expect(
+    sendApplicationDecision({
+      applicationId,
+      decision: "accepted",
+      yfnEmail,
+      subject: "Zusage",
+      message: "Willkommen!",
+    }),
+  ).rejects.toThrow("Brevo unavailable");
+
+  expect(await (await users()).countDocuments({ applicationId })).toBe(0);
+  expect(
+    await (await applications()).findOne({ _id: applicationId }),
+  ).toMatchObject({
+    status: "review",
+    workspaceProvisioningStatus: "provisioned",
+    workspaceProvisioningError:
+      "Workspace-Konto erstellt, Zugangsdaten nicht versendet",
+  });
 });
 
 test("does not overwrite a withdrawal that happens during delivery", async () => {
@@ -196,4 +347,5 @@ test("does not overwrite a withdrawal that happens during delivery", async () =>
   expect(
     await (await applications()).findOne({ _id: applicationId }),
   ).toMatchObject({ status: "withdrawn", fields: [], files: [] });
+  expect(await (await users()).countDocuments({ applicationId })).toBe(0);
 });

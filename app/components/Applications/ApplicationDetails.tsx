@@ -1,5 +1,6 @@
 import type { ApplicationWithFiles } from "@/lib/db/types";
 import { DATE_TIME_FORMAT } from "./applicationPresentation";
+import { ApplicationStatusBadge } from "./ApplicationStatusBadge";
 
 export function ApplicationDetails({
   application,
@@ -11,7 +12,10 @@ export function ApplicationDetails({
 
   return (
     <section className="space-y-4 border-t pt-5">
-      <h2 className="text-xl font-semibold">Bewerbungsdetails</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-xl font-semibold">Bewerbungsdetails</h2>
+        <ApplicationStatusBadge application={application} />
+      </div>
       <dl className="space-y-3">
         <div className="space-y-1">
           <dt className="text-sm font-medium text-muted-foreground">

@@ -21,6 +21,7 @@ pnpm coverage                # Tests with coverage report
 ```
 
 **Run a single test file:**
+
 ```bash
 pnpm vitest run app/lib/server/projects/projects.test.ts
 pnpm exec playwright test e2e/reimbursements.spec.ts
@@ -31,10 +32,12 @@ pnpm exec playwright test e2e/reimbursements.spec.ts
 **Tech Stack:** Next.js 16 (App Router) + MongoDB + Auth.js + TypeScript + Tailwind CSS + shadcn/ui
 
 **Route Structure:**
+
 - `app/(protected)/` - Authenticated routes (dashboard, projects, transactions, reimbursements)
 - `app/(public)/` - Public routes (login, shareable forms)
 
 **Backend:**
+
 - `app/lib/db/` - MongoDB client, collections, indexes, and shared database types
 - `app/lib/server/` - Server-only data access and domain actions grouped by feature
 - `app/lib/auth/` - Auth.js configuration and authorization helpers
@@ -45,21 +48,27 @@ pnpm exec playwright test e2e/reimbursements.spec.ts
 ## Key Domain Concepts
 
 **Transaction Status:**
+
 - `processed` - Bank transactions that count toward project balance
 - `expected` - Planned transactions that do NOT count toward balance
 
 **Transaction Types:**
+
 - Regular transactions (imported or manual)
 - Split transactions (`splitFromTransactionId`) - income split across projects, counted as processed
 - Transfer transactions (`transferId`) - internal budget moves, counted toward balance
 
 **Tax Spheres (German non-profit categories):**
+
 - `non-profit` (Ideeller Bereich)
 - `asset-management` (Vermögensverwaltung)
 - `purpose-operations` (Zweckbetrieb)
 - `commercial-operations` (Wirtschaftlicher Geschäftsbetrieb)
 
-**User Roles:** `admin`, `finance`, `people_culture`, `member`
+**User Roles:** `admin`, `finance`, `people_culture`, `team_lead`, `member`
+
+`team_lead` manages job postings and applications of their own teams (`teamId`,
+`secondaryTeamId`) but cannot publish or reopen them.
 
 ## Testing
 
@@ -80,11 +89,13 @@ pnpm exec playwright test e2e/reimbursements.spec.ts
 **Before making any changes:** Do not make changes until you have 95% confidence that you know what to build. Ask follow-up questions until you have that confidence.
 
 **Priority order when working on code:**
+
 1. Fix all errors first
 2. Simplify components as much as possible
 3. Remove unnecessary code
 
 **Principles:**
+
 - DRY (Don't Repeat Yourself)
 - KISS (Keep It Simple, Stupid)
 - Remove code, don't add code
@@ -93,12 +104,14 @@ pnpm exec playwright test e2e/reimbursements.spec.ts
 - Flat is better than nested
 
 **Naming:**
+
 - No single-letter variable names except:
   - `e` for events
   - `q` for queries
   - `t` for test contexts
 
 **Readability:**
+
 - Write code that reads like plain English
 - Early returns over nested conditionals
 - Extract complex conditions into named variables

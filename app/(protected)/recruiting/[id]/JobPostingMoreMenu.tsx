@@ -22,6 +22,7 @@ import {
 import { verticalActionMenuClassNames as menu } from "@/components/ui/vertical-action-menu";
 import { useJobPostingMutations } from "@/lib/client/jobPostings/hooks/useJobPostingMutations";
 import type { JobPosting } from "@/lib/db/types";
+import { useCanPublishJobPostings } from "@/lib/hooks/useCurrentUserRole";
 import { statusMeansClosed } from "@/lib/jobPostings/status";
 import { tallyFormEditorUrl } from "@/lib/tally/constants";
 
@@ -41,6 +42,7 @@ export function JobPostingMoreMenu({
   showTallyAction?: boolean;
 }) {
   const router = useRouter();
+  const canPublish = useCanPublishJobPostings();
   const { close, reopen, archive, retrySync } = useJobPostingMutations();
   const pending =
     close.isPending ||
@@ -102,7 +104,7 @@ export function JobPostingMoreMenu({
             Schließen
           </DropdownMenuItem>
         ) : null}
-        {posting.status === "closed" ? (
+        {posting.status === "closed" && canPublish ? (
           <DropdownMenuItem
             className={menu.item}
             onSelect={() => void run(reopen, "Ausschreibung wieder geöffnet")}

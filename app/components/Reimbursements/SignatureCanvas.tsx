@@ -6,14 +6,24 @@ import toast from "react-hot-toast";
 import SignaturePad from "react-signature-canvas";
 import { Button } from "@/components/ui/button";
 import { useSignatureResize } from "@/lib/hooks/useSignatureResize";
+import type { ReimbursementStorageType } from "@/lib/s3/keys";
 import { generateUploadUrl } from "@/lib/server/reimbursements/files";
 
 type Props = {
-  onUploadComplete: (key: string) => void;
+  onUploadComplete: (key: string) => void | Promise<void>;
   uploadSignature?: (blob: Blob) => Promise<string>;
+  reimbursementType?: ReimbursementStorageType;
+  submitLabel?: string;
+  showStatusToast?: boolean;
 };
 
-export function SignatureCanvas({ onUploadComplete, uploadSignature }: Props) {
+export function SignatureCanvas({
+  onUploadComplete,
+  uploadSignature,
+  reimbursementType,
+  submitLabel = "Unterschrift speichern",
+  showStatusToast = true,
+}: Props) {
   const padRef = useRef<SignaturePad>(null);
   const [uploading, setUploading] = useState(false);
   useSignatureResize(padRef);
@@ -26,26 +36,39 @@ export function SignatureCanvas({ onUploadComplete, uploadSignature }: Props) {
     }
 
     setUploading(true);
+    let signatureUploaded = false;
     try {
       const dataUrl = pad.getTrimmedCanvas().toDataURL("image/png");
       const blob = await (await fetch(dataUrl)).blob();
+      let storageKey: string;
 
       if (uploadSignature) {
-        onUploadComplete(await uploadSignature(blob));
+        storageKey = await uploadSignature(blob);
       } else {
-        const { key, url } = await generateUploadUrl("image/png");
+        if (!reimbursementType) {
+          throw new Error("Upload context is required");
+        }
+        const { key, url } = await generateUploadUrl(
+          "image/png",
+          reimbursementType,
+          "signature",
+        );
         const response = await fetch(url, {
           method: "PUT",
           headers: { "Content-Type": "image/png" },
           body: blob,
         });
         if (!response.ok) throw new Error();
-        onUploadComplete(key);
+        storageKey = key;
       }
 
-      toast.success("Unterschrift gespeichert");
+      signatureUploaded = true;
+      await onUploadComplete(storageKey);
+      if (showStatusToast) toast.success("Unterschrift gespeichert");
     } catch {
-      toast.error("Speichern fehlgeschlagen");
+      if (showStatusToast || !signatureUploaded) {
+        toast.error("Speichern fehlgeschlagen");
+      }
     } finally {
       setUploading(false);
     }
@@ -58,7 +81,10 @@ export function SignatureCanvas({ onUploadComplete, uploadSignature }: Props) {
           ref={padRef}
           minWidth={2}
           maxWidth={3}
-          canvasProps={{ className: "h-48 w-full sm:h-64" }}
+          canvasProps={{
+            className: "h-48 w-full sm:h-64",
+            "aria-label": "Unterschriftsfeld",
+          }}
         />
       </div>
       <div className="flex gap-2">
@@ -68,7 +94,7 @@ export function SignatureCanvas({ onUploadComplete, uploadSignature }: Props) {
           className="h-11 flex-1 px-3 sm:h-10 sm:flex-none"
           onClick={() => padRef.current?.clear()}
         >
-          <RotateCcw className="size-4 mr-1" />
+          <RotateCcw aria-hidden="true" className="size-4 mr-1" />
           Löschen
         </Button>
         <Button
@@ -77,8 +103,10 @@ export function SignatureCanvas({ onUploadComplete, uploadSignature }: Props) {
           onClick={handleSave}
           disabled={uploading}
         >
-          {uploading && <Loader2 className="size-4 animate-spin mr-1" />}
-          Unterschrift speichern
+          {uploading && (
+            <Loader2 aria-hidden="true" className="size-4 animate-spin mr-1" />
+          )}
+          {submitLabel}
         </Button>
       </div>
     </div>

@@ -4,7 +4,7 @@ import { Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
-import { CAR_ALLOWANCE_RATE_EUR_PER_KM } from "@/lib/travel-costs";
+import { getCarAllowanceRate } from "@/lib/travel-costs";
 import type { CostType, Receipt, TravelReceipt } from "./types";
 
 type Props = {
@@ -35,7 +35,7 @@ export function PublicReimbursementSummary(props: Props) {
           title: props.costLabels[receipt.costType],
           detail:
             receipt.costType === "car"
-              ? `${receipt.kilometers ?? 0} km × ${formatCurrency(CAR_ALLOWANCE_RATE_EUR_PER_KM)}`
+              ? `${receipt.kilometers ?? 0} km × ${formatCurrency(getCarAllowanceRate(receipt))}`
               : receipt.description,
           key: receipt.clientId,
         }))

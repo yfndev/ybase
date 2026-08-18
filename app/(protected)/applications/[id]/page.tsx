@@ -9,8 +9,10 @@ import { ApplicationReview } from "./ApplicationReview";
 
 export default async function ApplicationPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ returnTo?: string }>;
 }) {
   const session = await auth();
   if (!hasPermission(session?.user?.role, USER_PERMISSIONS.recruiting)) {
@@ -18,6 +20,11 @@ export default async function ApplicationPage({
   }
 
   const { id } = await params;
+  const requestedReturnUrl = (await searchParams).returnTo;
+  const backUrl =
+    requestedReturnUrl?.startsWith("/") && !requestedReturnUrl.startsWith("//")
+      ? requestedReturnUrl
+      : "/members";
   try {
     const [application, members, organizationDomain] = await Promise.all([
       getApplication(id),
@@ -29,12 +36,13 @@ export default async function ApplicationPage({
         initialApplication={application}
         members={members}
         organizationDomain={organizationDomain}
+        backUrl={backUrl}
       />
     );
   } catch {
     return (
       <div className="space-y-4">
-        <PageHeader title="Bewerbung" showBackButton />
+        <PageHeader title="Bewerbung" showBackButton backUrl={backUrl} />
         <p className="text-muted-foreground">Bewerbung nicht gefunden.</p>
       </div>
     );

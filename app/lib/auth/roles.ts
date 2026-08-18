@@ -3,6 +3,7 @@ import type { UserRole } from "../db/types";
 export type UserPermission =
   | "manage_finance"
   | "manage_recruiting"
+  | "publish_job_postings"
   | "manage_members"
   | "manage_organization_structure"
   | "manage_roles"
@@ -16,8 +17,10 @@ const rolePermissions: Record<
 > = {
   member: [],
   finance: ["manage_finance"],
+  team_lead: ["manage_recruiting"],
   people_culture: [
     "manage_recruiting",
+    "publish_job_postings",
     "manage_members",
     "manage_organization_structure",
   ],
@@ -27,12 +30,14 @@ const validRoles = new Set<UserRole>([
   "admin",
   "finance",
   "people_culture",
+  "team_lead",
   "member",
 ]);
 
 export const USER_PERMISSIONS = {
   finance: "manage_finance",
   recruiting: "manage_recruiting",
+  publishJobPostings: "publish_job_postings",
   members: "manage_members",
   organizationStructure: "manage_organization_structure",
   roles: "manage_roles",
@@ -56,7 +61,10 @@ export function hasRoleAccess(role: unknown, requiredRole: UserRole): boolean {
   if (requiredRole === "finance") {
     return hasPermission(role, USER_PERMISSIONS.finance);
   }
-  return hasPermission(role, USER_PERMISSIONS.recruiting);
+  if (requiredRole === "team_lead") {
+    return hasPermission(role, USER_PERMISSIONS.recruiting);
+  }
+  return hasPermission(role, USER_PERMISSIONS.members);
 }
 
 export function hasPermission(
@@ -66,4 +74,17 @@ export function hasPermission(
   const normalizedRole = normalizeUserRole(role);
   if (normalizedRole === "admin") return true;
   return rolePermissions[normalizedRole].includes(permission);
+}
+
+interface TeamAssignment {
+  role?: unknown;
+  teamId?: string;
+  secondaryTeamId?: string;
+}
+
+export function recruitingTeamIds(user: TeamAssignment): string[] | null {
+  if (normalizeUserRole(user.role) !== "team_lead") return null;
+  return [user.teamId, user.secondaryTeamId].filter(
+    (teamId): teamId is string => Boolean(teamId),
+  );
 }

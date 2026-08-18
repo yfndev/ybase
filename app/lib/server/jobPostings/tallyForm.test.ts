@@ -11,6 +11,7 @@ import { requirePermission } from "../../auth/session";
 import { jobPostings, logs } from "../../db/collections";
 import { newId } from "../../db/ids";
 import type { JobPosting } from "../../db/types";
+import { berlinToday } from "../../jobPostings/deadline";
 import { createTestActor } from "../../test/fixtures";
 import { setupTestDatabase } from "../../test/setupTestDatabase";
 import { createConfiguredTallyClient } from "../tally/client";
@@ -149,7 +150,7 @@ beforeEach(async () => {
   );
   vi.mocked(loadTallyFormConfig).mockReturnValue({
     workspaceId: "ws",
-    templateFormId: "tpl",
+    templateFormId: "tpl-general",
     webhookUrl: "https://ybase.test/api/tally/webhook",
     webhookSigningSecret: "secret",
   });
@@ -172,6 +173,7 @@ test("creates, configures, publishes and stores the tally ids", async () => {
   expect(client.createForm).toHaveBeenCalledTimes(1);
   expect(client.createForm).toHaveBeenCalledWith(
     expect.objectContaining({
+      templateId: "tpl-general",
       blocks: expect.arrayContaining([
         expect.objectContaining({
           type: "FORM_TITLE",
@@ -186,9 +188,9 @@ test("creates, configures, publishes and stores the tally ids", async () => {
           }),
         }),
         expect.objectContaining({
-          type: "HEADING_2",
+          type: "HEADING_3",
           payload: expect.objectContaining({
-            safeHTMLSchema: [["Deine Stelle: Vorstand"]],
+            safeHTMLSchema: [["Fragen zur Rolle"]],
           }),
         }),
         expect.objectContaining({
@@ -225,14 +227,31 @@ test("creates, configures, publishes and stores the tally ids", async () => {
   });
 });
 
-test("syncs posting content and exact role questions into Tally", async () => {
+test("uses the template selected for the posting", async () => {
+  const client = useClient(fakeClient());
+  const id = await insertDraft(orgA, {
+    tallyTemplateFormId: "tpl-selected",
+  });
+
+  await expect(generateTallyForm({ jobPostingId: id })).resolves.toEqual({
+    ok: true,
+  });
+
+  expect(client.getForm).toHaveBeenCalledWith("tpl-selected");
+  expect(client.createForm).toHaveBeenCalledWith(
+    expect.objectContaining({ templateId: "tpl-selected" }),
+  );
+});
+
+test("keeps posting details out of Tally and syncs exact role questions", async () => {
   const client = useClient(fakeClient());
   const id = await insertDraft(orgA, {
     shortText: "Gestalte unsere technische Plattform.",
     description: "<p>Du entwickelst YBase weiter.</p>",
     tasks: "<ul><li>Architektur gestalten</li></ul>",
     requirements: "<p>Erfahrung mit TypeScript</p>",
-    timeCommitment: "5 Stunden pro Woche",
+    benefits: "<ul><li>Zugang zur YFN Community</li></ul>",
+    timeCommitment: "Zwischen 4 und 8 Stunden",
     location: "Remote",
     deadline: "2026-08-31",
     applicationQuestions: ["Welche Architektur hast du zuletzt gestaltet?"],
@@ -247,11 +266,15 @@ test("syncs posting content and exact role questions into Tally", async () => {
   >;
   const patch = updateFormCalls[0]?.[1];
   const serialized = JSON.stringify(patch?.blocks);
-  expect(serialized).toContain("Über die Rolle");
-  expect(serialized).toContain("Du entwickelst YBase weiter.");
-  expect(serialized).toContain("Aufgaben");
-  expect(serialized).toContain("Anforderungen");
-  expect(serialized).toContain("Rahmenbedingungen");
+  expect(serialized).not.toContain("Gestalte unsere technische Plattform.");
+  expect(serialized).not.toContain("Du entwickelst YBase weiter.");
+  expect(serialized).not.toContain("Architektur gestalten");
+  expect(serialized).not.toContain("Erfahrung mit TypeScript");
+  expect(serialized).not.toContain("Benefits");
+  expect(serialized).not.toContain("Zugang zur YFN Community");
+  expect(serialized).not.toContain("Zwischen 4 und 8 Stunden");
+  expect(serialized).not.toContain("2026-08-31");
+  expect(serialized).toContain("Fragen zur Rolle");
   expect(serialized).toContain("Welche Architektur hast du zuletzt gestaltet?");
   expect(serialized).not.toContain("Spezifische Frage");
 });
@@ -313,10 +336,11 @@ test("publishing syncs the title and preserves other manual Tally changes", asyn
   });
 });
 
-test("returns errors for incomplete or expired drafts before calling Tally", async () => {
+test("returns errors for incomplete or non-future drafts before calling Tally", async () => {
   const client = useClient(fakeClient());
   const incomplete = await insertDraft(orgA, { title: "" });
   const expired = await insertDraft(orgA, { deadline: "2000-01-01" });
+  const dueToday = await insertDraft(orgA, { deadline: berlinToday() });
 
   await expect(
     generateTallyForm({ jobPostingId: incomplete }),
@@ -326,7 +350,11 @@ test("returns errors for incomplete or expired drafts before calling Tally", asy
   });
   await expect(generateTallyForm({ jobPostingId: expired })).resolves.toEqual({
     ok: false,
-    error: "Die Frist liegt in der Vergangenheit",
+    error: "Die Frist muss in der Zukunft liegen",
+  });
+  await expect(generateTallyForm({ jobPostingId: dueToday })).resolves.toEqual({
+    ok: false,
+    error: "Die Frist muss in der Zukunft liegen",
   });
   expect(client.getForm).not.toHaveBeenCalled();
 });
@@ -506,4 +534,14 @@ test("rejects an unauthorized role", async () => {
   await expect(generateTallyForm({ jobPostingId: id })).rejects.toThrow(
     "Insufficient permissions",
   );
+});
+
+test("publishing demands the publish permission", async () => {
+  const client = useClient(fakeClient());
+  const id = await insertDraft(orgA);
+
+  await generateTallyForm({ jobPostingId: id });
+
+  expect(requirePermission).toHaveBeenCalledWith("publish_job_postings");
+  expect(client.publishForm).toHaveBeenCalled();
 });

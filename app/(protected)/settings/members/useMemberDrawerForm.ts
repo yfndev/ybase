@@ -1,72 +1,117 @@
-import { useMemberMutations } from "@/lib/client/members/hooks/useMemberMutations";
-import type {
-  MemberStatus,
-  TeamOnboardingStatus,
-  UserRole,
-} from "@/lib/db/types";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { useMemberMutations } from "@/lib/client/members/hooks/useMemberMutations";
+import type { BoardMembership, MemberStatus, UserRole } from "@/lib/db/types";
+import { normalizeMemberStatus } from "@/lib/members/status";
 import type { MemberDrawerProps } from "./MemberDrawer.types";
+import { memberOrganizationState } from "./memberOrganizationState";
+import { useBoardMembershipForm } from "./useBoardMembershipForm";
 
 const LAST_ADMIN_MESSAGE =
   "Der letzte Admin kann nicht entfernt werden. Mindestens ein Admin ist erforderlich.";
 
-export function useMemberDrawerForm({
-  member,
-  teams,
-  departments,
-  canEditRoles,
-  adminCount,
-  onClose,
-}: MemberDrawerProps) {
+export function useMemberDrawerForm(
+  {
+    member,
+    teams,
+    departments,
+    canEditRoles,
+    adminCount,
+    onClose,
+  }: MemberDrawerProps,
+  onSavingChange: (isSaving: boolean) => void,
+) {
   const {
     updateProfile,
     setStatus: setStatusMutation,
-    setOnboarding: setOnboardingMutation,
     updateRole,
   } = useMemberMutations();
   const [teamId, setTeamId] = useState(member.teamId ?? "");
-  const [position, setPosition] = useState(member.positionTitle ?? "");
-  const [status, setStatus] = useState<MemberStatus>(member.memberStatus);
-  const [onboarding, setOnboarding] = useState<TeamOnboardingStatus>(
-    member.teamOnboardingStatus,
+  const [secondaryTeamId, setSecondaryTeamId] = useState(
+    member.secondaryTeamId ?? "",
+  );
+  const [status, setStatus] = useState<MemberStatus>(
+    normalizeMemberStatus(member.memberStatus),
   );
   const [role, setRole] = useState<UserRole>(member.role ?? "member");
+  const [isTeamLead, setIsTeamLead] = useState(member.isTeamLead ?? false);
+  const [isSecondaryTeamLead, setIsSecondaryTeamLead] = useState(
+    member.isSecondaryTeamLead ?? false,
+  );
+  const board = useBoardMembershipForm(member);
 
-  const activeTeams = teams.filter((team) => !team.isArchived);
-  const teamOptions = activeTeams.map((team) => ({
-    value: team._id,
-    label: team.name,
-  }));
-  const selectedTeam = activeTeams.find((team) => team._id === teamId);
-  const department = selectedTeam
-    ? departments.find((entry) => entry._id === selectedTeam.departmentId)
-    : undefined;
+  const { teamOptions, departmentOptions, department, chapterTeamIds } =
+    memberOrganizationState(teams, departments, teamId);
   const isSaving =
     updateProfile.isPending ||
     setStatusMutation.isPending ||
-    setOnboardingMutation.isPending ||
     updateRole.isPending;
 
   const handleSave = async () => {
+    onSavingChange(true);
+
     try {
+      if (board.isBoardMember && !board.boardDepartmentId) {
+        toast.error("Bitte wähle ein Department aus.");
+        return;
+      }
+      if (!board.isBoardMember && status === "active" && !teamId) {
+        toast.error("Bitte wähle ein Team aus.");
+        return;
+      }
+      if (!board.isBoardMember && teamId && secondaryTeamId === teamId) {
+        toast.error("Hauptteam und weiteres Team müssen unterschiedlich sein.");
+        return;
+      }
       const profile: {
         userId: string;
-        teamId?: string;
-        positionTitle?: string;
+        teamId?: string | null;
+        secondaryTeamId?: string | null;
+        isTeamLead?: boolean;
+        isSecondaryTeamLead?: boolean;
+        boardMembership?: BoardMembership | null;
       } = { userId: member._id };
-      if (teamId && teamId !== member.teamId) profile.teamId = teamId;
-      const trimmed = position.trim();
-      if (trimmed && trimmed !== member.positionTitle)
-        profile.positionTitle = trimmed;
-      if (profile.teamId || profile.positionTitle)
+      if (board.isBoardMember) {
+        if (member.teamId) profile.teamId = null;
+      } else if (teamId && teamId !== member.teamId) {
+        profile.teamId = teamId;
+      }
+      if (secondaryTeamId !== (member.secondaryTeamId ?? "")) {
+        profile.secondaryTeamId = secondaryTeamId || null;
+      }
+      const nextIsTeamLead = board.isBoardMember ? false : isTeamLead;
+      if (nextIsTeamLead !== (member.isTeamLead ?? false)) {
+        profile.isTeamLead = nextIsTeamLead;
+      }
+      const nextIsSecondaryTeamLead = secondaryTeamId
+        ? isSecondaryTeamLead
+        : false;
+      if (nextIsSecondaryTeamLead !== (member.isSecondaryTeamLead ?? false)) {
+        profile.isSecondaryTeamLead = nextIsSecondaryTeamLead;
+      }
+      const nextBoardMembership = board.isBoardMember
+        ? {
+            departmentId: board.boardDepartmentId,
+            isChair: board.boardIsChair,
+          }
+        : null;
+      const currentBoardMembership = member.boardMembership ?? null;
+      if (
+        JSON.stringify(nextBoardMembership) !==
+        JSON.stringify(currentBoardMembership)
+      ) {
+        profile.boardMembership = nextBoardMembership;
+      }
+      if (
+        profile.teamId !== undefined ||
+        profile.secondaryTeamId !== undefined ||
+        profile.isTeamLead !== undefined ||
+        profile.isSecondaryTeamLead !== undefined ||
+        profile.boardMembership !== undefined
+      ) {
         await updateProfile.mutateAsync(profile);
+      }
 
-      if (onboarding !== member.teamOnboardingStatus)
-        await setOnboardingMutation.mutateAsync({
-          userId: member._id,
-          status: onboarding,
-        });
       if (status !== member.memberStatus)
         await setStatusMutation.mutateAsync({ userId: member._id, status });
 
@@ -86,22 +131,29 @@ export function useMemberDrawerForm({
       toast.error(
         error instanceof Error ? error.message : "Fehler beim Speichern",
       );
+    } finally {
+      onSavingChange(false);
     }
   };
 
   return {
     teamId,
     setTeamId,
-    position,
-    setPosition,
+    secondaryTeamId,
+    setSecondaryTeamId,
     status,
     setStatus,
-    onboarding,
-    setOnboarding,
     role,
     setRole,
+    isTeamLead,
+    setIsTeamLead,
+    isSecondaryTeamLead,
+    setIsSecondaryTeamLead,
+    ...board,
     teamOptions,
+    departmentOptions,
     department,
+    chapterTeamIds,
     canEditRoles,
     isSaving,
     handleSave,

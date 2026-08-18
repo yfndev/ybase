@@ -39,6 +39,74 @@ test("requires a Tally API token", () => {
   expect(() => createTallyClient("")).toThrow("Tally API token is required");
 });
 
+test("lists workspace forms and folders for template discovery", async () => {
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(
+      json({
+        items: [
+          {
+            id: "tpl-1",
+            name: "Allgemein",
+            status: "PUBLISHED",
+            workspaceId: "ws-1",
+            folderId: "folder-1",
+          },
+        ],
+      }),
+    )
+    .mockResolvedValueOnce(
+      json([
+        {
+          id: "folder-1",
+          name: "Vorlagen",
+          workspaceId: "ws-1",
+          parentId: null,
+        },
+      ]),
+    );
+  const client = createTallyClient("token", fetcher as unknown as typeof fetch);
+
+  await expect(client.listForms("ws-1")).resolves.toEqual([
+    expect.objectContaining({ id: "tpl-1", folderId: "folder-1" }),
+  ]);
+  await expect(client.listFolders("ws-1")).resolves.toEqual([
+    expect.objectContaining({ id: "folder-1", name: "Vorlagen" }),
+  ]);
+  expect(fetcher.mock.calls[0][0]).toBe(
+    "https://api.tally.so/forms?page=1&limit=500&workspaceIds=ws-1",
+  );
+  expect(fetcher.mock.calls[1][0]).toBe(
+    "https://api.tally.so/workspaces/ws-1/folders",
+  );
+});
+
+test("loads every page of workspace forms", async () => {
+  const summary = (id: string) => ({
+    id,
+    name: id,
+    status: "PUBLISHED",
+    workspaceId: "ws-1",
+  });
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(
+      json({ items: [summary("template-1")], hasMore: true }),
+    )
+    .mockResolvedValueOnce(
+      json({ items: [summary("template-2")], hasMore: false }),
+    );
+  const client = createTallyClient("token", fetcher as unknown as typeof fetch);
+
+  await expect(client.listForms("ws-1")).resolves.toEqual([
+    expect.objectContaining({ id: "template-1" }),
+    expect.objectContaining({ id: "template-2" }),
+  ]);
+  expect(fetcher.mock.calls[1][0]).toBe(
+    "https://api.tally.so/forms?page=2&limit=500&workspaceIds=ws-1",
+  );
+});
+
 test("includes the Tally response message in API errors", async () => {
   const fetcher = vi.fn(async () =>
     Response.json(

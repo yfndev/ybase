@@ -1,10 +1,12 @@
 "use server";
 
 import { z } from "zod";
-import { USER_PERMISSIONS } from "../../auth/roles";
+import { recruitingTeamIds, USER_PERMISSIONS } from "../../auth/roles";
 import { requirePermission } from "../../auth/session";
 import { applications, jobPostings, users } from "../../db/collections";
-import type { Application, ApplicationWithFiles } from "../../db/types";
+import type { ApplicationWithFiles } from "../../db/types";
+import { UNAVAILABLE_MEMBER_STATUSES } from "../../members/status";
+import { jobPostingScopeFilter } from "../jobPostings/access";
 import { addLog } from "../logs";
 import {
   loadOwnedApplication,
@@ -12,51 +14,33 @@ import {
   requireRecruitingJobPosting,
 } from "./access";
 import { createApplicationHistoryEntry } from "./history";
-
-function toApplicationView(
-  application: Application,
-  jobPostingTitle: string,
-): ApplicationWithFiles {
-  const {
-    applicantEmailNormalized: _applicantEmailNormalized,
-    files,
-    tallyEventId: _tallyEventId,
-    tallySubmissionId: _tallySubmissionId,
-    tallyResponseId: _tallyResponseId,
-    tallyFormId: _tallyFormId,
-    withdrawalTokenHash: _withdrawalTokenHash,
-    yfnEmailNormalized: _yfnEmailNormalized,
-    workspaceUserId: _workspaceUserId,
-    onboardingCompletedBy: _onboardingCompletedBy,
-    cleanupEligibleAt: _cleanupEligibleAt,
-    ownerIds,
-    ...visibleApplication
-  } = application;
-  return {
-    ...visibleApplication,
-    jobPostingTitle,
-    ownerIds: ownerIds ?? [],
-    files: files.map(
-      ({ sourceUrl: _sourceUrl, storageKey: _storageKey, ...file }) => file,
-    ),
-  };
-}
+import { toApplicationView } from "./view";
 
 export async function getApplications(): Promise<ApplicationWithFiles[]> {
   const user = await requirePermission(USER_PERMISSIONS.recruiting);
-  const [records, postings] = await Promise.all([
-    (await applications())
-      .find({ organizationId: user.organizationId })
-      .sort({ _creationTime: -1 })
-      .toArray(),
-    (await jobPostings())
-      .find({ organizationId: user.organizationId })
-      .project({ _id: 1, title: 1 })
-      .toArray(),
-  ]);
+  const postings = await (
+    await jobPostings()
+  )
+    .find({
+      organizationId: user.organizationId,
+      ...jobPostingScopeFilter(user),
+    })
+    .project({ _id: 1, title: 1 })
+    .toArray();
   const titles = new Map(
     postings.map((posting) => [posting._id, posting.title]),
   );
+  const records = await (
+    await applications()
+  )
+    .find({
+      organizationId: user.organizationId,
+      ...(recruitingTeamIds(user)
+        ? { jobPostingId: { $in: [...titles.keys()] } }
+        : {}),
+    })
+    .sort({ _creationTime: -1 })
+    .toArray();
   return records.map((application) =>
     toApplicationView(
       application,
@@ -147,7 +131,7 @@ export async function updateApplicationManagement(input: {
     ).countDocuments({
       _id: { $in: parsed.ownerIds },
       organizationId: user.organizationId,
-      memberStatus: { $ne: "offboarded" },
+      memberStatus: { $nin: [...UNAVAILABLE_MEMBER_STATUSES] },
     });
     if (availableOwners !== parsed.ownerIds.length) {
       throw new Error(

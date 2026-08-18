@@ -1,3 +1,4 @@
+import type { CarAllowanceRate } from "@/lib/travel-costs";
 import { CONNECTION_ERROR, postJson } from "./http";
 
 export type ReimbursementLink =
@@ -55,6 +56,7 @@ export type ReimbursementLink =
             | "accommodation"
             | "incidental";
           kilometers?: number;
+          mileageRate?: CarAllowanceRate;
         }>;
       };
     };
@@ -70,9 +72,14 @@ export async function validateReimbursementLink(
   }
 }
 
-export function reimbursementUploadUrl(id: string, contentType: string) {
+export function reimbursementUploadUrl(
+  id: string,
+  contentType: string,
+  documentType: "receipt" | "signature",
+) {
   return postJson(`/api/public/reimbursement/${id}/upload-url`, {
     contentType,
+    documentType,
   }) as Promise<{ key: string; url: string }>;
 }
 

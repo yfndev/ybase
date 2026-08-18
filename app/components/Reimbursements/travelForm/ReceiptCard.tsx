@@ -13,7 +13,10 @@ import {
 } from "@/components/ui/select";
 import { toNet } from "@/lib/bank-utils";
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
-import { CAR_ALLOWANCE_RATE_EUR_PER_KM } from "@/lib/travel-costs";
+import {
+  calculateCarAllowance,
+  CAR_ALLOWANCE_RATE_EUR_PER_KM,
+} from "@/lib/travel-costs";
 import { Trash2 } from "lucide-react";
 import { InvoiceOrganizationHint } from "../InvoiceOrganizationHint";
 import { PLACEHOLDERS } from "./constants";
@@ -96,10 +99,10 @@ export function ReceiptCard({
                     0,
                     Math.floor(parseFloat(e.target.value) || 0),
                   );
-                  const amount =
-                    Math.round(km * CAR_ALLOWANCE_RATE_EUR_PER_KM * 100) / 100;
+                  const amount = calculateCarAllowance(km);
                   onUpdate({
                     kilometers: km,
+                    mileageRate: CAR_ALLOWANCE_RATE_EUR_PER_KM,
                     grossAmount: amount,
                     netAmount: amount,
                   });
@@ -169,6 +172,7 @@ export function ReceiptCard({
             <ReceiptUpload
               onUploadComplete={(id) => onUpdate({ fileStorageId: id })}
               storageId={receipt.fileStorageId || undefined}
+              reimbursementType="travel"
             />
           </div>
         )}

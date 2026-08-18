@@ -1,10 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { selectApplicationMemberPlatformProfileAction } from "@/lib/server/applications/admissionRequirementsAction";
 import { submitApplicationDecision } from "@/lib/server/applications/decisionAction";
-import { updateApplicationManagement } from "@/lib/server/applications/management";
-import {
-  setApplicationOnboardingCompleted,
-  setApplicationYfnEmail,
-} from "@/lib/server/applications/onboarding";
 import { setApplicationStatus } from "@/lib/server/applications/status";
 
 export function useApplicationMutations() {
@@ -13,10 +9,6 @@ export function useApplicationMutations() {
     queryClient.invalidateQueries({ queryKey: ["applications"] });
 
   return {
-    updateManagement: useMutation({
-      mutationFn: updateApplicationManagement,
-      onSuccess: invalidate,
-    }),
     setStatus: useMutation({
       mutationFn: setApplicationStatus,
       onSuccess: invalidate,
@@ -28,14 +20,24 @@ export function useApplicationMutations() {
         const result = await submitApplicationDecision(input);
         if (!result.ok) throw new Error(result.error);
       },
-      onSuccess: invalidate,
+      onSuccess: (_, input) => {
+        invalidate();
+        if (input.decision === "accepted") {
+          queryClient.invalidateQueries({ queryKey: ["members"] });
+        }
+      },
     }),
-    setYfnEmail: useMutation({
-      mutationFn: setApplicationYfnEmail,
-      onSuccess: invalidate,
-    }),
-    setOnboardingCompleted: useMutation({
-      mutationFn: setApplicationOnboardingCompleted,
+    selectMemberPlatformProfile: useMutation({
+      mutationFn: async (
+        input: Parameters<
+          typeof selectApplicationMemberPlatformProfileAction
+        >[0],
+      ) => {
+        const result =
+          await selectApplicationMemberPlatformProfileAction(input);
+        if (!result.ok)
+          throw new Error("Member-Profil konnte nicht zugeordnet werden.");
+      },
       onSuccess: invalidate,
     }),
   };

@@ -1,5 +1,10 @@
 import { signatureTokens } from "../../db/collections";
+import {
+  membershipSignatureUploadDirectory,
+  reimbursementUploadDirectory,
+} from "../../s3/keys";
 import { presignUpload } from "../../s3/storage";
+import { isReimbursementSignatureContext } from "../../signatures/context";
 import {
   claimPendingUploads,
   registerPendingUpload,
@@ -39,7 +44,16 @@ export async function createPublicSignatureUpload(
   contentType?: string,
 ) {
   const doc = await requireOpenToken(token);
-  const upload = await presignUpload(contentType);
+  const uploadContext = doc.uploadContext ?? doc.reimbursementType;
+  if (!uploadContext) throw new Error("Upload context is missing");
+  const directory = isReimbursementSignatureContext(uploadContext)
+    ? reimbursementUploadDirectory(
+        uploadContext,
+        doc.organizationId,
+        "signature",
+      )
+    : membershipSignatureUploadDirectory(doc.organizationId, doc.createdBy);
+  const upload = await presignUpload(contentType, directory);
   const result = await (
     await signatureTokens()
   ).updateOne(

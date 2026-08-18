@@ -19,10 +19,7 @@ test("reports domain-wide delegation rejected by Google", async () => {
       }),
     ).toString("base64"),
   );
-  vi.stubEnv(
-    "GOOGLE_WORKSPACE_ADMIN_EMAIL",
-    "admin@youngfounders.network",
-  );
+  vi.stubEnv("GOOGLE_WORKSPACE_ADMIN_EMAIL", "admin@youngfounders.network");
   vi.stubGlobal(
     "fetch",
     vi.fn().mockResolvedValue(

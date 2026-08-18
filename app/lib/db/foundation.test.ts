@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { ensureAppUser } from "../auth/provisioning";
+import { ensureAppUser, isLinkedWorkspaceUser } from "../auth/provisioning";
 import { YFN_ORGANIZATION } from "../organization";
 import { setupTestDatabase } from "../test/setupTestDatabase";
 import { getDb } from "./client";
@@ -62,6 +62,39 @@ test("ensureAppUser is idempotent for the same email", async () => {
   expect(second._id).toBe(first._id);
   const db = await getDb();
   expect(await db.collection("users").countDocuments()).toBe(1);
+});
+
+test("ensureAppUser links and follows a stable Google Workspace user ID", async () => {
+  const first = await ensureAppUser({
+    email: "alice@youngfounders.network",
+    googleWorkspaceUserId: "google-user-1",
+  });
+  const second = await ensureAppUser({
+    email: "alice.renamed@youngfounders.network",
+    googleWorkspaceUserId: "google-user-1",
+  });
+
+  expect(second).toMatchObject({
+    _id: first._id,
+    email: "alice.renamed@youngfounders.network",
+    googleWorkspaceUserId: "google-user-1",
+  });
+  await expect(isLinkedWorkspaceUser("google-user-1")).resolves.toBe(true);
+  expect(await (await getDb()).collection("users").countDocuments()).toBe(1);
+});
+
+test("ensureAppUser rejects a Google Workspace account conflict", async () => {
+  await ensureAppUser({
+    email: "alice@youngfounders.network",
+    googleWorkspaceUserId: "google-user-1",
+  });
+
+  await expect(
+    ensureAppUser({
+      email: "alice@youngfounders.network",
+      googleWorkspaceUserId: "google-user-2",
+    }),
+  ).rejects.toThrow("another Google Workspace account");
 });
 
 test("ensureAppUser updates an existing user from the current login profile", async () => {
@@ -162,7 +195,6 @@ test("links an accepted application on the first matching login", async () => {
     applicationId,
     organizationId,
     teamId,
-    positionTitle: "People Lead",
     memberStatus: "onboarding",
     teamOnboardingStatus: "not_started",
   });

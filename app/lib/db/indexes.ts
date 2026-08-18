@@ -1,4 +1,5 @@
 import { getDb } from "./client";
+import { ensureMembershipIndexes } from "./membershipIndexes";
 
 export async function ensureIndexes(): Promise<void> {
   const db = await getDb();
@@ -12,7 +13,10 @@ export async function ensureIndexes(): Promise<void> {
 
   await db.collection("users").createIndexes([
     { key: { email: 1 }, unique: true, sparse: true },
+    { key: { googleWorkspaceUserId: 1 }, unique: true, sparse: true },
     { key: { applicationId: 1 }, unique: true, sparse: true },
+    { key: { memberPlatformUserId: 1 }, unique: true, sparse: true },
+    { key: { membershipId: 1 }, unique: true, sparse: true },
     { key: { organizationId: 1 } },
     {
       key: {
@@ -70,6 +74,8 @@ export async function ensureIndexes(): Promise<void> {
       { key: { tallySubmissionId: 1 }, unique: true },
       { key: { tallyResponseId: 1 }, unique: true },
       { key: { withdrawalTokenHash: 1 }, unique: true, sparse: true },
+      { key: { appealTokenHash: 1 }, unique: true, sparse: true },
+      { key: { "rejectionDelivery.messageId": 1 }, unique: true, sparse: true },
       { key: { yfnEmailNormalized: 1 }, unique: true, sparse: true },
       { key: { jobPostingId: 1, applicantEmailNormalized: 1 }, unique: true },
     ]);
@@ -124,4 +130,5 @@ export async function ensureIndexes(): Promise<void> {
       { key: { contextType: 1, contextId: 1 } },
       { key: { claimedByType: 1, claimedById: 1 }, sparse: true },
     ]);
+  await ensureMembershipIndexes(db);
 }

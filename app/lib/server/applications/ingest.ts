@@ -8,7 +8,9 @@ import { newId } from "../../db/ids";
 import { berlinToday, isDeadlinePassed } from "../../jobPostings/deadline";
 import { addLog } from "../logs";
 import { createApplicationFile } from "./fileRecord";
-import { isDuplicateKeyError, recordWebhookEvent } from "./history";
+import { isDuplicateKeyError } from "../../db/errors";
+import { recordWebhookEvent } from "./history";
+import { tryFindApplicationMemberPlatformProfile } from "./memberPlatformAdmission";
 import { parseTallySubmission, type TallyWebhookPayload } from "./tallyPayload";
 import { createApplicationWithdrawalToken } from "./withdrawalToken";
 
@@ -98,6 +100,10 @@ export async function ingestTallySubmission(
     return { status: "ignored", reason: "missing-phone" };
   }
 
+  const memberPlatformSnapshot = await tryFindApplicationMemberPlatformProfile({
+    applicantName: parsed.name,
+    privateEmail: parsed.emailNormalized,
+  });
   const withdrawal = createApplicationWithdrawalToken();
 
   const application: Application = {
@@ -110,6 +116,7 @@ export async function ingestTallySubmission(
     applicantEmail: parsed.email,
     applicantEmailNormalized: parsed.emailNormalized,
     applicantPhone: parsed.phone,
+    ...memberPlatformSnapshot,
     fields: parsed.fields,
     files: parsed.files.map(createApplicationFile),
     tallyEventId: payload.eventId,

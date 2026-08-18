@@ -67,6 +67,7 @@ export function VolunteerAllowanceFormUI({
         <SignatureField
           onSignatureComplete={setSignature}
           storageId={signature || undefined}
+          signatureContext="volunteer-allowance"
         />
       </div>
 

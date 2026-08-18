@@ -11,15 +11,12 @@ type ReimbursementMailData = Reimbursement & {
   project: Project;
 };
 
-function formatAmount(amount: number, currency = "EUR"): string {
-  try {
-    return new Intl.NumberFormat("de-DE", {
-      style: "currency",
-      currency,
-    }).format(amount);
-  } catch {
-    return `${amount.toFixed(2)} ${currency}`;
-  }
+function formatAmount(amount: number, currency?: string | null): string {
+  const code = currency?.match(/^[A-Za-z]{3}$/) ? currency : "EUR";
+  return new Intl.NumberFormat("de-DE", {
+    style: "currency",
+    currency: code,
+  }).format(amount);
 }
 
 function formatDate(timestamp?: number): string {

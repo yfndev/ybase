@@ -5,9 +5,13 @@ import { USER_PERMISSIONS } from "../../auth/roles";
 import { requirePermission } from "../../auth/session";
 import { jobPostings } from "../../db/collections";
 import type { JobPosting } from "../../db/types";
-import { berlinToday, isDeadlinePassed } from "../../jobPostings/deadline";
+import {
+  isDeadlineInFuture,
+  JOB_POSTING_DEADLINE_ERROR,
+} from "../../jobPostings/deadline";
 import { addLog } from "../logs";
 import { createConfiguredTallyClient } from "../tally/client";
+import { requireOwnedJobPosting } from "./access";
 import {
   provisionTallyFormDraft,
   recordTallyFormError,
@@ -23,17 +27,14 @@ function assertPublishable(posting: JobPosting): void {
       "Titel und Team sind vor der Veröffentlichung erforderlich",
     );
   }
-  if (isDeadlinePassed(posting.deadline, berlinToday())) {
-    throw new Error("Die Frist liegt in der Vergangenheit");
+  if (!isDeadlineInFuture(posting.deadline)) {
+    throw new Error(JOB_POSTING_DEADLINE_ERROR);
   }
 }
 
 async function requireDraft(jobPostingId: string) {
-  const user = await requirePermission(USER_PERMISSIONS.recruiting);
-  const posting = await (await jobPostings()).findOne({ _id: jobPostingId });
-  if (!posting || posting.organizationId !== user.organizationId) {
-    throw new Error("Access denied");
-  }
+  const user = await requirePermission(USER_PERMISSIONS.publishJobPostings);
+  const posting = await requireOwnedJobPosting(jobPostingId, user);
   if (posting.status !== "draft") {
     return {
       user,

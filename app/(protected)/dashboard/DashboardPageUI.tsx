@@ -12,13 +12,16 @@ import {
 import { formatCurrency } from "@/lib/formatters/formatCurrency";
 import { formatDate } from "@/lib/formatters/formatDate";
 import { STATUS_DISPLAY } from "@/lib/reimbursementStatus";
+import type { OwnMembershipOverview } from "@/lib/server/memberships/selfServiceResignation";
+import { MembershipWelcomeBanner } from "./MembershipWelcomeBanner";
+
+const DASHBOARD_CARD_CLASS_NAME = "rounded-none border";
 
 const STATUS_CARDS = [
   { status: "pending", title: "Offen" },
   { status: "changes_requested", title: "Änderungen angefordert" },
   { status: "approved", title: "Genehmigt" },
   { status: "paid", title: "Bezahlt" },
-  { status: "declined", title: "Abgelehnt" },
 ] as const;
 
 type BreakdownRow = { key: string; label: string; count: number; sum: number };
@@ -41,7 +44,7 @@ function BreakdownCard({
   emptyText: string;
 }) {
   return (
-    <Card>
+    <Card className={DASHBOARD_CARD_CLASS_NAME}>
       <CardHeader>
         <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
@@ -56,7 +59,8 @@ function BreakdownCard({
             >
               <span className="truncate">{row.label}</span>
               <span className="shrink-0 text-sm text-muted-foreground">
-                {row.count} · {formatCurrency(row.sum)}
+                {row.count} {row.count === 1 ? "Vorgang" : "Vorgänge"},{" "}
+                {formatCurrency(row.sum)}
               </span>
             </div>
           ))
@@ -66,7 +70,13 @@ function BreakdownCard({
   );
 }
 
-export function DashboardPageUI({ entries }: { entries: DashboardEntry[] }) {
+export function DashboardPageUI({
+  entries,
+  membership,
+}: {
+  entries: DashboardEntry[];
+  membership: OwnMembershipOverview | null;
+}) {
   const totals = statusTotals(entries);
   const projectRows: BreakdownRow[] = sumByProject(entries).map((row) => ({
     key: row.projectName,
@@ -89,9 +99,11 @@ export function DashboardPageUI({ entries }: { entries: DashboardEntry[] }) {
       <PageHeader title="Dashboard" />
 
       <div className="flex flex-col gap-6">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <MembershipWelcomeBanner membership={membership} />
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {STATUS_CARDS.map((card) => (
-            <Card key={card.status}>
+            <Card key={card.status} className={DASHBOARD_CARD_CLASS_NAME}>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <StatusDot status={card.status} />
@@ -124,7 +136,7 @@ export function DashboardPageUI({ entries }: { entries: DashboardEntry[] }) {
           />
         </div>
 
-        <Card>
+        <Card className={DASHBOARD_CARD_CLASS_NAME}>
           <CardHeader>
             <CardTitle className="text-base">Letzte Aktivität</CardTitle>
           </CardHeader>

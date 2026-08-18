@@ -4,6 +4,9 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { requireAuthenticatedUser } from "../../auth/session";
 import { users } from "../../db/collections";
+import type { StoredMemberStatus } from "../../db/types";
+import { isUnavailableMemberStatus } from "../../members/status";
+import { profileImageUploadDirectory } from "../../s3/keys";
 import {
   getObjectBuffer,
   getObjectSize,
@@ -31,11 +34,13 @@ const completeSchema = z.object({
 function requireEligibleUser<
   T extends {
     organizationId?: string;
-    memberStatus: string;
+    memberStatus: StoredMemberStatus;
   },
 >(user: T): asserts user is T & { organizationId: string } {
   if (!user.organizationId) throw new Error("User has no organization");
-  if (user.memberStatus === "offboarded") throw new Error("User is offboarded");
+  if (isUnavailableMemberStatus(user.memberStatus)) {
+    throw new Error("User is unavailable");
+  }
 }
 
 export async function generateProfileImageUpload(
@@ -47,7 +52,10 @@ export async function generateProfileImageUpload(
     throw new Error("Bitte verwende ein JPEG- oder PNG-Bild");
   }
 
-  const upload = await presignUpload(contentType);
+  const upload = await presignUpload(
+    contentType,
+    profileImageUploadDirectory(user._id),
+  );
   await registerPendingUpload(upload.key, {
     organizationId: user.organizationId,
     userId: user._id,

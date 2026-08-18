@@ -3,6 +3,7 @@
 import { FileText, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import type { ReimbursementType } from "@/lib/db/types";
 import {
   convertToJPG,
   FileConversionError,
@@ -17,9 +18,14 @@ import { ReceiptDropzone } from "./ReceiptDropzone";
 interface Props {
   onUploadComplete: (key: string) => void;
   storageId?: string;
+  reimbursementType: ReimbursementType;
 }
 
-export function ReceiptUpload({ onUploadComplete, storageId }: Props) {
+export function ReceiptUpload({
+  onUploadComplete,
+  storageId,
+  reimbursementType,
+}: Props) {
   const [isUploading, setIsUploading] = useState(false);
   const [isPdf, setIsPdf] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -57,7 +63,11 @@ export function ReceiptUpload({ onUploadComplete, storageId }: Props) {
     setIsUploading(true);
     try {
       const convertedFile = await convertToJPG(file);
-      const { key, url } = await generateUploadUrl(convertedFile.type);
+      const { key, url } = await generateUploadUrl(
+        convertedFile.type,
+        reimbursementType,
+        "receipt",
+      );
       const result = await fetch(url, {
         method: "PUT",
         headers: { "Content-Type": convertedFile.type },

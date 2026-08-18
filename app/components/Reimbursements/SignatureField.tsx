@@ -4,16 +4,23 @@ import { CheckCircle2, PenLine, RotateCcw, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getFileUrlAction } from "@/lib/server/reimbursements/files";
+import {
+  type SignatureUploadContext,
+  isReimbursementSignatureContext,
+} from "@/lib/signatures/context";
 import { SignatureCanvas } from "./SignatureCanvas";
 import { SignatureQRPanel } from "./SignatureQRPanel";
 
 interface Props {
-  onSignatureComplete: (key: string) => void;
+  onSignatureComplete: (key: string) => void | Promise<void>;
   storageId?: string;
   uploadSignature?: (blob: Blob) => Promise<string>;
   getFileUrl?: (storageId: string) => Promise<string | null>;
   onClear?: () => void;
   allowMobileHandoff?: boolean;
+  signatureContext?: SignatureUploadContext;
+  submitLabel?: string;
+  showStatusToast?: boolean;
 }
 
 export function SignatureField({
@@ -23,8 +30,15 @@ export function SignatureField({
   getFileUrl = getFileUrlAction,
   onClear,
   allowMobileHandoff = true,
+  signatureContext,
+  submitLabel,
+  showStatusToast = true,
 }: Props) {
   const [mode, setMode] = useState<"direct" | "mobile">("direct");
+  const reimbursementType =
+    signatureContext && isReimbursementSignatureContext(signatureContext)
+      ? signatureContext
+      : undefined;
 
   if (storageId) {
     return (
@@ -45,8 +59,9 @@ export function SignatureField({
             variant={mode === "direct" ? "default" : "outline"}
             className="h-12 min-w-0 w-full px-3"
             onClick={() => setMode("direct")}
+            aria-pressed={mode === "direct"}
           >
-            <PenLine className="size-4 mr-1" />
+            <PenLine aria-hidden="true" className="size-4 mr-1" />
             Auf diesem Gerät
           </Button>
           <Button
@@ -54,8 +69,9 @@ export function SignatureField({
             variant={mode === "mobile" ? "default" : "outline"}
             className="h-12 min-w-0 w-full px-3"
             onClick={() => setMode("mobile")}
+            aria-pressed={mode === "mobile"}
           >
-            <Smartphone className="size-4 mr-1" />
+            <Smartphone aria-hidden="true" className="size-4 mr-1" />
             Mit dem Handy
           </Button>
         </div>
@@ -65,9 +81,18 @@ export function SignatureField({
         <SignatureCanvas
           onUploadComplete={onSignatureComplete}
           uploadSignature={uploadSignature}
+          reimbursementType={reimbursementType}
+          submitLabel={submitLabel}
+          showStatusToast={showStatusToast}
         />
       ) : (
-        <SignatureQRPanel onSignatureComplete={onSignatureComplete} />
+        signatureContext && (
+          <SignatureQRPanel
+            onSignatureComplete={onSignatureComplete}
+            signatureContext={signatureContext}
+            showStatusToast={showStatusToast}
+          />
+        )
       )}
     </div>
   );
@@ -119,7 +144,7 @@ function SignaturePreview({
           className="mt-3 w-full"
           onClick={onClear}
         >
-          <RotateCcw className="size-4" />
+          <RotateCcw aria-hidden="true" className="size-4" />
           Neu unterschreiben
         </Button>
       ) : null}

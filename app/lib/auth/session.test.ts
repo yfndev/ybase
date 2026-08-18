@@ -10,7 +10,12 @@ vi.mock("../db/collections", () => ({
   users: vi.fn(async () => ({ findOne: mocks.findOne })),
 }));
 
-import { requirePermission, requireRole, requireUser } from "./session";
+import {
+  requireAuthenticatedUser,
+  requirePermission,
+  requireRole,
+  requireUser,
+} from "./session";
 
 beforeEach(() => {
   mocks.auth.mockResolvedValue({ user: { id: "user-id" } });
@@ -52,19 +57,56 @@ test("admin passes People & Culture and finance permission guards", async () => 
   await expect(requirePermission("manage_finance")).resolves.toBeDefined();
 });
 
-test("offboarded users lose access to protected data", async () => {
+test.each(["offboarding", "archived", "excluded", "offboarded"])(
+  "%s users lose access to protected data",
+  async (memberStatus) => {
+    mocks.findOne.mockResolvedValue({
+      _id: "user-id",
+      organizationId: "organization-id",
+      role: "admin",
+      memberStatus,
+    });
+
+    await expect(requireUser()).rejects.toThrow("User is unavailable");
+    await expect(requireRole("member")).rejects.toThrow("User is unavailable");
+    await expect(requirePermission("manage_members")).rejects.toThrow(
+      "User is unavailable",
+    );
+  },
+);
+
+test("members with a planned offboarding keep regular access", async () => {
   mocks.findOne.mockResolvedValue({
     _id: "user-id",
     organizationId: "organization-id",
-    role: "admin",
-    memberStatus: "offboarded",
+    role: "member",
+    memberStatus: "offboarding_planned",
   });
 
-  await expect(requireUser()).rejects.toThrow("User is offboarded");
-  await expect(requireRole("member")).rejects.toThrow("User is offboarded");
-  await expect(requirePermission("manage_members")).rejects.toThrow(
-    "User is offboarded",
+  await expect(requireUser()).resolves.toMatchObject({
+    memberStatus: "offboarding_planned",
+  });
+});
+
+test("members with a deleted Workspace account lose protected access", async () => {
+  mocks.findOne.mockResolvedValue({
+    _id: "user-id",
+    organizationId: "organization-id",
+    role: "member",
+    memberStatus: "active",
+    workspaceAccountDeletedAt: Date.now(),
+  });
+
+  await expect(requireAuthenticatedUser()).rejects.toThrow(
+    "User is unavailable",
   );
+  await expect(requireUser()).rejects.toThrow("User is unavailable");
+  await expect(requirePermission("manage_members")).rejects.toThrow(
+    "User is unavailable",
+  );
+  await expect(
+    requireAuthenticatedUser({ allowDeletedWorkspaceAccount: true }),
+  ).resolves.toMatchObject({ workspaceAccountDeletedAt: expect.any(Number) });
 });
 
 test("members in onboarding cannot access regular platform data", async () => {

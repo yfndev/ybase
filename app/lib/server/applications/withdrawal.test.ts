@@ -40,6 +40,9 @@ beforeEach(async () => {
     applicantEmail: "secret@example.com",
     applicantEmailNormalized: "secret@example.com",
     applicantPhone: "+4915123456789",
+    dateOfBirth: "2009-01-01",
+    memberPlatformUserId: "member-platform-secret",
+    memberPlatformSyncedAt: Date.now(),
     fields: [
       {
         key: "motivation",
@@ -76,6 +79,8 @@ beforeEach(async () => {
     workspaceProvisionedAt: Date.now(),
     onboardingUserId,
     onboardingLinkedAt: Date.now(),
+    onboardingStartedAt: Date.now(),
+    onboardingStartedBy: onboardingUserId,
     onboardingCompletedAt: Date.now(),
     onboardingCompletedBy: newId(),
     cleanupEligibleAt: Date.now(),
@@ -125,16 +130,21 @@ test("anonymizes personal data, locks the application and removes files", async 
   });
   expect(stored).not.toHaveProperty("applicantName");
   expect(stored).not.toHaveProperty("applicantPhone");
+  expect(stored).not.toHaveProperty("dateOfBirth");
+  expect(stored).not.toHaveProperty("memberPlatformUserId");
+  expect(stored).not.toHaveProperty("memberPlatformSyncedAt");
   expect(stored).not.toHaveProperty("ownerIds");
   expect(stored).not.toHaveProperty("withdrawalTokenHash");
   expect(stored).not.toHaveProperty("yfnEmail");
   expect(stored).not.toHaveProperty("workspaceUserId");
   expect(stored).not.toHaveProperty("workspaceProvisioningStatus");
   expect(stored).not.toHaveProperty("onboardingUserId");
+  expect(stored).not.toHaveProperty("onboardingStartedAt");
+  expect(stored).not.toHaveProperty("onboardingStartedBy");
   expect(stored).not.toHaveProperty("onboardingCompletedAt");
   expect(stored).not.toHaveProperty("onboardingCompletedBy");
   expect(JSON.stringify(stored)).not.toMatch(
-    /Secret Person|secret@example.com|secret answer|tally-event-secret/,
+    /Secret Person|secret@example.com|secret answer|tally-event-secret|member-platform-secret/,
   );
   expect(deleteObject).toHaveBeenCalledWith("applications/secret-cv.pdf");
   expect(

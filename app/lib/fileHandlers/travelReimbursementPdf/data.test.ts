@@ -64,6 +64,23 @@ test("maps domestic travel data and aggregates supported cost types", () => {
   });
 });
 
+test("uses the fixed 15 cent mileage rate", () => {
+  const data = buildTravelPdfData(reimbursement({ amount: 15 }), [
+    {
+      costType: "car",
+      kilometers: 100,
+      mileageRate: 0.15,
+      grossAmount: 15,
+    },
+  ]);
+
+  expect(data.fields).toMatchObject({
+    privateCarKilometers: "100",
+    mileageRate: "0,15 €",
+    privateCarCost: "15,00 €",
+  });
+});
+
 test("uses the international allowance fields and account holder fallback", () => {
   const data = buildTravelPdfData(
     reimbursement({

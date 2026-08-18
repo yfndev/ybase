@@ -1,65 +1,35 @@
-import type {
-  MemberStatus,
-  TeamOnboardingStatus,
-  UserRole,
-} from "@/lib/db/types";
-
-type BadgeVariant =
-  | "default"
-  | "primary"
-  | "secondary"
-  | "destructive"
-  | "outline";
+import type { MemberStatus, UserRole } from "@/lib/db/types";
 
 interface Option<T extends string> {
   value: T;
   label: string;
 }
 
-export const MEMBER_STATUS_OPTIONS: Option<MemberStatus>[] = [
-  { value: "onboarding", label: "Im Onboarding" },
-  { value: "active", label: "Aktiv" },
-  { value: "offboarded", label: "Inaktiv" },
+const ONBOARDING_STATUS_OPTION: Option<MemberStatus> = {
+  value: "onboarding",
+  label: "Onboarding",
+};
+
+const MEMBER_STATUS_OPTIONS: Option<MemberStatus>[] = [
+  { value: "active", label: "Vereinsmitglied" },
+  { value: "offboarding_planned", label: "Offboarding vorgemerkt" },
+  { value: "offboarding", label: "Offboarding" },
+  { value: "archived", label: "Archiviert" },
+  { value: "excluded", label: "Ausgeschlossen" },
 ];
 
-export const TEAM_ONBOARDING_OPTIONS: Option<TeamOnboardingStatus>[] = [
-  { value: "not_started", label: "Nicht begonnen" },
-  { value: "in_progress", label: "In Bearbeitung" },
-  { value: "completed", label: "Abgeschlossen" },
-];
+export function memberStatusOptions(
+  currentStatus: MemberStatus,
+): Option<MemberStatus>[] {
+  return currentStatus === "onboarding"
+    ? [ONBOARDING_STATUS_OPTION, ...MEMBER_STATUS_OPTIONS]
+    : MEMBER_STATUS_OPTIONS;
+}
 
 export const ROLE_OPTIONS: Option<UserRole>[] = [
   { value: "admin", label: "Admin" },
   { value: "finance", label: "Finance" },
   { value: "people_culture", label: "People & Culture" },
+  { value: "team_lead", label: "Team Lead" },
   { value: "member", label: "Teammitglied" },
 ];
-
-const MEMBER_STATUS_VARIANT: Record<MemberStatus, BadgeVariant> = {
-  onboarding: "default",
-  active: "secondary",
-  offboarded: "outline",
-};
-
-const TEAM_ONBOARDING_VARIANT: Record<TeamOnboardingStatus, BadgeVariant> = {
-  not_started: "outline",
-  in_progress: "default",
-  completed: "primary",
-};
-
-function labelOf<T extends string>(options: Option<T>[], value: T): string {
-  return options.find((option) => option.value === value)?.label ?? value;
-}
-
-export const memberStatusLabel = (status: MemberStatus) =>
-  labelOf(MEMBER_STATUS_OPTIONS, status);
-
-export const teamOnboardingLabel = (status: TeamOnboardingStatus) =>
-  labelOf(TEAM_ONBOARDING_OPTIONS, status);
-
-export const memberStatusVariant = (status: MemberStatus): BadgeVariant =>
-  MEMBER_STATUS_VARIANT[status];
-
-export const teamOnboardingVariant = (
-  status: TeamOnboardingStatus,
-): BadgeVariant => TEAM_ONBOARDING_VARIANT[status];

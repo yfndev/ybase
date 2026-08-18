@@ -26,7 +26,9 @@ export default function ImpressumPage() {
         Telefon: +49-01715871414
         <br />
         E-Mail:{" "}
-        <a href="mailto:info@youngfounders.network">info@youngfounders.network</a>
+        <a href="mailto:info@youngfounders.network">
+          info@youngfounders.network
+        </a>
       </p>
 
       <p className="mb-4">

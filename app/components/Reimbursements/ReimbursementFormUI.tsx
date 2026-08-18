@@ -46,6 +46,7 @@ export function ReimbursementFormUI({
               <SignatureField
                 onSignatureComplete={form.setSignature}
                 storageId={form.signature || undefined}
+                signatureContext="expense"
               />
             </div>
           </>

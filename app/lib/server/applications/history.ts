@@ -1,5 +1,6 @@
 import type { TallyWebhookEvent } from "../../db/application";
 import { tallyWebhookEvents } from "../../db/collections";
+import { isDuplicateKeyError } from "../../db/errors";
 import { newId } from "../../db/ids";
 import type {
   ApplicationHistoryEntry,
@@ -28,14 +29,6 @@ export function createApplicationHistoryEntry(
     details,
     ...status,
   };
-}
-
-export function isDuplicateKeyError(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    (error as { code?: number }).code === 11000
-  );
 }
 
 export async function recordWebhookEvent(

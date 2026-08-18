@@ -46,9 +46,14 @@ const ACTION_LABELS: Record<string, string> = {
   "jobPosting.tally.error": "Tally-Synchronisierung fehlgeschlagen",
   "jobFeedToken.rotate": "Job-Feed-Token rotiert",
   "member.public_team_profile_update": "Öffentliches Teamprofil aktualisiert",
+  "member.created": "Mitglied angelegt",
   "application.received": "Bewerbung eingegangen",
   "application.management_update": "Bewerbung aktualisiert",
   "application.status_change": "Bewerbungsstatus geändert",
+  "application.onboarding_linked": "YBase-Registrierung verknüpft",
+  "application.onboarding_started": "Onboarding gestartet",
+  "application.onboarding_completed": "Onboarding abgeschlossen",
+  "application.onboarding_reopened": "Onboarding wieder geöffnet",
 };
 
 export default async function LogsPage() {

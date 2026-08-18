@@ -2,13 +2,13 @@
 
 import {
   Coins,
+  FileCheck2,
   FolderKanban,
   LayoutDashboard,
   Megaphone,
   Network,
   ScrollText,
-  UserRoundSearch,
-  UserCog,
+  UsersRound,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -31,12 +31,8 @@ import { MainNav, type NavItem } from "./MainNav";
 import { NavUser } from "./UserNav";
 
 const MEMBER_NAV_ITEMS: NavItem[] = [
-  { name: "Erstattungen", url: "/reimbursements", icon: Coins },
-];
-
-const STAFF_NAV_ITEMS: NavItem[] = [
   { name: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  ...MEMBER_NAV_ITEMS,
+  { name: "Erstattungen", url: "/reimbursements", icon: Coins },
 ];
 
 type ProtectedNavItem = NavItem & { permission: UserPermission };
@@ -49,9 +45,9 @@ const ADMINISTRATION_NAV_ITEMS: ProtectedNavItem[] = [
     permission: USER_PERMISSIONS.organizationStructure,
   },
   {
-    name: "Team",
-    url: "/settings/members",
-    icon: UserCog,
+    name: "Unterlagen",
+    url: "/settings/documents",
+    icon: FileCheck2,
     permission: USER_PERMISSIONS.members,
   },
   {
@@ -68,18 +64,28 @@ const ADMINISTRATION_NAV_ITEMS: ProtectedNavItem[] = [
   },
 ];
 
-export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({
+  locked = false,
+  navSlot,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & {
+  locked?: boolean;
+  navSlot?: React.ReactNode;
+}) {
   const role = useCurrentUserRole();
-  const homeUrl = role === "member" ? "/reimbursements" : "/dashboard";
+  const homeUrl = "/dashboard";
   const mainItems: NavItem[] = [
-    ...(role === "member" ? MEMBER_NAV_ITEMS : STAFF_NAV_ITEMS),
+    ...MEMBER_NAV_ITEMS,
     ...(hasPermission(role, USER_PERMISSIONS.recruiting)
+      ? [{ name: "Ausschreibungen", url: "/recruiting", icon: Megaphone }]
+      : []),
+    ...(hasPermission(role, USER_PERMISSIONS.members)
       ? [
-          { name: "Ausschreibungen", url: "/recruiting", icon: Megaphone },
           {
-            name: "Bewerbungen",
-            url: "/applications",
-            icon: UserRoundSearch,
+            name: "Mitglieder",
+            url: "/members",
+            activeUrls: ["/applications"],
+            icon: UsersRound,
           },
         ]
       : []),
@@ -94,20 +100,43 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href={homeUrl}>
-                <Image src="/AppIcon.png" alt="YBase" width={32} height={32} />
-                <div className="grid flex-1 text-left leading-tight">
-                  <span className="truncate text-base font-bold">YBase</span>
-                </div>
-              </Link>
+              {locked ? (
+                <span>
+                  <Image
+                    src="/AppIcon.png"
+                    alt="YBase"
+                    width={32}
+                    height={32}
+                  />
+                  <div className="grid flex-1 text-left leading-tight">
+                    <span className="truncate text-base font-bold">YBase</span>
+                  </div>
+                </span>
+              ) : (
+                <Link href={homeUrl}>
+                  <Image
+                    src="/AppIcon.png"
+                    alt="YBase"
+                    width={32}
+                    height={32}
+                  />
+                  <div className="grid flex-1 text-left leading-tight">
+                    <span className="truncate text-base font-bold">YBase</span>
+                  </div>
+                </Link>
+              )}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <MainNav items={mainItems} />
-        {administrationItems.length > 0 && (
-          <MainNav items={administrationItems} label="Verwaltung" />
+        {navSlot ?? (
+          <>
+            <MainNav items={mainItems} />
+            {administrationItems.length > 0 && (
+              <MainNav items={administrationItems} label="Verwaltung" />
+            )}
+          </>
         )}
       </SidebarContent>
       <SidebarFooter>

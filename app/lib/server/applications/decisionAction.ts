@@ -1,6 +1,7 @@
 "use server";
 
 import { ZodError } from "zod";
+import { APPLICATION_ADMISSION_ERRORS } from "../../applications/admissionEligibility";
 import type { ApplicationDecisionInput } from "./decisionInput";
 import { sendApplicationDecision } from "./decision";
 
@@ -13,9 +14,10 @@ const DISPLAYABLE_DECISION_ERRORS = new Set([
   "Dieser Statuswechsel ist nicht zulässig",
   "Das Workspace-Konto wird bereits eingerichtet",
   "Ausschreibung nicht gefunden",
-  "YBase-URL ist nicht konfiguriert",
   "Diese Workspace-E-Mail ist bereits einer Bewerbung zugeordnet",
   "Diese Workspace-E-Mail gehört bereits zu einem YBase-Profil",
+  "Das Member-Profil ist bereits mit einem YBase-Nutzer verknüpft.",
+  "Das Mitglied konnte nicht eindeutig mit der Bewerbung verknüpft werden.",
   "Diese Workspace-E-Mail ist bereits vergeben",
   "Das Workspace-Konto verwendet eine andere E-Mail",
   "Google-Workspace-Integration ist nicht konfiguriert",
@@ -29,6 +31,7 @@ const DISPLAYABLE_DECISION_ERRORS = new Set([
   "Workspace-Konto konnte nicht gespeichert werden",
   "E-Mail konnte nicht versendet werden",
   "Bewerbung wurde zwischenzeitlich geändert",
+  ...Object.values(APPLICATION_ADMISSION_ERRORS),
 ]);
 
 function decisionErrorMessage(

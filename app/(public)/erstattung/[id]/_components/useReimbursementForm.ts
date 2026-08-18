@@ -11,6 +11,10 @@ import {
 } from "@/(public)/_lib/reimbursements";
 import { createClientReceiptId } from "@/lib/travelReceiptForm";
 import {
+  calculateCarAllowance,
+  CAR_ALLOWANCE_RATE_EUR_PER_KM,
+} from "@/lib/travel-costs";
+import {
   submitReimbursementForm,
   validateReimbursement,
 } from "./submitReimbursementForm";
@@ -60,12 +64,23 @@ export function useReimbursementForm(id: string) {
         setTravelReceipts(
           submission.receipts.flatMap((receipt) => {
             if (!receipt.costType) return [];
+            const isCar = receipt.costType === "car";
+            const carAmount = isCar
+              ? calculateCarAllowance(receipt.kilometers ?? 0)
+              : undefined;
             return [
               {
                 ...receipt,
                 costType: receipt.costType,
                 receiptNumber: receipt.receiptNumber,
                 clientId: createClientReceiptId(),
+                ...(isCar
+                  ? {
+                      mileageRate: CAR_ALLOWANCE_RATE_EUR_PER_KM,
+                      grossAmount: carAmount ?? 0,
+                      netAmount: carAmount ?? 0,
+                    }
+                  : {}),
               },
             ];
           }),
@@ -96,7 +111,7 @@ export function useReimbursementForm(id: string) {
       );
 
   const generateUploadUrl = useCallback(
-    (contentType: string) => reimbursementUploadUrl(id, contentType),
+    (contentType: string) => reimbursementUploadUrl(id, contentType, "receipt"),
     [id],
   );
   const getFileUrl = useCallback(
@@ -107,7 +122,7 @@ export function useReimbursementForm(id: string) {
     (blob: Blob) =>
       uploadViaPresign(
         `/api/public/reimbursement/${id}/upload-url`,
-        { contentType: "image/png" },
+        { contentType: "image/png", documentType: "signature" },
         blob,
       ),
     [id],

@@ -1,5 +1,5 @@
 import { uploadOwnerships } from "../../db/collections";
-import type { UploadContextType } from "../../db/types";
+import type { UploadClaimType, UploadContextType } from "../../db/types";
 
 type UploadOwner = {
   organizationId: string;
@@ -8,8 +8,8 @@ type UploadOwner = {
   contextId: string;
 };
 
-type UploadClaim = {
-  type: "profileImage" | "reimbursement" | "allowance" | "signatureToken";
+export type UploadClaim = {
+  type: UploadClaimType;
   id: string;
 };
 
@@ -98,14 +98,22 @@ async function releaseUploadsClaimedBy(
   );
 }
 
-async function claimSubmissionSignature(
+export async function claimSignatureForSubmission(
   storageKey: string,
   owner: UploadIdentity,
   claim: UploadClaim,
 ): Promise<void> {
-  const result = await (
-    await uploadOwnerships()
-  ).updateOne(
+  const uploads = await uploadOwnerships();
+  const alreadyClaimed = await uploads.findOne({
+    _id: storageKey,
+    organizationId: owner.organizationId,
+    userId: owner.userId,
+    claimedByType: claim.type,
+    claimedById: claim.id,
+  });
+  if (alreadyClaimed) return;
+
+  const result = await uploads.updateOne(
     {
       _id: storageKey,
       organizationId: owner.organizationId,
@@ -146,7 +154,7 @@ export async function claimUploadsForSubmission(
   await claimPendingUploads(uniqueReceiptKeys, owner, ["user"], claim);
 
   try {
-    await claimSubmissionSignature(signatureStorageKey, owner, claim);
+    await claimSignatureForSubmission(signatureStorageKey, owner, claim);
   } catch (error) {
     await releaseUploadsClaimedBy(uniqueReceiptKeys, claim);
     throw error;

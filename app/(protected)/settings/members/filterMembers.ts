@@ -1,27 +1,40 @@
 import type { MemberStatus, Team, User } from "@/lib/db/types";
+import { normalizeMemberStatus } from "../../../lib/members/status";
 
 export const ALL = "all";
 
 export interface MemberFilters {
-  status: MemberStatus;
+  status: MemberStatus | readonly MemberStatus[];
   departmentId: string;
   teamId: string;
   search: string;
 }
 
-export function departmentIdOf(
+export function departmentIdsOf(
   member: User,
   teamsById: Map<string, Team>,
-): string | undefined {
-  if (!member.teamId) return undefined;
-  return teamsById.get(member.teamId)?.departmentId;
+): string[] {
+  const departmentIds = member.boardMembership
+    ? [member.boardMembership.departmentId]
+    : [];
+  const teamIds = member.boardMembership
+    ? [member.secondaryTeamId]
+    : [member.teamId, member.secondaryTeamId];
+  for (const teamId of teamIds) {
+    if (!teamId) continue;
+    const departmentId = teamsById.get(teamId)?.departmentId;
+    if (departmentId && !departmentIds.includes(departmentId)) {
+      departmentIds.push(departmentId);
+    }
+  }
+  return departmentIds;
 }
 
 function matchesSearch(member: User, search: string): boolean {
   const needle = search.trim().toLowerCase();
   if (!needle) return true;
   const haystack =
-    `${member.name ?? ""} ${member.email ?? ""} ${member.positionTitle ?? ""}`.toLowerCase();
+    `${member.name ?? ""} ${member.email ?? ""} ${member.privateEmail ?? ""} ${member.phone ?? ""}`.toLowerCase();
   return haystack.includes(needle);
 }
 
@@ -30,14 +43,23 @@ export function filterMembers(
   filters: MemberFilters,
   teamsById: Map<string, Team>,
 ): User[] {
+  const statuses = Array.isArray(filters.status)
+    ? filters.status
+    : [filters.status];
   return members.filter((member) => {
-    if (member.memberStatus !== filters.status) return false;
+    if (!statuses.includes(normalizeMemberStatus(member.memberStatus))) {
+      return false;
+    }
     if (
       filters.departmentId !== ALL &&
-      departmentIdOf(member, teamsById) !== filters.departmentId
+      !departmentIdsOf(member, teamsById).includes(filters.departmentId)
     )
       return false;
-    if (filters.teamId !== ALL && member.teamId !== filters.teamId)
+    if (
+      filters.teamId !== ALL &&
+      member.teamId !== filters.teamId &&
+      member.secondaryTeamId !== filters.teamId
+    )
       return false;
     return matchesSearch(member, filters.search);
   });

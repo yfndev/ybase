@@ -78,6 +78,7 @@ export function TravelReimbursementFormUI({
               <SignatureField
                 onSignatureComplete={form.setSignature}
                 storageId={form.signature || undefined}
+                signatureContext="travel"
               />
             </div>
           </>

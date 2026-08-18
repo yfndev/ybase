@@ -3,6 +3,7 @@ import type { Application, JobPosting } from "../../db/types";
 import { type EmailRecipient, sendMail } from "../../email/brevo";
 import { BREVO_TEMPLATE_IDS } from "../../email/templates";
 import { appUrl } from "../../email/urls";
+import { UNAVAILABLE_MEMBER_STATUSES } from "../../members/status";
 import { YFN_ORGANIZATION } from "../../organization";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -55,7 +56,7 @@ async function sendContactEmail(
         .find({
           _id: { $in: posting.contactUserIds },
           organizationId: posting.organizationId,
-          memberStatus: { $ne: "offboarded" },
+          memberStatus: { $nin: [...UNAVAILABLE_MEMBER_STATUSES] },
         })
         .project({ name: 1, email: 1 })
         .toArray()

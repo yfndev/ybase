@@ -1,7 +1,7 @@
 import { emailDomain, normalizeYfnEmail } from "../../applications/yfnEmail";
 import { applications, users } from "../../db/collections";
+import { isDuplicateKeyError } from "../../db/errors";
 import type { Application } from "../../db/types";
-import { isDuplicateKeyError } from "./history";
 
 const CLAIM_TIMEOUT_MS = 5 * 60 * 1000;
 
@@ -15,12 +15,6 @@ export function workspaceApplicantName(application: Application): {
     givenName: parts[0],
     familyName: parts.slice(1).join(" ") || parts[0],
   };
-}
-
-export function ybaseLoginUrl(): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, "");
-  if (!appUrl) throw new Error("YBase-URL ist nicht konfiguriert");
-  return `${appUrl}/login`;
 }
 
 export async function reserveWorkspaceProvisioning(input: {

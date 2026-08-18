@@ -1,6 +1,8 @@
 import { departments, jobPostings, teams, users } from "../../db/collections";
 import type { JobPosting, User } from "../../db/types";
 import { berlinToday } from "../../jobPostings/deadline";
+import { DEFAULT_JOB_POSTING_BENEFITS } from "../../jobPostings/benefits";
+import { UNAVAILABLE_MEMBER_STATUSES } from "../../members/status";
 import { YFN_ORGANIZATION } from "../../organization";
 
 export const JOB_FEED_TAG = "YFN_TEAM" as const;
@@ -14,6 +16,7 @@ export interface JobFeedItemV1 {
     description: string;
     tasks: string;
     requirements: string;
+    benefits: string;
   };
   team: string;
   department: string;
@@ -60,6 +63,7 @@ export async function getJobFeedV1(
           description: 1,
           tasks: 1,
           requirements: 1,
+          benefits: 1,
           teamId: 1,
           timeCommitment: 1,
           location: 1,
@@ -82,7 +86,7 @@ export async function getJobFeedV1(
       .find({
         _id: { $in: contactUserIds },
         organizationId,
-        memberStatus: { $ne: "offboarded" },
+        memberStatus: { $nin: [...UNAVAILABLE_MEMBER_STATUSES] },
       })
       .project<Pick<User, "_id" | "name" | "email">>({
         _id: 1,
@@ -137,6 +141,7 @@ function toFeedItem(
       description: posting.description ?? "",
       tasks: posting.tasks ?? "",
       requirements: posting.requirements ?? "",
+      benefits: posting.benefits ?? DEFAULT_JOB_POSTING_BENEFITS,
     },
     team: team?.name ?? "",
     department: department?.name ?? "",

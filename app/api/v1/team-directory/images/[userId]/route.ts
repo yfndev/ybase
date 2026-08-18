@@ -1,4 +1,5 @@
 import { departments, teams, users } from "@/lib/db/collections";
+import { PUBLIC_MEMBER_STATUSES } from "@/lib/members/status";
 import { getObjectBuffer } from "@/lib/s3/storage";
 import { validateProfileImage } from "@/lib/server/profile/validation";
 
@@ -20,28 +21,36 @@ export async function GET(_request: Request, context: RouteContext) {
   ).findOne({
     _id: userId,
     organizationId,
-    memberStatus: "active",
+    memberStatus: { $in: [...PUBLIC_MEMBER_STATUSES] },
     publicProfileCompletedAt: { $exists: true },
     profileImageStorageKey: { $exists: true },
   });
-  if (!member?.teamId || !member.profileImageStorageKey) {
+  if (!member?.profileImageStorageKey) {
     return new Response(null, { status: 404, headers: NOT_FOUND_HEADERS });
   }
 
-  const team = await (
-    await teams()
-  ).findOne({
-    _id: member.teamId,
-    organizationId,
-    isArchived: false,
-  });
-  if (!team) {
-    return new Response(null, { status: 404, headers: NOT_FOUND_HEADERS });
+  let departmentId = member.boardMembership?.departmentId;
+  if (!departmentId) {
+    if (!member.teamId) {
+      return new Response(null, { status: 404, headers: NOT_FOUND_HEADERS });
+    }
+    const team = await (
+      await teams()
+    ).findOne({
+      _id: member.teamId,
+      organizationId,
+      isArchived: false,
+    });
+    if (!team) {
+      return new Response(null, { status: 404, headers: NOT_FOUND_HEADERS });
+    }
+    departmentId = team.departmentId;
   }
+
   const department = await (
     await departments()
   ).findOne({
-    _id: team.departmentId,
+    _id: departmentId,
     organizationId,
     isArchived: false,
   });

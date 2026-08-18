@@ -38,6 +38,8 @@ export function ApplicationActionFooter({
   jobPostingTitle,
   organizationDomain,
   yfnEmail,
+  isProfileRequired,
+  acceptanceBlockedReason,
 }: {
   applicationId: string;
   status: ApplicationStatus;
@@ -45,6 +47,8 @@ export function ApplicationActionFooter({
   jobPostingTitle: string;
   organizationDomain: string;
   yfnEmail?: string;
+  isProfileRequired: boolean;
+  acceptanceBlockedReason?: string;
 }) {
   const { setStatus, sendDecision } = useApplicationMutations();
   const [decisionDraft, setDecisionDraft] =
@@ -114,6 +118,14 @@ export function ApplicationActionFooter({
       {actions.length > 0 ? (
         <section className="border-t pt-5">
           <fieldset className="space-y-2" aria-label="Bewerbungsaktionen">
+            {acceptanceBlockedReason &&
+            actions.some(
+              ({ status: nextStatus }) => nextStatus === "accepted",
+            ) ? (
+              <p className="text-sm text-destructive">
+                {acceptanceBlockedReason}
+              </p>
+            ) : null}
             {actions.map((action, index) => (
               <Button
                 key={action.status}
@@ -122,7 +134,13 @@ export function ApplicationActionFooter({
                 variant={
                   action.variant ?? (index === 0 ? "primary" : "outline")
                 }
-                disabled={setStatus.isPending || sendDecision.isPending}
+                disabled={
+                  setStatus.isPending ||
+                  sendDecision.isPending ||
+                  (action.status === "interview" && isProfileRequired) ||
+                  (action.status === "accepted" &&
+                    Boolean(acceptanceBlockedReason))
+                }
                 onClick={() => changeStatus(action.status)}
               >
                 {action.label}

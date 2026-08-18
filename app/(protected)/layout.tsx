@@ -1,13 +1,20 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { PostHogIdentity } from "@/components/PostHogIdentity";
-import { AppSidebar } from "@/components/Sidebar/AppSidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
 import { requireAuthenticatedUser } from "@/lib/auth/session";
+import { isGettingToKnowConfirmed } from "@/lib/members/gettingToKnow";
+import { isUnavailableMemberStatus } from "@/lib/members/status";
+import { getMemberPlatformLinkingData } from "@/lib/server/memberPlatform/linking";
+import { AppShell } from "./AppShell";
+import { MemberPlatformLinking } from "./MemberPlatformLinking";
+import { MembershipPendingNotice } from "./MembershipPendingNotice";
 import { OnboardingNotice } from "./OnboardingNotice";
 import { OffboardedNotice } from "./OffboardedNotice";
 import { PublicProfileSetup } from "./PublicProfileSetup";
+import { MembershipOnboarding } from "./membership-onboarding/MembershipOnboarding";
+import { OnboardingProvider } from "./membership-onboarding/OnboardingContext";
+import { OnboardingSidebarProgress } from "./membership-onboarding/OnboardingSidebarProgress";
 
 export default async function ProtectedLayout({
   children,
@@ -16,12 +23,19 @@ export default async function ProtectedLayout({
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  const member = await requireAuthenticatedUser();
+  const member = await requireAuthenticatedUser({
+    allowDeletedWorkspaceAccount: true,
+  });
 
   let content: ReactNode;
-  if (member.memberStatus === "offboarded") {
+  if (member.workspaceAccountDeletedAt) {
+    content = <OffboardedNotice isAccountDeleted />;
+  } else if (isUnavailableMemberStatus(member.memberStatus)) {
     content = <OffboardedNotice />;
-  } else if (member.publicProfileSetupRequired === true) {
+  } else if (
+    member.publicProfileSetupRequired === true &&
+    !member.memberPlatformUserId
+  ) {
     content = (
       <PublicProfileSetup
         canUseGooglePhoto={
@@ -29,21 +43,33 @@ export default async function ProtectedLayout({
         }
       />
     );
+  } else if (
+    member.memberStatus === "onboarding" &&
+    !member.memberPlatformUserId
+  ) {
+    const linkingData = await getMemberPlatformLinkingData(member);
+    content = linkingData ? (
+      <MemberPlatformLinking data={linkingData} />
+    ) : (
+      <OnboardingNotice />
+    );
   } else if (member.memberStatus === "onboarding") {
     content = (
-      <OnboardingNotice onboardingStatus={member.teamOnboardingStatus} />
+      <OnboardingProvider>
+        <AppShell locked navSlot={<OnboardingSidebarProgress />}>
+          <MembershipOnboarding />
+        </AppShell>
+      </OnboardingProvider>
+    );
+  } else if (isGettingToKnowConfirmed(member)) {
+    content = (
+      <AppShell>
+        <MembershipPendingNotice />
+        {children}
+      </AppShell>
     );
   } else {
-    content = (
-      <SidebarProvider className="bg-sidebar">
-        <AppSidebar />
-        <div className="flex min-w-0 flex-1 flex-col p-2 transition-[padding-right] duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:p-3 lg:p-4 min-[1200px]:has-[[data-member-drawer]]:pr-[calc(var(--member-drawer-width)+2rem)] min-[1280px]:has-[[data-application-review-sidebar]]:pr-[calc(var(--application-review-sidebar-width)+2rem)]">
-          <div className="flex-1 rounded-[0.25rem] border bg-background p-4 sm:p-6 lg:p-8">
-            {children}
-          </div>
-        </div>
-      </SidebarProvider>
-    );
+    content = <AppShell>{children}</AppShell>;
   }
 
   return (

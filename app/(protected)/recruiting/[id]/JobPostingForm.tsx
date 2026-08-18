@@ -9,6 +9,11 @@ import { PageHeader } from "@/components/Layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useJobPostingMutations } from "@/lib/client/jobPostings/hooks/useJobPostingMutations";
 import type { JobPosting } from "@/lib/db/types";
+import { useCanPublishJobPostings } from "@/lib/hooks/useCurrentUserRole";
+import {
+  isDeadlineInFuture,
+  JOB_POSTING_DEADLINE_ERROR,
+} from "@/lib/jobPostings/deadline";
 import {
   type JobPostingFormValues,
   toJobPostingForm,
@@ -22,6 +27,7 @@ import { JobPostingStatusActions } from "./JobPostingStatusActions";
 
 export function JobPostingForm({ posting }: { posting: JobPosting }) {
   const router = useRouter();
+  const canPublish = useCanPublishJobPostings();
   const { update, generateForm, deletePosting } = useJobPostingMutations();
   const [values, setValues] = useState<JobPostingFormValues>(() =>
     toJobPostingForm(posting),
@@ -34,9 +40,14 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
   const patch = (part: Partial<JobPostingFormValues>) =>
     setValues((current) => ({ ...current, ...part }));
 
-  const hasRequiredFields = () => {
+  const validateFields = () => {
     if (!values.title.trim() || !values.teamId) {
       toast.error("Titel und Team sind erforderlich");
+      return false;
+    }
+
+    if (!isDeadlineInFuture(values.deadline)) {
+      toast.error(JOB_POSTING_DEADLINE_ERROR);
       return false;
     }
 
@@ -44,7 +55,7 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
   };
 
   const handleSave = async () => {
-    if (!hasRequiredFields()) return;
+    if (!validateFields()) return;
 
     setActiveAction("save");
     try {
@@ -60,7 +71,7 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
   };
 
   const handlePublish = async () => {
-    if (!hasRequiredFields()) return;
+    if (!validateFields()) return;
 
     setActiveAction("publish");
     try {
@@ -104,7 +115,7 @@ export function JobPostingForm({ posting }: { posting: JobPosting }) {
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <JobPostingStatusActions posting={posting} />
-        {posting.status === "draft" ? (
+        {posting.status === "draft" && canPublish ? (
           <JobPostingDraftActions
             posting={posting}
             activeAction={activeAction}

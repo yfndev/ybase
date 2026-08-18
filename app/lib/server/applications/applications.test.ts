@@ -128,6 +128,32 @@ test("loads one application without internal identifiers", async () => {
       $set: {
         ownerIds: [ownerId],
         withdrawalTokenHash: "secret-withdrawal-hash",
+        onboardingStartedBy: actorId,
+        onboardingCompletedBy: actorId,
+        dateOfBirth: "2004-01-01",
+        memberPlatformUserId: "platform-alex",
+        memberPlatformSyncedAt: Date.now(),
+        admissionDecision: {
+          result: "admitted",
+          decidedAt: Date.now(),
+          decidedBy: actorId,
+          authority: "board_member",
+          recordedAt: Date.now(),
+          recordedBy: actorId,
+        },
+        rejectionDelivery: {
+          channel: "email",
+          recipient: "alex@example.com",
+          messageId: "secret-message-id",
+        },
+        appealTokenHash: "secret-appeal-hash",
+        appealStatement: "Interner Beschwerdetext",
+        appealDecision: {
+          result: "rejected",
+          decidedAt: Date.now(),
+          recordedAt: Date.now(),
+          recordedBy: actorId,
+        },
         fields: [
           {
             key: "phone-in-fields",
@@ -145,6 +171,9 @@ test("loads one application without internal identifiers", async () => {
     _id: applicationId,
     jobPostingTitle: "Fundraising",
     ownerIds: [ownerId],
+    dateOfBirth: "2004-01-01",
+    memberPlatformUserId: "platform-alex",
+    memberPlatformSyncedAt: expect.any(Number),
   });
   expect(application).not.toHaveProperty("applicantPhone");
   expect(application).not.toHaveProperty("applicantEmailNormalized");
@@ -153,6 +182,13 @@ test("loads one application without internal identifiers", async () => {
   expect(application).not.toHaveProperty("tallyResponseId");
   expect(application).not.toHaveProperty("tallyFormId");
   expect(application).not.toHaveProperty("withdrawalTokenHash");
+  expect(application).not.toHaveProperty("admissionDecision");
+  expect(application).not.toHaveProperty("rejectionDelivery");
+  expect(application).not.toHaveProperty("appealTokenHash");
+  expect(application).not.toHaveProperty("appealStatement");
+  expect(application).not.toHaveProperty("appealDecision");
+  expect(application).not.toHaveProperty("onboardingStartedBy");
+  expect(application).not.toHaveProperty("onboardingCompletedBy");
 });
 
 test("stores multiple responsible people and an internal history entry", async () => {
@@ -210,10 +246,25 @@ test("rejects an owner from another organization", async () => {
 });
 
 test("enforces allowed non-decision transitions and records them", async () => {
+  await (
+    await applications()
+  ).updateOne(
+    { _id: applicationId },
+    {
+      $set: {
+        memberPlatformUserId: "platform-alex",
+        dateOfBirth: "2004-01-01",
+      },
+    },
+  );
   await setApplicationStatus({ applicationId, status: "interview" });
 
   const stored = await (await applications()).findOne({ _id: applicationId });
-  expect(stored?.status).toBe("interview");
+  expect(stored).toMatchObject({
+    status: "interview",
+    memberPlatformUserId: "platform-alex",
+    dateOfBirth: "2004-01-01",
+  });
   expect(stored?.history).toHaveLength(1);
   expect(stored?.history?.at(-1)).toMatchObject({
     fromStatus: "received",
@@ -222,6 +273,15 @@ test("enforces allowed non-decision transitions and records them", async () => {
   await expect(
     setApplicationStatus({ applicationId, status: "review" }),
   ).rejects.toThrow("nicht zulässig");
+});
+
+test("requires a member-platform profile before an interview", async () => {
+  await expect(
+    setApplicationStatus({ applicationId, status: "interview" }),
+  ).rejects.toThrow("Member-Plattform-Profil");
+  expect(
+    await (await applications()).findOne({ _id: applicationId }),
+  ).toMatchObject({ status: "received" });
 });
 
 test("requires acceptance and rejection to use the email action", async () => {
@@ -250,6 +310,45 @@ test("blocks management changes after a withdrawal", async () => {
       ownerIds: [],
     }),
   ).rejects.toThrow("nicht bearbeitet");
+});
+
+test("a team lead only reaches applications of their own teams", async () => {
+  const ownTeamId = newId();
+  const ownPostingId = newId();
+  await (
+    await jobPostings()
+  ).insertOne({
+    _id: ownPostingId,
+    _creationTime: Date.now(),
+    organizationId,
+    teamId: ownTeamId,
+    status: "published",
+    title: "Eigenes Team",
+    createdBy: actorId,
+  });
+  const ownApplication = await insertApplication({
+    jobPostingId: ownPostingId,
+    applicantEmail: "own@example.com",
+    applicantEmailNormalized: "own@example.com",
+  });
+  vi.mocked(requirePermission).mockResolvedValue(
+    createTestActor({
+      _id: actorId,
+      organizationId,
+      role: "team_lead",
+      teamId: ownTeamId,
+    }),
+  );
+
+  const list = await getApplications();
+  expect(list.map(({ _id }) => _id)).toEqual([ownApplication._id]);
+  await expect(getApplication(ownApplication._id)).resolves.toMatchObject({
+    jobPostingTitle: "Eigenes Team",
+  });
+  await expect(getApplication(applicationId)).rejects.toThrow("Access denied");
+  await expect(
+    setApplicationStatus({ applicationId, status: "review" }),
+  ).rejects.toThrow("Access denied");
 });
 
 test("cannot read or update an application from another organization", async () => {

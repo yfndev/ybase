@@ -1,6 +1,11 @@
 export type * from "./application";
+export type * from "./legalDelivery";
 export type { JobFeedToken } from "./jobFeedToken";
-export type { JobPosting, JobPostingStatus } from "./jobPosting";
+export type {
+  JobPosting,
+  JobPostingStatus,
+  JobPostingUrgency,
+} from "./jobPosting";
 export type { Log } from "./log";
 export type { Organization } from "./organization";
 export type { Department, Team } from "./orgStructureTypes";
@@ -12,12 +17,31 @@ export type {
   ReviewStatus,
   TravelDetails,
 } from "./reimbursement";
-export type { CostType, MealAllowance, MealAllowanceLine } from "./travelTypes";
-export type { SignatureToken } from "./signature";
-export type { UploadContextType, UploadOwnership } from "./upload";
 export type {
+  CarAllowanceRate,
+  CostType,
+  MealAllowance,
+  MealAllowanceLine,
+} from "./travelTypes";
+export type { SignatureToken } from "./signature";
+export type {
+  UploadClaimType,
+  UploadContextType,
+  UploadOwnership,
+} from "./upload";
+export type * from "./membership";
+export type * from "./membershipAdmission";
+export type * from "./membershipCase";
+export type * from "./membershipDocument";
+export type * from "./membershipEvent";
+export type * from "./membershipResignation";
+export type {
+  BoardMembership,
+  GettingToKnowOutcome,
+  GettingToKnowPhase,
   MemberStatus,
   ProfileImageSource,
+  StoredMemberStatus,
   TeamOnboardingStatus,
   User,
   UserRole,

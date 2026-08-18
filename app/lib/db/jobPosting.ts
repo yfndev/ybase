@@ -1,4 +1,7 @@
+import type { JobPostingTimeCommitment } from "../jobPostings/timeCommitment";
+
 export type JobPostingStatus = "draft" | "published" | "closed" | "archived";
+export type JobPostingUrgency = "normal" | "urgent";
 
 export interface JobPosting {
   _id: string;
@@ -6,18 +9,21 @@ export interface JobPosting {
   organizationId: string;
   teamId: string;
   status: JobPostingStatus;
+  urgency?: JobPostingUrgency;
   title: string;
   shortText?: string;
   description?: string;
   tasks?: string;
   requirements?: string;
-  timeCommitment?: string;
+  benefits?: string;
+  timeCommitment?: JobPostingTimeCommitment | "";
   location?: string;
   isRemote?: boolean;
   deadline?: string;
   contactUserIds?: string[];
   applicationQuestions?: string[];
   createdBy: string;
+  tallyTemplateFormId?: string;
   tallyFormId?: string;
   tallyWebhookId?: string;
   tallyFormError?: string;

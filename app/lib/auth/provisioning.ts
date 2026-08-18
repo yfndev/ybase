@@ -2,22 +2,34 @@ import { organizations, projects, users } from "../db/collections";
 import { newId } from "../db/ids";
 import type { User } from "../db/types";
 import { YFN_ORGANIZATION } from "../organization";
+import { tryRefreshMemberPlatformProfile } from "../server/memberPlatform/sync";
 import { linkAcceptedApplication } from "./applicationLinking";
 
 type SignInProfile = {
   email: string;
+  googleWorkspaceUserId?: string;
   name?: string;
   image?: string;
   firstName?: string;
   lastName?: string;
   googlePhotoIsDefault?: boolean;
 };
-
 export async function ensureAppUser(profile: SignInProfile): Promise<User> {
   const usersCol = await users();
   const normalizedEmail = profile.email.trim().toLowerCase();
+  const googleWorkspaceUserId = profile.googleWorkspaceUserId?.trim();
 
-  let user = await usersCol.findOne({ email: normalizedEmail });
+  const [emailUser, workspaceUser] = await Promise.all([
+    usersCol.findOne({ email: normalizedEmail }),
+    googleWorkspaceUserId
+      ? usersCol.findOne({ googleWorkspaceUserId })
+      : Promise.resolve(null),
+  ]);
+  if (emailUser && workspaceUser && emailUser._id !== workspaceUser._id) {
+    throw new Error("Google Workspace account is linked to another user");
+  }
+
+  let user = workspaceUser ?? emailUser;
   if (!user) {
     const now = Date.now();
     user = {
@@ -30,6 +42,7 @@ export async function ensureAppUser(profile: SignInProfile): Promise<User> {
       publicProfileSetupRequired: true,
       firstName: profile.firstName,
       lastName: profile.lastName,
+      googleWorkspaceUserId,
       emailVerificationTime: now,
       memberStatus: "onboarding",
       teamOnboardingStatus: "not_started",
@@ -37,7 +50,19 @@ export async function ensureAppUser(profile: SignInProfile): Promise<User> {
     };
     await usersCol.insertOne(user);
   } else {
+    if (
+      googleWorkspaceUserId &&
+      user.googleWorkspaceUserId &&
+      googleWorkspaceUserId !== user.googleWorkspaceUserId
+    ) {
+      throw new Error("User is linked to another Google Workspace account");
+    }
     const profileUpdates = {
+      ...(normalizedEmail !== user.email ? { email: normalizedEmail } : {}),
+      ...(googleWorkspaceUserId &&
+      googleWorkspaceUserId !== user.googleWorkspaceUserId
+        ? { googleWorkspaceUserId }
+        : {}),
       ...(profile.name && profile.name !== user.name
         ? { name: profile.name }
         : {}),
@@ -56,9 +81,31 @@ export async function ensureAppUser(profile: SignInProfile): Promise<User> {
         : {}),
     };
 
-    if (Object.keys(profileUpdates).length > 0) {
-      await usersCol.updateOne({ _id: user._id }, { $set: profileUpdates });
-      user = { ...user, ...profileUpdates };
+    const restoresDeletedWorkspaceAccount = Boolean(
+      googleWorkspaceUserId && user.workspaceAccountDeletedAt,
+    );
+    if (
+      Object.keys(profileUpdates).length > 0 ||
+      restoresDeletedWorkspaceAccount
+    ) {
+      await usersCol.updateOne(
+        { _id: user._id },
+        {
+          ...(Object.keys(profileUpdates).length > 0
+            ? { $set: profileUpdates }
+            : {}),
+          ...(restoresDeletedWorkspaceAccount
+            ? { $unset: { workspaceAccountDeletedAt: "" } }
+            : {}),
+        },
+      );
+      user = {
+        ...user,
+        ...profileUpdates,
+        ...(restoresDeletedWorkspaceAccount
+          ? { workspaceAccountDeletedAt: undefined }
+          : {}),
+      };
     }
   }
 
@@ -86,7 +133,21 @@ export async function ensureAppUser(profile: SignInProfile): Promise<User> {
     user = { ...user, ...membership };
   }
 
-  return linkAcceptedApplication(user);
+  return tryRefreshMemberPlatformProfile(await linkAcceptedApplication(user));
+}
+
+export async function isLinkedWorkspaceUser(
+  googleWorkspaceUserId: string | undefined,
+): Promise<boolean> {
+  const normalizedId = googleWorkspaceUserId?.trim();
+  if (!normalizedId) return false;
+  const user = await (
+    await users()
+  ).findOne(
+    { googleWorkspaceUserId: normalizedId },
+    { projection: { _id: 1 } },
+  );
+  return Boolean(user);
 }
 
 function isYfnEmail(email: string): boolean {

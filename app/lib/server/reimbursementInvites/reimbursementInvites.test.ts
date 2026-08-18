@@ -98,6 +98,24 @@ test("already active members can follow the link", async () => {
   await expect(redeemReimbursementInvite(token)).resolves.toBeUndefined();
 });
 
+test("planned offboarding members keep their internal status", async () => {
+  const token = await insertInvite();
+  const member = createTestActor({
+    email: "planned@youngfounders.network",
+    organizationId,
+    role: "member",
+    memberStatus: "offboarding_planned",
+  });
+  await (await users()).insertOne(member);
+  vi.mocked(requireAuthenticatedUser).mockResolvedValue(member);
+
+  await redeemReimbursementInvite(token);
+
+  expect(await (await users()).findOne({ _id: member._id })).toMatchObject({
+    memberStatus: "offboarding_planned",
+  });
+});
+
 test("rejects accounts outside the organization domain", async () => {
   const token = await insertInvite();
   vi.mocked(requireAuthenticatedUser).mockResolvedValue(

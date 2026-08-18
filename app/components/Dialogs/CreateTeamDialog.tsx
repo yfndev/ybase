@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useDepartments } from "@/lib/client/departments/hooks/useDepartments";
@@ -27,10 +28,17 @@ export function CreateTeamDialog({ open, onOpenChange }: Props) {
   const { create } = useTeamMutations();
   const [name, setName] = useState("");
   const [departmentId, setDepartmentId] = useState("");
+  const [isChapter, setIsChapter] = useState(false);
+  const communityDepartmentId = departments.find(
+    (department) =>
+      department.name.trim().toLocaleLowerCase("de-DE") === "community",
+  )?._id;
+  const showChapterOption = departmentId === communityDepartmentId;
 
   const reset = () => {
     setName("");
     setDepartmentId("");
+    setIsChapter(false);
   };
 
   const handleOpenChange = (value: boolean) => {
@@ -43,7 +51,11 @@ export function CreateTeamDialog({ open, onOpenChange }: Props) {
     e.preventDefault();
     if (!name.trim() || !departmentId || create.isPending) return;
     try {
-      await create.mutateAsync({ name: name.trim(), departmentId });
+      await create.mutateAsync({
+        name: name.trim(),
+        departmentId,
+        isChapter: showChapterOption && isChapter,
+      });
       toast.success("Team erstellt");
       reset();
       onOpenChange(false);
@@ -81,9 +93,24 @@ export function CreateTeamDialog({ open, onOpenChange }: Props) {
                 id="team-department"
                 departments={departments}
                 value={departmentId || undefined}
-                onValueChange={setDepartmentId}
+                onValueChange={(value) => {
+                  setDepartmentId(value);
+                  if (value !== communityDepartmentId) {
+                    setIsChapter(false);
+                  }
+                }}
               />
             </div>
+            {showChapterOption ? (
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="team-chapter"
+                  checked={isChapter}
+                  onCheckedChange={(checked) => setIsChapter(checked === true)}
+                />
+                <Label htmlFor="team-chapter">Chapter</Label>
+              </div>
+            ) : null}
             <DialogFooter>
               <Button
                 type="submit"

@@ -75,6 +75,9 @@ export async function withdrawApplicationByToken(
       $unset: {
         applicantName: "",
         applicantPhone: "",
+        dateOfBirth: "",
+        memberPlatformUserId: "",
+        memberPlatformSyncedAt: "",
         ownerIds: "",
         withdrawalTokenHash: "",
         yfnEmail: "",
@@ -87,6 +90,8 @@ export async function withdrawApplicationByToken(
         onboardingUserId: "",
         onboardingLinkedAt: "",
         onboardingLinkError: "",
+        onboardingStartedAt: "",
+        onboardingStartedBy: "",
         onboardingCompletedAt: "",
         onboardingCompletedBy: "",
         cleanupEligibleAt: "",

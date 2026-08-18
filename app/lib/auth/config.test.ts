@@ -2,10 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   ensureAppUser: vi.fn(),
+  isLinkedWorkspaceUser: vi.fn(),
 }));
 
 vi.mock("./provisioning", () => ({
   ensureAppUser: mocks.ensureAppUser,
+  isLinkedWorkspaceUser: mocks.isLinkedWorkspaceUser,
 }));
 
 import { authConfig } from "./config";
@@ -13,6 +15,7 @@ import { authConfig } from "./config";
 describe("auth config", () => {
   beforeEach(() => {
     mocks.ensureAppUser.mockReset();
+    mocks.isLinkedWorkspaceUser.mockReset();
   });
 
   it("refreshes a persisted session against the current database", async () => {
@@ -22,6 +25,8 @@ describe("auth config", () => {
       email: "local@example.com",
       organizationId: "new-organization-id",
       role: "finance",
+      profileImageStorageKey: "profile-image",
+      publicProfileCompletedAt: 123,
     });
     const token = {
       email: "local@example.com",
@@ -37,6 +42,7 @@ describe("auth config", () => {
 
     expect(mocks.ensureAppUser).toHaveBeenCalledWith({
       email: "local@example.com",
+      googleWorkspaceUserId: undefined,
       name: undefined,
       image: undefined,
       firstName: undefined,
@@ -46,7 +52,38 @@ describe("auth config", () => {
       userId: "new-user-id",
       organizationId: "new-organization-id",
       role: "finance",
+      profileImageStorageKey: "profile-image",
+      publicProfileCompletedAt: 123,
     });
+  });
+
+  it("allows linked accounts from another Workspace domain", async () => {
+    mocks.isLinkedWorkspaceUser.mockResolvedValue(true);
+
+    const result = await authConfig.callbacks.signIn({
+      user: { id: "google-id", email: "member@ybudget.de" },
+      account: {
+        provider: "google",
+        providerAccountId: "google-id",
+      },
+    } as Parameters<typeof authConfig.callbacks.signIn>[0]);
+
+    expect(result).toBe(true);
+    expect(mocks.isLinkedWorkspaceUser).toHaveBeenCalledWith("google-id");
+  });
+
+  it("rejects unknown accounts from another domain", async () => {
+    mocks.isLinkedWorkspaceUser.mockResolvedValue(false);
+
+    const result = await authConfig.callbacks.signIn({
+      user: { id: "google-id", email: "unknown@example.com" },
+      account: {
+        provider: "google",
+        providerAccountId: "google-id",
+      },
+    } as Parameters<typeof authConfig.callbacks.signIn>[0]);
+
+    expect(result).toBe(false);
   });
 
   it("keeps the People & Culture role in the session", () => {

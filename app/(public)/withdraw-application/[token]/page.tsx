@@ -1,7 +1,16 @@
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { canWithdrawApplication } from "@/lib/server/applications/withdrawal";
-import { AlertCircle, ShieldCheck } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import type { Metadata } from "next";
+import Image from "next/image";
+import type { ReactNode } from "react";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +19,20 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
   referrer: "no-referrer",
 };
+
+function WithdrawApplicationShell({ children }: { children: ReactNode }) {
+  return (
+    <main className="flex min-h-svh items-center justify-center bg-muted/30 px-6 py-10">
+      <div className="w-full max-w-md space-y-6">
+        <div className="flex items-center justify-center gap-3">
+          <Image src="/AppIcon.png" alt="" width={40} height={40} priority />
+          <span className="text-xl font-bold">YBase</span>
+        </div>
+        {children}
+      </div>
+    </main>
+  );
+}
 
 export default async function WithdrawApplicationPage({
   params,
@@ -21,39 +44,51 @@ export default async function WithdrawApplicationPage({
 
   if (!valid) {
     return (
-      <main className="flex min-h-svh items-center justify-center p-6">
-        <div className="max-w-md text-center">
-          <AlertCircle className="mx-auto mb-4 size-12 text-destructive" />
-          <h1 className="text-2xl font-semibold">Link nicht mehr gültig</h1>
-          <p className="mt-2 text-muted-foreground">
-            Die Bewerbung wurde bereits zurückgezogen oder der Link ist
-            ungültig.
-          </p>
-        </div>
-      </main>
+      <WithdrawApplicationShell>
+        <Card>
+          <CardHeader className="text-center">
+            <div className="mx-auto flex size-12 items-center justify-center text-destructive">
+              <AlertCircle aria-hidden="true" className="size-7" />
+            </div>
+            <CardTitle>Link nicht mehr gültig</CardTitle>
+            <CardDescription>
+              Die Bewerbung wurde bereits zurückgezogen oder der Link ist
+              ungültig.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </WithdrawApplicationShell>
     );
   }
 
   return (
-    <main className="flex min-h-svh items-center justify-center p-6">
-      <div className="w-full max-w-md rounded-lg border bg-background p-6 shadow-sm">
-        <ShieldCheck className="mb-4 size-10 text-primary" />
-        <h1 className="text-2xl font-semibold">Bewerbung zurückziehen?</h1>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          Deine Bewerbung wird sofort gesperrt. Persönliche Angaben, Antworten
-          und hochgeladene Dateien werden unwiderruflich gelöscht; erhalten
-          bleiben nur anonyme Statistikdaten.
-        </p>
-        <form
-          className="mt-6"
-          method="post"
-          action={`/api/public/applications/withdraw/${encodeURIComponent(token)}`}
-        >
-          <Button className="w-full" variant="destructive" type="submit">
-            Bewerbung endgültig zurückziehen
-          </Button>
-        </form>
-      </div>
-    </main>
+    <WithdrawApplicationShell>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">Bewerbung zurückziehen?</CardTitle>
+          <CardDescription className="text-sm leading-6">
+            Deine persönlichen Daten, Antworten und hochgeladenen Dateien werden
+            gelöscht. Anonyme Statistikdaten bleiben erhalten. Dieser Schritt
+            kann nicht rückgängig gemacht werden.
+          </CardDescription>
+        </CardHeader>
+        <CardFooter>
+          <form
+            className="w-full"
+            method="post"
+            action={`/api/public/applications/withdraw/${encodeURIComponent(token)}`}
+          >
+            <Button
+              className="w-full"
+              variant="primary"
+              size="lg"
+              type="submit"
+            >
+              Bewerbung endgültig zurückziehen
+            </Button>
+          </form>
+        </CardFooter>
+      </Card>
+    </WithdrawApplicationShell>
   );
 }

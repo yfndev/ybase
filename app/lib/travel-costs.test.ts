@@ -1,8 +1,17 @@
 import { expect, test } from "vitest";
 import {
+  calculateCarAllowance,
   changeMealAllowanceCountry,
   createMealAllowance,
+  getCarAllowanceRate,
 } from "./travel-costs";
+
+test("calculates the fixed 15 cent car allowance rate", () => {
+  expect(calculateCarAllowance(100)).toBe(15);
+  expect(getCarAllowanceRate({})).toBe(0.3);
+  expect(getCarAllowanceRate({ mileageRate: 0.15 })).toBe(0.15);
+  expect(getCarAllowanceRate({ mileageRate: 0.3 })).toBe(0.3);
+});
 
 test("keeps meal days when switching travel country", () => {
   const domestic = createMealAllowance();
