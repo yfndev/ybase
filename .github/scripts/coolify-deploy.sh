@@ -63,9 +63,6 @@ case "$TAG_MODE" in
 esac
 
 echo "==> Starte Deployment"
-# Coolify hat den Endpunkt auf POST umgestellt; ein GET antwortet seit dem
-# Wechsel mit HTTP 405 ("This endpoint has changed to a POST request.") und
-# liess jedes Deployment nach erfolgreichem Image-Build scheitern.
 deploy_response=$(api POST "/deploy?uuid=${COOLIFY_APP_UUID}&force=false")
 deployment_uuid=$(printf '%s' "$deploy_response" | python3 -c '
 import json, sys
